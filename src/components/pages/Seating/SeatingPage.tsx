@@ -1,5 +1,5 @@
 // src/components/pages/Seating/SeatingPage.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { useSeatingApi, useDeleteSeat } from "../../../api/hooks/useSeatingApi";
 import { SeatingFormModal } from "../../molecules/SeatingFormModal";
 import { Button } from "../../atoms/Button";

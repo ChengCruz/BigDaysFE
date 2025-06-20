@@ -6,7 +6,7 @@ import { FormField } from "../../molecules/FormField";
 import { Button } from "../../atoms/Button";
 
 export default function LoginPage() {
-  const { login, loading } = useAuth();
+  const { loading } = useAuth();
   const nav = useNavigate();
   const location = useLocation();
   const from = (location.state as any)?.from?.pathname || "/app";

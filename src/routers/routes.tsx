@@ -1,9 +1,7 @@
 import { Routes, Route, Navigate, Outlet, useNavigate } from "react-router-dom";
 import LandingPage from "../components/pages/Landing/LandingPage";
 // import AuthTemplate  from "../components/templates/AuthTemplate";
-import LandingTemplate from "../components/templates/LandingTemplate";
 import LoginPage from "../components/pages/Auth/LoginPage";
-import AuthTemplate from "../components/templates/AuthTemplate";
 import DashboardTemplate from "../components/templates/DashboardTemplate";
 import EventsPage from "../components/pages/Events/EventsPage";
 import RsvpsPage from "../components/pages/RSVPs/RsvpsPage";

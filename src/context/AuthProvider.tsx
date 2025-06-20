@@ -22,7 +22,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const {
     data: profile,
     isLoading,
-    refetch,
   } = useQuery({
     queryKey: ["me"],
     queryFn: () => client.get(AuthEndpoints.me).then((r) => r.data),
