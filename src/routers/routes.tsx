@@ -18,7 +18,7 @@ import TablesPage from "../components/pages/Tables/TablesPage";
 import SeatingPage from "../components/pages/Seating/SeatingPage";
 import UsersPage from "../components/pages/Users/UsersPage";
 import CostingPage from "../components/pages/Costing/CostingPage";
-import RequireAuth from "../components/RequireAuth";
+// import RequireAuth from "../components/RequireAuth";
 import { EventFormModal } from "../components/molecules/EventFormModal";
 import EventDetail from "../components/pages/Events/EventDetail";
 import { RsvpFormModal } from "../components/molecules/RsvpFormModal";
@@ -67,9 +67,9 @@ export default function AppRoutes() {
       <Route
         path="/app/*"
         element={
-          <RequireAuth>
+          // <RequireAuth>
             <DashboardTemplate />
-          </RequireAuth>
+          // </RequireAuth>
         }
       >
         {/* <Route index element={<Navigate to="events" replace />} /> */}
