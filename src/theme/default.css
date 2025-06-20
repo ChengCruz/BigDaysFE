@@ -1,0 +1,8 @@
+/* src/theme/default.css */
+:root {
+  --color-primary: #6b5b95;
+  --color-secondary: #ff6f61;
+  --color-accent: #88b04b;
+  --color-bg: #f3f2f8;
+  --color-text: #333;
+}

@@ -1,0 +1,36 @@
+/* src/index.css */
+@import "tailwindcss";
+
+/* 1. Match your .dark class for all dark: utilities */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* 2. Light-mode CSS variables (apply before components/utilities) */
+@theme {
+  --color-primary:    oklch(0.08 0.02 0);    /* Rich Black headings */
+  --color-secondary:  oklch(0.75 0.30 80);   /* Champagne Gold accents */
+  --color-accent:     oklch(0.85 0.15 50);   /* Soft Beige */
+  --color-background: oklch(0.98 0.03 43);   /* Ivory page bg */
+  --color-text:       oklch(0.14 0.02 0);    /* Dark gray copy */
+  --color-button:     oklch(0.54 0.16 50); 
+}
+
+/* 3. Dark-mode overrides, shifted pink + brighter */
+@layer base {
+  @variant dark {
+      --color-primary:    oklch(0.80 0.18 330);  /* Pale pink headings */
+      --color-secondary:  oklch(0.75 0.25 330);  /* Dusty rose highlights */
+      --color-accent:     oklch(0.80 0.18 330);  /* Soft rose accent */
+      --color-background: oklch(0.20 0.02 330);  /* Deep mauve bg */
+      --color-text:       oklch(0.98 0.04 330);  /* Nearly white pink copy */
+      --color-button:     oklch(0.52 0.25 330);  /* Soft rose button */
+  }
+}
+/* @layer base {
+  @variant dark {
+    --color-primary: #8e0d7a;
+  }
+} */
+
+/* 4. Now pull in Tailwind’s generated components & utilities */
+@tailwind components;
+@tailwind utilities;

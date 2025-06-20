@@ -1,0 +1,8 @@
+/* src/theme/dark.css */
+.dark {
+  --color-primary: #a084ca;
+  --color-secondary: #ff9a8d;
+  --color-accent: #b4dca0;
+  --color-bg: #1f1d2b;
+  --color-text: #eee;
+}
