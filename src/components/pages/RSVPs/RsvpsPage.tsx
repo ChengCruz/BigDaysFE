@@ -1,6 +1,5 @@
 // src/components/pages/Rsvps/RsvpsPage.tsx
 import React, { useState, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import toast from "react-hot-toast";
@@ -20,7 +19,6 @@ export default function RsvpsPage() {
   // ← 1) pull eventId
   const { eventId } = useEventContext();
 console.log("RsvpsPage eventId:", eventId);
-  const navigate = useNavigate();
 
   const { data: rsvps = [], isLoading, isError } = useRsvpsApi(eventId!);
   const createRsvp = useCreateRsvp(eventId!);

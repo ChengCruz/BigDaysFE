@@ -1,12 +1,10 @@
 // src/routers/AppRoutes.tsx
-import React from "react";
 import {
   Routes,
   Route,
   Navigate,
   Outlet,
   useNavigate,
-  useParams,
 } from "react-router-dom";
 
 import LandingPage from "../components/pages/Landing/LandingPage";
@@ -15,32 +13,31 @@ import PublicTemplate from "../components/templates/PublicTemplate";
 import DashboardTemplate from "../components/templates/DashboardTemplate";
 
 import EventsPage from "../components/pages/Events/EventsPage";
-import EventDetail from "../components/pages/Events/EventDetail";
 // import EventFormModal from "../components/molecules/EventFormModal";
 import EditEventModal from "../components/pages/Events/EditEventModal";
 
 import RsvpsPage from "../components/pages/RSVPs/RsvpsPage";
-import RsvpDetail from "../components/pages/RSVPs/RsvpDetail";
+// import RsvpDetail from "../components/pages/RSVPs/RsvpDetail";
 // import rsvp from "../components/pages/RSVPs/NewRsvpModal";
 // import EditRsvpModal from "../components/pages/RSVPs/EditRsvpModal";
 
 import TablesPage from "../components/pages/Tables/TablesPage";
-import TableDetail from "../components/pages/Tables/TableDetail";
+// import TableDetail from "../components/pages/Tables/TableDetail";
 // import TableFormModal from "../components/molecules/TableFormModal";
 import EditTableModal from "../components/pages/Tables/EditTableModal";
 
 import SeatingPage from "../components/pages/Seating/SeatingPage";
-import SeatingDetail from "../components/pages/Seating/SeatingDetail";
+// import SeatingDetail from "../components/pages/Seating/SeatingDetail";
 // import SeatingFormModal from "../components/molecules/SeatingFormModal";
 import EditSeatingModal from "../components/pages/Seating/EditSeatingModal";
 
 import UsersPage from "../components/pages/Users/UsersPage";
-import UserDetail from "../components/pages/Users/UserDetail";
+// import UserDetail from "../components/pages/Users/UserDetail";
 // import UserFormModal from "../components/molecules/UserFormModal";
 import EditUserModal from "../components/pages/Users/EditUserModal";
 
 import CostingPage from "../components/pages/Costing/CostingPage";
-import CostDetail from "../components/pages/Costing/CostDetail";
+// import CostDetail from "../components/pages/Costing/CostDetail";
 // import CostFormModal from "../components/molecules/CostFormModal";
 import EditCostModal from "../components/pages/Costing/EditCostModal";
 

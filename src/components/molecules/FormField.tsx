@@ -1,7 +1,7 @@
 // src/components/molecules/FormField.tsx
 
 export type FieldType =
-  | "text" | "email" | "number" | "date"
+  | "text" | "email" | "number" | "date" | "password"
   | "textarea"
   | "select"
   | "radio"
