@@ -12,8 +12,9 @@ export function useTablesApi() {
 }
 
 export function useTableApi(id: string) {
+  console.log("useTableApi called with id:", id);
   return useQuery({
-    queryKey: ["table", id],
+    queryKey: ["tables", id],
     queryFn: async () => (await client.get(TablesEndpoints.byId(id))).data,
   });
 }

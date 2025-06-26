@@ -15,8 +15,9 @@ export function useEventsApi() {
 }
 
 export function useEventApi(id: string) {
+  console.log("useEventApi called with id:", id);
   return useQuery({
-    queryKey: ["event", id],
+    queryKey: ["events", id],
     queryFn: async () => {
       const res = await client.get(EventsEndpoints.byId(id));
       return res.data as { id: string; title: string; date: string };

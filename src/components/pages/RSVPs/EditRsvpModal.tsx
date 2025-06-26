@@ -1,18 +1,39 @@
-// src/components/pages/Tables/EditTableModal.tsx
-import { useParams, useNavigate } from "react-router-dom";
+// src/components/pages/Rsvps/EditRsvpModal.tsx
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  useRsvpApi,
+  useUpdateRsvp,
+  type CreateRsvpInput,
+} from "../../../api/hooks/useRsvpsApi";
 import { RsvpFormModal } from "../../molecules/RsvpFormModal";
-import { useRsvpApi } from "../../../api/hooks/useRsvpsApi";
+import { useEventContext } from "../../../context/EventContext";
 
-export default function EditRsvpModal() {
-  const { id } = useParams<{ id: string }>();
+export function EditRsvpModal() {
   const nav = useNavigate();
-  const { data, isLoading, isError } = useRsvpApi(id!);
+  const { eventId } = useEventContext();
+  const { id } = useParams<{ id: string }>();
+  const { data: initial, isLoading } = useRsvpApi(eventId!, id!);
+  const update = useUpdateRsvp(eventId!);
 
-  if (isLoading) return <div className="p-6 text-center">Loading…</div>;
-  if (isError || !data)
-    return (
-      <div className="p-6 text-center text-red-500">Couldn’t load Rsvp.</div>
+  if (isLoading) return null;
+
+  const handleSave = (data: CreateRsvpInput, _id?: string) => {
+    // _id will always be defined here
+    update.mutate(
+      { id: _id!, ...data },
+      {
+        onSuccess: () => nav(-1),
+      }
     );
+  };
 
-  return <RsvpFormModal isOpen initial={data} onClose={() => nav(-1)} />;
+  return (
+    <RsvpFormModal
+      isOpen={true}
+      onClose={() => nav(-1)}
+      eventId={eventId!}
+      initial={initial}
+      onSave={handleSave}
+    />
+  );
 }
