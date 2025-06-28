@@ -37,7 +37,7 @@ export function TableAssignments() {
             {unassigned.map((r) => (
               <li
                 key={r.id}
-                className="flex justify-between items-center p-2 bg-white rounded shadow-sm"
+                className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded shadow-sm"
               >
                 <span>{r.guestName}</span>
                 <Button
@@ -65,7 +65,7 @@ export function TableAssignments() {
             {assigned.map((r) => (
               <li
                 key={r.id}
-                className="flex justify-between items-center p-2 bg-white rounded shadow-sm"
+                className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded shadow-sm"
               >
                 <span>{r.guestName}</span>
                 <Button

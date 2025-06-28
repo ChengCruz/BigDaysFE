@@ -21,7 +21,7 @@
       --color-secondary:  oklch(0.75 0.25 330);  /* Dusty rose highlights */
       --color-accent:     oklch(0.80 0.18 330);  /* Soft rose accent */
       --color-background: oklch(0.20 0.02 330);  /* Deep mauve bg */
-      --color-text:       oklch(0.98 0.04 330);  /* Nearly white pink copy */
+      --color-text:       oklch(0.91 0.01 261);  /* Nearly white pink copy */
       --color-button:     oklch(0.52 0.25 330);  /* Soft rose button */
   }
 }

@@ -47,7 +47,7 @@ export function TableLayoutPlanner() {
             bounds="parent"
             onDragStop={(_e, d) => handleDragStop(g.id, d)}
           >
-            <div className="p-1 bg-white border rounded text-sm">
+            <div className="p-1 bg-white dark:bg-gray-800 border rounded text-sm">
               {g.guestName}
             </div>
           </Rnd>

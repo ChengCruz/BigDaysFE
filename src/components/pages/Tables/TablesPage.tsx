@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   useTablesApi,
   useDeleteTable,
-  useTableApi,
 } from "../../../api/hooks/useTablesApi";
 import { Button } from "../../atoms/Button";
 import { ViewListIcon, ViewGridIcon } from "@heroicons/react/outline";
@@ -21,11 +20,11 @@ export default function TablesPage() {
   if (isLoading) return <p>Loading tables…</p>;
   if (isError) return <p>Failed to load tables.</p>;
 
-  const guestByTable = (tableId: string) => {
-    const { data: guestTable } = useTableApi(tableId);
-    const guests = guestTable?.guests ?? [];
-    return guests;
-  };
+  // const guestByTable = (tableId: string) => {
+  //   const { data: guestTable } = useTableApi(tableId);
+  //   const guests = guestTable?.guests ?? [];
+  //   return guests;
+  // };
 
   const filtered = tables.filter((t) =>
     t.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -73,7 +72,7 @@ export default function TablesPage() {
             {filtered.map((t: any) => (
               <li
                 key={t.id}
-                className="group relative p-4 bg-white rounded shadow hover:shadow-lg transition cursor-pointer"
+                className="group relative p-4 bg-white dark:bg-gray-800 rounded shadow hover:shadow-lg transition cursor-pointer"
                 onClick={() => navigate(`${t.id}`)}
                 title={
                   t.guests?.length
@@ -89,7 +88,7 @@ export default function TablesPage() {
                 {/* hover popup */}
                 <div
                   className="absolute left-0 right-0 top-full mt-1 hidden
-                          group-hover:block bg-white border rounded shadow z-50"
+                          group-hover:block bg-white dark:bg-gray-800 border rounded shadow z-50"
                 >
                   <strong className="block px-2 pt-2 text-sm font-semibold">
                     Guests:
@@ -125,7 +124,7 @@ export default function TablesPage() {
             {filtered.map((t: any) => (
               <li
                 key={t.id}
-                className="group relative flex justify-between items-center p-4 bg-white rounded shadow hover:shadow-lg transition cursor-pointer"
+                className="group relative flex justify-between items-center p-4 bg-white dark:bg-gray-800 rounded shadow hover:shadow-lg transition cursor-pointer"
                 onClick={() => navigate(`${t.id}`)}
                 title={
                   t.guests?.length
@@ -143,7 +142,7 @@ export default function TablesPage() {
                 {/* hover popup */}
                 <div
                   className="absolute left-0 right-0 top-full mt-1 hidden
-                         group-hover:block bg-white border rounded shadow z-50"
+                         group-hover:block bg-white dark:bg-gray-900 border rounded shadow z-50"
                 >
                   <strong className="block px-2 pt-1 text-sm font-semibold">
                     Guests:

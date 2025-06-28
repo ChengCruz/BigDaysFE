@@ -16,7 +16,7 @@ export function TableSummary() {
       </h3>
       <ul className="space-y-2">
         {table.guests.map(g => (
-          <li key={g.id} className="p-3 bg-white rounded shadow">
+          <li key={g.id} className="p-3 bg-white dark:bg-gray-800 rounded shadow">
             <p className="font-medium">{g.guestName}</p>
             <p className="text-sm">Status: {g.status}</p>
             <p className="text-sm">Type: {g.guestType}</p>
