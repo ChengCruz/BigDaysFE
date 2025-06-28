@@ -11,6 +11,7 @@
     "mock:api": "json-server --watch db.json --port 4000"
   },
   "dependencies": {
+    "@heroicons/react": "^1.0.6",
     "@tailwindcss/vite": "^4.1.8",
     "@tanstack/react-query": "^5.80.6",
     "axios": "^1.9.0",
