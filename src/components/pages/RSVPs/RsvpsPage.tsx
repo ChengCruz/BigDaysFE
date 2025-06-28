@@ -19,28 +19,28 @@ export default function RsvpsPage() {
   const { eventId } = useEventContext();
   const { data: rsvps = [], isLoading, isError } = useRsvpsApi(eventId!);
 
-  const statusBadgeClasses: Record<string, string> = {
-    Yes: "bg-green-100 text-green-800",
-    No: "bg-red-100   text-red-800",
-    Maybe: "bg-yellow-100 text-yellow-800",
-  };
-  const cardBorderClasses: Record<string, string> = {
-    Yes: "border-green-500",
-    No: "border-red-500",
-    Maybe: "border-yellow-500",
-  };
+  // const statusBadgeClasses: Record<string, string> = {
+  //   Yes: "bg-green-100 text-green-800",
+  //   No: "bg-red-100   text-red-800",
+  //   Maybe: "bg-yellow-100 text-yellow-800",
+  // };
+  // const cardBorderClasses: Record<string, string> = {
+  //   Yes: "border-green-500",
+  //   No: "border-red-500",
+  //   Maybe: "border-yellow-500",
+  // };
   const cardBgClasses: Record<string,string> = {
   Yes:   "bg-green-50",
   No:    "bg-red-50",
   Maybe: "bg-yellow-50",
 };
 
-const typeBadgeClasses: Record<string,string> = {
-  Family: "bg-blue-100 text-blue-800",
-  VIP:    "bg-purple-100 text-purple-800",
-  Friend: "bg-indigo-100 text-indigo-800",
-  Other:  "bg-gray-100 text-gray-800",
-};
+// const typeBadgeClasses: Record<string,string> = {
+//   Family: "bg-blue-100 text-blue-800",
+//   VIP:    "bg-purple-100 text-purple-800",
+//   Friend: "bg-indigo-100 text-indigo-800",
+//   Other:  "bg-gray-100 text-gray-800",
+// };
   const createRsvp = useCreateRsvp(eventId!);
   const updateRsvp = useUpdateRsvp(eventId!);
   const deleteRsvp = useDeleteRsvp(eventId!);
