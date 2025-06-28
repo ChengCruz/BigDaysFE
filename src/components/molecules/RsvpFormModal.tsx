@@ -10,7 +10,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   eventId: string;
-  initial?: Rsvp; // <-- same Rsvp
+  initial?: Rsvp;
   onSave: (data: CreateRsvpInput, id?: string) => void;
 }
 
@@ -24,36 +24,28 @@ export const RsvpFormModal: React.FC<Props> = ({
   const [guestName, setGuestName] = useState(initial?.guestName || "");
   const [status, setStatus] = useState(initial?.status || "Yes");
   const [guestType, setGuestType] = useState(initial?.guestType || "Family");
-console.log("RsvpFormModal eventId:", eventId);
-  // pick up any extra dynamic fields:
+
   const [extras, setExtras] = useState<Record<string, string>>({});
   const { data: formFields = [] } = useFormFields(eventId);
-  const [hasInitialized, setHasInitialized] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+
   useEffect(() => {
-    if (isOpen && !hasInitialized) {
+    if (isOpen && !initialized) {
       setGuestName(initial?.guestName ?? "");
       setStatus(initial?.status ?? "Yes");
       setGuestType(initial?.guestType ?? "Family");
       setExtras(
-        formFields.reduce(
-          (acc, f) => ({
-            ...acc,
-            [f.name]: initial ? (initial as Record<string, any>)[f.name] ?? "" : ""
-          }),
-          {}
-        )
+        formFields.reduce((acc, f) => {
+          acc[f.name] = (initial as any)?.[f.name] ?? "";
+          return acc;
+        }, {} as Record<string, string>)
       );
-      setHasInitialized(true);
+      setInitialized(true);
     }
-    // when the modal closes, reset the flag
     if (!isOpen) {
-      setHasInitialized(false);
+      setInitialized(false);
     }
-  }, [
-    isOpen,
-    initial?.id /* only reset init when id changes */,
-    formFields.length,
-  ]);
+  }, [isOpen, initial?.id, formFields, initialized]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,14 +66,46 @@ console.log("RsvpFormModal eventId:", eventId);
       title={initial ? "Edit RSVP" : "New RSVP"}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Guest Name */}
         <FormField
           label="Guest Name"
           value={guestName}
           onChange={(e) => setGuestName(e.target.value)}
         />
 
-        {/* status, guestType selects omitted for brevity */}
+        {/* —— Guest Type Select —— */}
+        <div>
+          <label className="block mb-1">Guest Type</label>
+          <select
+            className="w-full border rounded p-2 focus:ring-2 focus:ring-primary"
+            value={guestType}
+            onChange={(e) => setGuestType(e.target.value)}
+          >
+            {["Family", "VIP", "Friend", "Other"].map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+        </div>
+        
+        {/* —— Status Select —— */}
+        <div>
+          <label className="block mb-1">Reservation Status</label>
+          <select
+            className="w-full border rounded p-2 focus:ring-2 focus:ring-primary"
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+          >
+            {["Yes", "No", "Maybe"].map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
 
+        {/* —— Dynamic Extra Fields —— */}
         {formFields.map((f) => (
           <FormField
             key={f.id}
@@ -91,11 +115,12 @@ console.log("RsvpFormModal eventId:", eventId);
             options={f.options}
             value={extras[f.name] || ""}
             onChange={(e) =>
-              setExtras((x) => ({ ...x, [f.name]: e.target.value }))
+              setExtras((prev) => ({ ...prev, [f.name]: e.target.value }))
             }
           />
         ))}
 
+        {/* Actions */}
         <div className="flex justify-end space-x-2">
           <Button variant="secondary" onClick={onClose} type="button">
             Cancel

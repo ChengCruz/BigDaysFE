@@ -16,7 +16,7 @@ export const EventsEndpoints = {
 };
 
 export const RsvpsEndpoints = {
-    all: (eventId: string) => `/events/${eventId}/rsvps`,
+  all: (eventId: string) => `/events/${eventId}/rsvps`,
   // byId:   (id: string) => `/rsvps/${id}`,
   // ← add this!  “give me the RSVPs for a specific event”
   forEvent: (eventId: string) => `/events/${eventId}/rsvps`,
@@ -27,13 +27,21 @@ export const RsvpsEndpoints = {
   delete: (eventId: string, id: string) => `/events/${eventId}/rsvps/${id}`,
 };
 
+// src/api/endpoints.ts
+// src/api/endpoints.ts
 export const TablesEndpoints = {
-  all: "/tables",
-  byId: (id: string) => `/tables/${id}`,
+  all:    "/tables",
+  byId:   (id: string) => `/tables/${id}`,
   create: "/tables",
   update: (id: string) => `/tables/${id}`,
   delete: (id: string) => `/tables/${id}`,
+
+  // ← NEW:
+  tableGuests: (id: string) => `/tables/${id}/guests`,
+  reassignGuest: (tableId: string, guestId: string) =>
+    `/tables/${tableId}/guests/${guestId}/reassign`,
 };
+
 
 export const SeatingEndpoints = {
   all: "/seating",

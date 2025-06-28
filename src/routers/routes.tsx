@@ -1,11 +1,5 @@
 // src/routers/AppRoutes.tsx
-import {
-  Routes,
-  Route,
-  Navigate,
-  Outlet,
-  useNavigate,
-} from "react-router-dom";
+import { Routes, Route, Navigate, Outlet, useNavigate } from "react-router-dom";
 
 import LandingPage from "../components/pages/Landing/LandingPage";
 import LoginPage from "../components/pages/Auth/LoginPage";
@@ -51,6 +45,11 @@ import { SeatingFormModal } from "../components/molecules/SeatingFormModal";
 import { UserFormModal } from "../components/molecules/UserFormModal";
 import { CostFormModal } from "../components/molecules/CostFormModal";
 import FormFieldsPage from "../components/pages/Events/FormFieldsPage";
+import { TableAssignments } from "../components/pages/Tables/TableAssignments";
+import TableDetail from "../components/pages/Tables/TableDetail";
+import { TableLayoutPlanner } from "../components/pages/Tables/TableLayoutPlanner";
+import { TablePrintView } from "../components/pages/Tables/TablePrintView";
+import { TableSummary } from "../components/pages/Tables/TableSummary";
 // …and other Public pages…
 
 export default function AppRoutes() {
@@ -70,7 +69,7 @@ export default function AppRoutes() {
       </Route>
 
       {/* ─── PROTECTED / DASHBOARD ─────────────────────────── */}
-     <Route path="/app" element={<DashboardTemplate />}>
+      <Route path="/app" element={<DashboardTemplate />}>
         <Route index element={<Navigate to="events" replace />} />
 
         {/* EVENTS */}
@@ -80,36 +79,34 @@ export default function AppRoutes() {
             path="new"
             element={<EventFormModal isOpen onClose={() => navigate(-1)} />}
           />
-          <Route
-            path=":id/edit"
-            element={<EditEventModal />}
-          />
+          <Route path=":id/edit" element={<EditEventModal />} />
           <Route path=":id/form-fields" element={<FormFieldsPage />} />
         </Route>
 
         {/* RSVPs (no :eventId in the URL) */}
         <Route path="rsvps" element={<Outlet />}>
           <Route index element={<RsvpsPage />} />
-          <Route
-            path="new"
-            element={<NewRsvpModal />}
-          />
-          <Route
-            path=":id/edit"
-            element={<EditRsvpModal />}
-          />
+          <Route path="new" element={<NewRsvpModal />} />
+          <Route path=":id/edit" element={<EditRsvpModal />} />
         </Route>
 
-        {/* TABLES */}
-        <Route path="tables" element={<Outlet />}>
-          <Route index element={<TablesPage />} />
-          <Route
-            path="new"
-            element={<TableFormModal isOpen onClose={() => navigate(-1)} />}
-          />
-          <Route path=":id/edit" element={<EditTableModal />} />
-        </Route>
+        {/* ─── TABLES ─────────────────────────────────────────── */}
+<Route path="tables" element={<Outlet/>}>
+  <Route index element={<TablesPage />} />
 
+  <Route path="new" element={
+    <TableFormModal isOpen onClose={() => navigate(-1)} />
+  }/>
+
+  <Route path=":tableId" element={<TableDetail />}>
+    {/* ← now this is the “index” child under /app/tables/:tableId */}
+    <Route index         element={<TableSummary      />} />
+    <Route path="assignments" element={<TableAssignments />} />
+    <Route path="layout"      element={<TableLayoutPlanner />} />
+    <Route path="print"       element={<TablePrintView   />} />
+    <Route path="edit"        element={<EditTableModal   />} />
+  </Route>
+</Route>
         {/* SEATING */}
         <Route path="seating" element={<Outlet />}>
           <Route index element={<SeatingPage />} />

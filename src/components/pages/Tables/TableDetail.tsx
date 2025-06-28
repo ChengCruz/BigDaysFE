@@ -1,30 +1,33 @@
-// src/components/pages/RSVPs/RsvpDetail.tsx
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { useTableApi } from "../../../api/hooks/useTablesApi";
-
+// src/components/pages/Tables/TableDetail.tsx
+import { NavLink, Outlet } from "react-router-dom";
 export default function TableDetail() {
-  const { id } = useParams<{ id: string }>();
-  const nav = useNavigate();
-  const { data: r, isLoading, isError } = useTableApi(id!);
-
-  if (isLoading) return <p>Loading…</p>;
-  if (isError)   return <p>Couldn’t load Table.</p>;
 
   return (
     <div className="space-y-4">
-      <header className="flex justify-between">
-        <h2 className="text-2xl font-semibold text-primary">{r.guestName}</h2>
-        <button
-          className="px-3 py-1 bg-secondary text-white rounded"
-          onClick={() => nav("edit")}
-        >
-          Edit
-        </button>
-      </header>
-      <p>Status: <strong>{r.status}</strong></p>
-      <Link to="/app/tables" className="text-sm text-gray-500 hover:underline">
-        ← Back to list
-      </Link>
+      {/* you can also pull name/capacity here if you like—but summary will do it */}
+      <nav className="border-b pb-2 flex space-x-4">
+        {[
+          ["","Summary"],
+          ["assignments","Assign Guests"],
+          ["layout","Layout"],
+          ["print","Print"],
+          ["edit","Edit"],
+        ].map(([path,label]) => (
+          <NavLink
+            key={path}
+            to={path}
+            end={path===""}   // so that “/tables/:id” matches the summary tab
+            className={({isActive})=>
+              isActive ? "border-b-2 border-button" : undefined
+            }
+          >
+            {label}
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* this is where summary/assign/layout/print/edit will render */}
+      <Outlet />
     </div>
   );
 }

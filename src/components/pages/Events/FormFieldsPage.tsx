@@ -9,14 +9,15 @@ import {
 } from "../../../api/hooks/useFormFieldsApi";
 import { Button } from "../../atoms/Button";
 import { FormFieldModal } from "../../molecules/FormFieldModal";
-import { useEventContext } from "../../../context/EventContext";
+import { useParams } from "react-router-dom";
 
 export default function FormFieldsPage() {
-  const { eventId } = useEventContext();
-  const { data: fields = [], isLoading } = useFormFields(eventId!);
-  const createField = useCreateFormField(eventId!);
-  const updateField = useUpdateFormField(eventId!);
-  const deleteField = useDeleteFormField(eventId!);
+  const { id } = useParams<{ id: string }>();
+
+  const { data: fields = [], isLoading } = useFormFields(id!);
+  const createField = useCreateFormField(id!);
+  const updateField = useUpdateFormField(id!);
+  const deleteField = useDeleteFormField(id!);
 
   const [modal, setModal] = useState<{
     open: boolean;

@@ -1,9 +1,13 @@
+// src/components/molecules/TableFormModal.tsx
 import React, { useEffect, useState } from "react";
 import { Modal } from "./Modal";
 import { FormField } from "./FormField";
 import { Button } from "../atoms/Button";
-import { useCreateTable, useUpdateTable } from "../../api/hooks/useTablesApi";
 import { FormError } from "./FormError";
+import {
+  useCreateTable,
+  useUpdateTableInfo,
+} from "../../api/hooks/useTablesApi";
 
 interface Props {
   isOpen: boolean;
@@ -17,16 +21,21 @@ export const TableFormModal: React.FC<Props> = ({
   initial,
 }) => {
   const [name, setName] = useState(initial?.name || "");
-  const [capacity, setCapacity] = useState(initial?.capacity.toString() || "1");
-  const createTable = useCreateTable();
-  const updateTable = useUpdateTable(initial?.id || "");
+  const [capacity, setCapacity] = useState(
+    initial?.capacity.toString() || "1"
+  );
   const [error, setError] = useState<string | null>(null);
 
-  // Reset when opened
+  // hooks
+  const createTable = useCreateTable();
+  const updateTableInfo = useUpdateTableInfo(initial?.id || "");
+
+  // Reset form fields whenever we open or switch `initial`
   useEffect(() => {
     if (isOpen) {
       setName(initial?.name || "");
-      setCapacity(initial?.capacity.toString() || "1");
+      setCapacity((initial?.capacity ?? 1).toString());
+      setError(null);
     }
   }, [isOpen, initial]);
 
@@ -34,17 +43,21 @@ export const TableFormModal: React.FC<Props> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const data = { name, capacity: Number(capacity) };
+    const payload = {
+      name: name.trim(),
+      capacity: Number(capacity),
+    };
+
     try {
       if (isEdit && initial) {
-        await updateTable.mutateAsync(data);
+        await updateTableInfo.mutateAsync(payload);
       } else {
-        await createTable.mutateAsync(data);
+        await createTable.mutateAsync(payload);
       }
       onClose();
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.message || "Something went wrong.");
+      setError(err.message ?? "Something went wrong.");
     }
   };
 
@@ -56,17 +69,20 @@ export const TableFormModal: React.FC<Props> = ({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <FormError message={error} />}
+
         <FormField
           label="Table Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
+
         <FormField
           label="Capacity"
           type="number"
           value={capacity}
           onChange={(e) => setCapacity(e.target.value)}
         />
+
         <div className="flex justify-end space-x-2">
           <Button variant="secondary" onClick={onClose} type="button">
             Cancel
