@@ -1,5 +1,4 @@
 // src/components/organisms/Sidebar.tsx
-import React from "react";
 import { NavLink } from "react-router-dom";
 import { XIcon }   from "@heroicons/react/outline";
 
