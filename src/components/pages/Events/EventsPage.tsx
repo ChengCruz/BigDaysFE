@@ -21,11 +21,12 @@ export default function EventsPage() {
     <>
       <div className="space-y-4">
         <h2 className="text-2xl font-semibold text-primary">Your Events</h2>
-        {/* <Button onClick={() => setModal({ open: true })}>New Event</Button> */}
-        <Button onClick={() => navigate("new")}>+ New Event</Button>
+        <Button onClick={() => setModal({ open: true })}>+ New Event</Button>
+
         <h1 className="text-primary bg-background">
           Welcome to <span className="text-secondary">My Big Day</span>
         </h1>
+
         <ul className="space-y-2">
           {Array.isArray(events) &&
             events.map((ev: any) => (
@@ -41,14 +42,12 @@ export default function EventsPage() {
                   <Button
                     onClick={() => {
                       setEventId(ev.id);
-                      navigate("/app/rsvps"); // ← immediately jump into RSVPs
+                      navigate("/app/rsvps");
                     }}
                   >
                     {eventId === ev.id ? "✓ Active" : "Select"}
                   </Button>
-                  <Button
-                    onClick={() => navigate(`${ev.id}/form-fields`)}
-                  >
+                  <Button onClick={() => navigate(`${ev.id}/form-fields`)}>
                     Fields
                   </Button>
                   <Button onClick={() => navigate(`${ev.id}/edit`)}>
@@ -64,14 +63,16 @@ export default function EventsPage() {
               </li>
             ))}
         </ul>
-        +{" "}
+
         <EventFormModal
           isOpen={modal.open}
           onClose={() => setModal({ open: false })}
+          onSuccess={() => setModal({ open: false })}
           initial={modal.event}
         />
       </div>
-      <Outlet /> {/* this will render the new/edit modal routes */}
+
+      <Outlet />
     </>
   );
 }

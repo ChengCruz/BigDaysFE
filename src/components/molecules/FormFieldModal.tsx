@@ -1,4 +1,3 @@
-// src/components/molecules/FormFieldModal.tsx
 import React, { useState, useEffect } from "react";
 import { type FormFieldConfig } from "../../api/hooks/useFormFieldsApi";
 import { Modal } from "./Modal";
@@ -19,7 +18,20 @@ export function FormFieldModal({ isOpen, onClose, initial, onSave }: Props) {
     initial?.type || "text"
   );
   const [required, setReq]  = useState(initial?.required || false);
-  const [options, setOpts]  = useState(initial?.options?.join(",") || "");
+
+  // normalize incoming options to a comma string
+  const normalize = (opts?: string[] | string | null) => {
+    if (Array.isArray(opts)) return opts.join(",");
+    if (typeof opts === "string") {
+      try {
+        const parsed = JSON.parse(opts);
+        if (Array.isArray(parsed)) return parsed.join(",");
+      } catch {}
+      return opts;
+    }
+    return "";
+  };
+  const [options, setOpts] = useState(() => normalize(initial?.options as any));
 
   useEffect(() => {
     if (!isOpen) return;
@@ -27,7 +39,7 @@ export function FormFieldModal({ isOpen, onClose, initial, onSave }: Props) {
     setLabel(initial?.label  || "");
     setType(initial?.type    || "text");
     setReq(initial?.required || false);
-    setOpts(initial?.options?.join(",") || "");
+    setOpts(normalize(initial?.options as any));
   }, [isOpen, initial]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -46,10 +58,15 @@ export function FormFieldModal({ isOpen, onClose, initial, onSave }: Props) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={initial ? "Edit Field" : "New Field"}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={initial ? "Edit Field" : "New Field"}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         <FormField label="Key (name)" value={name} onChange={e => setName(e.target.value)} />
         <FormField label="Label"     value={label} onChange={e => setLabel(e.target.value)} />
+
         <div>
           <label className="block mb-1">Type</label>
           <select
@@ -57,11 +74,12 @@ export function FormFieldModal({ isOpen, onClose, initial, onSave }: Props) {
             onChange={e => setType(e.target.value as any)}
             className="w-full border rounded p-2"
           >
-            {["text","textarea","select","radio","checkbox","email","number","date"].map((t) => (
+            {["text","textarea","select","radio","checkbox","email","number","date"].map(t => (
               <option key={t}>{t}</option>
             ))}
           </select>
         </div>
+
         <div className="flex items-center space-x-2">
           <input
             id="required"
@@ -71,6 +89,7 @@ export function FormFieldModal({ isOpen, onClose, initial, onSave }: Props) {
           />
           <label htmlFor="required">Required</label>
         </div>
+
         {(type === "select" || type === "radio" || type === "checkbox") && (
           <FormField
             label="Options (comma-separated)"

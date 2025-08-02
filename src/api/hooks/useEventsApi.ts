@@ -3,6 +3,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { EventsEndpoints } from "../endpoints";
 
+export interface Event {
+  id: string;
+  title: string;
+  date: string;
+}
+
+
 export function useEventsApi() {
   return useQuery({
     queryKey: ["events"],
@@ -14,7 +21,7 @@ export function useEventsApi() {
   });
 }
 
-export function useEventApi(id: string) {
+export function useEventApi(id: string, p0: { enabled: boolean; }) {
   console.log("useEventApi called with id:", id);
   return useQuery({
     queryKey: ["events", id],

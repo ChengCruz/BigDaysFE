@@ -1,30 +1,37 @@
 // src/components/organisms/Navbar.tsx
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../api/hooks/useAuth";
-import { useUser  } from "../../context/UserContext";
+import { useEventContext } from "../../context/EventContext";
 import { MenuIcon } from "@heroicons/react/outline";
+import { Button } from "../atoms/Button";
 
- export function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
-
+export function Navbar({
+  onMenuToggle,
+}: {
+  onMenuToggle?: () => void;
+}) {
   const { theme, toggle } = useTheme();
-  const { logout }        = useAuth();
-  const { user, loading } = useUser();
+  const { logout } = useAuth();
+  const { event, openSelector } = useEventContext();
 
   return (
-    <header className="flex items-center justify-between p-4 bg-background text-text shadow">
-            {/* hamburger only on mobile */}
-     <button
-       className=" p-2 rounded hover:bg-secondary/10"
-       onClick={onMenuToggle}
-       aria-label="Toggle sidebar"
-     >
-       <MenuIcon className="h-6 w-6" />
-     </button>
-      <h1 className="text-xl font-bold text-primary">My Big Day</h1>
+    <header className="flex items-center justify-between px-6 py-4 bg-background text-text border-b border-gray-200 shadow">
+      {onMenuToggle && (
+        <button
+          className="md:hidden p-2 rounded hover:bg-secondary/10"
+          onClick={onMenuToggle}
+          aria-label="Toggle sidebar"
+        >
+          <MenuIcon className="h-6 w-6" />
+        </button>
+      )}
+      <h1 className="text-xl font-bold">
+        {event?.title ?? "Select Event"}
+      </h1>
       <div className="flex items-center space-x-4">
-        {!loading && user && (
-          <span className="text-sm">Welcome, <strong>{user.name}</strong></span>
-        )}
+        <Button variant="secondary" onClick={openSelector}>
+          Change Event
+        </Button>
         <button
           onClick={toggle}
           aria-label="Toggle dark mode"
