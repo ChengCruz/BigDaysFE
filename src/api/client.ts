@@ -10,6 +10,11 @@ const client = axios.create({
 client.interceptors.request.use(cfg => {
   const token = localStorage.getItem("token");
   if (token) cfg.headers!["Authorization"] = `Bearer ${token}`;
+    // Attach required headers for your API
+  const apiKey = import.meta.env.VITE_API_KEY;   // store in .env
+  const author = import.meta.env.VITE_API_AUTHOR; // store in .env
+  if (apiKey) cfg.headers!["apiKey"] = apiKey;
+  if (author) cfg.headers!["author"] = author;
   return cfg;
 });
 

@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { XIcon } from "@heroicons/react/outline";
 import { useEventContext } from "../../context/EventContext";
-import { useDeleteEvent, type Event } from "../../api/hooks/useEventsApi";
+import { useDeactivateEvent, type Event } from "../../api/hooks/useEventsApi";
 import { Button } from "../atoms/Button";
 import { EventFormModal } from "./EventFormModal";
 
@@ -12,7 +12,7 @@ export function EventSelectorModal() {
     setEventId,
     closeSelector,
   } = useEventContext();
-  const deleteEvent = useDeleteEvent();
+  const deactivateEvent = useDeactivateEvent();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Event | undefined>(undefined);
@@ -34,7 +34,7 @@ export function EventSelectorModal() {
     setFormOpen(true);
   };
 
-  const handleDelete = (id: string) => deleteEvent.mutate(id);
+  const handleDeactivate = (id: string) => deactivateEvent.mutate(id);
 
   const handleFormClose = () => setFormOpen(false);
 
@@ -84,8 +84,8 @@ export function EventSelectorModal() {
                   <Button variant="secondary" onClick={() => openEditForm(evt)}>
                     Edit
                   </Button>
-                  <Button variant="secondary" onClick={() => handleDelete(evt.id)}>
-                    Delete
+                  <Button variant="secondary" onClick={() => handleDeactivate(evt.id)}>
+                    Deactivate
                   </Button>
                 </div>
               </li>

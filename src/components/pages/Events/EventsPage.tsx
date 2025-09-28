@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { useDeleteEvent, useEventsApi } from "../../../api/hooks/useEventsApi";
+import {
+  useDeactivateEvent,
+  useEventsApi,
+} from "../../../api/hooks/useEventsApi";
 import { EventFormModal } from "../../molecules/EventFormModal";
 import { Button } from "../../atoms/Button";
 import { Outlet, useNavigate } from "react-router-dom";
@@ -7,7 +10,7 @@ import { useEventContext } from "../../../context/EventContext";
 
 export default function EventsPage() {
   const { data: events, isLoading, isError } = useEventsApi();
-  const deleteEvt = useDeleteEvent();
+  const deactivateEvent = useDeactivateEvent();
   const [modal, setModal] = useState<{ open: boolean; event?: any }>({
     open: false,
   });
@@ -55,9 +58,14 @@ export default function EventsPage() {
                   </Button>
                   <Button
                     variant="secondary"
-                    onClick={() => deleteEvt.mutate(ev.id)}
+                    onClick={() =>
+                      deactivateEvent.mutate(ev.id, {
+                        onSuccess: () => console.log("Deactivated", ev.id),
+                      })
+                    }
+                    disabled={deactivateEvent.isPending}
                   >
-                    Delete
+                    {deactivateEvent.isPending ? "Deactivating…" : "Deactivate"}
                   </Button>
                 </div>
               </li>

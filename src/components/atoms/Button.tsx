@@ -2,11 +2,12 @@ import { Spinner } from "./Spinner";
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary";
+  variant?: "primary" | "secondary" | "ghost";
   loading?: boolean;
 }
 
 export const Button: React.FC<ButtonProps> = ({
+  type = "button",
   variant = "primary",
   loading = false,
   children,
@@ -22,6 +23,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
+      type={type}
       className={`${base} ${color} ${className}`}
       disabled={loading || props.disabled}
       {...props}

@@ -6,20 +6,24 @@ export const AuthEndpoints = {
 };
 
 export const EventsEndpoints = {
-  all: "/events",
-  byId: (id: string) => `/events/${id}`,
-  create: "/events",
-  update: (id: string) => `/events/${id}`,
+  all: "/event/GetEventsList",
+  byId: (id: string) => `/event/${id}`,
+  create: "/event/Create",
+  update: `/event/Update`,
+  updateTableQuantity: `/event/UpdateTableQuantity`,
+  activateEvent: (id: string) => `/event/Activate/${id}`,
+  deactivateEvent: (id: string) => `/event/Deactivate/${id}`,
+  previewEvent: `/event/Preview`,
   delete: (id: string) => `/events/${id}`,
   importRsvps: (eventId: string) => `/events/${eventId}/rsvps/import`,
   exportRsvps: (eventId: string) => `/events/${eventId}/rsvps/export`,
 };
 
 export const RsvpsEndpoints = {
-  all: (eventId: string) => `/events/${eventId}/rsvps`,
+  all: (eventId: string) => `/rsvp/GetRsvp/List/${eventId}`,
   // byId:   (id: string) => `/rsvps/${id}`,
   // ← add this!  “give me the RSVPs for a specific event”
-  forEvent: (eventId: string) => `/events/${eventId}/rsvps`,
+  forEvent: (eventId: string) => `/rsvp/GetRsvp/List/${eventId}`,
   byId: (eventId: string, id: string) => `/events/${eventId}/rsvps/${id}`,
 
   create: (eventId: string) => `/events/${eventId}/rsvps`,
@@ -30,8 +34,8 @@ export const RsvpsEndpoints = {
 // src/api/endpoints.ts
 // src/api/endpoints.ts
 export const TablesEndpoints = {
-  all:    "/tables",
-  byId:   (id: string) => `/tables/${id}`,
+  all: "/tables",
+  byId: (id: string) => `/tables/${id}`,
   create: "/tables",
   update: (id: string) => `/tables/${id}`,
   delete: (id: string) => `/tables/${id}`,
@@ -41,7 +45,6 @@ export const TablesEndpoints = {
   reassignGuest: (tableId: string, guestId: string) =>
     `/tables/${tableId}/guests/${guestId}/reassign`,
 };
-
 
 export const SeatingEndpoints = {
   all: "/seating",
