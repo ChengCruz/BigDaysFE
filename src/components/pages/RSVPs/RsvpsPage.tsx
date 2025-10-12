@@ -14,6 +14,7 @@ import {
 import { RsvpFormModal } from "../../molecules/RsvpFormModal";
 import { Button } from "../../atoms/Button";
 import { useEventContext } from "../../../context/EventContext";
+import { useAuth } from "../../../api/hooks/useAuth";
 
 export default function RsvpsPage() {
   const { eventId } = useEventContext()!;
@@ -23,6 +24,8 @@ export default function RsvpsPage() {
   const createRsvp = useCreateRsvp(eventId!);
   const updateRsvp = useUpdateRsvp(eventId!);
   const deleteRsvp = useDeleteRsvp(eventId!);
+  const { user } = useAuth();
+  const actor = user?.id ?? user?.name ?? "System";
 
   const [modal, setModal] = useState<{ open: boolean; rsvp?: Rsvp }>({
     open: false,
@@ -92,7 +95,8 @@ export default function RsvpsPage() {
           };
           const existing = rsvps.find((r) => r.name === payload.guestName);
           if (existing) {
-            await updateRsvp.mutateAsync({ rsvpId: existing.rsvpId, ...payload });
+            const guid = existing.rsvpGuid ?? existing.rsvpId ?? existing.id;
+            await updateRsvp.mutateAsync({ rsvpGuid: guid, ...payload, updatedBy: actor });
           } else {
             await createRsvp.mutateAsync(payload);
           }
@@ -279,8 +283,12 @@ export default function RsvpsPage() {
         initial={modal.rsvp}
         eventId={eventId!}
         onSave={(data, id) => {
-          if (id) updateRsvp.mutate({ id, ...data });
-          else createRsvp.mutate(data);
+          if (id) {
+            const guid = id;
+            updateRsvp.mutate({ rsvpId: guid, ...data });
+          } else {
+            createRsvp.mutate(data);
+          }
           setModal({ open: false });
         }}
       />

@@ -1,6 +1,7 @@
 // src/components/molecules/RsvpFormModal.tsx
 import React, { useState, useEffect } from "react";
 import { type Rsvp, type CreateRsvpInput } from "../../api/hooks/useRsvpsApi";
+import { useAuth } from "../../api/hooks/useAuth";
 import { useFormFields } from "../../api/hooks/useFormFieldsApi";
 import { Modal } from "./Modal";
 import { FormField } from "./FormField";
@@ -21,6 +22,7 @@ export const RsvpFormModal: React.FC<Props> = ({
   initial,
   onSave,
 }) => {
+  const { user } = useAuth();
   const [guestName, setGuestName] = useState(initial?.guestName || initial?.name || "");
   const [status, setStatus] = useState(initial?.status || "Yes");
   const [guestType, setGuestType] = useState(initial?.guestType || "Family");
@@ -50,15 +52,19 @@ export const RsvpFormModal: React.FC<Props> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const actor = user?.id ?? user?.name ?? "System";
     const payload: CreateRsvpInput = {
       eventId,
       guestName: guestName,
       status,
       guestType,
-      createdBy: "Admin", // Placeholder; replace with actual user info if available
       remarks: "", // Placeholder; can be extended to include remarks in the form
       ...extras,
     };
+
+    // If editing an existing RSVP, include updatedBy. Otherwise include createdBy.
+    if (initial) payload.updatedBy = actor;
+    else payload.createdBy = actor;
     onSave(payload, initial?.id ?? initial?.rsvpId);
     onClose();
   };

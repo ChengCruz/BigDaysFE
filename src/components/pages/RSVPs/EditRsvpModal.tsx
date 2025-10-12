@@ -19,8 +19,9 @@ export function EditRsvpModal() {
 
   const handleSave = (data: CreateRsvpInput, _id?: string) => {
     // _id will always be defined here
+    const guid = _id!;
     update.mutate(
-      { id: _id!, ...data },
+      { rsvpGuid: guid, ...data },
       {
         onSuccess: () => nav(-1),
       }

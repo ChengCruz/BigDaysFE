@@ -7,12 +7,14 @@ export interface Rsvp {
   // normalize API shape to what components expect
   id: string; // primary id used across UI
   rsvpId?: string; // original api field (optional)
+  rsvpGuid?: string; // original api field (optional)
   eventId?: string;
   guestName: string; // human-friendly name used in UI
   name?: string; // original api field (optional)
   status?: string;
   guestType?: string;
   createdBy?: string;
+  updatedBy?: string;
   remarks?: string;
   tableId?: string; // used by table assignment features
 }
@@ -50,8 +52,9 @@ export function useRsvpsApi(eventId: string) {
         : [];
 
       return arr.map((r: any) => ({
-        id: r.id ?? r.rsvpId ?? r._id,
+        id: r.id ?? r.rsvpId ?? r.rsvpGuid ?? r._id,
         rsvpId: r.rsvpId ?? r.id,
+        rsvpGuid: r.rsvpGuid ?? r.rsvpGuid ?? undefined,
         eventId: r.eventId,
         guestName: r.guestName ?? r.name ?? "",
         name: r.name,
@@ -112,7 +115,7 @@ export function useUpdateRsvp(eventId: string) {
   return useMutation({
     mutationFn: async (payload: any) => {
       // now we read `cfg.id!` inside the mutation
-      const res = await client.put(RsvpsEndpoints.update(), payload);
+      const res = await client.post(RsvpsEndpoints.update(), payload);
       return res.data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["rsvps", eventId] }),
