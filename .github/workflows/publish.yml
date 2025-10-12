@@ -1,29 +1,26 @@
-name: Generate a build and push to another branch
+name: Build and push compiled site
 
 on:
   push:
-    branches:
-      - main # The branch name your are commit the new changes
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Build and Push
     steps:
-      - name: git-checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Install all dependencies
-        run: npm install
+      - name: Install
+        run: npm ci
 
-      - name: Build
-        run: npm run build # The build command of your project
+      - name: Build (Vite -> dist/)
+        run: npm run build
 
-      - name: Push
+      - name: Publish dist to build branch
         uses: s0/git-publish-subdir-action@develop
         env:
           REPO: self
-          BRANCH: build # The branch name where you want to push the assets
-          FOLDER: build # The directory where your assets are generated
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub will automatically add this - you don't need to bother getting a token
-          MESSAGE: "Build: ({sha}) {msg}" # The commit message
+          BRANCH: build               # the branch your Hostinger webhook pulls
+          FOLDER: dist                # ✅ Vite output
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MESSAGE: "Build: ({sha}) {msg}"
