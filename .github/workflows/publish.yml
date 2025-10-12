@@ -2,7 +2,10 @@ name: Build and push compiled site
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master ]   # ✅ your repo uses master
+
+permissions:
+  contents: write          # ✅ allow pushing branches
 
 jobs:
   build:
@@ -10,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install
+      - name: Install dependencies
         run: npm ci
 
       - name: Build (Vite -> dist/)
@@ -20,7 +23,7 @@ jobs:
         uses: s0/git-publish-subdir-action@develop
         env:
           REPO: self
-          BRANCH: build               # the branch your Hostinger webhook pulls yes
-          FOLDER: dist                # ✅ Vite output
+          BRANCH: build           # or deploy
+          FOLDER: dist
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MESSAGE: "Build: ({sha}) {msg}"
