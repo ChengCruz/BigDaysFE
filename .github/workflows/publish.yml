@@ -20,7 +20,7 @@ jobs:
         uses: s0/git-publish-subdir-action@develop
         env:
           REPO: self
-          BRANCH: build               # the branch your Hostinger webhook pulls
+          BRANCH: build               # the branch your Hostinger webhook pulls yes
           FOLDER: dist                # ✅ Vite output
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MESSAGE: "Build: ({sha}) {msg}"
