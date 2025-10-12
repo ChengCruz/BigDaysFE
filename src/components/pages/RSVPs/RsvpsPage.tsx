@@ -40,7 +40,7 @@ export default function RsvpsPage() {
   // Filtered & searched list
   const filtered = rsvps.filter((r) => {
     const okType = guestTypeFilter === "All" || r.guestType === guestTypeFilter;
-    const okSearch = r.guestName
+    const okSearch = r.name
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     return okType && okSearch;
@@ -55,7 +55,7 @@ export default function RsvpsPage() {
 
   // Export to Excel
   const handleExport = () => {
-    const data = rsvps.map(({ id, ...rest }) => rest);
+    const data = rsvps.map(({ eventId, ...rest }) => rest);
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "RSVPs");
@@ -92,9 +92,9 @@ export default function RsvpsPage() {
             status: obj["status"] || "Yes",
             guestType: obj["guesttype"] || "Other",
           };
-          const existing = rsvps.find((r) => r.guestName === payload.guestName);
+          const existing = rsvps.find((r) => r.name === payload.guestName);
           if (existing) {
-            await updateRsvp.mutateAsync({ id: existing.id, ...payload });
+            await updateRsvp.mutateAsync({ rsvpId: existing.rsvpId, ...payload });
           } else {
             await createRsvp.mutateAsync(payload);
           }
@@ -180,7 +180,7 @@ export default function RsvpsPage() {
         <ul className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filtered.map((r) => (
             <li
-              key={r.id}
+              key={r.eventId}
               className={`
                 relative p-4 rounded-lg shadow flex flex-col justify-between
                 ${cardBgClasses[r.status] || "bg-white"}
@@ -203,7 +203,7 @@ export default function RsvpsPage() {
               </span>
 
               <div className="space-y-2">
-                <h3 className="text-xl font-semibold">{r.guestName}</h3>
+                <h3 className="text-xl font-semibold">{r.name}</h3>
                 <span
                   className={`
                     inline-block px-2 py-0.5 rounded-full text-sm font-medium border-2
@@ -231,7 +231,7 @@ export default function RsvpsPage() {
                 </Button>
                 <Button
                   variant="secondary"
-                  onClick={() => deleteRsvp.mutate(r.id!)}
+                  onClick={() => deleteRsvp.mutate(r.rsvpId!)}
                 >
                   Delete
                 </Button>
@@ -246,11 +246,11 @@ export default function RsvpsPage() {
         <ul className="space-y-2">
           {filtered.map((r) => (
             <li
-              key={r.id}
+              key={r.rsvpId}
               className="flex items-center justify-between p-4 bg-white rounded shadow"
             >
               <div className="flex-1">
-                <p className="font-medium">{r.guestName}</p>
+                <p className="font-medium">{r.name}</p>
                 <p className="text-sm text-gray-600">
                   <span className="mr-2">Status: {r.status}</span>
                   <span>Type: {r.guestType}</span>
@@ -265,7 +265,7 @@ export default function RsvpsPage() {
                 </Button>
                 <Button
                   variant="secondary"
-                  onClick={() => deleteRsvp.mutate(r.id!)}
+                  onClick={() => deleteRsvp.mutate(r.rsvpId!)}
                 >
                   Delete
                 </Button>

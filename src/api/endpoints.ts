@@ -26,9 +26,9 @@ export const RsvpsEndpoints = {
   forEvent: (eventId: string) => `/rsvp/GetRsvp/List/${eventId}`,
   byId: (eventId: string, id: string) => `/events/${eventId}/rsvps/${id}`,
 
-  create: (eventId: string) => `/events/${eventId}/rsvps`,
-  update: (eventId: string, id: string) => `/events/${eventId}/rsvps/${id}`,
-  delete: (eventId: string, id: string) => `/events/${eventId}/rsvps/${id}`,
+  create: () => `/rsvp/Create`,
+  update: () => `/rsvp/Update`,
+  delete: () => `/rsvp/Delete`,
 };
 
 // src/api/endpoints.ts
@@ -71,12 +71,11 @@ export const CostingEndpoints = {
 };
 
 export const FormFieldsEndpoints = {
-  all: (eventId: string) => `/events/${eventId}/rsvp-form-fields`,
-  byId: (eventId: string, id: string) =>
-    `/events/${eventId}/rsvp-form-fields/${id}`,
-  create: (eventId: string) => `/events/${eventId}/rsvp-form-fields`,
-  update: (eventId: string, id: string) =>
-    `/events/${eventId}/rsvp-form-fields/${id}`,
+  all: (eventId: string) => `/question/GetQuestions/${eventId}`,
+  create: () => `/question/Create`,
+  update: () => `/question/Update`,
+    activate: () => `/question/Activate`,
+  deactivate: () => `/question/Deactivate`,
   delete: (eventId: string, id: string) =>
     `/events/${eventId}/rsvp-form-fields/${id}`,
 };

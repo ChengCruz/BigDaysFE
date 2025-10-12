@@ -21,7 +21,7 @@ export const RsvpFormModal: React.FC<Props> = ({
   initial,
   onSave,
 }) => {
-  const [guestName, setGuestName] = useState(initial?.guestName || "");
+  const [guestName, setGuestName] = useState(initial?.name || "");
   const [status, setStatus] = useState(initial?.status || "Yes");
   const [guestType, setGuestType] = useState(initial?.guestType || "Family");
 
@@ -31,11 +31,11 @@ export const RsvpFormModal: React.FC<Props> = ({
 
   useEffect(() => {
     if (isOpen && !initialized) {
-      setGuestName(initial?.guestName ?? "");
+      setGuestName(initial?.name ?? "");
       setStatus(initial?.status ?? "Yes");
-      setGuestType(initial?.guestType ?? "Family");
+      // setGuestType(initial?.guestType ?? "Family");
       setExtras(
-        formFields.reduce((acc, f) => {
+        formFields.reduce((acc: Record<string, string>, f: typeof formFields[number]) => {
           acc[f.name] = (initial as any)?.[f.name] ?? "";
           return acc;
         }, {} as Record<string, string>)
@@ -45,17 +45,20 @@ export const RsvpFormModal: React.FC<Props> = ({
     if (!isOpen) {
       setInitialized(false);
     }
-  }, [isOpen, initial?.id, formFields, initialized]);
+  }, [isOpen, initial?.rsvpId, formFields, initialized]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload: CreateRsvpInput = {
-      guestName,
+      eventId,
+      name: guestName,
       status,
       guestType,
+      createdBy: "Admin", // Placeholder; replace with actual user info if available
+      remarks: "", // Placeholder; can be extended to include remarks in the form
       ...extras,
     };
-    onSave(payload, initial?.id);
+    onSave(payload, initial?.rsvpId);
     onClose();
   };
 
@@ -106,7 +109,7 @@ export const RsvpFormModal: React.FC<Props> = ({
         </div>
 
         {/* —— Dynamic Extra Fields —— */}
-        {formFields.map((f) => (
+        {formFields.map((f: any) => (
           <FormField
             key={f.id}
             label={f.label}

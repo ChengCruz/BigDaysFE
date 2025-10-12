@@ -10,6 +10,7 @@ import { useEventContext } from "../../../context/EventContext";
 
 export default function EventsPage() {
   const { data: events, isLoading, isError } = useEventsApi();
+  console.log("EventsPage events:", events);
   const deactivateEvent = useDeactivateEvent();
   const [modal, setModal] = useState<{ open: boolean; event?: any }>({
     open: false,

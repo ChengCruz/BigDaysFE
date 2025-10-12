@@ -4,10 +4,13 @@ import client from "../client";
 import { RsvpsEndpoints } from "../endpoints";
 
 export interface Rsvp {
-  id: string;
-  guestName: string;
+  rsvpId?: string;
+  eventId?: string;
+  name: string;
   status: string;
   guestType: string;
+  createdBy: string;
+  remarks: string;
 }
 
 // Input shape when creating a new RSVP
@@ -27,13 +30,24 @@ export interface UpdateRsvpInput extends Partial<CreateRsvpInput> {
 // }
 
 export function useRsvpsApi(eventId: string) {
-  console.log("useRsvpsApi called with eventId:", eventId);
-  return useQuery({
+  return useQuery<Rsvp[]>({
     queryKey: ["rsvps", eventId],
-    queryFn: () =>
-      client
-        .get<Rsvp[]>(RsvpsEndpoints.forEvent(eventId))
-        .then((r) => r.data),
+    queryFn: async () => {
+      const res = await client.get(RsvpsEndpoints.forEvent(eventId));
+
+      // Safely normalize the data shape
+      const data = res.data?.data ?? res.data;
+
+      // Ensure it's always an array
+      if (Array.isArray(data)) {
+        return data;
+      } else if (Array.isArray((data as any)?.data)) {
+        return (data as any).data;
+      } else {
+        console.warn("⚠️ Unexpected RSVP response format:", res.data);
+        return [];
+      }
+    },
     staleTime: 60_000,
   });
 }
@@ -41,7 +55,8 @@ export function useRsvpsApi(eventId: string) {
 export function useRsvpApi(eventId: string, id: string) {
   return useQuery({
     queryKey: ["rsvp", id],
-    queryFn: async () => (await client.get(RsvpsEndpoints.byId(eventId,id))).data,
+    queryFn: async () =>
+      (await client.get(RsvpsEndpoints.byId(eventId, id))).data,
   });
 }
 
@@ -57,12 +72,11 @@ export function useRsvpApi(eventId: string, id: string) {
 export function useCreateRsvp(eventId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data :any) =>
-      client.post(RsvpsEndpoints.create(eventId), data).then(r => r.data),
+    mutationFn: (data: any) =>
+      client.post(RsvpsEndpoints.create(), data).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["rsvps", eventId] }),
   });
 }
-
 
 // export function useUpdateRsvp(id: string) {
 //   const qc = useQueryClient();
@@ -77,26 +91,19 @@ export interface UpdateRsvpInput {
   data: CreateRsvpInput;
 }
 
-
-
 // UPDATE now expects the full Rsvp (id + all fields)
 
 export function useUpdateRsvp(eventId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload :any) => {
+    mutationFn: async (payload: any) => {
       // now we read `cfg.id!` inside the mutation
-      const res = await client.put(
-        RsvpsEndpoints.update(eventId, payload.id!),
-        payload
-      );
+      const res = await client.put(RsvpsEndpoints.update(), payload);
       return res.data;
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["rsvps", eventId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["rsvps", eventId] }),
   });
 }
-
 
 // export function useUpdateRsvp() {
 //   const qc = useQueryClient();
@@ -111,7 +118,7 @@ export function useDeleteRsvp(eventId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      client.delete(RsvpsEndpoints.delete(eventId, id)).then(r => r.data),
+      client.delete(RsvpsEndpoints.delete()).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["rsvps", eventId] }),
   });
 }

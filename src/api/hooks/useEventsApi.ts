@@ -35,7 +35,7 @@ export interface Event {
 
 function toEvent(e: ApiEvent): Event {
   return {
-    id: e.eventID.toString(),
+    id: e.eventGUID.toString(),
     title: e.eventName,
     date: e.eventDate,
     noOfTable: e.noOfTable,

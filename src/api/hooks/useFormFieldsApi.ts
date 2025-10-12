@@ -1,55 +1,62 @@
 // src/api/hooks/useFormFieldsApi.ts
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { FormFieldsEndpoints } from "../endpoints";
 
+/** UI model for the modal / page */
 export interface FormFieldConfig {
-  id?: string;
-  name: string;
-  label: string;
-  type: "text"|"textarea"|"select"|"radio"|"checkbox"|"email"|"number"|"date";
+  questionId?: string;
+  eventId?: string;
+  text: string;
+  type: number; // e.g., text, select, radio, checkbox
   required: boolean;
-  options?: string[]; // for select/radio/checkbox
+  options?: string; // for select/radio/checkbox
 }
 
+/** Payload we actually send to the Question API (needs eventId too) */
+export type QuestionPayload = FormFieldConfig;
+
+/** Optional: fetcher (kept as-is) */
 export function useFormFields(eventId: string) {
   return useQuery({
     queryKey: ["formFields", eventId],
-    queryFn: async () => (await client.get(FormFieldsEndpoints.all(eventId))).data as FormFieldConfig[],
-    staleTime: 60_000,
-  });
-}
-
-export function useCreateFormField(eventId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (cfg: FormFieldConfig) =>
-      client.post(FormFieldsEndpoints.create(eventId), cfg).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["formFields", eventId] }),
-  });
-}
-
-export function useUpdateFormField(eventId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (cfg: FormFieldConfig) => {
-      // now we read `cfg.id!` inside the mutation
-      const res = await client.put(
-        FormFieldsEndpoints.update(eventId, cfg.id!),
-        cfg
-      );
-      return res.data;
+    queryFn: async () => {
+      const res = await client.get(FormFieldsEndpoints.all(eventId));
+      return res.data?.data ?? [];
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["formFields", eventId] }),
   });
 }
 
-export function useDeleteFormField(eventId: string) {
+/** CREATE question */
+export function useCreateFormField() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      client.delete(FormFieldsEndpoints.delete(eventId, id)).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["formFields", eventId] }),
+    // ✅ allow eventId in the body
+    mutationFn: (payload: QuestionPayload) =>
+      client.post(FormFieldsEndpoints.create(), payload).then((r) => r.data),
+    onSuccess: (_d, vars) =>
+      qc.invalidateQueries({ queryKey: ["formFields", vars.eventId] }),
+  });
+}
+
+/** UPDATE question */
+export function useUpdateFormField() {
+  const qc = useQueryClient();
+  return useMutation({
+    // ✅ require id and allow eventId in the body
+    mutationFn: (payload: QuestionPayload & { id: string }) =>
+      client.put(FormFieldsEndpoints.update(), payload).then((r) => r.data),
+    onSuccess: (_d, vars) =>
+      qc.invalidateQueries({ queryKey: ["formFields", vars.eventId] }),
+  });
+}
+
+/** DELETE question */
+export function useDeleteFormField() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      client.delete(FormFieldsEndpoints.deactivate()).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["formFields"] }),
   });
 }
