@@ -4,17 +4,21 @@ import client from "../client";
 import { RsvpsEndpoints } from "../endpoints";
 
 export interface Rsvp {
-  rsvpId?: string;
+  // normalize API shape to what components expect
+  id: string; // primary id used across UI
+  rsvpId?: string; // original api field (optional)
   eventId?: string;
-  name: string;
-  status: string;
-  guestType: string;
-  createdBy: string;
-  remarks: string;
+  guestName: string; // human-friendly name used in UI
+  name?: string; // original api field (optional)
+  status?: string;
+  guestType?: string;
+  createdBy?: string;
+  remarks?: string;
+  tableId?: string; // used by table assignment features
 }
 
 // Input shape when creating a new RSVP
-export type CreateRsvpInput = Omit<Rsvp, "id">;
+export type CreateRsvpInput = Omit<Rsvp, "id"> & { guestName?: string };
 
 // Input shape when updating
 export interface UpdateRsvpInput extends Partial<CreateRsvpInput> {
@@ -39,14 +43,24 @@ export function useRsvpsApi(eventId: string) {
       const data = res.data?.data ?? res.data;
 
       // Ensure it's always an array
-      if (Array.isArray(data)) {
-        return data;
-      } else if (Array.isArray((data as any)?.data)) {
-        return (data as any).data;
-      } else {
-        console.warn("⚠️ Unexpected RSVP response format:", res.data);
-        return [];
-      }
+      const arr = Array.isArray(data)
+        ? data
+        : Array.isArray((data as any)?.data)
+        ? (data as any).data
+        : [];
+
+      return arr.map((r: any) => ({
+        id: r.id ?? r.rsvpId ?? r._id,
+        rsvpId: r.rsvpId ?? r.id,
+        eventId: r.eventId,
+        guestName: r.guestName ?? r.name ?? "",
+        name: r.name,
+        status: r.status ?? "",
+        guestType: r.guestType ?? "",
+        createdBy: r.createdBy ?? "",
+        remarks: r.remarks ?? "",
+        tableId: r.tableId ?? r.table_id ?? undefined,
+      } as Rsvp));
     },
     staleTime: 60_000,
   });
@@ -117,7 +131,8 @@ export function useUpdateRsvp(eventId: string) {
 export function useDeleteRsvp(eventId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
+    // id is not used in the current API shape; mark as unused to avoid TS6133
+    mutationFn: (_id: string) =>
       client.delete(RsvpsEndpoints.delete()).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["rsvps", eventId] }),
   });

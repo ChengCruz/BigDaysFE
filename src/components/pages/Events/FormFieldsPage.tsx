@@ -54,13 +54,13 @@ export default function FormFieldsPage() {
         <ul className="space-y-2">
           {fields.map((f) => (
             <li
-              key={f.questionId}
+              key={f.questionId ?? f.id}
               className="p-4 bg-white dark:bg-gray-800 rounded-lg flex justify-between items-center"
             >
               <div>
-                <p className="font-medium">{f.text}</p>
+                <p className="font-medium">{f.label ?? f.text}</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {f.type} {f.required && "· required"}
+                  {(typeof f.type === "number" ? f.type : f.typeKey ?? String(f.type))} {f.isRequired && "· required"}
                 </p>
               </div>
               <div className="space-x-2">
@@ -96,26 +96,26 @@ export default function FormFieldsPage() {
           initial={
             modal.initial
               ? {
-                  id: modal.initial.questionId,
-                  text: modal.initial.text,
-                  isRequired: modal.initial.required,
-                  order: 0, // You may want to set the correct order if available
-                  type: modal.initial.type,
+                  id: modal.initial.questionId ?? modal.initial.id,
+                  text: modal.initial.text ?? modal.initial.label ?? "",
+                  isRequired: modal.initial.isRequired ?? false,
+                  order: modal.initial.order ?? 0,
+                  type: modal.initial.type ?? 0,
                   options: Array.isArray(modal.initial.options)
                     ? modal.initial.options.join(",")
-                    : modal.initial.options,
+                    : (typeof modal.initial.options === "string" ? modal.initial.options : undefined),
                 }
               : undefined
           }
           onSave={(dto) => {
             if (!eventId) return;
 
-            // Build the payload the API expects
+            // Build the payload the API expects (QuestionDto shape)
             const payload: QuestionPayload = {
-              text: dto.text,
+              text: dto.text ?? "",
               type: dto.type,
-              required: dto.isRequired,
-              options: dto.options?? "",
+              isRequired: dto.isRequired,
+              options: dto.options ?? "",
               eventId,
             };
 

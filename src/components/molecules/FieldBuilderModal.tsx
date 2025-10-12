@@ -15,19 +15,23 @@ interface Props {
 export const FieldBuilderModal: React.FC<Props> = ({
   isOpen, onClose, initial, onSave
 }) => {
-  const [label, setLabel] = useState(initial?.label || "");
+  const [label, setLabel] = useState(initial?.label ?? initial?.text ?? "");
   const [name, setName]   = useState(initial?.name  || "");
-  const [type, setType]   = useState<FormFieldConfig["type"]>(initial?.type || "text");
-  const [required, setRequired] = useState(initial?.required||false);
-  const [opts, setOpts]   = useState((initial?.options||[]).join(","));
+  const [type, setType]   = useState<FormFieldConfig["typeKey"]>(
+    (initial?.typeKey as any) || (typeof initial?.type === "number" ? undefined : (initial?.type as any)) || "text"
+  );
+  const [required, setRequired] = useState<boolean>(initial?.isRequired||false);
+  const [opts, setOpts]   = useState<string>(
+    Array.isArray(initial?.options) ? (initial?.options || []).join(",") : (typeof initial?.options === "string" ? initial?.options : "")
+  );
 
   useEffect(() => {
     if (isOpen) {
-      setLabel(initial?.label||"");
+      setLabel(initial?.label ?? initial?.text ?? "");
       setName(initial?.name||"");
-      setType(initial?.type||"text");
-      setRequired(initial?.required||false);
-      setOpts((initial?.options||[]).join(","));
+      setType((initial?.typeKey as any) || (typeof initial?.type === "number" ? undefined : (initial?.type as any)) || "text");
+      setRequired(initial?.isRequired||false);
+      setOpts(Array.isArray(initial?.options) ? (initial?.options || []).join(",") : (typeof initial?.options === "string" ? initial?.options : ""));
     }
   }, [isOpen, initial]);
 
@@ -35,10 +39,14 @@ export const FieldBuilderModal: React.FC<Props> = ({
     e.preventDefault();
     const cfg: FormFieldConfig = {
       ...initial!,
-      label, name, type, required,
-      options: ["select","radio","checkbox"].includes(type)
-        ? opts.split(",").map(o=>o.trim()).filter(Boolean)
-        : undefined
+      label,
+      text: label,
+      name,
+      typeKey: type,
+      isRequired: required,
+      options: ["select","radio","checkbox"].includes(type as string)
+        ? opts.split(",").map((o: string) => o.trim()).filter(Boolean)
+        : undefined,
     };
     onSave(cfg);
     onClose();

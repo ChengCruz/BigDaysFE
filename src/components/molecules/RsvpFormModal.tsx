@@ -21,7 +21,7 @@ export const RsvpFormModal: React.FC<Props> = ({
   initial,
   onSave,
 }) => {
-  const [guestName, setGuestName] = useState(initial?.name || "");
+  const [guestName, setGuestName] = useState(initial?.guestName || initial?.name || "");
   const [status, setStatus] = useState(initial?.status || "Yes");
   const [guestType, setGuestType] = useState(initial?.guestType || "Family");
 
@@ -35,8 +35,9 @@ export const RsvpFormModal: React.FC<Props> = ({
       setStatus(initial?.status ?? "Yes");
       // setGuestType(initial?.guestType ?? "Family");
       setExtras(
-        formFields.reduce((acc: Record<string, string>, f: typeof formFields[number]) => {
-          acc[f.name] = (initial as any)?.[f.name] ?? "";
+        (formFields as any[]).reduce((acc: Record<string, string>, f: any) => {
+          const key = f.name ?? f.id ?? f.questionId;
+          if (key) acc[key] = (initial as any)?.[key] ?? "";
           return acc;
         }, {} as Record<string, string>)
       );
@@ -51,14 +52,14 @@ export const RsvpFormModal: React.FC<Props> = ({
     e.preventDefault();
     const payload: CreateRsvpInput = {
       eventId,
-      name: guestName,
+      guestName: guestName,
       status,
       guestType,
       createdBy: "Admin", // Placeholder; replace with actual user info if available
       remarks: "", // Placeholder; can be extended to include remarks in the form
       ...extras,
     };
-    onSave(payload, initial?.rsvpId);
+    onSave(payload, initial?.id ?? initial?.rsvpId);
     onClose();
   };
 

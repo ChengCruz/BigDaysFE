@@ -60,7 +60,7 @@ const [impOpen, setImpOpen] = useState(false);
        <h3 className="text-xl font-semibold text-primary mb-4">Customize RSVP Form</h3>
        <Button onClick={()=>setFb({open:true})}> Add Field</Button>
        <ul className="mt-4 space-y-2">
-         {fields?.map(f => (
+         {(fields as any[] | undefined)?.map((f: any) => (
            <li key={f.id} className="flex justify-between items-center bg-white dark:bg-gray-800 p-2 rounded">
              <span>{f.label} <em className="text-sm text-gray-500">({f.type})</em></span>
              <div className="space-x-2">
@@ -75,7 +75,7 @@ const [impOpen, setImpOpen] = useState(false);
          initial={fb.field}
          onClose={()=>setFb({open:false})}
          onSave={cfg => {
-           if (cfg.id) updateField.mutate(cfg);
+           if (cfg.id) updateField.mutate(cfg as FormFieldConfig & { id: string });
            else createField.mutate(cfg);
          }}
        />
