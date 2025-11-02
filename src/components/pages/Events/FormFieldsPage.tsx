@@ -123,7 +123,7 @@ export default function FormFieldsPage() {
               // update expects an id; map from questionId
               updateField.mutate({
                 ...payload,
-                questionId: modal.initial.questionId,
+                questionId: modal.initial.questionId.toString(),
               });
             } else {
               // create

@@ -15,6 +15,7 @@ import { RsvpFormModal } from "../../molecules/RsvpFormModal";
 import { Button } from "../../atoms/Button";
 import { useEventContext } from "../../../context/EventContext";
 import { useAuth } from "../../../api/hooks/useAuth";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function RsvpsPage() {
   const { eventId } = useEventContext()!;
@@ -26,6 +27,7 @@ export default function RsvpsPage() {
   const deleteRsvp = useDeleteRsvp(eventId!);
   const { user } = useAuth();
   const actor = user?.id ?? user?.name ?? "System";
+  const qc = useQueryClient();
 
   const [modal, setModal] = useState<{ open: boolean; rsvp?: Rsvp }>({
     open: false,
@@ -292,14 +294,21 @@ export default function RsvpsPage() {
         onClose={() => setModal({ open: false })}
         initial={modal.rsvp}
         eventId={eventId!}
-        onSave={(data, id) => {
-          if (id) {
-            const guid = id;
-            updateRsvp.mutate({ rsvpId: guid, ...data });
-          } else {
-            createRsvp.mutate(data);
+        onSave={async (data, id) => {
+          try {
+            if (id) {
+              const guid = id;
+              await updateRsvp.mutateAsync({ rsvpGuid: guid, ...data });
+            } else {
+              await createRsvp.mutateAsync(data);
+            }
+            // Ensure fresh data after mutation
+            qc.invalidateQueries({ queryKey: ["rsvps", eventId] });
+          } catch (err) {
+            console.error("RSVP save error", err);
+          } finally {
+            setModal({ open: false });
           }
-          setModal({ open: false });
         }}
       />
     </>

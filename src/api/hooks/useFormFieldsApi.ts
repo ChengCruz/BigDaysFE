@@ -77,7 +77,7 @@ export function useCreateFormField(eventId?: string) {
     mutationFn: (payload: QuestionPayload) =>
       client.post(FormFieldsEndpoints.create(), payload).then((r) => r.data),
     onSuccess: (_d, vars) =>
-      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? (vars as any)?.eventId] }),
+      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? (vars as any)?.eventId ?? (vars as any)?.eventGuid ?? (vars as any)?.eventGUID] }),
   });
 }
 
@@ -95,7 +95,7 @@ export function useUpdateFormField(eventId?: string) {
       return client.post(FormFieldsEndpoints.update(), body).then((r) => r.data);
     },
     onSuccess: (_d, vars) =>
-      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? (vars as any)?.eventId] }),
+      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? (vars as any)?.eventId ?? (vars as any)?.eventGuid ?? (vars as any)?.eventGUID] }),
   });
 }
 
