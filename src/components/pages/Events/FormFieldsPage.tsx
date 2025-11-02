@@ -116,14 +116,14 @@ export default function FormFieldsPage() {
               type: dto.type,
               isRequired: dto.isRequired,
               options: dto.options ?? "",
-              eventId,
+              eventGuid: eventId,
             };
 
             if (modal.initial?.questionId) {
               // update expects an id; map from questionId
               updateField.mutate({
                 ...payload,
-                id: modal.initial.questionId,
+                questionId: modal.initial.questionId,
               });
             } else {
               // create

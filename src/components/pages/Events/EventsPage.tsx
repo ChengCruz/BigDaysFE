@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   useDeactivateEvent,
   useEventsApi,
+  useActivateEvent,
 } from "../../../api/hooks/useEventsApi";
 import { EventFormModal } from "../../molecules/EventFormModal";
 import { Button } from "../../atoms/Button";
@@ -9,9 +10,11 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { useEventContext } from "../../../context/EventContext";
 
 export default function EventsPage() {
-  const { data: events, isLoading, isError } = useEventsApi();
-  console.log("EventsPage events:", events);
+  const [showArchived, setShowArchived] = useState(false);
+  const { data: events, isLoading, isError } = useEventsApi(showArchived);
+  console.log("EventsPage events:", events, "showArchived:", showArchived);
   const deactivateEvent = useDeactivateEvent();
+  const activateEvent = useActivateEvent();
   const [modal, setModal] = useState<{ open: boolean; event?: any }>({
     open: false,
   });
@@ -31,14 +34,32 @@ export default function EventsPage() {
           Welcome to <span className="text-secondary">My Big Day</span>
         </h1>
 
+        <div className="flex items-center justify-between mb-4">
+          <div />
+          <div className="flex items-center space-x-2">
+            <label className="text-sm">Show archived</label>
+            <Button
+              variant={showArchived ? "primary" : "secondary"}
+              onClick={() => setShowArchived((s) => !s)}
+            >
+              {showArchived ? "Hide" : "Show"}
+            </Button>
+          </div>
+        </div>
+
         <ul className="space-y-2">
-          {Array.isArray(events) &&
-            events.map((ev: any) => (
+          {Array.isArray(events) && events.map((ev: any) => (
               <li
                 key={ev.id}
                 className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow"
               >
-                <h3 className="text-lg font-medium">{ev.title}</h3>
+                <h3 className="text-lg font-medium">{ev.title}
+                  {ev?.raw?.isDeleted && (
+                    <span className="ml-3 inline-block text-xs font-semibold px-2 py-0.5 rounded bg-yellow-100 text-yellow-800">
+                      Archived
+                    </span>
+                  )}
+                </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {new Date(ev.date).toLocaleDateString()}
                 </p>
@@ -57,17 +78,33 @@ export default function EventsPage() {
                   <Button onClick={() => navigate(`${ev.id}/edit`)}>
                     Edit
                   </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() =>
-                      deactivateEvent.mutate(ev.id, {
-                        onSuccess: () => console.log("Deactivated", ev.id),
-                      })
-                    }
-                    disabled={deactivateEvent.isPending}
-                  >
-                    {deactivateEvent.isPending ? "Deactivating…" : "Deactivate"}
-                  </Button>
+                  {ev?.raw?.isDeleted ? (
+                    <Button
+                      variant="primary"
+                      style={{ backgroundColor: "#16a34a", borderColor: "#16a34a" }}
+                      onClick={() =>
+                        activateEvent.mutate(ev.id, {
+                          onSuccess: () => console.log("Activated", ev.id),
+                        })
+                      }
+                      disabled={activateEvent.isPending}
+                    >
+                      {activateEvent.isPending ? "Activating…" : "Activate"}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      style={{ backgroundColor: "#dc2626", borderColor: "#dc2626" }}
+                      onClick={() =>
+                        deactivateEvent.mutate(ev.id, {
+                          onSuccess: () => console.log("Deactivated", ev.id),
+                        })
+                      }
+                      disabled={deactivateEvent.isPending}
+                    >
+                      {deactivateEvent.isPending ? "Deactivating…" : "Deactivate"}
+                    </Button>
+                  )}
                 </div>
               </li>
             ))}

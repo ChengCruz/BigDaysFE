@@ -8,7 +8,7 @@ export interface FormFieldConfig {
   // identifiers (API may use questionId or id)
   questionId?: string;
   id?: string;
-  eventId?: string;
+  eventGuid?: string;
 
   // API DTO fields
   text?: string; // question text
@@ -85,9 +85,15 @@ export function useCreateFormField(eventId?: string) {
 export function useUpdateFormField(eventId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    // require id and allow eventId in the body
-    mutationFn: (payload: QuestionPayload & { id: string }) =>
-      client.put(FormFieldsEndpoints.update(), payload).then((r) => r.data),
+    // require id (or questionId) and allow eventId in the body
+    // The backend expects POST for question updates (not PUT)
+    mutationFn: (payload: QuestionPayload & { id?: string; questionId?: string }) => {
+      // Normalize to the API expected field name `questionId`
+      const body: any = { ...payload, questionId: payload.questionId ?? payload.id };
+      // Ensure we don't send `id` as well since API expects `questionId`
+      delete body.id;
+      return client.post(FormFieldsEndpoints.update(), body).then((r) => r.data);
+    },
     onSuccess: (_d, vars) =>
       qc.invalidateQueries({ queryKey: ["formFields", eventId ?? (vars as any)?.eventId] }),
   });

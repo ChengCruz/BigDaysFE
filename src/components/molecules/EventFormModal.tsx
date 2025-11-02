@@ -73,7 +73,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
     try {
       if (isEdit && initial) {
         const updated = await updateEvt.mutateAsync({
-          eventID: initial.id,
+          eventGuid: initial.id,
           name: title,
           date, // already YYYY-MM-DD from input
           time: "",

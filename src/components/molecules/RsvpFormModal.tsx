@@ -23,7 +23,10 @@ export const RsvpFormModal: React.FC<Props> = ({
   onSave,
 }) => {
   const { user } = useAuth();
-  const [guestName, setGuestName] = useState(initial?.guestName || initial?.name || "");
+  const [guestName, setGuestName] = useState(
+    initial?.guestName || initial?.name || ""
+  );
+  const [phoneNo, setPhoneNo] = useState(initial?.phoneNo || "");
   const [status, setStatus] = useState(initial?.status || "Yes");
   const [guestType, setGuestType] = useState(initial?.guestType || "Family");
 
@@ -34,6 +37,7 @@ export const RsvpFormModal: React.FC<Props> = ({
   useEffect(() => {
     if (isOpen && !initialized) {
       setGuestName(initial?.name ?? "");
+      setPhoneNo((initial as any)?.phoneNo ?? "");
       setStatus(initial?.status ?? "Yes");
       // setGuestType(initial?.guestType ?? "Family");
       setExtras(
@@ -59,12 +63,15 @@ export const RsvpFormModal: React.FC<Props> = ({
       status,
       guestType,
       remarks: "", // Placeholder; can be extended to include remarks in the form
+      phoneNo: phoneNo,
       ...extras,
     };
 
     // If editing an existing RSVP, include updatedBy. Otherwise include createdBy.
-    if (initial) payload.updatedBy = actor;
-    else payload.createdBy = actor;
+    if (initial) {
+      payload.updatedBy = actor;
+      payload.rsvpGuid = initial.rsvpGuid;
+    } else payload.createdBy = actor;
     onSave(payload, initial?.id ?? initial?.rsvpId);
     onClose();
   };
@@ -83,6 +90,13 @@ export const RsvpFormModal: React.FC<Props> = ({
           onChange={(e) => setGuestName(e.target.value)}
         />
 
+        {/* Phone number */}
+        <FormField
+          label="Phone"
+          value={phoneNo}
+          onChange={(e) => setPhoneNo(e.target.value)}
+        />
+
         {/* —— Guest Type Select —— */}
         <div>
           <label className="block mb-1">Guest Type</label>
@@ -98,7 +112,7 @@ export const RsvpFormModal: React.FC<Props> = ({
             ))}
           </select>
         </div>
-        
+
         {/* —— Status Select —— */}
         <div>
           <label className="block mb-1">Reservation Status</label>

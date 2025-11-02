@@ -5,13 +5,14 @@ import { EventsEndpoints } from "../endpoints";
 // --- API payload ---
 type ApiEvent = {
   eventID: string;
-  eventGUID: string;
+  eventGuid: string;
   eventName: string;
   eventDate: string;
   eventTime: string;
   eventLocation: string;
   noOfTable?: number;
   eventDescription?: string;
+  isDeleted?: boolean;
 };
 
 type ApiResponse<T> = {
@@ -35,7 +36,7 @@ export interface Event {
 
 function toEvent(e: ApiEvent): Event {
   return {
-    id: e.eventGUID.toString(),
+    id: e.eventGuid.toString(),
     title: e.eventName,
     date: e.eventDate,
     noOfTable: e.noOfTable,
@@ -48,15 +49,17 @@ function toEvent(e: ApiEvent): Event {
 /**
  * Get all events
  */
-export function useEventsApi() {
+export function useEventsApi(includeDeleted = false) {
   return useQuery<Event[]>({
-    queryKey: ["events"],
+    // include includeDeleted in the cache key so toggling updates cache correctly
+    queryKey: ["events", includeDeleted],
     queryFn: async () => {
-      const res = await client.get<ApiResponse<ApiEvent[]>>(
-        EventsEndpoints.all
-      );
+      const res = await client.get<ApiResponse<ApiEvent[]>>(EventsEndpoints.all);
       const items = Array.isArray(res.data?.data) ? res.data.data : [];
-      return items.map(toEvent);
+      if (includeDeleted) return items.map(toEvent);
+      // Filter out deleted events (backend marks deactivated events with isDeleted = true)
+      const active = items.filter((e) => !e.isDeleted);
+      return active.map(toEvent);
     },
   });
 }
@@ -109,7 +112,7 @@ export function useUpdateEvent() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: {
-      eventID: string;
+      eventGuid: string;
       name: string;
       date: string;
       description: string;
@@ -123,7 +126,7 @@ export function useUpdateEvent() {
     },
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ["events"] });
-      qc.invalidateQueries({ queryKey: ["event", variables.eventID] });
+      qc.invalidateQueries({ queryKey: ["event", variables.eventGuid] });
     },
   });
 }

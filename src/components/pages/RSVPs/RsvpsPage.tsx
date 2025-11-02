@@ -206,6 +206,9 @@ export default function RsvpsPage() {
 
               <div className="space-y-2">
                 <h3 className="text-xl font-semibold">{r.guestName}</h3>
+                {r.phoneNo && (
+                  <p className="text-sm text-gray-600">Phone: {r.phoneNo}</p>
+                )}
                 <span
                   className={`
                     inline-block px-2 py-0.5 rounded-full text-sm font-medium border-2
@@ -233,7 +236,9 @@ export default function RsvpsPage() {
                 </Button>
                 <Button
                   variant="secondary"
-                  onClick={() => deleteRsvp.mutate(r.rsvpId!)}
+                  onClick={() =>
+                    deleteRsvp.mutate({ rsvpGuid: r.rsvpGuid ?? r.rsvpId ?? r.id, eventId: eventId! })
+                  }
                 >
                   Delete
                 </Button>
@@ -257,6 +262,9 @@ export default function RsvpsPage() {
                   <span className="mr-2">Status: {r.status}</span>
                   <span>Type: {r.guestType}</span>
                 </p>
+                {r.phoneNo && (
+                  <p className="text-sm text-gray-600">Phone: {r.phoneNo}</p>
+                )}
               </div>
               <div className="flex space-x-2">
                 <Button
@@ -267,7 +275,9 @@ export default function RsvpsPage() {
                 </Button>
                 <Button
                   variant="secondary"
-                  onClick={() => deleteRsvp.mutate(r.rsvpId!)}
+                  onClick={() =>
+                    deleteRsvp.mutate({ rsvpGuid: r.rsvpGuid ?? r.rsvpId ?? r.id, eventId: eventId! })
+                  }
                 >
                   Delete
                 </Button>

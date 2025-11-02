@@ -16,6 +16,7 @@ export interface Rsvp {
   createdBy?: string;
   updatedBy?: string;
   remarks?: string;
+  phoneNo?: string;
   tableId?: string; // used by table assignment features
 }
 
@@ -62,6 +63,7 @@ export function useRsvpsApi(eventId: string) {
         guestType: r.guestType ?? "",
         createdBy: r.createdBy ?? "",
         remarks: r.remarks ?? "",
+        phoneNo: r.phoneNo ?? "",
         tableId: r.tableId ?? r.table_id ?? undefined,
       } as Rsvp));
     },
@@ -134,9 +136,9 @@ export function useUpdateRsvp(eventId: string) {
 export function useDeleteRsvp(eventId: string) {
   const qc = useQueryClient();
   return useMutation({
-    // id is not used in the current API shape; mark as unused to avoid TS6133
-    mutationFn: (_id: string) =>
-      client.delete(RsvpsEndpoints.delete()).then((r) => r.data),
+    // Expect payload with rsvpGuid and eventId for the delete POST API
+    mutationFn: (payload: { rsvpGuid: string; eventId: string }) =>
+      client.post(RsvpsEndpoints.delete(), payload).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["rsvps", eventId] }),
   });
 }
