@@ -8,10 +8,10 @@ import { useEventContext } from "../../context/EventContext";
 
 export default function DashboardTemplate() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
-  const { isSelectorOpen } = useEventContext();
+  const { isSelectorOpen, mustChooseEvent } = useEventContext();
 
   return (
-    <div className="flex h-screen bg-background text-text">
+    <div className="flex h-screen bg-gradient-to-br from-background via-background to-accent/50 dark:from-slate-950 dark:via-slate-950 dark:to-primary/10 text-text">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex flex-col flex-1">
         <Navbar onMenuToggle={() => setSidebarOpen(o => !o)} />
@@ -19,7 +19,7 @@ export default function DashboardTemplate() {
           <Outlet />
         </main>
       </div>
-     {isSelectorOpen && <EventSelectorModal />}
+      {(mustChooseEvent || isSelectorOpen) && <EventSelectorModal />}
     </div>
   );
 }

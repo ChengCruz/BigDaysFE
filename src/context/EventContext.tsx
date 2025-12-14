@@ -7,6 +7,7 @@ interface EventContextValue {
   event?: Event;
   events?: Event[];
   isSelectorOpen: boolean;
+  mustChooseEvent: boolean;
   setEventId: (id: string) => void;
   openSelector: () => void;
   closeSelector: () => void;
@@ -17,6 +18,7 @@ const EventContext = createContext<EventContextValue>({
   event: undefined,
   events: [],
   isSelectorOpen: false,
+  mustChooseEvent: false,
   setEventId: () => {},
   openSelector: () => {},
   closeSelector: () => {},
@@ -29,13 +31,18 @@ export function EventProvider({ children }: { children: ReactNode }) {
   );
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 
+  const mustChooseEvent = !eventId;
+
   const setEventId = (id: string) => {
     localStorage.setItem("eventId", id);
     _setEventId(id);
     setIsSelectorOpen(false);
   };
   const openSelector = () => setIsSelectorOpen(true);
-  const closeSelector = () => setIsSelectorOpen(false);
+  const closeSelector = () => {
+    if (mustChooseEvent) return;
+    setIsSelectorOpen(false);
+  };
 
   const event = events?.find((e: Event) => e.id === eventId);
 
@@ -46,6 +53,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
         event,
         events,
         isSelectorOpen,
+        mustChooseEvent,
         setEventId,
         openSelector,
         closeSelector,
