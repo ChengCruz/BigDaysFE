@@ -4,6 +4,7 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import toast from "react-hot-toast";
 import { ViewGridIcon, ViewListIcon } from "@heroicons/react/outline";
+import { Link } from "react-router-dom";
 import {
   useRsvpsApi,
   useCreateRsvp,
@@ -56,9 +57,24 @@ export default function RsvpsPage() {
     Maybe: "bg-yellow-50",
   };
 
+  const totals = rsvps.reduce(
+    (acc, r) => {
+      acc.total += 1;
+      if (r.status === "Yes") acc.yes += 1;
+      if (r.status === "No") acc.no += 1;
+      if (r.status === "Maybe") acc.maybe += 1;
+      if (r.guestType === "VIP") acc.vip += 1;
+      return acc;
+    },
+    { total: 0, yes: 0, no: 0, maybe: 0, vip: 0 }
+  );
+
   // Export to Excel
   const handleExport = () => {
-    const data = rsvps.map(({ eventId, ...rest }) => rest);
+    const data = rsvps.map(({ eventId, ...rest }) => {
+      void eventId;
+      return rest;
+    });
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "RSVPs");
@@ -105,9 +121,10 @@ export default function RsvpsPage() {
           success++;
         }
         toast.success(`Imported ${success} rows`);
-      } catch (err: any) {
+      } catch (err) {
         console.error(err);
-        toast.error(err.message || "Import failed");
+        const message = err instanceof Error ? err.message : "Import failed";
+        toast.error(message);
       } finally {
         if (fileInput.current) fileInput.current.value = "";
       }
@@ -118,10 +135,32 @@ export default function RsvpsPage() {
 
   return (
     <>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="p-3 rounded-lg bg-white shadow border border-gray-100">
+          <p className="text-xs text-gray-500">Total guests</p>
+          <p className="text-xl font-semibold text-primary">{totals.total}</p>
+        </div>
+        <div className="p-3 rounded-lg bg-white shadow border border-gray-100">
+          <p className="text-xs text-gray-500">Yes</p>
+          <p className="text-xl font-semibold text-green-600">{totals.yes}</p>
+        </div>
+        <div className="p-3 rounded-lg bg-white shadow border border-gray-100">
+          <p className="text-xs text-gray-500">Maybe</p>
+          <p className="text-xl font-semibold text-yellow-600">{totals.maybe}</p>
+        </div>
+        <div className="p-3 rounded-lg bg-white shadow border border-gray-100">
+          <p className="text-xs text-gray-500">VIPs</p>
+          <p className="text-xl font-semibold text-purple-600">{totals.vip}</p>
+        </div>
+      </div>
+
       {/* ─── HEADER + CONTROLS ──────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
         <h2 className="text-2xl font-semibold text-primary">RSVPs</h2>
         <div className="flex flex-wrap gap-2">
+          <Link to="/app/rsvps/designer">
+            <Button variant="secondary">Design RSVP Card</Button>
+          </Link>
           <Button onClick={() => setModal({ open: true })}>+ New RSVP</Button>
           <Button variant="secondary" onClick={handleImportClick}>
             Import CSV/XLSX

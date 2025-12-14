@@ -29,10 +29,13 @@ export interface FormFieldConfig {
 export type QuestionPayload = FormFieldConfig;
 
 /** Optional: fetcher (kept as-is) */
-export function useFormFields(eventId: string) {
+export function useFormFields(eventId?: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["formFields", eventId],
+    enabled: !!eventId && (options?.enabled ?? true),
     queryFn: async () => {
+      if (!eventId) return [] as FormFieldConfig[];
+
       const res = await client.get(FormFieldsEndpoints.all(eventId));
       const raw = res.data?.data ?? [];
 

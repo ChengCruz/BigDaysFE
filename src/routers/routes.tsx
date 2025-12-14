@@ -11,6 +11,8 @@ import EventsPage from "../components/pages/Events/EventsPage";
 import EditEventModal from "../components/pages/Events/EditEventModal";
 
 import RsvpsPage from "../components/pages/RSVPs/RsvpsPage";
+import RsvpDesignPage from "../components/pages/RSVPs/RsvpDesignPage";
+import RsvpSharePreviewPage from "../components/pages/RSVPs/RsvpSharePreviewPage";
 // import RsvpDetail from "../components/pages/RSVPs/RsvpDetail";
 // import rsvp from "../components/pages/RSVPs/NewRsvpModal";
 // import EditRsvpModal from "../components/pages/RSVPs/EditRsvpModal";
@@ -65,6 +67,7 @@ export default function AppRoutes() {
         {/* public landing pages */}
         <Route path="/events" element={<EventPublicPage />} />
         <Route path="/rsvp" element={<RSVPPublicPage />} />
+        <Route path="/rsvp/share/:token" element={<RsvpSharePreviewPage />} />
         {/* … other public pages … */}
       </Route>
 
@@ -86,6 +89,7 @@ export default function AppRoutes() {
         {/* RSVPs (no :eventId in the URL) */}
         <Route path="rsvps" element={<Outlet />}>
           <Route index element={<RsvpsPage />} />
+          <Route path="designer" element={<RsvpDesignPage />} />
           <Route path="new" element={<NewRsvpModal />} />
           <Route path=":id/edit" element={<EditRsvpModal />} />
         </Route>

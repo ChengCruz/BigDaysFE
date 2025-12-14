@@ -14,6 +14,8 @@ export function Navbar({
   const { logout } = useAuth();
   const { event, openSelector } = useEventContext();
 
+  const eventDate = event?.date ? new Date(event.date).toLocaleDateString() : null;
+
   return (
     <header className="flex items-center justify-between px-6 py-4 bg-background text-text border-b border-gray-200 shadow">
       {onMenuToggle && (
@@ -25,9 +27,20 @@ export function Navbar({
           <MenuIcon className="h-6 w-6" />
         </button>
       )}
-      <h1 className="text-xl font-bold">
-        {event?.title ?? "Select Event"}
-      </h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+        <h1 className="text-xl font-bold">{event?.title ?? "Select Event"}</h1>
+        {event && (
+          <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+            {eventDate && (
+              <span className="px-2 py-1 rounded-full bg-gray-100">Date: {eventDate}</span>
+            )}
+            {event.location && (
+              <span className="px-2 py-1 rounded-full bg-gray-100">Venue: {event.location}</span>
+            )}
+            <span className="px-2 py-1 rounded-full bg-secondary/10 text-secondary">Tables: {event.noOfTable ?? "-"}</span>
+          </div>
+        )}
+      </div>
       <div className="flex items-center space-x-4">
         <Button variant="secondary" onClick={openSelector}>
           Change Event
