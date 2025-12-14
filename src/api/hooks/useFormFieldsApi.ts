@@ -104,7 +104,7 @@ export function useDeleteFormField(eventId?: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () =>
-      client.delete(FormFieldsEndpoints.deactivate()).then((r) => r.data),
+      client.post(FormFieldsEndpoints.deactivate()).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["formFields", eventId] }),
   });
 }
