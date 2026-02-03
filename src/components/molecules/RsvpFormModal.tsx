@@ -26,18 +26,25 @@ export const RsvpFormModal: React.FC<Props> = ({
   const [guestName, setGuestName] = useState(
     initial?.guestName || initial?.name || ""
   );
+  const [noOfPax, setNoOfPax] = useState<string | number>(initial?.noOfPax || 1);
   const [phoneNo, setPhoneNo] = useState(initial?.phoneNo || "");
+  const [remarks, setRemarks] = useState(initial?.remarks || "");
   const [status, setStatus] = useState(initial?.status || "Yes");
   const [guestType, setGuestType] = useState(initial?.guestType || "Family");
 
   const [extras, setExtras] = useState<Record<string, string>>({});
   const { data: formFields = [] } = useFormFields(eventId);
   const [initialized, setInitialized] = useState(false);
+  const [guestNameError, setGuestNameError] = useState("");
+  const [phoneNoError, setPhoneNoError] = useState("");
+  const [noOfPaxError, setNoOfPaxError] = useState("");
 
   useEffect(() => {
     if (isOpen && !initialized) {
       setGuestName(initial?.name ?? "");
+      setNoOfPax(initial?.noOfPax ?? 1);
       setPhoneNo((initial as any)?.phoneNo ?? "");
+      setRemarks(initial?.remarks ?? "");
       setStatus(initial?.status ?? "Yes");
       // setGuestType(initial?.guestType ?? "Family");
       setExtras(
@@ -47,6 +54,10 @@ export const RsvpFormModal: React.FC<Props> = ({
           return acc;
         }, {} as Record<string, string>)
       );
+      // Clear all errors when modal opens
+      setGuestNameError("");
+      setPhoneNoError("");
+      setNoOfPaxError("");
       setInitialized(true);
     }
     if (!isOpen) {
@@ -56,14 +67,53 @@ export const RsvpFormModal: React.FC<Props> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    let hasError = false;
+    
+    // Validate guest name
+    if (!guestName || guestName.trim() === "") {
+      setGuestNameError("Guest name is required");
+      hasError = true;
+    } else {
+      setGuestNameError("");
+    }
+    
+    // Validate phone number
+    if (!phoneNo || phoneNo.trim() === "") {
+      setPhoneNoError("Phone number is required");
+      hasError = true;
+    } else {
+      setPhoneNoError("");
+    }
+    
+    // Validate noOfPax
+    if (!noOfPax && noOfPax !== 0 && noOfPax !== "0") {
+      setNoOfPaxError("Number of pax is required");
+      hasError = true;
+    } else if (Number(noOfPax) < 0) {
+      setNoOfPaxError("Number of pax cannot be negative");
+      hasError = true;
+    } else if (!Number.isInteger(Number(noOfPax))) {
+      setNoOfPaxError("Number of pax must be a whole number");
+      hasError = true;
+    } else {
+      setNoOfPaxError("");
+    }
+    
+    // If any validation failed, stop submission
+    if (hasError) {
+      return;
+    }
+    
     const actor = user?.id ?? user?.name ?? "System";
     const payload: CreateRsvpInput = {
       eventId,
-      guestName: guestName,
+      guestName: guestName.trim(),
+      noOfPax: Number(noOfPax),
       status,
       guestType,
-      remarks: "", // Placeholder; can be extended to include remarks in the form
-      phoneNo: phoneNo,
+      remarks: remarks.trim(),
+      phoneNo: phoneNo.trim(),
       ...extras,
     };
 
@@ -84,21 +134,58 @@ export const RsvpFormModal: React.FC<Props> = ({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Guest Name */}
-        <FormField
-          label="Guest Name"
-          value={guestName}
-          onChange={(e) => setGuestName(e.target.value)}
-        />
+        <div>
+          <FormField
+            label="Guest Name"
+            value={guestName}
+            onChange={(e) => {
+              setGuestName(e.target.value);
+              setGuestNameError(""); // Clear error when user types
+            }}
+            required
+          />
+          {guestNameError && (
+            <p className="text-red-500 text-sm mt-1">{guestNameError}</p>
+          )}
+        </div>
+
+        {/* No Of Pax */}
+        <div>
+          <FormField
+            label="No Of Pax"
+            type="number"
+            value={String(noOfPax)}
+            onChange={(e) => {
+              setNoOfPax(e.target.value);
+              setNoOfPaxError(""); // Clear error when user types
+            }}
+            min={0}
+            step={1}
+            required
+          />
+          {noOfPaxError && (
+            <p className="text-red-500 text-sm mt-1">{noOfPaxError}</p>
+          )}
+        </div>
 
         {/* Phone number */}
-        <FormField
-          label="Phone"
-          value={phoneNo}
-          onChange={(e) => setPhoneNo(e.target.value)}
-        />
+        <div>
+          <FormField
+            label="Phone"
+            value={phoneNo}
+            onChange={(e) => {
+              setPhoneNo(e.target.value);
+              setPhoneNoError(""); // Clear error when user types
+            }}
+            required
+          />
+          {phoneNoError && (
+            <p className="text-red-500 text-sm mt-1">{phoneNoError}</p>
+          )}
+        </div>
 
         {/* —— Guest Type Select —— */}
-        <div>
+        <div style={{ display: 'none' }}>
           <label className="block mb-1">Guest Type</label>
           <select
             className="w-full border rounded p-2 focus:ring-2 focus:ring-primary"
@@ -114,7 +201,7 @@ export const RsvpFormModal: React.FC<Props> = ({
         </div>
 
         {/* —— Status Select —— */}
-        <div>
+        <div style={{ display: 'none' }}>
           <label className="block mb-1">Reservation Status</label>
           <select
             className="w-full border rounded p-2 focus:ring-2 focus:ring-primary"
@@ -127,6 +214,18 @@ export const RsvpFormModal: React.FC<Props> = ({
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Remarks */}
+        <div>
+          <label className="block mb-1">Remarks</label>
+          <textarea
+            className="w-full border rounded p-2 focus:ring-2 focus:ring-primary"
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+            rows={3}
+            placeholder="Add any additional notes or remarks..."
+          />
         </div>
 
         {/* —— Dynamic Extra Fields —— */}

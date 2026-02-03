@@ -50,13 +50,6 @@ export default function RsvpsPage() {
     return okType && okSearch;
   });
 
-  // Background colors by status
-  const cardBgClasses: Record<string, string> = {
-    Yes: "bg-green-50",
-    No: "bg-red-50",
-    Maybe: "bg-yellow-50",
-  };
-
   const totals = rsvps.reduce(
     (acc, r) => {
       acc.total += 1;
@@ -221,110 +214,107 @@ export default function RsvpsPage() {
       {/* ─── GRID VIEW ─────────────────────────────────────────── */}
       {viewMode === "grid" && (
         <ul className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {filtered.map((r) => (
-                <li
-              key={r.id}
-              className={`
-                relative p-4 rounded-lg shadow flex flex-col justify-between
-                ${cardBgClasses[r.status ?? ""] || "bg-white"}
-              `}
-            >
-              <span
-                role="status"
-                aria-label={`RSVP status: ${r.status}`}
-                className={`absolute top-2 right-2 inline-block px-2 py-0.5 rounded-full text-xs font-semibold
-                  ${
-                    r.status === "Yes"
-                      ? "bg-green-600 text-white"
-                      : r.status === "No"
-                      ? "bg-red-600 text-white"
-                      : "bg-yellow-600 text-white"
-                  }
+          {filtered.map((r) => {
+            // Determine status based on noOfPax
+            const nop = r.noOfPax ?? 0;
+            const displayStatus = nop > 0 ? "Yes" : "No";
+            const statusColor = nop > 0 ? "bg-green-600 text-white" : "bg-red-600 text-white";
+            const cardBg = nop > 0 ? "bg-green-50" : "bg-red-50";
+
+            return (
+              <li
+                key={r.id}
+                className={`
+                  relative p-4 rounded-lg shadow flex flex-col justify-between
+                  ${cardBg}
                 `}
               >
-                {r.status}
-              </span>
-
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold">{r.guestName}</h3>
-                {r.phoneNo && (
-                  <p className="text-sm text-gray-600">Phone: {r.phoneNo}</p>
-                )}
                 <span
-                  className={`
-                    inline-block px-2 py-0.5 rounded-full text-sm font-medium border-2
-                    ${
-                      r.guestType === "Family"
-                        ? "border-blue-600 text-blue-600"
-                        : r.guestType === "VIP"
-                        ? "border-purple-600 text-purple-600"
-                        : r.guestType === "Friend"
-                        ? "border-indigo-600 text-indigo-600"
-                        : "border-gray-400 text-gray-600"
-                    }
-                  `}
+                  role="status"
+                  aria-label={`RSVP status: ${displayStatus}`}
+                  className={`absolute top-2 right-2 inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${statusColor}`}
                 >
-                  {r.guestType}
+                  {displayStatus}
                 </span>
-              </div>
 
-              <div className="mt-4 flex space-x-2">
-                <Button
-                  variant="secondary"
-                  onClick={() => setModal({ open: true, rsvp: r })}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    deleteRsvp.mutate({ rsvpGuid: r.rsvpGuid ?? r.rsvpId ?? r.id, eventId: eventId! })
-                  }
-                >
-                  Delete
-                </Button>
-              </div>
-            </li>
-          ))}
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold">{r.guestName}</h3>
+                  {r.phoneNo && (
+                    <p className="text-sm text-gray-600">Phone: {r.phoneNo}</p>
+                  )}
+                  {(r.noOfPax !== undefined && r.noOfPax !== null) && (
+                    <p className="text-sm text-gray-600">Pax: {r.noOfPax}</p>
+                  )}
+                  {/* Guest type tag (Friend/Family/VIP) hidden as requested */}
+                </div>
+
+                <div className="mt-4 flex space-x-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setModal({ open: true, rsvp: r })}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() =>
+                      deleteRsvp.mutate({ rsvpGuid: r.rsvpGuid ?? r.rsvpId ?? r.id, eventId: eventId! })
+                    }
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
 
       {/* ─── LIST VIEW ──────────────────────────────────────────── */}
       {viewMode === "list" && (
         <ul className="space-y-2">
-            {filtered.map((r) => (
-            <li
-              key={r.id}
-              className="flex items-center justify-between p-4 bg-white rounded shadow"
-            >
-              <div className="flex-1">
-                <p className="font-medium">{r.guestName}</p>
-                <p className="text-sm text-gray-600">
-                  <span className="mr-2">Status: {r.status}</span>
-                  <span>Type: {r.guestType}</span>
-                </p>
-                {r.phoneNo && (
-                  <p className="text-sm text-gray-600">Phone: {r.phoneNo}</p>
-                )}
-              </div>
-              <div className="flex space-x-2">
-                <Button
-                  variant="secondary"
-                  onClick={() => setModal({ open: true, rsvp: r })}
+            {filtered.map((r) => {
+              // Determine background color based on noOfPax
+              const nop = r.noOfPax ?? 0;
+              const cardBg = nop > 0 ? "bg-green-50" : "bg-red-50";
+
+              return (
+                <li
+                  key={r.id}
+                  className={`flex items-center justify-between p-4 rounded shadow ${cardBg}`}
                 >
-                  Edit
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    deleteRsvp.mutate({ rsvpGuid: r.rsvpGuid ?? r.rsvpId ?? r.id, eventId: eventId! })
-                  }
-                >
-                  Delete
-                </Button>
-              </div>
-            </li>
-          ))}
+                  <div className="flex-1">
+                    <p className="font-medium">{r.guestName}</p>
+                    <p className="text-sm text-gray-600" style={{display:'none'}}>
+                      <span className="mr-2">Status: {r.status}</span>
+                      <span>Type: {r.guestType}</span>
+                    </p>
+                    {r.phoneNo && (
+                      <p className="text-sm text-gray-600">Phone: {r.phoneNo}</p>
+                    )}
+                    {(r.noOfPax !== undefined && r.noOfPax !== null) && (
+                      <p className="text-sm text-gray-600">Pax: {r.noOfPax}</p>
+                    )}
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setModal({ open: true, rsvp: r })}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={() =>
+                        deleteRsvp.mutate({ rsvpGuid: r.rsvpGuid ?? r.rsvpId ?? r.id, eventId: eventId! })
+                      }
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </li>
+              );
+            })}
         </ul>
       )}
 
