@@ -1,86 +1,87 @@
 // src/api/endpoints.ts
 
 export const AuthEndpoints = {
-  login: "/auth/login", // POST { email, password } → { token, user }
-  me: "/auth/me", // GET → { id, name, email, roles… }
+  login: "/v1/auth/login", // POST { email, password } → { token, user }
+  me: "/v1/auth/me", // GET → { id, name, email, roles… }
 };
 
 export const EventsEndpoints = {
-  all: "/event/GetEventsList",
-  byId: (id: string) => `/event/${id}`,
-  create: "/event/Create",
-  update: `/event/Update`,
-  updateTableQuantity: `/event/UpdateTableQuantity`,
-  activateEvent: (id: string) => `/event/Activate/${id}`,
-  deactivateEvent: (id: string) => `/event/Deactivate/${id}`,
-  previewEvent: `/event/Preview`,
-  delete: (id: string) => `/events/${id}`,
-  importRsvps: (eventId: string) => `/events/${eventId}/rsvps/import`,
-  exportRsvps: (eventId: string) => `/events/${eventId}/rsvps/export`,
+  all: "/v1/event/GetEventsList",
+  byId: (id: string) => `/v1/event/${id}`,
+  create: "/v1/event/Create",
+  update: `/v1/event/Update`,
+  updateTableQuantity: `/v1/event/UpdateTableQuantity`,
+  activateEvent: (id: string) => `/v1/event/Activate/${id}`,
+  deactivateEvent: (id: string) => `/v1/event/Deactivate/${id}`,
+  previewEvent: `/v1/event/Preview`,
+  delete: (id: string) => `/v1/events/${id}`,
+  importRsvps: (eventId: string) => `/v1/events/${eventId}/rsvps/import`,
+  exportRsvps: (eventId: string) => `/v1/events/${eventId}/rsvps/export`,
 };
 
 export const RsvpsEndpoints = {
-  all: (eventId: string) => `/rsvp/GetRsvp/List/${eventId}`,
+  all: (eventId: string) => `/v1/rsvp/GetRsvp/List/${eventId}`,
   // byId:   (id: string) => `/rsvps/${id}`,
   // ← add this!  “give me the RSVPs for a specific event”
-  forEvent: (eventId: string) => `/rsvp/GetRsvp/List/${eventId}`,
-  byId: (eventId: string, id: string) => `/events/${eventId}/rsvps/${id}`,
+  forEvent: (eventId: string) => `/v1/rsvp/GetRsvp/List/${eventId}`,
+  byId: (eventId: string, id: string) => `/v1/events/${eventId}/rsvps/${id}`,
 
-  create: () => `/rsvp/Create`,
-  update: () => `/rsvp/Update`,
-  delete: () => `/rsvp/Delete`,
+  create: () => `/v1/rsvp/Create`,
+  update: () => `/v1/rsvp/Update`,
+  delete: () => `/v1/rsvp/Delete`,
 };
 
 // src/api/endpoints.ts
 // src/api/endpoints.ts
 export const TablesEndpoints = {
-  all: "/tables",
-  byId: (id: string) => `/tables/${id}`,
-  create: "/tables",
-  update: (id: string) => `/tables/${id}`,
-  delete: (id: string) => `/tables/${id}`,
+ // all: (id:string)=>`/v1/TableArrangement/ByEvent/${id}`,
+  all: (id:string)=>`/v1/TableArrangement/Summary/${id}`,
+  byId: (id: string) => `/v1/TableArrangement/Summary/${id}`,
+  create: "/v1/TableArrangement/Create",
+  update: (id: string) => `/v1/TableArrangement/${id}`,
+  delete: (tableId: string) => `/v1/TableArrangement/${tableId}`,
 
   // ← NEW:
-  tableGuests: (id: string) => `/tables/${id}/guests`,
+  tableGuests: (id: string) => `/v1/tables/${id}/guests`,
   reassignGuest: (tableId: string, guestId: string) =>
-    `/tables/${tableId}/guests/${guestId}/reassign`,
+    `/v1/tables/${tableId}/guests/${guestId}/reassign`,
 };
 
 export const SeatingEndpoints = {
-  all: "/seating",
-  byId: (id: string) => `/seating/${id}`,
-  create: "/seating",
-  update: (id: string) => `/seating/${id}`,
-  delete: (id: string) => `/seating/${id}`,
+  all: "/v1/seating",
+  byId: (id: string) => `/v1/seating/${id}`,
+  create: "/v1/seating",
+  update: (id: string) => `/v1/seating/${id}`,
+  delete: (id: string) => `/v1/seating/${id}`,
 };
 
 export const UsersEndpoints = {
-  all: "/users",
-  byId: (id: string) => `/users/${id}`,
-  create: "/users",
-  update: (id: string) => `/users/${id}`,
-  delete: (id: string) => `/users/${id}`,
+  all: "/v1/users",
+  byId: (id: string) => `/v1/users/${id}`,
+  create: "/v1/users",
+  update: (id: string) => `/v1/users/${id}`,
+  delete: (id: string) => `/v1/users/${id}`,
 };
 
 export const CostingEndpoints = {
-  all: "/costing",
-  byId: (id: string) => `/costing/${id}`,
-  create: "/costing",
-  update: (id: string) => `/costing/${id}`,
-  delete: (id: string) => `/costing/${id}`,
+  all: "/v1/costing",
+  byId: (id: string) => `/v1/costing/${id}`,
+  create: "/v1/costing",
+  update: (id: string) => `/v1/costing/${id}`,
+  delete: (id: string) => `/v1/costing/${id}`,
 };
 
 export const FormFieldsEndpoints = {
-  all: (eventId: string) => `/question/GetQuestions/${eventId}`,
-  create: () => `/question/Create`,
-  update: () => `/question/Update`,
-    activate: () => `/question/Activate`,
-  deactivate: () => `/question/Deactivate`,
+  all: (eventId: string) => `/v1/question/GetQuestions/${eventId}`,
+  create: () => `/v1/question/Create`,
+  update: () => `/v1/question/Update`,
+    activate: () => `/v1/question/Activate`,
+  deactivate: () => `/v1/question/Deactivate`,
   delete: (eventId: string, id: string) =>
-    `/events/${eventId}/rsvp-form-fields/${id}`,
+    `/v1/events/${eventId}/rsvp-form-fields/${id}`,
 };
 
 export const PublicRsvpEndpoints = {
-  submit: (eventId: string) => `/events/${eventId}/rsvps/public`,
+  submit: (eventId: string) => `/v1/events/${eventId}/rsvps/public`,
 };
 // … later you can add RSVPs, Tables, Seating, Users, Costing, etc.
