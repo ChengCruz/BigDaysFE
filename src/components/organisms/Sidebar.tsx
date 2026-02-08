@@ -11,6 +11,7 @@ import {
   TableIcon,
   CurrencyDollarIcon,
   SparklesIcon,
+  UserGroupIcon,
 } from "@heroicons/react/solid";
 import { useEventContext } from "../../context/EventContext";
 import { Button } from "../atoms/Button";
@@ -25,10 +26,10 @@ interface SidebarLink {
 const links: SidebarLink[] = [
   { to: "/app/events", label: "Events", Icon: CalendarIcon, description: "Manage dates & details" },
   { to: "/app/rsvps", label: "RSVPs", Icon: ClipboardListIcon, description: "Guest responses" },
-  { to: "/app/tables", label: "Tables", Icon: TableIcon, description: "Layouts & seats" },
-  { to: "/app/seating", label: "Seating", Icon: CogIcon, description: "Assignments" },
+  { to: "/app/guests", label: "Guests", Icon: UserGroupIcon, description: "Guest list" },
+  { to: "/app/tables", label: "Tables", Icon: TableIcon, description: "Seating & arrangements" },
   { to: "/app/users", label: "Users", Icon: UserIcon, description: "Team" },
-  { to: "/app/costing", label: "Costing", Icon: CurrencyDollarIcon, description: "Budget" },
+  { to: "/app/costing", label: "Wallet", Icon: CurrencyDollarIcon, description: "Budget" },
 ];
 
 interface SidebarProps {

@@ -17,6 +17,8 @@ import RsvpSharePreviewPage from "../components/pages/RSVPs/RsvpSharePreviewPage
 // import rsvp from "../components/pages/RSVPs/NewRsvpModal";
 // import EditRsvpModal from "../components/pages/RSVPs/EditRsvpModal";
 
+import GuestsPage from "../components/pages/Guests/GuestsPage";
+
 import TablesPage from "../components/pages/Tables/TablesPage";
 // import TableDetail from "../components/pages/Tables/TableDetail";
 // import TableFormModal from "../components/molecules/TableFormModal";
@@ -93,6 +95,9 @@ export default function AppRoutes() {
           <Route path="new" element={<NewRsvpModal />} />
           <Route path=":id/edit" element={<EditRsvpModal />} />
         </Route>
+
+        {/* GUESTS */}
+        <Route path="guests" element={<GuestsPage />} />
 
         {/* ─── TABLES ─────────────────────────────────────────── */}
 <Route path="tables" element={<Outlet/>}>

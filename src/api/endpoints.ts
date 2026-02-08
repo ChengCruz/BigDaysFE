@@ -38,13 +38,24 @@ export const TablesEndpoints = {
   all: (id:string)=>`/v1/TableArrangement/Summary/${id}`,
   byId: (id: string) => `/v1/TableArrangement/Summary/${id}`,
   create: "/v1/TableArrangement/Create",
-  update: (id: string) => `/v1/TableArrangement/${id}`,
-  delete: (tableId: string) => `/v1/TableArrangement/${tableId}`,
+  bulkCreate: "/v1/TableArrangement/BulkCreate",
+  update: "/v1/TableArrangement/Update",  // For table info & assignments
+  delete: (tableId: string) => `/v1/TableArrangement/Delete/${tableId}`,
+  
+  // Table Layout Module (separate API)
+  updateLayout: (id: string) => `/v1/tables/${id}/layout`,  // Different module/API
 
   // ← NEW:
   tableGuests: (id: string) => `/v1/tables/${id}/guests`,
   reassignGuest: (tableId: string, guestId: string) =>
     `/v1/tables/${tableId}/guests/${guestId}/reassign`,
+};
+
+export const GuestEndpoints = {
+  all: (id:string)=>`/v1/Guest/ByEvent/${id}`,
+  byTable: (tableId: string)=>`/v1/Guest/ByTable/${tableId}`,
+  assignTable: (guestId: string, tableId: string) => `/v1/Guest/${guestId}/AssignTable/${tableId}`,
+  unassignTable: (guestId: string) => `/v1/Guest/${guestId}/UnassignTable`,
 };
 
 export const SeatingEndpoints = {
