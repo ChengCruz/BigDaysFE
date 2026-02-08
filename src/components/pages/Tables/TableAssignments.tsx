@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useEventContext } from "../../../context/EventContext";
-import { useRsvpsApi } from "../../../api/hooks/useRsvpsApi";
+import { useGuestsApi } from "../../../api/hooks/useGuestsApi";
 import {
   useTableApi,
   useUpdateTableExtras,
+  useAssignGuestToTable,
+  useUnassignGuestFromTable,
 } from "../../../api/hooks/useTablesApi";
-import { useReassignGuest } from "../../../api/hooks/useTablesApi";
 import { Button } from "../../atoms/Button";
 
 export function TableAssignments() {
@@ -14,17 +15,18 @@ export function TableAssignments() {
   const { eventId } = useEventContext();
 
   const { data: table, isLoading: loadingTable } = useTableApi(tableId!);
-  const { data: rsvps = [], isLoading: loadingRsvps } = useRsvpsApi(eventId!);
+  const { data: guests = [], isLoading: loadingGuests } = useGuestsApi(eventId!);
 
-  const reassign = useReassignGuest(tableId!, eventId!);
-  const updateExtras = useUpdateTableExtras(tableId!);
+  const assignGuest = useAssignGuestToTable(eventId!);
+  const unassignGuest = useUnassignGuestFromTable(eventId!);
+  const updateExtras = useUpdateTableExtras(tableId!, eventId);
 
   const [extra, setExtra] = useState(table?.extraGuests || 0);
 
-  if (loadingTable || loadingRsvps) return <p>Loading…</p>;
+  if (loadingTable || loadingGuests) return <p>Loading…</p>;
 
-  const assigned = rsvps.filter((r: any) => r.tableId === tableId);
-  const unassigned = rsvps.filter((r: any) => !r.tableId);
+  const assigned = guests.filter((g: any) => g.tableId === tableId);
+  const unassigned = guests.filter((g: any) => !g.tableId);
 
   return (
     <div className="grid md:grid-cols-2 gap-8">
@@ -34,17 +36,17 @@ export function TableAssignments() {
           <p>All guests are assigned.</p>
         ) : (
           <ul className="mt-2 space-y-2">
-            {unassigned.map((r) => (
+            {unassigned.map((g) => (
               <li
-                key={r.id}
+                key={g.id}
                 className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded shadow-sm"
               >
-                <span>{r.guestName}</span>
+                <span>{g.guestName || g.name}</span>
                 <Button
                   onClick={() =>
-                    reassign.mutate({
-                      guestId: r.id,
-                      newTableId: tableId!,
+                    assignGuest.mutate({
+                      guestId: g.id,
+                      tableId: tableId!,
                     })
                   }
                 >
@@ -62,20 +64,15 @@ export function TableAssignments() {
           <p>No one assigned yet.</p>
         ) : (
           <ul className="mt-2 space-y-2">
-            {assigned.map((r) => (
+            {assigned.map((g) => (
               <li
-                key={r.id}
+                key={g.id}
                 className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded shadow-sm"
               >
-                <span>{r.guestName}</span>
+                <span>{g.guestName || g.name}</span>
                 <Button
                   variant="secondary"
-                  onClick={() =>
-                    reassign.mutate({
-                      guestId: r.id,
-                      newTableId: "",
-                    })
-                  }
+                  onClick={() => unassignGuest.mutate(g.id)}
                 >
                   ← Unassign
                 </Button>
@@ -94,7 +91,11 @@ export function TableAssignments() {
             <Button onClick={() => setExtra((x) => x + 1)}>＋</Button>
             <Button
               variant="primary"
-              onClick={() => updateExtras.mutate({ extraGuests: extra })}
+              onClick={() => updateExtras.mutate({ 
+                extraGuests: extra,
+                tableName: table?.name || "",
+                maxSeats: table?.capacity || 0
+              })}
             >
               Save
             </Button>

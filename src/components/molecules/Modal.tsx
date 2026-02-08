@@ -28,9 +28,9 @@ export const Modal: React.FC<ModalProps> = ({
       >
         <div className="flex justify-between items-center mb-4">
           {title && <h3 className="text-lg font-semibold">{title}</h3>}
-          <Button onClick={onClose} variant="secondary">
+          {/* <Button onClick={onClose} variant="secondary">
             Close
-          </Button>
+          </Button> */}
         </div>
         <div>{children}</div>
       </div>

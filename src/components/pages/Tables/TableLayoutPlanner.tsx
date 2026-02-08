@@ -5,11 +5,13 @@ import {
   useUpdateTableLayout,
 } from "../../../api/hooks/useTablesApi";
 import { useParams } from "react-router-dom";
+import { useEventContext } from "../../../context/EventContext";
 
 export function TableLayoutPlanner() {
   const { tableId } = useParams<{ tableId: string }>();
+  const { eventId } = useEventContext();
   const { data: table, isLoading, error } = useTableApi(tableId!);
-  const updateLayout = useUpdateTableLayout(tableId!);
+  const updateLayout = useUpdateTableLayout(tableId!, eventId);
 
   const [positions, setPositions] = useState(
     () =>
