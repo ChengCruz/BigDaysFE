@@ -34,10 +34,7 @@ import UsersPage from "../components/pages/Users/UsersPage";
 // import UserFormModal from "../components/molecules/UserFormModal";
 import EditUserModal from "../components/pages/Users/EditUserModal";
 
-import CostingPage from "../components/pages/Costing/CostingPage";
-// import CostDetail from "../components/pages/Costing/CostDetail";
-// import CostFormModal from "../components/molecules/CostFormModal";
-import EditCostModal from "../components/pages/Costing/EditCostModal";
+import WalletPage from "../components/pages/Wallet/WalletPage";
 
 import RSVPPublicPage from "../components/pages/Public/RSVPPublic/RSVPPublicPage";
 import EventPublicPage from "../components/pages/Public/EventsPublic/EventsPublicPage";
@@ -136,15 +133,8 @@ export default function AppRoutes() {
           <Route path=":id/edit" element={<EditUserModal />} />
         </Route>
 
-        {/* COSTING */}
-        <Route path="costing" element={<Outlet />}>
-          <Route index element={<CostingPage />} />
-          <Route
-            path="new"
-            element={<CostFormModal isOpen onClose={() => navigate(-1)} />}
-          />
-          <Route path=":id/edit" element={<EditCostModal />} />
-        </Route>
+        {/* WALLET */}
+        <Route path="wallet" element={<WalletPage />} />
 
         {/* any other /app/* → back to events */}
         <Route path="*" element={<Navigate to="/app/events" replace />} />

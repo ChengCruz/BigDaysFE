@@ -74,12 +74,24 @@ export const UsersEndpoints = {
   delete: (id: string) => `/v1/users/${id}`,
 };
 
-export const CostingEndpoints = {
-  all: "/v1/costing",
-  byId: (id: string) => `/v1/costing/${id}`,
-  create: "/v1/costing",
-  update: (id: string) => `/v1/costing/${id}`,
-  delete: (id: string) => `/v1/costing/${id}`,
+export const WalletEndpoints = {
+  getByEvent: (eventGuid: string) => `/v1/Wallet/GetWalletByEvent/${eventGuid}`,
+  getByGuid: (walletGuid: string, eventId: string) => `/v1/Wallet/${walletGuid}?eventId=${eventId}`,
+  create: "/v1/Wallet/Create",
+  update: "/v1/Wallet/Update",
+  delete: "/v1/Wallet/Delete",
+  activate: (id: string) => `/v1/Wallet/Activate/${id}`,
+  deactivate: (id: string) => `/v1/Wallet/Deactivate/${id}`,
+};
+
+export const TransactionEndpoints = {
+  getByWallet: (walletGuid: string, eventGuid: string) => 
+    `/v1/Transaction/${walletGuid}/transactions?eventGuid=${eventGuid}`,
+  getById: (transactionId: string, eventGuid: string) => 
+    `/v1/Transaction/${transactionId}?eventGuid=${eventGuid}`,
+  create: "/v1/Transaction/Create",
+  update: "/v1/Transaction/Update",
+  delete: "/v1/Transaction/Delete",
 };
 
 export const FormFieldsEndpoints = {
