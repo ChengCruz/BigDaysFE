@@ -155,11 +155,17 @@ export default function RsvpsPage() {
             <Button variant="secondary">Design RSVP Card</Button>
           </Link>
           <Button onClick={() => setModal({ open: true })}>+ New RSVP</Button>
-          <Button variant="secondary" onClick={handleImportClick}>
-            Import CSV/XLSX
+          <Button disabled variant="secondary" onClick={handleImportClick}>
+            Import CSV/XLSX   
+            <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-0.5 rounded-full ml-1">
+              Coming Soon
+            </span>
           </Button>
-          <Button variant="secondary" onClick={handleExport}>
+          <Button disabled variant="secondary" onClick={handleExport}>
             Export Excel
+            <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-0.5 rounded-full ml-1">
+              Coming Soon
+            </span>
           </Button>
         </div>
       </div>

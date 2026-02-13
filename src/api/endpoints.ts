@@ -107,4 +107,9 @@ export const FormFieldsEndpoints = {
 export const PublicRsvpEndpoints = {
   submit: (eventId: string) => `/v1/events/${eventId}/rsvps/public`,
 };
-// … later you can add RSVPs, Tables, Seating, Users, Costing, etc.
+
+export const RsvpDesignEndpoints = {
+  get: (eventGuid: string) => `/api/v1/RsvpDesign/${eventGuid}/design`,
+  save: (eventGuid: string) => `/api/v1/RsvpDesign/${eventGuid}/design`,
+  publish: (eventGuid: string, version: number) => `/api/v1/RsvpDesign/${eventGuid}/design/${version}/publish`,
+};

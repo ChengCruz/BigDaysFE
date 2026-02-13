@@ -49,8 +49,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
   // Clone children and inject the close handler
   const childrenWithProps = React.Children.map(children, (child) => {
-    if (React.isValidElement(child) && child.type === DropdownItem) {
-      return React.cloneElement(child as React.ReactElement<DropdownItemProps>, {
+    if (React.isValidElement<DropdownItemProps>(child) && child.type === DropdownItem) {
+      return React.cloneElement(child, {
         onClick: () => handleItemClick(child.props.onClick),
       });
     }

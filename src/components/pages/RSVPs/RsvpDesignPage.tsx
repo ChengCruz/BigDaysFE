@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { Button } from "../../atoms/Button";
 import { useEventContext } from "../../../context/EventContext";
 import { useFormFields, type FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
+import { useRsvpDesign, useSaveRsvpDesign } from "../../../api/hooks/useRsvpDesignApi";
+import type { RsvpDesign } from "../../../types/rsvpDesign";
 
 // Types for flexible RSVP card blocks
  type BlockMedia = { id: string; src: string; alt?: string };
@@ -364,7 +366,13 @@ export function FullPagePreview({
 export default function RsvpDesignPage() {
   const { event, eventId } = useEventContext() ?? {};
   const { data: serverFormFields = [], isFetching } = useFormFields(eventId, { enabled: !!eventId });
+  
+  // API integration for loading/saving design
+  const { data: savedDesign, isLoading: isLoadingDesign } = useRsvpDesign(eventId ?? "");
+  const { mutate: saveDesign, isPending: isSaving, isSuccess: isSaveSuccess, data: saveResponse } = useSaveRsvpDesign(eventId ?? "");
+  
   const [availableQuestions, setAvailableQuestions] = useState<FormFieldConfig[]>([]);
+  const [isDesignLoaded, setIsDesignLoaded] = useState(false);
   const [blocks, setBlocks] = useState<RsvpBlock[]>([
     {
       id: uid(),
@@ -409,6 +417,7 @@ export default function RsvpDesignPage() {
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [publicLink, setPublicLink] = useState<string | null>(null);
   const [shareToken, setShareToken] = useState<string | null>(null);
+  const [version, setVersion] = useState<number | undefined>(undefined);
   const [linkCopied, setLinkCopied] = useState(false);
   const objectUrlRefs = useRef<string[]>([]);
 
@@ -427,6 +436,57 @@ export default function RsvpDesignPage() {
   }, []);
 
   useEffect(() => () => objectUrlRefs.current.forEach((url) => URL.revokeObjectURL(url)), []);
+
+  // Update version from save response
+  useEffect(() => {
+    if (saveResponse?.data?.version !== undefined) {
+      setVersion(saveResponse.data.version);
+    }
+  }, [saveResponse]);
+
+  // Load saved design from backend when available
+  useEffect(() => {
+    if (savedDesign && !isDesignLoaded) {
+      // Populate state with saved design
+      if (savedDesign.blocks && savedDesign.blocks.length > 0) {
+        setBlocks(savedDesign.blocks);
+      }
+      if (savedDesign.globalBackgroundType) {
+        setGlobalBackgroundType(savedDesign.globalBackgroundType);
+      }
+      if (savedDesign.globalBackgroundAsset) {
+        setGlobalBackgroundAsset(savedDesign.globalBackgroundAsset);
+      }
+      if (savedDesign.globalBackgroundColor) {
+        setGlobalBackgroundColor(savedDesign.globalBackgroundColor);
+      }
+      if (savedDesign.globalOverlay !== undefined) {
+        setGlobalOverlay(savedDesign.globalOverlay);
+      }
+      if (savedDesign.accentColor) {
+        setAccentColor(savedDesign.accentColor);
+      }
+      if (savedDesign.flowPreset) {
+        setFlowPreset(savedDesign.flowPreset);
+      }
+      
+      // Load version from backend (needed for publish endpoint)
+      if (savedDesign.version !== undefined) {
+        setVersion(savedDesign.version);
+      }
+      
+      // Load shareToken from backend and regenerate public link if available
+      if (savedDesign.shareToken) {
+        setShareToken(savedDesign.shareToken);
+        if (typeof window !== "undefined") {
+          const link = `${window.location.origin}/rsvp/share/${savedDesign.shareToken}`;
+          setPublicLink(link);
+        }
+      }
+      
+      setIsDesignLoaded(true);
+    }
+  }, [savedDesign, isDesignLoaded]);
 
   const toAlign = (value: string): "left" | "center" | "right" => {
     if (value === "center" || value === "right") return value;
@@ -754,6 +814,31 @@ export default function RsvpDesignPage() {
     setLinkCopied(true);
   };
 
+  // Save current design to backend
+  const handleSaveDesign = () => {
+    if (!eventId) return;
+
+    const currentDesign: RsvpDesign = {
+      blocks,
+      flowPreset,
+      globalBackgroundType,
+      globalBackgroundAsset,
+      globalBackgroundColor,
+      globalOverlay,
+      accentColor,
+      shareToken,
+      publicLink,
+    };
+
+    saveDesign({
+      design: currentDesign,
+      isPublished: false,
+      isDraft: true,
+      shareToken,
+      publicLink,
+    });
+  };
+
   return (
     <div className="space-y-6 lg:space-y-8">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -763,12 +848,24 @@ export default function RsvpDesignPage() {
           <p className="max-w-3xl text-gray-600">
             Arrange media-backed blocks, tie existing questions, and preview a wedding invite card that guests can scroll through. Editing stays on this page—open the modal preview to see it exactly like your guests.
           </p>
+          {isLoadingDesign && (
+            <p className="text-sm text-blue-600">Loading saved design...</p>
+          )}
+          {isSaveSuccess && (
+            <p className="text-sm text-green-600">Design saved successfully!</p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <Link to="/app/rsvps">
             <Button variant="secondary">Back to RSVP list</Button>
           </Link>
           <Button onClick={() => setShowPreview(true)}>Open preview</Button>
+          <Button 
+            onClick={handleSaveDesign} 
+            disabled={isSaving || isLoadingDesign || !eventId}
+          >
+            {isSaving ? "Saving..." : isSaveSuccess ? "Saved!" : "Save Design"}
+          </Button>
         </div>
       </div>
 
