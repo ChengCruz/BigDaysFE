@@ -13,6 +13,7 @@ import {
   type Rsvp,
 } from "../../../api/hooks/useRsvpsApi";
 import { RsvpFormModal } from "../../molecules/RsvpFormModal";
+import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { Button } from "../../atoms/Button";
 import { useEventContext } from "../../../context/EventContext";
 import { useAuth } from "../../../api/hooks/useAuth";
@@ -33,6 +34,10 @@ export default function RsvpsPage() {
   const [modal, setModal] = useState<{ open: boolean; rsvp?: Rsvp }>({
     open: false,
   });
+  const [deleteModal, setDeleteModal] = useState<{
+    open: boolean;
+    rsvp: Rsvp | null;
+  }>({ open: false, rsvp: null });
   const fileInput = useRef<HTMLInputElement>(null);
 
   const [guestTypeFilter, setGuestTypeFilter] = useState<string>("All");
@@ -42,6 +47,29 @@ export default function RsvpsPage() {
 
   if (isLoading) return <p>Loading RSVPs…</p>;
   if (isError) return <p>Failed to load RSVPs.</p>;
+
+  // Delete modal handlers
+  const handleDelete = (rsvp: Rsvp) => {
+    setDeleteModal({ open: true, rsvp });
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteModal({ open: false, rsvp: null });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.rsvp) return;
+    
+    try {
+      await deleteRsvp.mutateAsync({
+        rsvpGuid: deleteModal.rsvp.rsvpGuid ?? deleteModal.rsvp.rsvpId ?? deleteModal.rsvp.id,
+        eventId: eventId!
+      });
+      setDeleteModal({ open: false, rsvp: null });
+    } catch (error) {
+      console.error("Failed to delete RSVP:", error);
+    }
+  };
 
   // Filtered & searched list
   const filtered = rsvps.filter((r) => {
@@ -263,9 +291,7 @@ export default function RsvpsPage() {
                   </Button>
                   <Button
                     variant="secondary"
-                    onClick={() =>
-                      deleteRsvp.mutate({ rsvpGuid: r.rsvpGuid ?? r.rsvpId ?? r.id, eventId: eventId! })
-                    }
+                    onClick={() => handleDelete(r)}
                   >
                     Delete
                   </Button>
@@ -311,9 +337,7 @@ export default function RsvpsPage() {
                     </Button>
                     <Button
                       variant="secondary"
-                      onClick={() =>
-                        deleteRsvp.mutate({ rsvpGuid: r.rsvpGuid ?? r.rsvpId ?? r.id, eventId: eventId! })
-                      }
+                      onClick={() => handleDelete(r)}
                     >
                       Delete
                     </Button>
@@ -346,6 +370,54 @@ export default function RsvpsPage() {
           }
         }}
       />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.open}
+        isDeleting={deleteRsvp.isPending}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        title="Delete RSVP?"
+        description="Are you sure you want to delete this RSVP? This will permanently remove it from your guest list."
+      >
+        {deleteModal.rsvp && (
+          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
+            <div className="flex items-start gap-3">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-800 dark:text-white mb-1">
+                  {deleteModal.rsvp.guestName}
+                </p>
+                {deleteModal.rsvp.phoneNo && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Phone: {deleteModal.rsvp.phoneNo}
+                  </p>
+                )}
+                {(deleteModal.rsvp.noOfPax !== undefined && deleteModal.rsvp.noOfPax !== null) && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Pax: {deleteModal.rsvp.noOfPax}
+                  </p>
+                )}
+                {deleteModal.rsvp.guestType && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Type: {deleteModal.rsvp.guestType}
+                  </p>
+                )}
+              </div>
+              <div className="text-right">
+                <span
+                  className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                    (deleteModal.rsvp.noOfPax ?? 0) > 0
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                  }`}
+                >
+                  {(deleteModal.rsvp.noOfPax ?? 0) > 0 ? "Yes" : "No"}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </DeleteConfirmationModal>
     </>
   );
 }

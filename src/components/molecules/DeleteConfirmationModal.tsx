@@ -1,24 +1,27 @@
-// src/components/pages/Wallet/DeleteTransactionModal.tsx
+// src/components/molecules/DeleteConfirmationModal.tsx
 import React from "react";
-import { Button } from "../../atoms/Button";
-import type { Transaction } from "../../../types/transaction";
+import { Button } from "../atoms/Button";
 
-interface DeleteTransactionModalProps {
+interface DeleteConfirmationModalProps {
   isOpen: boolean;
-  transaction: Transaction | null;
   isDeleting: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
 }
 
-export const DeleteTransactionModal: React.FC<DeleteTransactionModalProps> = ({
+export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
   isOpen,
-  transaction,
   isDeleting,
   onConfirm,
   onCancel,
+  title,
+  description = "This action cannot be undone.",
+  children,
 }) => {
-  if (!isOpen || !transaction) return null;
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
@@ -44,10 +47,10 @@ export const DeleteTransactionModal: React.FC<DeleteTransactionModalProps> = ({
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
-                Delete Transaction?
+                {title}
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                This action cannot be undone.
+                {description}
               </p>
             </div>
           </div>
@@ -55,41 +58,7 @@ export const DeleteTransactionModal: React.FC<DeleteTransactionModalProps> = ({
 
         {/* Content */}
         <div className="p-6">
-          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
-            <div className="flex items-start gap-3">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-slate-800 dark:text-white mb-1">
-                  {transaction.transactionName}
-                </p>
-                {transaction.vendorName && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Vendor: {transaction.vendorName}
-                  </p>
-                )}
-                {transaction.referenceId && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Ref: {transaction.referenceId}
-                  </p>
-                )}
-              </div>
-              <div className="text-right">
-                <p className={`text-sm font-bold ${
-                  transaction.type === 1
-                    ? "text-red-600 dark:text-red-400"
-                    : "text-emerald-600 dark:text-emerald-400"
-                }`}>
-                  {transaction.type === 1 ? "-" : "+"} {transaction.amount.toFixed(2)}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  {transaction.category}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
-            Are you sure you want to delete this transaction? This will permanently remove it from your records.
-          </p>
+          {children}
         </div>
 
         {/* Footer */}
@@ -113,7 +82,7 @@ export const DeleteTransactionModal: React.FC<DeleteTransactionModalProps> = ({
                 Deleting...
               </div>
             ) : (
-              "Delete Transaction"
+              "Delete"
             )}
           </Button>
         </div>

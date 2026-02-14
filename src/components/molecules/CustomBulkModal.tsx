@@ -103,7 +103,7 @@ export const CustomBulkModal: React.FC<Props> = ({ isOpen, onClose }) => {
         <FormField
           label="Number of Tables"
           type="number"
-          min="1"
+          min={1}
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
           required
@@ -112,7 +112,7 @@ export const CustomBulkModal: React.FC<Props> = ({ isOpen, onClose }) => {
         <FormField
           label="Default Capacity (seats per table)"
           type="number"
-          min="1"
+          min={1}
           value={capacity}
           onChange={(e) => setCapacity(e.target.value)}
           required

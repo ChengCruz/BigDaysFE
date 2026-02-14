@@ -7,7 +7,7 @@ import { formatAmount, getTransactionTypeLabel } from "../../../utils/transactio
 import type { Wallet } from "../../../types/wallet";
 import { CURRENCY_CONFIG } from "../../../types/wallet";
 import { useDeleteTransaction } from "../../../api/hooks/useTransactionApi";
-import { DeleteTransactionModal } from "./DeleteTransactionModal";
+import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 
 interface TransactionTableProps {
   wallet: Wallet;
@@ -400,13 +400,48 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
       </div>
 
       {/* Delete Confirmation Modal */}
-      <DeleteTransactionModal
+      <DeleteConfirmationModal
         isOpen={deleteModal.open}
-        transaction={deleteModal.transaction}
         isDeleting={deleteTransaction.isPending}
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
-      />
+        title="Delete Transaction?"
+        description="Are you sure you want to delete this transaction? This will permanently remove it from your records."
+      >
+        {deleteModal.transaction && (
+          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
+            <div className="flex items-start gap-3">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-800 dark:text-white mb-1">
+                  {deleteModal.transaction.transactionName}
+                </p>
+                {deleteModal.transaction.vendorName && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Vendor: {deleteModal.transaction.vendorName}
+                  </p>
+                )}
+                {deleteModal.transaction.referenceId && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Ref: {deleteModal.transaction.referenceId}
+                  </p>
+                )}
+              </div>
+              <div className="text-right">
+                <p className={`text-sm font-bold ${
+                  deleteModal.transaction.type === 1
+                    ? "text-red-600 dark:text-red-400"
+                    : "text-emerald-600 dark:text-emerald-400"
+                }`}>
+                  {deleteModal.transaction.type === 1 ? "-" : "+"} {deleteModal.transaction.amount.toFixed(2)}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  {deleteModal.transaction.category}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </DeleteConfirmationModal>
     </div>
   );
 };

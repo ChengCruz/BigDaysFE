@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useUsersApi, useDeleteUser } from "../../../api/hooks/useUsersApi";
 import { UserFormModal } from "../../molecules/UserFormModal";
+import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { Button } from "../../atoms/Button";
 
 export default function UsersPage() {
@@ -11,9 +12,33 @@ export default function UsersPage() {
     open: boolean;
     user?: { id: string; name: string; email: string };
   }>({ open: false });
+  const [deleteModal, setDeleteModal] = useState<{
+    open: boolean;
+    user: { id: string; name: string; email: string } | null;
+  }>({ open: false, user: null });
 
   if (isLoading) return <p>Loading users…</p>;
   if (isError) return <p>Failed to load users.</p>;
+
+  // Delete modal handlers
+  const handleDelete = (user: { id: string; name: string; email: string }) => {
+    setDeleteModal({ open: true, user });
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteModal({ open: false, user: null });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.user) return;
+    
+    try {
+      await deleteUser.mutateAsync(deleteModal.user.id);
+      setDeleteModal({ open: false, user: null });
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+    }
+  };
 
   return (
     <>
@@ -48,7 +73,7 @@ export default function UsersPage() {
                 </Button>
                 <Button
                   variant="secondary"
-                  onClick={() => deleteUser.mutate(u.id)}
+                  onClick={() => handleDelete({ id: u.id, name: u.name, email: u.email })}
                 >
                   Delete
                 </Button>
@@ -61,6 +86,31 @@ export default function UsersPage() {
         onClose={() => setModal({ open: false })}
         initial={modal.user}
       />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.open}
+        isDeleting={deleteUser.isPending}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        title="Delete User?"
+        description="Are you sure you want to delete this user? This action cannot be undone."
+      >
+        {deleteModal.user && (
+          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
+            <div className="flex items-start gap-3">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-800 dark:text-white mb-1">
+                  {deleteModal.user.name}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Email: {deleteModal.user.email}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </DeleteConfirmationModal>
     </>
   );
 }

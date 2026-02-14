@@ -44,7 +44,6 @@ import { EditRsvpModal } from "../components/pages/RSVPs/EditRsvpModal";
 import { TableFormModal } from "../components/molecules/TableFormModal";
 import { SeatingFormModal } from "../components/molecules/SeatingFormModal";
 import { UserFormModal } from "../components/molecules/UserFormModal";
-import { CostFormModal } from "../components/molecules/CostFormModal";
 import FormFieldsPage from "../components/pages/Events/FormFieldsPage";
 import { TableAssignments } from "../components/pages/Tables/TableAssignments";
 import TableDetail from "../components/pages/Tables/TableDetail";

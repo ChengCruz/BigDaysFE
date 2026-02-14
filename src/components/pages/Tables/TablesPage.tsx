@@ -15,6 +15,7 @@ import { GuestCard } from "../../molecules/GuestCard";
 import { TableCard } from "../../molecules/TableCard";
 import { QuickSetupModal } from "../../molecules/QuickSetupModal";
 import { TableFormModal } from "../../molecules/TableFormModal";
+import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { useState, useMemo } from "react";
 import { useEventContext } from "../../../context/EventContext";
 import toast from "react-hot-toast";
@@ -213,8 +214,16 @@ export default function TablesPage() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
         <h2 className="text-2xl font-semibold text-primary">Table Arrangement</h2>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" disabled>
-            Auto-Assign (Coming Soon)
+          <Button 
+            variant="secondary" 
+            disabled
+            className="opacity-50 cursor-not-allowed flex items-center gap-2"
+            title="Coming Soon"
+          >
+            Auto-Assign
+            <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-0.5 rounded-full ml-1">
+              Coming Soon
+            </span>
           </Button>
           <Dropdown
             trigger={
@@ -358,34 +367,29 @@ export default function TablesPage() {
       />
 
       {/* Delete Confirmation Modal */}
-      {deletingTable && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-accent rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Delete Table
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300">
-              Are you sure you want to delete <strong>{deletingTable.name}</strong>? 
-              This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3 pt-4">
-              <Button 
-                variant="secondary" 
-                onClick={() => setDeletingTable(null)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                variant="primary" 
-                onClick={confirmDelete}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                Delete
-              </Button>
+      <DeleteConfirmationModal
+        isOpen={!!deletingTable}
+        isDeleting={deleteTable.isPending}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeletingTable(null)}
+        title="Delete Table"
+        description="Are you sure you want to delete this table? This action cannot be undone."
+      >
+        {deletingTable && (
+          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
+            <div className="flex items-start gap-3">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-800 dark:text-white mb-1">
+                  {deletingTable.name}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Table ID: {deletingTable.id}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </DeleteConfirmationModal>
     </div>
   );
 }

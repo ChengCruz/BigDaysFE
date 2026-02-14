@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useSeatingApi, useDeleteSeat } from "../../../api/hooks/useSeatingApi";
 import { SeatingFormModal } from "../../molecules/SeatingFormModal";
+import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { Button } from "../../atoms/Button";
 
 export default function SeatingPage() {
@@ -11,9 +12,33 @@ export default function SeatingPage() {
     open: boolean;
     seat?: { id: string; tableId: string; guestId: string };
   }>({ open: false });
+  const [deleteModal, setDeleteModal] = useState<{
+    open: boolean;
+    seat: { id: string; tableId: string; guestId: string } | null;
+  }>({ open: false, seat: null });
 
   if (isLoading) return <p>Loading seating…</p>;
   if (isError) return <p>Failed to load seating.</p>;
+
+  // Delete modal handlers
+  const handleDelete = (seat: { id: string; tableId: string; guestId: string }) => {
+    setDeleteModal({ open: true, seat });
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteModal({ open: false, seat: null });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.seat) return;
+    
+    try {
+      await deleteSeat.mutateAsync(deleteModal.seat.id);
+      setDeleteModal({ open: false, seat: null });
+    } catch (error) {
+      console.error("Failed to delete seat:", error);
+    }
+  };
 
   return (
     <>
@@ -48,7 +73,7 @@ export default function SeatingPage() {
               </Button>
               <Button
                 variant="secondary"
-                onClick={() => deleteSeat.mutate(s.id)}
+                onClick={() => handleDelete({ id: s.id, tableId: s.tableId, guestId: s.guestId })}
               >
                 Delete
               </Button>
@@ -62,6 +87,31 @@ export default function SeatingPage() {
         onClose={() => setModal({ open: false })}
         initial={modal.seat}
       />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.open}
+        isDeleting={deleteSeat.isPending}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        title="Delete Seating Assignment?"
+        description="Are you sure you want to delete this seating assignment? This action cannot be undone."
+      >
+        {deleteModal.seat && (
+          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
+            <div className="flex items-start gap-3">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-800 dark:text-white mb-1">
+                  Table ID: {deleteModal.seat.tableId}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Guest ID: {deleteModal.seat.guestId}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </DeleteConfirmationModal>
     </>
   );
 }
