@@ -12,9 +12,14 @@ import { WalletSummaryCards } from "./WalletSummaryCards";
 import { CategoryBreakdown } from "./CategoryBreakdown";
 import { TransactionTable } from "./TransactionTable";
 import type { Transaction } from "../../../types/transaction";
+import { NoEventsState } from "../../molecules/NoEventsState";
 
 export default function WalletPage() {
   const { eventId } = useEventContext()!;
+
+  // Show "no events" state if no events exist
+  if (!eventId) return <NoEventsState title="No Events for Budget Tracking" message="Create your first event to start managing your budget and tracking expenses." />;
+
   const { user } = useContext(AuthContext);
   
   // Fetch wallet data

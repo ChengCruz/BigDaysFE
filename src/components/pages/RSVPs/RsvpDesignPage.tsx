@@ -5,6 +5,7 @@ import { useEventContext } from "../../../context/EventContext";
 import { useFormFields, type FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
 import { useRsvpDesign, useSaveRsvpDesign } from "../../../api/hooks/useRsvpDesignApi";
 import type { RsvpDesign } from "../../../types/rsvpDesign";
+import { NoEventsState } from "../../molecules/NoEventsState";
 
 // Types for flexible RSVP card blocks
  type BlockMedia = { id: string; src: string; alt?: string };
@@ -364,6 +365,7 @@ export function FullPagePreview({
 }
 
 export default function RsvpDesignPage() {
+  // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
   const { event, eventId } = useEventContext() ?? {};
   const { data: serverFormFields = [], isFetching } = useFormFields(eventId, { enabled: !!eventId });
   
@@ -838,6 +840,11 @@ export default function RsvpDesignPage() {
       publicLink,
     });
   };
+
+  // ─── Early returns AFTER all hooks ─────────────────────────────────────────
+  
+  // Show "no events" state if no event exists (check BEFORE render logic)
+  if (!eventId) return <NoEventsState title="No Event for RSVP Design" message="Create your first event to start customizing your RSVP page design." />;
 
   return (
     <div className="space-y-6 lg:space-y-8">

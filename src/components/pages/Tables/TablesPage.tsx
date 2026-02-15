@@ -19,8 +19,10 @@ import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal
 import { useState, useMemo } from "react";
 import { useEventContext } from "../../../context/EventContext";
 import toast from "react-hot-toast";
+import { NoEventsState } from "../../molecules/NoEventsState";
 
 export default function TablesPage() {
+  // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
   const { eventId } = useEventContext()!;
   const { data: tables = [], isLoading: tablesLoading, isError: tablesError } = useTablesApi(eventId!);
   const { data: guests = [], isLoading: guestsLoading, isError: guestsError } = useGuestsApi(eventId!);
@@ -99,15 +101,10 @@ export default function TablesPage() {
     });
   }, [tablesWithGuests, searchTerm, filterType]);
 
-  // Early returns AFTER all hooks
-  if (!eventId) {
-    return (
-      <div className="p-6 rounded-lg border-2 border-dashed border-primary/25 text-center space-y-2 bg-white/70">
-        <p className="text-lg font-semibold">No event selected.</p>
-        <p className="text-sm text-gray-600">Please select an event from the sidebar to view tables.</p>
-      </div>
-    );
-  }
+  // ─── Early returns AFTER all hooks ─────────────────────────────────────────
+
+  // Show "no events" state if no events exist (check BEFORE loading state)
+  if (!eventId) return <NoEventsState title="No Events for Table Management" message="Create your first event to start organizing seating arrangements and table assignments." />;
 
   if (tablesLoading || guestsLoading) return <p>Loading tables and guests…</p>;
   if (tablesError || guestsError) return <p>Failed to load data.</p>;

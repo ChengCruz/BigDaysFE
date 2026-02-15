@@ -13,8 +13,10 @@ import { StatsCard } from "../../atoms/StatsCard";
 import { useEventContext } from "../../../context/EventContext";
 import toast from "react-hot-toast";
 import { GuestFormModal } from "./GuestFormModal";
+import { NoEventsState } from "../../molecules/NoEventsState";
 
 export default function GuestsPage() {
+  // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
   const { eventId } = useEventContext()!;
   const { data: guests = [], isLoading: guestsLoading, isError: guestsError } = useGuestsApi(eventId!);
   const { data: tables = [], isLoading: tablesLoading } = useTablesApi(eventId!);
@@ -58,6 +60,14 @@ export default function GuestsPage() {
     });
   }, [guests, guestTypeFilter, searchTerm]);
 
+  // ─── Early returns after hooks ─────────────────────────────────────────
+
+  // Show "no events" state if no events exist (check BEFORE loading state)
+  if (!eventId) return <NoEventsState title="No Events for Guest Management" message="Create your first event to start adding and managing your guest list." />;
+
+  if (guestsLoading || tablesLoading) return <p>Loading guests…</p>;
+  if (guestsError) return <p>Failed to load guests.</p>;
+
   // Note: Guest deletion is not available in this module.
   // Guests can only be deleted through the RSVP module, as they are managed as part of RSVP records.
 
@@ -90,19 +100,6 @@ export default function GuestsPage() {
       toast.error("Failed to unassign guest from table");
     }
   };
-
-  // Early returns
-  if (!eventId) {
-    return (
-      <div className="p-6 rounded-lg border-2 border-dashed border-primary/25 text-center space-y-2 bg-white/70">
-        <p className="text-lg font-semibold">No event selected.</p>
-        <p className="text-sm text-gray-600">Please select an event from the sidebar to view guests.</p>
-      </div>
-    );
-  }
-
-  if (guestsLoading || tablesLoading) return <p>Loading guests…</p>;
-  if (guestsError) return <p>Failed to load guests.</p>;
 
   return (
     <>
@@ -218,6 +215,19 @@ export default function GuestsPage() {
                       Phone: {guest.phoneNo}
                     </p>
                   )}
+
+                  {/* Number of Attendees (Pax) */}
+                  <div className="flex items-center gap-2">
+                    <UserGroupIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      {guest.pax || guest.noOfPax || 1} {((guest.pax || guest.noOfPax || 1) === 1) ? 'person' : 'people'}
+                      {(guest.pax || guest.noOfPax || 1) > 1 && (
+                        <span className="ml-2 text-xs font-bold text-primary">
+                          (+{(guest.pax || guest.noOfPax || 1) - 1})
+                        </span>
+                      )}
+                    </p>
+                  </div>
 
                   {/* Guest Type Badge */}
                   <div className="flex flex-wrap gap-2">

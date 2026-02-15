@@ -18,12 +18,12 @@ import { Button } from "../../atoms/Button";
 import { useEventContext } from "../../../context/EventContext";
 import { useAuth } from "../../../api/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
+import { NoEventsState } from "../../molecules/NoEventsState";
 
 export default function RsvpsPage() {
+  // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
   const { eventId } = useEventContext()!;
   const { data: rsvps = [], isLoading, isError } = useRsvpsApi(eventId!);
-
-  // ─── All hooks first ─────────────────────────────────────────
   const createRsvp = useCreateRsvp(eventId!);
   const updateRsvp = useUpdateRsvp(eventId!);
   const deleteRsvp = useDeleteRsvp(eventId!);
@@ -44,6 +44,9 @@ export default function RsvpsPage() {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   // ───────────────────────────────────────────────────────────────
+
+  // Show "no events" state if no events exist (check BEFORE loading state)
+  if (!eventId) return <NoEventsState title="No Events to Manage RSVPs" message="Create your first event to start managing guest responses and invitations." />;
 
   if (isLoading) return <p>Loading RSVPs…</p>;
   if (isError) return <p>Failed to load RSVPs.</p>;
