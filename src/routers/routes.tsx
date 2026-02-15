@@ -36,6 +36,8 @@ import EditUserModal from "../components/pages/Users/EditUserModal";
 
 import WalletPage from "../components/pages/Wallet/WalletPage";
 
+import MemberDashboardPage from "../components/pages/Dashboard/MemberDashboardPage";
+
 import RSVPPublicPage from "../components/pages/Public/RSVPPublic/RSVPPublicPage";
 import EventPublicPage from "../components/pages/Public/EventsPublic/EventsPublicPage";
 import { EventFormModal } from "../components/molecules/EventFormModal";
@@ -71,7 +73,10 @@ export default function AppRoutes() {
 
       {/* ─── PROTECTED / DASHBOARD ─────────────────────────── */}
       <Route path="/app" element={<DashboardTemplate />}>
-        <Route index element={<Navigate to="events" replace />} />
+        <Route index element={<Navigate to="dashboard" replace />} />
+
+        {/* DASHBOARD */}
+        <Route path="dashboard" element={<MemberDashboardPage />} />
 
         {/* EVENTS */}
         <Route path="events" element={<Outlet />}>
@@ -135,8 +140,8 @@ export default function AppRoutes() {
         {/* WALLET */}
         <Route path="wallet" element={<WalletPage />} />
 
-        {/* any other /app/* → back to events */}
-        <Route path="*" element={<Navigate to="/app/events" replace />} />
+        {/* any other /app/* → back to dashboard */}
+        <Route path="*" element={<Navigate to="/app/dashboard" replace />} />
       </Route>
 
       {/* global 404 fallback */}

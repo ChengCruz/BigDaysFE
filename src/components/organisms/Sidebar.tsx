@@ -12,6 +12,7 @@ import {
   CurrencyDollarIcon,
   SparklesIcon,
   UserGroupIcon,
+  HomeIcon,
 } from "@heroicons/react/solid";
 import { useEventContext } from "../../context/EventContext";
 import { Button } from "../atoms/Button";
@@ -24,12 +25,13 @@ interface SidebarLink {
 }
 
 const links: SidebarLink[] = [
+  { to: "/app/dashboard", label: "Member Dashboard", Icon: HomeIcon, description: "Overview & insights" },
   { to: "/app/events", label: "Events", Icon: CalendarIcon, description: "Manage dates & details" },
   { to: "/app/rsvps", label: "RSVPs", Icon: ClipboardListIcon, description: "Guest responses" },
   { to: "/app/guests", label: "Guests", Icon: UserGroupIcon, description: "Guest list" },
   { to: "/app/tables", label: "Tables", Icon: TableIcon, description: "Seating & arrangements" },
-  { to: "/app/users", label: "Users", Icon: UserIcon, description: "Team" },
   { to: "/app/wallet", label: "Wallet", Icon: CurrencyDollarIcon, description: "Budget & Expenses" },
+  { to: "/app/users", label: "Users", Icon: UserIcon, description: "Team" },
 ];
 
 interface SidebarProps {

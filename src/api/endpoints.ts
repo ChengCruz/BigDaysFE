@@ -109,7 +109,11 @@ export const PublicRsvpEndpoints = {
 };
 
 export const RsvpDesignEndpoints = {
-  get: (eventGuid: string) => `/api/v1/RsvpDesign/${eventGuid}/design`,
-  save: (eventGuid: string) => `/api/v1/RsvpDesign/${eventGuid}/design`,
-  publish: (eventGuid: string, version: number) => `/api/v1/RsvpDesign/${eventGuid}/design/${version}/publish`,
+  get: (eventGuid: string) => `/v1/RsvpDesign/${eventGuid}/design`,
+  save: (eventGuid: string) => `/v1/RsvpDesign/${eventGuid}/design`,
+  publish: (eventGuid: string, version: number) => `/v1/RsvpDesign/${eventGuid}/design/${version}/publish`,
+};
+
+export const DashboardEndpoints = {
+  summary: (eventGuid: string) => `/v1/Dashboard/Summary/${eventGuid}`,
 };
