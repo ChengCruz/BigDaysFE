@@ -11,11 +11,12 @@ import {
 import { Button } from "../../atoms/Button";
 import { FormFieldModal } from "../../molecules/FormFieldModal";
 import { useParams } from "react-router-dom";
+import { NoEventsState } from "../../molecules/NoEventsState";
 
 export default function FormFieldsPage() {
+  // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
   const { id } = useParams<{ id: string }>();
   const eventId = id ?? "";
-
   const { data: fieldsRaw, isLoading, isError } = useFormFields(eventId);
   const createField = useCreateFormField();
   const updateField = useUpdateFormField();
@@ -31,6 +32,11 @@ export default function FormFieldsPage() {
     () => (Array.isArray(fieldsRaw) ? fieldsRaw : []),
     [fieldsRaw]
   );
+
+  // ─── Early returns AFTER all hooks ─────────────────────────────────────────
+
+  // Show "no events" state if no event ID exists (check BEFORE loading state)
+  if (!eventId) return <NoEventsState title="No Event Selected" message="Create your first event to start customizing your RSVP form fields." />;
 
   if (isLoading) return <p>Loading form fields…</p>;
   if (isError) return <p>Failed to load form fields.</p>;

@@ -69,6 +69,7 @@ export function useRsvpsApi(eventId: string) {
         tableId: r.tableId ?? r.table_id ?? undefined,
       } as Rsvp));
     },
+    enabled: Boolean(eventId),
     staleTime: 60_000,
   });
 }
