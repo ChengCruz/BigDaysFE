@@ -96,7 +96,10 @@ export function useCreateRsvp(eventId: string) {
   return useMutation({
     mutationFn: (data: any) =>
       client.post(RsvpsEndpoints.create(), data).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["rsvps", eventId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["rsvps", eventId] });
+      qc.invalidateQueries({ queryKey: ["guests", eventId] });
+    },
   });
 }
 
@@ -123,7 +126,10 @@ export function useUpdateRsvp(eventId: string) {
       const res = await client.post(RsvpsEndpoints.update(), payload);
       return res.data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["rsvps", eventId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["rsvps", eventId] });
+      qc.invalidateQueries({ queryKey: ["guests", eventId] });
+    },
   });
 }
 
@@ -142,6 +148,9 @@ export function useDeleteRsvp(eventId: string) {
     // Expect payload with rsvpGuid and eventId for the delete POST API
     mutationFn: (payload: { rsvpGuid: string; eventId: string }) =>
       client.post(RsvpsEndpoints.delete(), payload).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["rsvps", eventId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["rsvps", eventId] });
+      qc.invalidateQueries({ queryKey: ["guests", eventId] });
+    },
   });
 }

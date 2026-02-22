@@ -2,7 +2,7 @@
 // NOTE: VITE_API_BASE already includes /api/v1 — do NOT add /v1 here.
 
 export const AuthEndpoints = {
-  login: "/auth/login",
+  login: "/User/Login",
   me: "/auth/me",
 };
 

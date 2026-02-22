@@ -6,7 +6,7 @@ import { FormField } from "../../molecules/FormField";
 import { Button } from "../../atoms/Button";
 
 export default function LoginPage() {
-  const { loading } = useAuth();
+  const { login, loading } = useAuth();
   const nav = useNavigate();
   const location = useLocation();
   const from = (location.state as any)?.from?.pathname || "/app";
@@ -19,8 +19,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     try {
-      //   await login({ email, password });
-      //   nav("/app");
+      await login({ email, password });
       nav(from, { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.message || "Login failed");
