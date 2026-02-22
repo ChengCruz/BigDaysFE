@@ -66,7 +66,7 @@ export function EventSelectorModal() {
 
   const subline = mustChooseEvent
     ? "Pick an existing celebration or create a new one to continue planning."
-    : "Keep everything in sync by switching the active event for tables, RSVPs, and costing.";
+    : "Keep everything in sync by switching the active event for tables, RSVPs, and wallet.";
 
   const handleBackdropClick = () => {
     if (!mustChooseEvent) closeSelector();
@@ -98,7 +98,7 @@ export function EventSelectorModal() {
                 <SparklesIcon className="w-5 h-5 text-amber-200" />
                 <div>
                   <p className="font-semibold">Unified status</p>
-                  <p className="text-indigo-100/80">Tables, RSVPs and seating stay on the active event.</p>
+                  <p className="text-indigo-100/80">Tables, RSVPs, wallet and seating stay on the active event.</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 bg-white/10 border border-white/10 rounded-xl p-3">

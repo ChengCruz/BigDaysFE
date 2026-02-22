@@ -17,6 +17,8 @@ import RsvpSharePreviewPage from "../components/pages/RSVPs/RsvpSharePreviewPage
 // import rsvp from "../components/pages/RSVPs/NewRsvpModal";
 // import EditRsvpModal from "../components/pages/RSVPs/EditRsvpModal";
 
+import GuestsPage from "../components/pages/Guests/GuestsPage";
+
 import TablesPage from "../components/pages/Tables/TablesPage";
 // import TableDetail from "../components/pages/Tables/TableDetail";
 // import TableFormModal from "../components/molecules/TableFormModal";
@@ -32,10 +34,9 @@ import UsersPage from "../components/pages/Users/UsersPage";
 // import UserFormModal from "../components/molecules/UserFormModal";
 import EditUserModal from "../components/pages/Users/EditUserModal";
 
-import CostingPage from "../components/pages/Costing/CostingPage";
-// import CostDetail from "../components/pages/Costing/CostDetail";
-// import CostFormModal from "../components/molecules/CostFormModal";
-import EditCostModal from "../components/pages/Costing/EditCostModal";
+import WalletPage from "../components/pages/Wallet/WalletPage";
+
+import MemberDashboardPage from "../components/pages/Dashboard/MemberDashboardPage";
 
 import RSVPPublicPage from "../components/pages/Public/RSVPPublic/RSVPPublicPage";
 import EventPublicPage from "../components/pages/Public/EventsPublic/EventsPublicPage";
@@ -45,7 +46,6 @@ import { EditRsvpModal } from "../components/pages/RSVPs/EditRsvpModal";
 import { TableFormModal } from "../components/molecules/TableFormModal";
 import { SeatingFormModal } from "../components/molecules/SeatingFormModal";
 import { UserFormModal } from "../components/molecules/UserFormModal";
-import { CostFormModal } from "../components/molecules/CostFormModal";
 import FormFieldsPage from "../components/pages/Events/FormFieldsPage";
 import { TableAssignments } from "../components/pages/Tables/TableAssignments";
 import TableDetail from "../components/pages/Tables/TableDetail";
@@ -73,7 +73,10 @@ export default function AppRoutes() {
 
       {/* ─── PROTECTED / DASHBOARD ─────────────────────────── */}
       <Route path="/app" element={<DashboardTemplate />}>
-        <Route index element={<Navigate to="events" replace />} />
+        <Route index element={<Navigate to="dashboard" replace />} />
+
+        {/* DASHBOARD */}
+        <Route path="dashboard" element={<MemberDashboardPage />} />
 
         {/* EVENTS */}
         <Route path="events" element={<Outlet />}>
@@ -93,6 +96,9 @@ export default function AppRoutes() {
           <Route path="new" element={<NewRsvpModal />} />
           <Route path=":id/edit" element={<EditRsvpModal />} />
         </Route>
+
+        {/* GUESTS */}
+        <Route path="guests" element={<GuestsPage />} />
 
         {/* ─── TABLES ─────────────────────────────────────────── */}
 <Route path="tables" element={<Outlet/>}>
@@ -131,18 +137,11 @@ export default function AppRoutes() {
           <Route path=":id/edit" element={<EditUserModal />} />
         </Route>
 
-        {/* COSTING */}
-        <Route path="costing" element={<Outlet />}>
-          <Route index element={<CostingPage />} />
-          <Route
-            path="new"
-            element={<CostFormModal isOpen onClose={() => navigate(-1)} />}
-          />
-          <Route path=":id/edit" element={<EditCostModal />} />
-        </Route>
+        {/* WALLET */}
+        <Route path="wallet" element={<WalletPage />} />
 
-        {/* any other /app/* → back to events */}
-        <Route path="*" element={<Navigate to="/app/events" replace />} />
+        {/* any other /app/* → back to dashboard */}
+        <Route path="*" element={<Navigate to="/app/dashboard" replace />} />
       </Route>
 
       {/* global 404 fallback */}

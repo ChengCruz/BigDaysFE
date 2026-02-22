@@ -8,6 +8,7 @@ import {
   useCreateTable,
   useUpdateTableInfo,
 } from "../../api/hooks/useTablesApi";
+import { useEventContext } from "../../context/EventContext";
 
 interface Props {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export const TableFormModal: React.FC<Props> = ({
   onClose,
   initial,
 }) => {
+  const { eventId } = useEventContext();
   const [name, setName] = useState(initial?.name || "");
   const [capacity, setCapacity] = useState(
     initial?.capacity.toString() || "1"
@@ -27,14 +29,14 @@ export const TableFormModal: React.FC<Props> = ({
   const [error, setError] = useState<string | null>(null);
 
   // hooks
-  const createTable = useCreateTable();
-  const updateTableInfo = useUpdateTableInfo(initial?.id || "");
+  const createTable = useCreateTable(eventId);
+  const updateTableInfo = useUpdateTableInfo(initial?.id || "", eventId);
 
   // Reset form fields whenever we open or switch `initial`
   useEffect(() => {
     if (isOpen) {
       setName(initial?.name || "");
-      setCapacity((initial?.capacity ?? 1).toString());
+      setCapacity((initial?.capacity ?? 10).toString());
       setError(null);
     }
   }, [isOpen, initial]);
@@ -46,6 +48,7 @@ export const TableFormModal: React.FC<Props> = ({
     const payload = {
       name: name.trim(),
       capacity: Number(capacity),
+      eventId: eventId!,
     };
 
     try {

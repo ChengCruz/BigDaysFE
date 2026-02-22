@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
-import { TablesEndpoints } from "../endpoints";
+import { TablesEndpoints, GuestEndpoints } from "../endpoints";
 import type { Rsvp } from "./useRsvpsApi";
 
 //
@@ -25,11 +25,36 @@ export interface TableWithGuests extends TableBase {
 //
 
 // List all tables (lightweight)
-export function useTablesApi() {
+export function useTablesApi(eventId:string) {
   return useQuery<TableBase[]>({
-    queryKey: ["tables"],
-    queryFn: () => client.get<TableBase[]>(TablesEndpoints.all).then(r => r.data),
+    queryKey: ["tables",eventId],
+    queryFn: async () => {
+      const response = await client.get(TablesEndpoints.all(eventId));
+      const data = response.data;
+      
+      // Handle different response formats flexibly
+      let tables = data?.data?.tables || data?.tables || data?.data || data || [];
+      
+      if (!Array.isArray(tables)) {
+        console.warn('Unexpected tables API response format:', data);
+        return [];
+      }
+      
+      // Convert API field names to frontend field names
+      // Note: API uses different naming conventions (see .cursor/CONVENTIONS.md)
+      return tables.map((table: any) => ({
+        id: table.tableId,                    // API → Frontend
+        name: table.tableName,                 // API → Frontend
+        capacity: table.maxSeats,              // API → Frontend
+        guests: table.guests || [],            // Include guests if present
+        assignedCount: table.assignedCount ?? table.guests?.length ?? 0, // Calculate if not provided
+        extraGuests: table.extraGuests,        // Optional field
+        layout: table.layout,                  // Optional field
+      }));
+    },
+    enabled: Boolean(eventId),
     staleTime: 5 * 60_000,
+    // Note: In dev mode with React StrictMode, you'll see 2x calls - this is normal
   });
 }
 
@@ -50,34 +75,77 @@ export function useTableApi(tableId: string) {
 //
 
 function invalidate(qc: ReturnType<typeof useQueryClient>, tableId?: string, eventId?: string) {
-  qc.invalidateQueries({ queryKey: ["tables"] });
-  if (tableId) qc.invalidateQueries({ queryKey: ["tables", tableId] });
-  if (eventId) qc.invalidateQueries({ queryKey: ["rsvps", eventId] });
+  // Force refetch by invalidating and refetching
+  if (tableId) {
+    qc.invalidateQueries({ queryKey: ["tables", tableId] });
+    qc.refetchQueries({ queryKey: ["tables", tableId] });
+  }
+  if (eventId) {
+    qc.invalidateQueries({ queryKey: ["tables", eventId] });
+    qc.invalidateQueries({ queryKey: ["rsvps", eventId] });
+    qc.invalidateQueries({ queryKey: ["guests", eventId] });
+    // Force refetch tables, rsvps, and guests
+    qc.refetchQueries({ queryKey: ["tables", eventId] });
+    qc.refetchQueries({ queryKey: ["rsvps", eventId] });
+    qc.refetchQueries({ queryKey: ["guests", eventId] });
+  }
+  // Only invalidate all tables if no specific IDs provided
+  if (!tableId && !eventId) {
+    qc.invalidateQueries({ queryKey: ["tables"] });
+    qc.refetchQueries({ queryKey: ["tables"] });
+  }
 }
 
-export function useCreateTable() {
+export function useCreateTable(eventId?: string) {
+  const qc = useQueryClient();
+  return useMutation<TableBase, Error, { name: string; capacity: number; eventId: string  }>({
+    mutationFn: ({ name, capacity, eventId }) =>
+      client.post<TableBase>(TablesEndpoints.create, {
+        eventGuid: eventId,
+        tableName: name,
+        maxSeats: capacity,
+      }).then(r => r.data),
+    onSuccess: () => invalidate(qc, undefined, eventId),
+  });
+}
+
+export function useBulkCreateTables(eventId?: string) {
+  const qc = useQueryClient();
+  return useMutation<void, Error, { 
+    eventGuid: string; 
+    tableName: string; 
+    quantity: number; 
+    maxSeats: number 
+  }>({
+    mutationFn: ({ eventGuid, tableName, quantity, maxSeats }) =>
+      client.post(TablesEndpoints.bulkCreate, {
+        eventGuid,
+        tableName,
+        quantity,
+        maxSeats,
+      }).then(r => r.data),
+    onSuccess: () => invalidate(qc, undefined, eventId),
+  });
+}
+
+export function useUpdateTableInfo(tableId: string, eventId?: string) {
   const qc = useQueryClient();
   return useMutation<TableBase, Error, { name: string; capacity: number }>({
-    mutationFn: data =>
-      client.post<TableBase>(TablesEndpoints.create, data).then(r => r.data),
-    onSuccess: () => invalidate(qc),
+    mutationFn: ({ name, capacity }) =>
+      client.post<TableBase>(TablesEndpoints.update, {
+        tableId: tableId,
+        tableName: name,
+        maxSeats: capacity,
+      }).then(r => r.data),
+    onSuccess: () => invalidate(qc, tableId, eventId),
   });
 }
 
-export function useUpdateTableInfo(tableId: string) {
-  const qc = useQueryClient();
-  return useMutation<TableBase, Error, Partial<Pick<TableBase, "name" | "capacity">>>({
-    mutationFn: data =>
-      client.put<TableBase>(TablesEndpoints.update(tableId), data).then(r => r.data),
-    onSuccess: () => invalidate(qc, tableId),
-  });
-}
-
-export function useDeleteTable() {
+export function useDeleteTable(eventId?: string) {
   const qc = useQueryClient();
   return useMutation<void, Error, string>({
     mutationFn: id => client.delete(TablesEndpoints.delete(id)).then(r => r.data),
-    onSuccess: () => invalidate(qc),
+    onSuccess: () => invalidate(qc, undefined, eventId),
   });
 }
 
@@ -99,22 +167,46 @@ export function useReassignGuest(tableId: string, eventId: string) {
   });
 }
 
-export function useUpdateTableExtras(tableId: string) {
+export function useUpdateTableExtras(tableId: string, eventId?: string) {
   const qc = useQueryClient();
-  return useMutation<TableWithGuests, Error, { extraGuests: number }>({
-    mutationFn: payload =>
-      client.put<TableWithGuests>(TablesEndpoints.update(tableId), payload)
-            .then(r => r.data),
-    onSuccess: () => invalidate(qc, tableId),
+  return useMutation<TableWithGuests, Error, { extraGuests: number; tableName: string; maxSeats: number }>({
+    mutationFn: ({ extraGuests, tableName, maxSeats }) =>
+      client.post<TableWithGuests>(TablesEndpoints.update, {
+        tableId: tableId,
+        tableName: tableName,
+        maxSeats: maxSeats,
+        extraGuests: extraGuests,
+      }).then(r => r.data),
+    onSuccess: () => invalidate(qc, tableId, eventId),
   });
 }
 
-export function useUpdateTableLayout(tableId: string) {
+export function useUpdateTableLayout(tableId: string, eventId?: string) {
   const qc = useQueryClient();
   return useMutation<TableWithGuests, Error, { layout: { guestId: string; x: number; y: number }[] }>({
     mutationFn: ({ layout }) =>
-      client.put<TableWithGuests>(TablesEndpoints.update(tableId), { layout })
+      client.put<TableWithGuests>(TablesEndpoints.updateLayout(tableId), { layout })
             .then(r => r.data),
-    onSuccess: () => invalidate(qc, tableId),
+    onSuccess: () => invalidate(qc, tableId, eventId),
+  });
+}
+
+export function useAssignGuestToTable(eventId: string) {
+  const qc = useQueryClient();
+  return useMutation<void, Error, { guestId: string; tableId: string }>({
+    mutationFn: ({ guestId, tableId }) =>
+      client.post(GuestEndpoints.assignTable(guestId, tableId), {})
+            .then(r => r.data),
+    onSuccess: () => invalidate(qc, undefined, eventId),
+  });
+}
+
+export function useUnassignGuestFromTable(eventId: string) {
+  const qc = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: (guestId: string) =>
+      client.post(GuestEndpoints.unassignTable(guestId), {})
+            .then(r => r.data),
+    onSuccess: () => invalidate(qc, undefined, eventId),
   });
 }

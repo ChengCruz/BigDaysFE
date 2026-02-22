@@ -10,6 +10,7 @@ export interface Rsvp {
   rsvpGuid?: string; // original api field (optional)
   eventId?: string;
   guestName: string; // human-friendly name used in UI
+  noOfPax?: number;
   name?: string; // original api field (optional)
   status?: string;
   guestType?: string;
@@ -58,6 +59,7 @@ export function useRsvpsApi(eventId: string) {
         rsvpGuid: r.rsvpGuid ?? r.rsvpGuid ?? undefined,
         eventId: r.eventId,
         guestName: r.guestName ?? r.name ?? "",
+        noOfPax: r.noOfPax !== undefined && r.noOfPax !== null ? r.noOfPax : 1,
         name: r.name,
         status: r.status ?? "",
         guestType: r.guestType ?? "",
@@ -67,6 +69,7 @@ export function useRsvpsApi(eventId: string) {
         tableId: r.tableId ?? r.table_id ?? undefined,
       } as Rsvp));
     },
+    enabled: Boolean(eventId),
     staleTime: 60_000,
   });
 }

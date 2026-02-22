@@ -91,7 +91,6 @@ export default function EventsPage() {
             <p className="text-sm text-gray-600">Prioritize the next celebration or revisit archived plans.</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button onClick={() => setModal({ open: true })}>+ New Event</Button>
             <Button
               variant={showArchived ? "primary" : "secondary"}
               onClick={() => setShowArchived((s) => !s)}

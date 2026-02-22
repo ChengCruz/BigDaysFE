@@ -4,9 +4,9 @@ import { useTableApi } from "../../../api/hooks/useTablesApi";
 import { TableFormModal } from "../../molecules/TableFormModal";
 
 export default function EditTableModal() {
-  const { id } = useParams<{ id: string }>();
+  const { tableId } = useParams<{ tableId: string }>();
   const nav = useNavigate();
-  const { data, isLoading, isError } = useTableApi(id!);
+  const { data, isLoading, isError } = useTableApi(tableId!);
 
   if (isLoading) return <div className="p-6 text-center">Loading…</div>;
   if (isError || !data)

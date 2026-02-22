@@ -13,16 +13,17 @@ import {
   type Rsvp,
 } from "../../../api/hooks/useRsvpsApi";
 import { RsvpFormModal } from "../../molecules/RsvpFormModal";
+import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { Button } from "../../atoms/Button";
 import { useEventContext } from "../../../context/EventContext";
 import { useAuth } from "../../../api/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
+import { NoEventsState } from "../../molecules/NoEventsState";
 
 export default function RsvpsPage() {
+  // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
   const { eventId } = useEventContext()!;
   const { data: rsvps = [], isLoading, isError } = useRsvpsApi(eventId!);
-
-  // ─── All hooks first ─────────────────────────────────────────
   const createRsvp = useCreateRsvp(eventId!);
   const updateRsvp = useUpdateRsvp(eventId!);
   const deleteRsvp = useDeleteRsvp(eventId!);
@@ -33,6 +34,10 @@ export default function RsvpsPage() {
   const [modal, setModal] = useState<{ open: boolean; rsvp?: Rsvp }>({
     open: false,
   });
+  const [deleteModal, setDeleteModal] = useState<{
+    open: boolean;
+    rsvp: Rsvp | null;
+  }>({ open: false, rsvp: null });
   const fileInput = useRef<HTMLInputElement>(null);
 
   const [guestTypeFilter, setGuestTypeFilter] = useState<string>("All");
@@ -40,8 +45,34 @@ export default function RsvpsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   // ───────────────────────────────────────────────────────────────
 
+  // Show "no events" state if no events exist (check BEFORE loading state)
+  if (!eventId) return <NoEventsState title="No Events to Manage RSVPs" message="Create your first event to start managing guest responses and invitations." />;
+
   if (isLoading) return <p>Loading RSVPs…</p>;
   if (isError) return <p>Failed to load RSVPs.</p>;
+
+  // Delete modal handlers
+  const handleDelete = (rsvp: Rsvp) => {
+    setDeleteModal({ open: true, rsvp });
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteModal({ open: false, rsvp: null });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.rsvp) return;
+    
+    try {
+      await deleteRsvp.mutateAsync({
+        rsvpGuid: deleteModal.rsvp.rsvpGuid ?? deleteModal.rsvp.rsvpId ?? deleteModal.rsvp.id,
+        eventId: eventId!
+      });
+      setDeleteModal({ open: false, rsvp: null });
+    } catch (error) {
+      console.error("Failed to delete RSVP:", error);
+    }
+  };
 
   // Filtered & searched list
   const filtered = rsvps.filter((r) => {
@@ -49,13 +80,6 @@ export default function RsvpsPage() {
     const okSearch = (r.guestName ?? "").toLowerCase().includes(searchTerm.toLowerCase());
     return okType && okSearch;
   });
-
-  // Background colors by status
-  const cardBgClasses: Record<string, string> = {
-    Yes: "bg-green-50",
-    No: "bg-red-50",
-    Maybe: "bg-yellow-50",
-  };
 
   const totals = rsvps.reduce(
     (acc, r) => {
@@ -162,11 +186,17 @@ export default function RsvpsPage() {
             <Button variant="secondary">Design RSVP Card</Button>
           </Link>
           <Button onClick={() => setModal({ open: true })}>+ New RSVP</Button>
-          <Button variant="secondary" onClick={handleImportClick}>
-            Import CSV/XLSX
+          <Button disabled variant="secondary" onClick={handleImportClick}>
+            Import CSV/XLSX   
+            <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-0.5 rounded-full ml-1">
+              Coming Soon
+            </span>
           </Button>
-          <Button variant="secondary" onClick={handleExport}>
+          <Button disabled variant="secondary" onClick={handleExport}>
             Export Excel
+            <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-0.5 rounded-full ml-1">
+              Coming Soon
+            </span>
           </Button>
         </div>
       </div>
@@ -221,110 +251,103 @@ export default function RsvpsPage() {
       {/* ─── GRID VIEW ─────────────────────────────────────────── */}
       {viewMode === "grid" && (
         <ul className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {filtered.map((r) => (
-                <li
-              key={r.id}
-              className={`
-                relative p-4 rounded-lg shadow flex flex-col justify-between
-                ${cardBgClasses[r.status ?? ""] || "bg-white"}
-              `}
-            >
-              <span
-                role="status"
-                aria-label={`RSVP status: ${r.status}`}
-                className={`absolute top-2 right-2 inline-block px-2 py-0.5 rounded-full text-xs font-semibold
-                  ${
-                    r.status === "Yes"
-                      ? "bg-green-600 text-white"
-                      : r.status === "No"
-                      ? "bg-red-600 text-white"
-                      : "bg-yellow-600 text-white"
-                  }
+          {filtered.map((r) => {
+            // Determine status based on noOfPax
+            const nop = r.noOfPax ?? 0;
+            const displayStatus = nop > 0 ? "Yes" : "No";
+            const statusColor = nop > 0 ? "bg-green-600 text-white" : "bg-red-600 text-white";
+            const cardBg = nop > 0 ? "bg-green-50" : "bg-red-50";
+
+            return (
+              <li
+                key={r.id}
+                className={`
+                  relative p-4 rounded-lg shadow flex flex-col justify-between
+                  ${cardBg}
                 `}
               >
-                {r.status}
-              </span>
-
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold">{r.guestName}</h3>
-                {r.phoneNo && (
-                  <p className="text-sm text-gray-600">Phone: {r.phoneNo}</p>
-                )}
                 <span
-                  className={`
-                    inline-block px-2 py-0.5 rounded-full text-sm font-medium border-2
-                    ${
-                      r.guestType === "Family"
-                        ? "border-blue-600 text-blue-600"
-                        : r.guestType === "VIP"
-                        ? "border-purple-600 text-purple-600"
-                        : r.guestType === "Friend"
-                        ? "border-indigo-600 text-indigo-600"
-                        : "border-gray-400 text-gray-600"
-                    }
-                  `}
+                  role="status"
+                  aria-label={`RSVP status: ${displayStatus}`}
+                  className={`absolute top-2 right-2 inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${statusColor}`}
                 >
-                  {r.guestType}
+                  {displayStatus}
                 </span>
-              </div>
 
-              <div className="mt-4 flex space-x-2">
-                <Button
-                  variant="secondary"
-                  onClick={() => setModal({ open: true, rsvp: r })}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    deleteRsvp.mutate({ rsvpGuid: r.rsvpGuid ?? r.rsvpId ?? r.id, eventId: eventId! })
-                  }
-                >
-                  Delete
-                </Button>
-              </div>
-            </li>
-          ))}
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold">{r.guestName}</h3>
+                  {r.phoneNo && (
+                    <p className="text-sm text-gray-600">Phone: {r.phoneNo}</p>
+                  )}
+                  {(r.noOfPax !== undefined && r.noOfPax !== null) && (
+                    <p className="text-sm text-gray-600">Pax: {r.noOfPax}</p>
+                  )}
+                  {/* Guest type tag (Friend/Family/VIP) hidden as requested */}
+                </div>
+
+                <div className="mt-4 flex space-x-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setModal({ open: true, rsvp: r })}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleDelete(r)}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
 
       {/* ─── LIST VIEW ──────────────────────────────────────────── */}
       {viewMode === "list" && (
         <ul className="space-y-2">
-            {filtered.map((r) => (
-            <li
-              key={r.id}
-              className="flex items-center justify-between p-4 bg-white rounded shadow"
-            >
-              <div className="flex-1">
-                <p className="font-medium">{r.guestName}</p>
-                <p className="text-sm text-gray-600">
-                  <span className="mr-2">Status: {r.status}</span>
-                  <span>Type: {r.guestType}</span>
-                </p>
-                {r.phoneNo && (
-                  <p className="text-sm text-gray-600">Phone: {r.phoneNo}</p>
-                )}
-              </div>
-              <div className="flex space-x-2">
-                <Button
-                  variant="secondary"
-                  onClick={() => setModal({ open: true, rsvp: r })}
+            {filtered.map((r) => {
+              // Determine background color based on noOfPax
+              const nop = r.noOfPax ?? 0;
+              const cardBg = nop > 0 ? "bg-green-50" : "bg-red-50";
+
+              return (
+                <li
+                  key={r.id}
+                  className={`flex items-center justify-between p-4 rounded shadow ${cardBg}`}
                 >
-                  Edit
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    deleteRsvp.mutate({ rsvpGuid: r.rsvpGuid ?? r.rsvpId ?? r.id, eventId: eventId! })
-                  }
-                >
-                  Delete
-                </Button>
-              </div>
-            </li>
-          ))}
+                  <div className="flex-1">
+                    <p className="font-medium">{r.guestName}</p>
+                    <p className="text-sm text-gray-600" style={{display:'none'}}>
+                      <span className="mr-2">Status: {r.status}</span>
+                      <span>Type: {r.guestType}</span>
+                    </p>
+                    {r.phoneNo && (
+                      <p className="text-sm text-gray-600">Phone: {r.phoneNo}</p>
+                    )}
+                    {(r.noOfPax !== undefined && r.noOfPax !== null) && (
+                      <p className="text-sm text-gray-600">Pax: {r.noOfPax}</p>
+                    )}
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setModal({ open: true, rsvp: r })}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={() => handleDelete(r)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </li>
+              );
+            })}
         </ul>
       )}
 
@@ -350,6 +373,54 @@ export default function RsvpsPage() {
           }
         }}
       />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.open}
+        isDeleting={deleteRsvp.isPending}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        title="Delete RSVP?"
+        description="Are you sure you want to delete this RSVP? This will permanently remove it from your guest list."
+      >
+        {deleteModal.rsvp && (
+          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
+            <div className="flex items-start gap-3">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-800 dark:text-white mb-1">
+                  {deleteModal.rsvp.guestName}
+                </p>
+                {deleteModal.rsvp.phoneNo && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Phone: {deleteModal.rsvp.phoneNo}
+                  </p>
+                )}
+                {(deleteModal.rsvp.noOfPax !== undefined && deleteModal.rsvp.noOfPax !== null) && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Pax: {deleteModal.rsvp.noOfPax}
+                  </p>
+                )}
+                {deleteModal.rsvp.guestType && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Type: {deleteModal.rsvp.guestType}
+                  </p>
+                )}
+              </div>
+              <div className="text-right">
+                <span
+                  className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                    (deleteModal.rsvp.noOfPax ?? 0) > 0
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                  }`}
+                >
+                  {(deleteModal.rsvp.noOfPax ?? 0) > 0 ? "Yes" : "No"}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </DeleteConfirmationModal>
     </>
   );
 }
