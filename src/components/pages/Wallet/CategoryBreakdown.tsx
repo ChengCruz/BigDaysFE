@@ -2,7 +2,7 @@
 import React from "react";
 import type { Transaction } from "../../../types/transaction";
 import { TransactionType, TransactionCategory } from "../../../types/transaction";
-import { CATEGORY_CONFIG, getCategoryConfig } from "../../../utils/categoryConfig";
+import { getCategoryConfig } from "../../../utils/categoryConfig";
 import { formatAmount } from "../../../utils/transactionUtils";
 import type { Wallet } from "../../../types/wallet";
 import { CURRENCY_CONFIG } from "../../../types/wallet";

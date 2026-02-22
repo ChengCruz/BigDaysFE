@@ -6,7 +6,6 @@ import { XIcon } from "@heroicons/react/outline";
 import {
   CalendarIcon,
   ClipboardListIcon,
-  CogIcon,
   UserIcon,
   TableIcon,
   CurrencyDollarIcon,

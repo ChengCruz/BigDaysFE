@@ -1,28 +1,31 @@
 // src/types/transaction.ts
 
-export enum TransactionType {
-  Credit = 0, // Income/Refund
-  Debit = 1,  // Expense
-}
+export const TransactionType = {
+  Credit: 0, // Income/Refund
+  Debit: 1,  // Expense
+} as const;
+export type TransactionType = typeof TransactionType[keyof typeof TransactionType];
 
-export enum TransactionCategory {
-  Venue = 'Venue',
-  Catering = 'Catering',
-  Photography = 'Photography',
-  Decoration = 'Decoration',
-  Attire = 'Attire',
-  Entertainment = 'Entertainment',
-  Transport = 'Transport',
-  Invitation = 'Invitation',
-  Gifts = 'Gifts',
-  Others = 'Others',
-}
+export const TransactionCategory = {
+  Venue: 'Venue',
+  Catering: 'Catering',
+  Photography: 'Photography',
+  Decoration: 'Decoration',
+  Attire: 'Attire',
+  Entertainment: 'Entertainment',
+  Transport: 'Transport',
+  Invitation: 'Invitation',
+  Gifts: 'Gifts',
+  Others: 'Others',
+} as const;
+export type TransactionCategory = typeof TransactionCategory[keyof typeof TransactionCategory];
 
-export enum PaymentStatus {
-  Paid = 'Paid',
-  Pending = 'Pending',
-  Overdue = 'Overdue',
-}
+export const PaymentStatus = {
+  Paid: 'Paid',
+  Pending: 'Pending',
+  Overdue: 'Overdue',
+} as const;
+export type PaymentStatus = typeof PaymentStatus[keyof typeof PaymentStatus];
 
 // API Response Type 
 export interface ApiTransaction {

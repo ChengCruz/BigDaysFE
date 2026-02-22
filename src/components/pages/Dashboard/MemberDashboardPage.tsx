@@ -6,13 +6,11 @@ import { Button } from "../../atoms/Button";
 import {
   CalendarIcon,
   LocationMarkerIcon,
-  UserGroupIcon,
   CheckCircleIcon,
   ClockIcon,
   CurrencyDollarIcon,
   ClipboardCheckIcon,
   MailIcon,
-  UsersIcon,
   TableIcon,
   CashIcon,
 } from "@heroicons/react/solid";

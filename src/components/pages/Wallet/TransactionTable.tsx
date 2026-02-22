@@ -1,7 +1,7 @@
 // src/components/pages/Wallet/TransactionTable.tsx
 import React, { useState, useMemo } from "react";
 import type { Transaction } from "../../../types/transaction";
-import { TransactionType, TransactionCategory, PaymentStatus } from "../../../types/transaction";
+import { TransactionType, PaymentStatus } from "../../../types/transaction";
 import { CATEGORY_CONFIG, getAllCategories } from "../../../utils/categoryConfig";
 import { formatAmount, getTransactionTypeLabel } from "../../../utils/transactionUtils";
 import type { Wallet } from "../../../types/wallet";

@@ -32,8 +32,6 @@ export default function WalletPage() {
   // Fetch transactions (only if wallet exists)
   const {
     data: transactions = [],
-    isLoading: transactionsLoading,
-    isError: transactionsError,
   } = useTransactionsApi(wallet?.walletGuid || "", eventId!);
 
   // Modal states

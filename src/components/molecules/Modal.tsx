@@ -1,5 +1,4 @@
 import React, { type ReactNode } from "react";
-import { Button } from "../atoms/Button";
 
 export interface ModalProps {
   isOpen: boolean;
@@ -13,7 +12,7 @@ export interface ModalProps {
 export const Modal: React.FC<ModalProps> = ({
   isOpen,
   title,
-  onClose,
+  onClose: _onClose,
   children,
   className = "",
 }) => {
