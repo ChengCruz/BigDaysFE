@@ -1,11 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import client from "../client";
 import { DashboardEndpoints } from "../endpoints";
-import {
-  ApiDashboardSummary,
-  DashboardSummary,
-  toDashboardSummary,
-} from "../../types/dashboard";
+import type { ApiDashboardSummary, DashboardSummary } from "../../types/dashboard";
+import { toDashboardSummary } from "../../types/dashboard";
 
 type ApiResponse<T> = {
   data: T;

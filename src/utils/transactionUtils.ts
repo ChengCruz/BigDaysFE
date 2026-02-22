@@ -2,15 +2,14 @@
 // Helper functions for parsing/serializing extended transaction fields
 // NOTE: Extended fields are stored in remarks as JSON until backend API is updated
 
-import {
+import type {
   ApiTransaction,
   Transaction,
   TransactionExtendedData,
   CreateTransactionRequest,
   UpdateTransactionRequest,
-  TransactionCategory,
-  PaymentStatus,
 } from '../types/transaction';
+import { TransactionCategory, PaymentStatus } from '../types/transaction';
 
 /**
  * Parse API transaction response to frontend Transaction type
