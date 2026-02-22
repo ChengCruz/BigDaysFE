@@ -1,5 +1,5 @@
 // src/components/atoms/Dropdown.tsx
-import React, { useState, useRef, useEffect, ReactNode } from "react";
+import React, { useState, useRef, useEffect, type ReactNode } from "react";
 
 export interface DropdownProps {
   trigger: ReactNode;

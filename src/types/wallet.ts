@@ -1,11 +1,12 @@
 // src/types/wallet.ts
 
-export enum Currency {
-  MYR = 'MYR',
-  USD = 'USD',
-  SGD = 'SGD',
-  IDR = 'IDR',
-}
+export const Currency = {
+  MYR: 'MYR',
+  USD: 'USD',
+  SGD: 'SGD',
+  IDR: 'IDR',
+} as const;
+export type Currency = typeof Currency[keyof typeof Currency];
 
 export const CURRENCY_CONFIG: Record<Currency, { flag: string; label: string; symbol: string }> = {
   [Currency.MYR]: { flag: '🇲🇾', label: 'Malaysian Ringgit', symbol: 'RM' },

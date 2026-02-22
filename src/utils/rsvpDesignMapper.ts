@@ -227,8 +227,8 @@ function transformBlockToFrontend(block: ApiBlock): RsvpBlock {
 export function mapToBackendPayload(
   frontendDesign: RsvpDesign,
   eventId: string,
-  shareToken?: string | null,
-  publicLink?: string | null,
+  _shareToken?: string | null,
+  _publicLink?: string | null,
   isPublished: boolean = false,
   isDraft: boolean = true
 ): ApiRsvpDesignPayload {

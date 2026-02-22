@@ -4,8 +4,7 @@ import { Modal } from "../../molecules/Modal";
 import { Button } from "../../atoms/Button";
 import type { Transaction } from "../../../types/transaction";
 import type { Wallet } from "../../../types/wallet";
-import { CATEGORY_CONFIG } from "../../../utils/categoryConfig";
-import { formatAmount, getTransactionTypeLabel } from "../../../utils/transactionUtils";
+import { getTransactionTypeLabel } from "../../../utils/transactionUtils";
 import { CURRENCY_CONFIG } from "../../../types/wallet";
 
 interface ExportReportModalProps {

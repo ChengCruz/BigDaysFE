@@ -419,7 +419,7 @@ export default function RsvpDesignPage() {
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [publicLink, setPublicLink] = useState<string | null>(null);
   const [shareToken, setShareToken] = useState<string | null>(null);
-  const [version, setVersion] = useState<number | undefined>(undefined);
+  const [_version, setVersion] = useState<number | undefined>(undefined);
   const [linkCopied, setLinkCopied] = useState(false);
   const objectUrlRefs = useRef<string[]>([]);
 

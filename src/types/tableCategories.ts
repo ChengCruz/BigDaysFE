@@ -3,18 +3,19 @@
 /**
  * Table category enum matching backend values
  */
-export enum TableCategory {
-  NONE = 0,
-  BRIDE_FAMILY = 1,
-  GROOM_FAMILY = 2,
-  BRIDE_RELATIVES = 3,
-  GROOM_RELATIVES = 4,
-  FRIENDS = 5,
-  COLLEAGUES = 6,
-  FAMILY_FRIENDS = 7,
-  NEIGHBORS = 8,
-  VIP = 9,
-}
+export const TableCategory = {
+  NONE: 0,
+  BRIDE_FAMILY: 1,
+  GROOM_FAMILY: 2,
+  BRIDE_RELATIVES: 3,
+  GROOM_RELATIVES: 4,
+  FRIENDS: 5,
+  COLLEAGUES: 6,
+  FAMILY_FRIENDS: 7,
+  NEIGHBORS: 8,
+  VIP: 9,
+} as const;
+export type TableCategory = typeof TableCategory[keyof typeof TableCategory];
 
 /**
  * Display labels for table categories

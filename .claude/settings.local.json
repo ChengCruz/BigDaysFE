@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /c/2026/BigDaysFE && npx tsc --noEmit 2>&1)"
+    ]
+  }
+}
