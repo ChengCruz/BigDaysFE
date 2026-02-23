@@ -12,6 +12,7 @@ import {
   SparklesIcon,
   UserGroupIcon,
   HomeIcon,
+  ViewGridIcon,
 } from "@heroicons/react/solid";
 import { useEventContext } from "../../context/EventContext";
 import { Button } from "../atoms/Button";
@@ -29,6 +30,7 @@ const links: SidebarLink[] = [
   { to: "/app/rsvps", label: "RSVPs", Icon: ClipboardListIcon, description: "Guest responses" },
   { to: "/app/guests", label: "Guests", Icon: UserGroupIcon, description: "Guest list" },
   { to: "/app/tables", label: "Tables", Icon: TableIcon, description: "Seating & arrangements" },
+  { to: "/app/tables/floorplan", label: "Floor Plan", Icon: ViewGridIcon, description: "Visual layout" },
   { to: "/app/wallet", label: "Wallet", Icon: CurrencyDollarIcon, description: "Budget & Expenses" },
   { to: "/app/users", label: "Users", Icon: UserIcon, description: "Team" },
 ];

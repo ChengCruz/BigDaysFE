@@ -52,6 +52,7 @@ import TableDetail from "../components/pages/Tables/TableDetail";
 import { TableLayoutPlanner } from "../components/pages/Tables/TableLayoutPlanner";
 import { TablePrintView } from "../components/pages/Tables/TablePrintView";
 import { TableSummary } from "../components/pages/Tables/TableSummary";
+import FloorPlanPage from "../components/pages/Tables/FloorPlanPage";
 // …and other Public pages…
 
 export default function AppRoutes() {
@@ -103,6 +104,7 @@ export default function AppRoutes() {
         {/* ─── TABLES ─────────────────────────────────────────── */}
 <Route path="tables" element={<Outlet/>}>
   <Route index element={<TablesPage />} />
+  <Route path="floorplan" element={<FloorPlanPage />} />
 
   <Route path="new" element={
     <TableFormModal isOpen onClose={() => navigate(-1)} />
