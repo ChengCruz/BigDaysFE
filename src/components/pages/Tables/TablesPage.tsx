@@ -1,4 +1,5 @@
 // src/components/pages/Tables/TablesPage.tsx
+import { PageLoader } from "../../atoms/PageLoader";
 import {
   useTablesApi,
   useDeleteTable,
@@ -106,7 +107,7 @@ export default function TablesPage() {
   // Show "no events" state if no events exist (check BEFORE loading state)
   if (!eventId) return <NoEventsState title="No Events for Table Management" message="Create your first event to start organizing seating arrangements and table assignments." />;
 
-  if (tablesLoading || guestsLoading) return <p>Loading tables and guests…</p>;
+  if (tablesLoading || guestsLoading) return <PageLoader message="Loading tables..." />;
   if (tablesError || guestsError) return <p>Failed to load data.</p>;
 
   // Drag and drop handlers

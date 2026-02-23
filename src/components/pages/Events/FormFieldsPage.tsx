@@ -1,4 +1,5 @@
 // src/components/pages/Events/FormFieldsPage.tsx
+import { PageLoader } from "../../atoms/PageLoader";
 import { useMemo, useState } from "react";
 import {
   useFormFields,
@@ -38,7 +39,7 @@ export default function FormFieldsPage() {
   // Show "no events" state if no event ID exists (check BEFORE loading state)
   if (!eventId) return <NoEventsState title="No Event Selected" message="Create your first event to start customizing your RSVP form fields." />;
 
-  if (isLoading) return <p>Loading form fields…</p>;
+  if (isLoading) return <PageLoader />;
   if (isError) return <p>Failed to load form fields.</p>;
 
   return (

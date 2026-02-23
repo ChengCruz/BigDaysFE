@@ -1,4 +1,5 @@
 // src/components/pages/Tables/TableSummary.tsx
+import { PageLoader } from "../../atoms/PageLoader";
 import { useParams } from "react-router-dom";
 import { useTableApi } from "../../../api/hooks/useTablesApi";
 
@@ -6,7 +7,7 @@ export function TableSummary() {
   const { tableId } = useParams<{tableId:string}>();
   const { data: table, isLoading, error } = useTableApi(tableId!);
 
-  if (isLoading) return <p>Loading…</p>;
+  if (isLoading) return <PageLoader />;
   if (error || !table) return <p>Failed to load table.</p>;
 
   return (

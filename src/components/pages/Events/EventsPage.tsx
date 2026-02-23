@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { PageLoader } from "../../atoms/PageLoader";
 import {
   useDeactivateEvent,
   useEventsApi,
@@ -79,7 +80,7 @@ export default function EventsPage() {
       )
     : undefined;
 
-  if (isLoading) return <p>Loading events…</p>;
+  if (isLoading) return <PageLoader message="Loading events..." />;
   if (isError) return <p>Failed to load events.</p>;
 
   return (

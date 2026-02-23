@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PageLoader } from "../../atoms/PageLoader";
 import { useParams } from "react-router-dom";
 import { useEventContext } from "../../../context/EventContext";
 import { useGuestsApi } from "../../../api/hooks/useGuestsApi";
@@ -23,7 +24,7 @@ export function TableAssignments() {
 
   const [extra, setExtra] = useState(table?.extraGuests || 0);
 
-  if (loadingTable || loadingGuests) return <p>Loading…</p>;
+  if (loadingTable || loadingGuests) return <PageLoader />;
 
   const assigned = guests.filter((g: any) => g.tableId === tableId);
   const unassigned = guests.filter((g: any) => !g.tableId);

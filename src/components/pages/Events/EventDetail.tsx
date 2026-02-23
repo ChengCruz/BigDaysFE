@@ -1,4 +1,5 @@
 // src/components/pages/Events/EventDetail.tsx
+import { PageLoader } from "../../atoms/PageLoader";
 import { useParams, Link } from "react-router-dom";
 import { useEventApi } from "../../../api/hooks/useEventsApi";
 import { useState } from "react";
@@ -21,7 +22,7 @@ const [impOpen, setImpOpen] = useState(false);
   const deleteField = useDeleteFormField(id!);
   const [fb, setFb] = useState<{ open: boolean; field?: FormFieldConfig }>({ open: false });
 
-  if (isLoading) return <p>Loading event…</p>;
+  if (isLoading) return <PageLoader />;
   if (isError   ) return <p>Couldn’t load event.</p>;
 
   return (

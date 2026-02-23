@@ -1,4 +1,5 @@
 // src/components/pages/Users/UserDetail.tsx
+import { PageLoader } from "../../atoms/PageLoader";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useUserApi } from "../../../api/hooks/useUsersApi";
 import { Button } from "../../atoms/Button";
@@ -8,7 +9,7 @@ export default function UserDetail() {
   const nav    = useNavigate();
   const { data: u, isLoading, isError } = useUserApi(id!);
 
-  if (isLoading) return <p>Loading user…</p>;
+  if (isLoading) return <PageLoader />;
   if (isError || !u) return <p>Couldn’t load user.</p>;
 
   return (

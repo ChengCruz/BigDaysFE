@@ -1,4 +1,5 @@
 // src/components/pages/Public/RSVPFormPage.tsx
+import { PageLoader } from "../../atoms/PageLoader";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useFormFields, type FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
@@ -29,7 +30,7 @@ export default function RSVPFormPage() {
     }
   }, [fields]);
 
-  if (isLoading) return <p>Loading form…</p>;
+  if (isLoading) return <PageLoader />;
 
   const handleChange = (name: string, v: any) =>
     setValues((vals) => ({ ...vals, [name]: v }));

@@ -1,4 +1,5 @@
 // src/components/pages/Guests/GuestsPage.tsx
+import { PageLoader } from "../../atoms/PageLoader";
 import { useState, useMemo } from "react";
 import { UserGroupIcon, UserIcon } from "@heroicons/react/solid";
 import {
@@ -65,7 +66,7 @@ export default function GuestsPage() {
   // Show "no events" state if no events exist (check BEFORE loading state)
   if (!eventId) return <NoEventsState title="No Events for Guest Management" message="Create your first event to start adding and managing your guest list." />;
 
-  if (guestsLoading || tablesLoading) return <p>Loading guests…</p>;
+  if (guestsLoading || tablesLoading) return <PageLoader message="Loading guests..." />;
   if (guestsError) return <p>Failed to load guests.</p>;
 
   // Note: Guest deletion is not available in this module.

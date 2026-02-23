@@ -1,7 +1,14 @@
 // src/components/organisms/Sidebar.tsx
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { XIcon } from "@heroicons/react/outline";
+import {
+  XIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  LogoutIcon,
+  UserCircleIcon,
+  SwitchHorizontalIcon,
+} from "@heroicons/react/outline";
 
 import {
   CalendarIcon,
@@ -13,26 +20,27 @@ import {
   UserGroupIcon,
   HomeIcon,
   ViewGridIcon,
+  HeartIcon,
 } from "@heroicons/react/solid";
 import { useEventContext } from "../../context/EventContext";
-import { Button } from "../atoms/Button";
+import { useAuth } from "../../api/hooks/useAuth";
 
 interface SidebarLink {
   to: string;
   label: string;
   Icon: React.FC<React.SVGProps<SVGSVGElement>>;
-  description?: string;
+  end?: boolean;
 }
 
 const links: SidebarLink[] = [
-  { to: "/app/dashboard", label: "Member Dashboard", Icon: HomeIcon, description: "Overview & insights" },
-  { to: "/app/events", label: "Events", Icon: CalendarIcon, description: "Manage dates & details" },
-  { to: "/app/rsvps", label: "RSVPs", Icon: ClipboardListIcon, description: "Guest responses" },
-  { to: "/app/guests", label: "Guests", Icon: UserGroupIcon, description: "Guest list" },
-  { to: "/app/tables", label: "Tables", Icon: TableIcon, description: "Seating & arrangements" },
-  { to: "/app/tables/floorplan", label: "Floor Plan", Icon: ViewGridIcon, description: "Visual layout" },
-  { to: "/app/wallet", label: "Wallet", Icon: CurrencyDollarIcon, description: "Budget & Expenses" },
-  { to: "/app/users", label: "Users", Icon: UserIcon, description: "Team" },
+  { to: "/app/dashboard", label: "Dashboard", Icon: HomeIcon },
+  { to: "/app/events", label: "Events", Icon: CalendarIcon },
+  { to: "/app/rsvps", label: "RSVPs", Icon: ClipboardListIcon },
+  { to: "/app/guests", label: "Guests", Icon: UserGroupIcon },
+  { to: "/app/tables", label: "Tables", Icon: TableIcon, end: true },
+  { to: "/app/tables/floorplan", label: "Floor Plan", Icon: ViewGridIcon },
+  { to: "/app/wallet", label: "Wallet", Icon: CurrencyDollarIcon },
+  { to: "/app/users", label: "Users", Icon: UserIcon },
 ];
 
 interface SidebarProps {
@@ -42,18 +50,9 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { event, openSelector, mustChooseEvent } = useEventContext();
+  const { user, logout } = useAuth();
 
   const [collapsed, setCollapsed] = React.useState(false);
-
-  const initials = React.useMemo(() => {
-    if (!event?.title) return "EV";
-    return event.title
-      .split(" ")
-      .map(part => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
-  }, [event?.title]);
 
   return (
     <>
@@ -73,116 +72,142 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* panel */}
       <aside
         className={`
-          fixed inset-y-0 left-0 w-72 text-white
-          bg-gradient-to-b from-primary/95 via-slate-900 to-secondary/90
-          dark:from-primary/70 dark:via-slate-950 dark:to-secondary/70
-          z-30 transform transition-all shadow-xl shadow-primary/25
+          fixed inset-y-0 left-0 w-72 text-text
+          bg-background border-r border-primary/10
+          dark:bg-slate-900 dark:border-white/10 dark:text-white
+          z-30 transform transition-all
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
-          md:static md:translate-x-0 md:shadow-none
-          ${collapsed ? "md:w-20" : "md:w-72"}
+          md:static md:translate-x-0
+          ${collapsed ? "md:w-20" : "md:w-64"}
         `}
       >
-        <div
-          className={`flex items-center justify-between px-4 py-5 border-b border-white/10 ${
-            collapsed ? "md:px-3" : "md:px-6"
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-xl bg-white/15 backdrop-blur grid place-items-center text-white/90 font-semibold">
-              {initials}
-            </div>
-            {!collapsed && (
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-indigo-200/80">Workspace</p>
-                <p className="text-sm font-semibold">Event Control</p>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              className="hidden md:inline-flex p-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition"
-              onClick={() => setCollapsed(c => !c)}
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              <span aria-hidden className="text-xs font-semibold tracking-wide text-indigo-100">
-                {collapsed ? "▶" : "◀"}
-              </span>
-            </button>
-            <button
-              className="md:hidden p-2 rounded-xl hover:bg-white/10 transition"
-              onClick={onClose}
-              aria-label="Close sidebar"
-            >
-              <XIcon className="h-5 w-5 text-white" />
-            </button>
-          </div>
-        </div>
-
-        <div className={`p-4 space-y-3 ${collapsed ? "md:px-3" : "md:px-5"}`}>
+        <div className="flex flex-col h-full">
+          {/* Header: logo + collapse toggle */}
           <div
-            className={`rounded-2xl border border-white/15 bg-white/5 backdrop-blur-sm transition-all ${
-              collapsed ? "px-2 py-3" : "p-4 space-y-2"
+            className={`flex items-center justify-between px-4 py-4 border-b border-primary/10 dark:border-white/10 ${
+              collapsed ? "md:px-3" : "md:px-5"
             }`}
           >
-            <div className={`flex items-start gap-3 ${collapsed ? "justify-center" : ""}`}>
-              <div className="p-2 rounded-xl bg-white/10">
-                <SparklesIcon className="h-5 w-5 text-amber-200" />
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-secondary text-white grid place-items-center flex-shrink-0">
+                <HeartIcon className="h-5 w-5" />
               </div>
               {!collapsed && (
-                <div className="flex-1">
-                  <p className="text-[11px] uppercase tracking-wide text-indigo-200/90 font-semibold">Current event</p>
-                  <p className="text-base font-semibold text-white line-clamp-1">{event?.title ?? "Choose an event"}</p>
-                  <p className="text-xs text-indigo-100/80 line-clamp-1">
-                    {event?.location || "Add a venue"} • {event?.date ? new Date(event.date).toLocaleDateString() : "Set a date"}
-                  </p>
-                </div>
+                <span className="text-sm font-semibold tracking-tight">My Big Days</span>
               )}
             </div>
-            <Button
-              variant="secondary"
-              className={`w-full justify-center ${collapsed ? "text-xs px-2" : ""}`}
-              onClick={openSelector}
-            >
-              <span className="flex items-center gap-2">
-                <SparklesIcon className="h-4 w-4" />
-                {!collapsed && (mustChooseEvent ? "Select an event" : "Switch event")}
-              </span>
-            </Button>
-            {mustChooseEvent && !collapsed && (
-              <p className="text-[11px] text-amber-100 bg-amber-500/20 border border-amber-200/30 rounded-lg px-3 py-2">
-                Choose an event to unlock the dashboard pages. Switching later stays here in the sidebar.
-              </p>
-            )}
+            <div className="flex items-center gap-1">
+              <button
+                className="hidden md:inline-flex p-1.5 rounded-lg text-text/50 hover:text-text hover:bg-primary/5 dark:text-white/40 dark:hover:text-white dark:hover:bg-white/10 transition"
+                onClick={() => setCollapsed((c) => !c)}
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {collapsed ? (
+                  <ChevronRightIcon className="h-4 w-4" />
+                ) : (
+                  <ChevronLeftIcon className="h-4 w-4" />
+                )}
+              </button>
+              <button
+                className="md:hidden p-1.5 rounded-lg text-text/50 hover:text-text transition"
+                onClick={onClose}
+                aria-label="Close sidebar"
+              >
+                <XIcon className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
-          <nav className="space-y-1">
-            {links.map(({ to, label, Icon, description }) => (
-              <NavLink
-                key={to}
-                to={to}
-                title={label}
-                onClick={onClose}
-                className={({ isActive }) =>
-                  `group flex items-center gap-3 ${collapsed ? "justify-center px-2" : "px-4"} py-3 rounded-xl border transition-colors text-sm
-                   ${
-                     isActive
-                       ? "border-white/30 bg-white/15 text-white shadow-lg shadow-black/20"
-                       : "border-transparent text-indigo-100 hover:border-white/20 hover:bg-white/10"
-                   }`
-                }
+          {/* Event card + Nav links — scrollable middle */}
+          <div className={`flex-1 overflow-y-auto py-3 space-y-3 ${collapsed ? "md:px-2" : "px-3"}`}>
+            {/* Event selector card */}
+            <div className={collapsed ? "px-1" : "px-1"}>
+              <button
+                onClick={openSelector}
+                className={`w-full rounded-xl p-3 text-left transition
+                  bg-primary/5 hover:bg-primary/10 border border-primary/10
+                  dark:bg-white/5 dark:hover:bg-white/10 dark:border-white/10
+                  ${collapsed ? "px-2 py-3 flex justify-center" : ""}
+                `}
               >
-                <Icon className="h-5 w-5 flex-shrink-0" />
-                {!collapsed && (
-                  <div className="flex-1">
-                    <p className="font-semibold">{label}</p>
-                    {description && (
-                      <p className="text-[12px] text-indigo-100/80 group-hover:text-white/90">{description}</p>
-                    )}
-                  </div>
-                )}
-              </NavLink>
-            ))}
-          </nav>
+                <div className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}>
+                  <SparklesIcon className={`h-5 w-5 flex-shrink-0 ${mustChooseEvent ? "text-amber-500" : "text-primary"}`} />
+                  {!collapsed && (
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-[11px] uppercase tracking-wide font-medium ${mustChooseEvent ? "text-amber-600 dark:text-amber-400" : "text-text/50 dark:text-white/50"}`}>
+                        {mustChooseEvent ? "Select an event" : "Current event"}
+                      </p>
+                      <p className="text-sm font-semibold truncate">
+                        {event?.title ?? "No event selected"}
+                      </p>
+                    </div>
+                  )}
+                  {!collapsed && (
+                    <SwitchHorizontalIcon className="h-4 w-4 text-text/30 dark:text-white/30 flex-shrink-0" />
+                  )}
+                </div>
+              </button>
+              {mustChooseEvent && !collapsed && (
+                <p className="mt-2 text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg px-3 py-2">
+                  Select an event to get started.
+                </p>
+              )}
+            </div>
+
+            {/* Navigation links */}
+            <nav className="space-y-0.5">
+              {links.map(({ to, label, Icon, end }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={end}
+                  title={label}
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    `group flex items-center gap-3 ${collapsed ? "justify-center px-2" : "px-3"} py-2.5 rounded-lg transition-colors text-sm
+                     ${
+                       isActive
+                         ? "bg-primary/10 text-primary font-semibold dark:bg-primary/20 dark:text-primary"
+                         : "text-text/70 hover:bg-primary/5 hover:text-text dark:text-white/60 dark:hover:bg-white/5 dark:hover:text-white"
+                     }`
+                  }
+                >
+                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  {!collapsed && <span>{label}</span>}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
+
+          {/* Footer: user profile + logout */}
+          <div className="border-t border-primary/10 dark:border-white/10 p-3">
+            {!collapsed ? (
+              <div className="flex items-center gap-3 px-2 py-2">
+                <div className="h-8 w-8 rounded-full bg-primary/10 dark:bg-white/10 grid place-items-center flex-shrink-0">
+                  <UserCircleIcon className="h-5 w-5 text-primary dark:text-white/70" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{user?.name ?? "User"}</p>
+                  <p className="text-xs text-text/50 dark:text-white/40 truncate">{user?.email ?? ""}</p>
+                </div>
+                <button
+                  onClick={logout}
+                  className="p-1.5 rounded-lg text-text/40 hover:text-red-500 hover:bg-red-50 dark:text-white/30 dark:hover:text-red-400 dark:hover:bg-red-500/10 transition"
+                  aria-label="Logout"
+                >
+                  <LogoutIcon className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={logout}
+                className="w-full flex justify-center p-2 rounded-lg text-text/40 hover:text-red-500 hover:bg-red-50 dark:text-white/30 dark:hover:text-red-400 dark:hover:bg-red-500/10 transition"
+                aria-label="Logout"
+              >
+                <LogoutIcon className="h-5 w-5" />
+              </button>
+            )}
+          </div>
         </div>
       </aside>
     </>

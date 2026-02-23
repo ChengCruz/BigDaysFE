@@ -1,4 +1,5 @@
 // src/components/pages/Rsvps/RsvpsPage.tsx
+import { PageLoader } from "../../atoms/PageLoader";
 import React, { useState, useRef } from "react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -48,7 +49,7 @@ export default function RsvpsPage() {
   // Show "no events" state if no events exist (check BEFORE loading state)
   if (!eventId) return <NoEventsState title="No Events to Manage RSVPs" message="Create your first event to start managing guest responses and invitations." />;
 
-  if (isLoading) return <p>Loading RSVPs…</p>;
+  if (isLoading) return <PageLoader message="Loading RSVPs..." />;
   if (isError) return <p>Failed to load RSVPs.</p>;
 
   // Delete modal handlers

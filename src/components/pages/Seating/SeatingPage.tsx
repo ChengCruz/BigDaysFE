@@ -1,4 +1,5 @@
 // src/components/pages/Seating/SeatingPage.tsx
+import { PageLoader } from "../../atoms/PageLoader";
 import { useState } from "react";
 import { useSeatingApi, useDeleteSeat } from "../../../api/hooks/useSeatingApi";
 import { SeatingFormModal } from "../../molecules/SeatingFormModal";
@@ -17,7 +18,7 @@ export default function SeatingPage() {
     seat: { id: string; tableId: string; guestId: string } | null;
   }>({ open: false, seat: null });
 
-  if (isLoading) return <p>Loading seating…</p>;
+  if (isLoading) return <PageLoader />;
   if (isError) return <p>Failed to load seating.</p>;
 
   // Delete modal handlers

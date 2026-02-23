@@ -11,9 +11,9 @@ export default function DashboardTemplate() {
   const { isSelectorOpen, mustChooseEvent } = useEventContext();
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-background via-background to-accent/50 dark:from-slate-950 dark:via-slate-950 dark:to-primary/10 text-text">
+    <div className="flex h-screen bg-background dark:bg-slate-950 text-text">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 min-w-0">
         <Navbar onMenuToggle={() => setSidebarOpen(o => !o)} />
         <main className="flex-1 p-6 overflow-auto">
           <Outlet />

@@ -1,11 +1,12 @@
 import { useTableApi } from "../../../api/hooks/useTablesApi";
+import { PageLoader } from "../../atoms/PageLoader";
 import { useParams } from "react-router-dom";
 
 export function TablePrintView() {
   const { tableId } = useParams<{ tableId: string }>();
   const { data: table, isLoading, error } = useTableApi(tableId!);
 
-  if (isLoading) return <p>Loading print…</p>;
+  if (isLoading) return <PageLoader />;
   if (error || !table) return <p>Error loading print view.</p>;
 
   return (

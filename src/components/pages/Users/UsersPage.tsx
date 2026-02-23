@@ -1,4 +1,5 @@
 // src/components/pages/Users/UsersPage.tsx
+import { PageLoader } from "../../atoms/PageLoader";
 import { useState } from "react";
 import { useUsersApi, useDeleteUser } from "../../../api/hooks/useUsersApi";
 import { UserFormModal } from "../../molecules/UserFormModal";
@@ -17,7 +18,7 @@ export default function UsersPage() {
     user: { id: string; name: string; email: string } | null;
   }>({ open: false, user: null });
 
-  if (isLoading) return <p>Loading users…</p>;
+  if (isLoading) return <PageLoader message="Loading users..." />;
   if (isError) return <p>Failed to load users.</p>;
 
   // Delete modal handlers

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PageLoader } from "../../atoms/PageLoader";
 import { Rnd } from "react-rnd";
 import {
   useTableApi,
@@ -21,7 +22,7 @@ export function TableLayoutPlanner() {
       ) ?? {}
   );
 
-  if (isLoading) return <p>Loading layout…</p>;
+  if (isLoading) return <PageLoader />;
   if (error || !table) return <p>Error loading layout.</p>;
 
   const handleDragStop = (guestId: string, d: { x: number; y: number }) => {

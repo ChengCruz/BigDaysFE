@@ -1,4 +1,5 @@
 // src/components/pages/Seating/SeatingDetail.tsx
+import { PageLoader } from "../../atoms/PageLoader";
 
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useSeatApi } from "../../../api/hooks/useSeatingApi";
@@ -9,7 +10,7 @@ export default function SeatingDetail() {
   const nav    = useNavigate();
   const { data: s, isLoading, isError } = useSeatApi(id!);
 
-  if (isLoading) return <p>Loading seating…</p>;
+  if (isLoading) return <PageLoader />;
   if (isError || !s) return <p>Couldn’t load seating.</p>;
 
   return (

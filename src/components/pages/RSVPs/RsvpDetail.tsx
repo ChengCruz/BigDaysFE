@@ -1,4 +1,5 @@
 // src/components/pages/RSVPs/RsvpDetail.tsx
+import { PageLoader } from "../../atoms/PageLoader";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useRsvpApi } from "../../../api/hooks/useRsvpsApi";
 
@@ -8,7 +9,7 @@ export default function RsvpDetail() {
   const nav = useNavigate();
   const { data: r, isLoading, isError } = useRsvpApi(eventId!, id!);
 
-  if (isLoading) return <p>Loading…</p>;
+  if (isLoading) return <PageLoader />;
   if (isError) return <p>Couldn’t load RSVP.</p>;
 
   return (
