@@ -1,7 +1,7 @@
 import React, { useRef, useCallback, useState, useEffect } from "react";
 import type { FloorItem } from "./useFloorPlanState";
-import type { TableBase } from "../../../api/hooks/useTablesApi";
-import type { Guest } from "../../../api/hooks/useGuestsApi";
+import type { TableBase } from "../../../../api/hooks/useTablesApi";
+import type { Guest } from "../../../../api/hooks/useGuestsApi";
 import { FloorTableItem } from "./FloorTableItem";
 import { FloorObstacleItem } from "./FloorObstacleItem";
 

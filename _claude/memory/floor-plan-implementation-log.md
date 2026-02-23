@@ -22,11 +22,11 @@ The backend has **no endpoint** for saving table x/y positions. The `DragDropSea
 ### Architecture
 ```
 FloorPlanPage.tsx (orchestrator)
-  ├── StatsCards (4x summary)
-  ├── Toolbar (shapes, decorations, zoom, snap)
+  ├── Header (title + stat pills + actions)
+  ├── Toolbar (shapes, decorations, context bar, zoom, snap)
   ├── FloorCanvas.tsx (pan/zoom container)
-  │     ├── FloorTableItem.tsx (per-table: drag, seats, guest drop)
-  │     └── FloorObstacleItem.tsx (per-decoration: drag)
+  │     ├── FloorTableItem.tsx (per-table: drag, resize, seats, guest drop)
+  │     └── FloorObstacleItem.tsx (per-decoration: drag, resize)
   ├── FloorGuestPanel.tsx (desktop sidebar / mobile drawer)
   └── useFloorPlanState.ts (state hook + localStorage persistence)
 ```
@@ -59,18 +59,18 @@ FloorPlanPage.tsx (orchestrator)
 | File | Lines | Purpose |
 |------|-------|---------|
 | `useFloorPlanState.ts` | ~180 | Custom hook: `floorItems` state, localStorage load/save, `addItem`, `updateItem`, `removeItem`, `autoArrange`, `syncTables`, `changeTableShape` |
-| `FloorObstacleItem.tsx` | ~80 | Draggable stage/dance floor/pillar/wall with gradient backgrounds |
-| `FloorTableItem.tsx` | ~315 | Draggable table with math-positioned seats, drag-drop guest zones, seat click handlers |
-| `FloorCanvas.tsx` | ~268 | Canvas with CSS transform pan/zoom, native wheel zoom, minimap, hint box |
+| `FloorObstacleItem.tsx` | ~155 | Draggable stage/dance floor/pillar/wall with gradient backgrounds, resize handle |
+| `FloorTableItem.tsx` | ~335 | Draggable table with math-positioned seats, drag-drop guest zones, seat click handlers, resize handle |
+| `FloorCanvas.tsx` | ~280 | Canvas with CSS transform pan/zoom, native wheel zoom, draggable minimap, hint box |
 | `FloorGuestPanel.tsx` | ~140 | Right sidebar: unassigned guests (draggable), assigned summary, search filter |
-| `FloorPlanPage.tsx` | ~500+ | Main page: stats, toolbar, canvas, guest panel, table modal, toast, seat popover, mobile drawer |
+| `FloorPlanPage.tsx` | ~610 | Main page: stat pills, toolbar, context bar, canvas, guest panel, table modal, toast, seat popover, mobile drawer |
 
 **Files Modified:**
 | File | Change |
 |------|--------|
 | `src/routers/routes.tsx` | Added `<Route path="floorplan" element={<FloorPlanPage />} />` inside tables group |
 | `src/components/organisms/Sidebar.tsx` | Added "Floor Plan" nav link with `ViewGridIcon` |
-| `src/index.css` | Added `animate-slide-up` and `animate-slide-left` keyframe animations |
+| `src/index.css` | Added `animate-fade-in`, `animate-slide-up` and `animate-slide-left` keyframe animations |
 
 ### Phase 2 — Bug Fixes (Round 1)
 
@@ -117,6 +117,37 @@ FloorPlanPage.tsx (orchestrator)
   - Popover closes on backdrop click or after assignment
   - Imported `useUnassignGuestFromTable` from `useGuestsApi.ts` (already existed but was unused)
 
+### Phase 4 — UX Redesign + Delete Fix (Round 3)
+
+**Issue 1: Keyboard Delete not working for obstacles**
+- **Root cause:** When clicking an obstacle/table, `e.stopPropagation()` prevents the event from reaching the canvas `<div>`. Since the canvas never receives the click, it never gets focus, so `onKeyDown` (Delete/Backspace) never fires.
+- **Fix:** Added `useEffect` in `FloorCanvas` that calls `containerRef.current.focus()` whenever `selectedId` changes to non-null.
+
+**Issue 2: UX/Design overhaul**
+- **FloorPlanPage:** Replaced `StatsCard` grid with inline stat pills in the header. Streamlined toolbar into one compact row. Added a **selection context bar** that appears when an item is selected — shows item name, shape switcher (for tables), and visible Delete button.
+- **FloorCanvas:** Auto-dismiss hint after 8s. Cleaner glassmorphism hint box and minimap.
+- **FloorTableItem/FloorObstacleItem:** Better selection outlines (indigo, consistent). Subtle drop shadows.
+- **FloorGuestPanel:** Compact header with icon, search input with magnifying glass prefix.
+- Removed `StatsCard` dependency. Replaced emoji close/FAB buttons with proper SVG icons.
+
+### Phase 5 — Shape, Resize, Delete, Minimap (Round 4)
+
+**Issue 1: New table insertion always defaults to circle**
+- **Root cause:** `syncTables()` hardcoded `"round"` for all newly added tables. The `pendingShape.current` ref was set when the table modal closed but never consumed by `syncTables`.
+- **Fix:** Added `defaultShape` parameter to `syncTables(apiTables, defaultShape)`. The sync effect now passes `pendingShape.current || "round"` and clears the ref after use. Moved ref declarations before the sync effect.
+
+**Issue 2: Table deletion**
+- **Problem:** Tables were blocked from deletion with "Cannot delete table from floor plan" toast.
+- **Fix:** Imported `useDeleteTable` from `useTablesApi`. `handleDeleteSelected` now calls `deleteTable.mutate(selectedId)` for table items — hits the `DELETE` API endpoint, then on success removes the floor item. The Delete button in the context bar now appears for **all** selected items (tables + obstacles). Shows "Deleting..." with disabled state during API call; error toast on failure.
+
+**Issue 3: Shapes are now resizable**
+- **Problem:** The resize handle (bottom-right corner) on tables was visual-only — no drag logic.
+- **Fix:** Added `onResize: (id: string, w: number, h: number) => void` prop to both `FloorTableItem` and `FloorObstacleItem`. The resize handle now has `onMouseDown` that tracks cursor delta, calculates new dimensions (with min size enforcement: tables 50px, obstacles 20-30px), and calls `onResize`. Handle visually changed from circle to rounded square. Seat positions auto-recalculate since `seatPositions()` uses the item's current width/height. Prop chain: `FloorPlanPage (handleResizeItem → updateItem)` → `FloorCanvas (onResizeItem)` → items `(onResize)`.
+
+**Issue 4: Minimap click/drag to navigate**
+- **Problem:** The viewport indicator had `pointerEvents: "none"` and the minimap was non-interactive.
+- **Fix:** Added `handleMinimapMouseDown` to the minimap container div. Click or drag anywhere on the minimap to pan the canvas — converts minimap pixel coordinates to canvas coordinates via `mmScale`, then calculates panX/panY to center the viewport on that point. All item dots have `pointerEvents: "none"` so clicks pass through. Header shows "drag to navigate" hint. Supports continuous drag (mousemove listener on window).
+
 ### API Hooks Used
 | Hook | Usage |
 |------|-------|
@@ -124,6 +155,7 @@ FloorPlanPage.tsx (orchestrator)
 | `useGuestsApi(eventId)` | Fetch all guests for the event |
 | `useAssignGuestToTable(eventId)` | Assign guest to table (drag-drop + seat click) |
 | `useUnassignGuestFromTable(eventId)` | Unassign guest from table (seat click) |
+| `useDeleteTable(eventId)` | Delete table via API (floor plan delete action) |
 
 ---
 
@@ -136,38 +168,37 @@ FloorPlanPage.tsx (orchestrator)
 - Ideal: `POST /api/v1/FloorPlan/{eventId}` that saves the full `floorItems` JSON.
 - This is the biggest limitation of the feature.
 
-**2. Resize handles for tables and decorations**
-- A resize handle visual exists (bottom-right dot when selected) but has **no functionality**.
-- Need: mousedown on handle → track drag → update `width`/`height` → recalculate seat positions.
-- Would let users fine-tune table sizes beyond the automatic capacity-based sizing.
-
-**3. Undo/Redo**
+**2. Undo/Redo**
 - No undo stack exists. Moving a table to the wrong spot requires manual repositioning.
 - Could implement with a simple state history array (`past[]`, `present`, `future[]`).
 
 ### Medium Priority
 
-**4. Seat index tracking in assignment**
+**3. Seat index tracking in assignment**
 - The API supports `seatIndex` in `DragDropSeatingRequest`, but we don't send it.
 - The seat popover knows which seat was clicked (`seatIndex`). Pass it to the assign mutation for exact seat tracking.
 
-**5. Touch support for mobile**
+**4. Touch support for mobile**
 - Drag uses `mousedown/mousemove/mouseup` — doesn't work on touch devices.
 - Need: `touchstart/touchmove/touchend` equivalents, or use pointer events (`pointerdown` etc.).
 - Pan/zoom on touch would need pinch gesture handling.
 
-**6. Context menu on tables**
-- Right-click table → menu with: Change Shape, Edit Details, View Guests, Remove from Layout.
-- Currently shape change requires selecting table first, then clicking toolbar. Context menu is more discoverable.
+**5. Context menu on tables**
+- Right-click table → menu with: Change Shape, Edit Details, View Guests, Delete Table.
+- Currently shape change requires selecting table first, then using context bar. Context menu is more discoverable.
 
-**7. Guest drag from panel to specific seat**
+**6. Guest drag from panel to specific seat**
 - Currently dragging a guest onto a table assigns them to the table generally (no seat index).
 - Could detect which seat the drop lands on and assign to that specific seat.
 
-**8. Performance: virtualized rendering**
+**7. Performance: virtualized rendering**
 - All floor items render at all times regardless of canvas viewport.
 - For events with 50+ tables, consider only rendering items visible within the current pan/zoom viewport.
 - Could use `IntersectionObserver` or manual bounding box checks.
+
+**8. Constrained resize (aspect ratio lock)**
+- Current resize is free-form. For round tables, hold Shift to maintain aspect ratio (keep it circular).
+- For pillars (circular), resize should lock to square dimensions by default.
 
 ### Low Priority
 
@@ -188,17 +219,13 @@ FloorPlanPage.tsx (orchestrator)
 - Would require WebSocket backend + conflict resolution. Far future scope.
 
 **13. FloorPlanPage component size**
-- `FloorPlanPage.tsx` is growing large (500+ lines). Consider extracting:
+- `FloorPlanPage.tsx` is growing large (610+ lines). Consider extracting:
   - Toolbar into `FloorToolbar.tsx`
-  - Stats section into inline component
+  - Context bar into `SelectionContextBar.tsx`
   - Seat popover into `SeatAssignPopover.tsx`
   - Mobile drawer into `MobileGuestDrawer.tsx`
 
-**14. Minimap click-to-navigate**
-- Minimap shows items and viewport indicator but clicking it doesn't pan the canvas.
-- Could allow clicking on the minimap to jump to that position.
-
-**15. Snap-to-alignment guides**
+**14. Snap-to-alignment guides**
 - Currently snap only aligns to a fixed grid (40px).
 - Smart guides that show alignment lines when tables are lined up horizontally/vertically would be more useful.
 
@@ -207,22 +234,26 @@ FloorPlanPage.tsx (orchestrator)
 ## Verification Checklist
 
 - [x] Tables render with correct shapes (round, rect, square)
-- [x] Shape change works: select table → click shape button → table reshapes
+- [x] Shape change works: select table → click shape button in context bar → table reshapes
+- [x] New table insertion respects selected shape tool (round/rect/square)
 - [x] Drag tables to reposition (persists in localStorage)
+- [x] Resize tables and obstacles via corner drag handle
 - [x] Add decorations: stage, dance floor, pillar, wall
+- [x] Delete tables via API (context bar Delete button or keyboard Delete)
+- [x] Delete obstacles (context bar Delete button or keyboard Delete)
 - [x] Zoom with scroll wheel (0.3x–2.0x)
 - [x] Pan by dragging empty canvas
 - [x] Minimap shows overview with viewport indicator
+- [x] Minimap click/drag to navigate (pans canvas to clicked position)
 - [x] Snap toggle works (40px grid)
 - [x] Auto-arrange repositions all tables in grid
 - [x] Double-click table opens edit modal
-- [x] Delete key removes selected decoration (not tables)
 - [x] Drag guests from panel onto tables (API assignment)
 - [x] Click empty seat → popover to pick guest → assigns via API
 - [x] Click occupied seat → unassigns guest via API
 - [x] Guest panel visible on desktop (sidebar)
 - [x] Guest panel accessible on mobile (floating button → drawer)
 - [x] Toolbar responsive: text labels hide on small screens
-- [x] Action buttons responsive: labels hide on small screens
+- [x] Selection context bar shows name, shape tools, delete button
 - [x] Toast notifications for all user actions
 - [x] TypeScript compiles with no errors
