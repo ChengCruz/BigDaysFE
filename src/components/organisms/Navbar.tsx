@@ -1,7 +1,9 @@
 // src/components/organisms/Navbar.tsx
 import { useTheme } from "../../context/ThemeContext";
 import { useEventContext } from "../../context/EventContext";
-import { MenuIcon, MoonIcon, SunIcon } from "@heroicons/react/outline";
+import MenuIcon from "@heroicons/react/outline/MenuIcon";
+import MoonIcon from "@heroicons/react/outline/MoonIcon";
+import SunIcon from "@heroicons/react/outline/SunIcon";
 
 export function Navbar({
   onMenuToggle,

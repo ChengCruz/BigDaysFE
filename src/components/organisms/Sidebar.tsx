@@ -1,14 +1,12 @@
 // src/components/organisms/Sidebar.tsx
 import React from "react";
 import { NavLink } from "react-router-dom";
-import {
-  XIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  LogoutIcon,
-  UserCircleIcon,
-  SwitchHorizontalIcon,
-} from "@heroicons/react/outline";
+import XIcon from "@heroicons/react/outline/XIcon";
+import ChevronLeftIcon from "@heroicons/react/outline/ChevronLeftIcon";
+import ChevronRightIcon from "@heroicons/react/outline/ChevronRightIcon";
+import LogoutIcon from "@heroicons/react/outline/LogoutIcon";
+import UserCircleIcon from "@heroicons/react/outline/UserCircleIcon";
+import SwitchHorizontalIcon from "@heroicons/react/outline/SwitchHorizontalIcon";
 
 import {
   CalendarIcon,
