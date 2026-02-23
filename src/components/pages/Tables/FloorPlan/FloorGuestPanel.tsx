@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import type { Guest } from "../../../api/hooks/useGuestsApi";
+import type { Guest } from "../../../../api/hooks/useGuestsApi";
 
 interface Props {
   guests: Guest[];
@@ -71,7 +71,7 @@ export const FloorGuestPanel: React.FC<Props> = ({ guests, tables }) => {
       <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ scrollbarWidth: "thin" }}>
         {/* Unassigned section */}
         <p className="text-[10px] uppercase tracking-wider text-yellow-600 dark:text-yellow-400 font-semibold flex items-center gap-1 mb-2">
-          ⚠️ Unassigned ({unassigned.length})
+          {"\u26a0\ufe0f"} Unassigned ({unassigned.length})
         </p>
 
         {filtered.length === 0 ? (
@@ -104,7 +104,7 @@ export const FloorGuestPanel: React.FC<Props> = ({ guests, tables }) => {
                 )}
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                {guest.phoneNo && <span>📱 {guest.phoneNo}</span>}
+                {guest.phoneNo && <span>{"\ud83d\udcf1"} {guest.phoneNo}</span>}
                 {guest.flag === "VIP" && (
                   <span className="px-1.5 py-0.5 rounded bg-amber-400 text-white text-[10px] font-bold">VIP</span>
                 )}
@@ -117,7 +117,7 @@ export const FloorGuestPanel: React.FC<Props> = ({ guests, tables }) => {
         {assignedGuests.length > 0 && (
           <>
             <p className="text-[10px] uppercase tracking-wider text-green-600 dark:text-green-400 font-semibold flex items-center gap-1 mt-4 mb-2">
-              ✅ Assigned ({assignedGuests.length})
+              {"\u2705"} Assigned ({assignedGuests.length})
             </p>
             {assignedGuests.slice(0, 5).map((guest) => (
               <div key={guest.id} className="p-3 rounded-lg border border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/20">
@@ -125,7 +125,7 @@ export const FloorGuestPanel: React.FC<Props> = ({ guests, tables }) => {
                   <div>
                     <p className="font-medium text-sm text-slate-800 dark:text-white">{guest.name}</p>
                     <p className="text-[10px] text-green-600 dark:text-green-400">
-                      {tableNameMap.get(guest.tableId ?? "") ?? "Table"} • Seat {guest.seatIndex ?? "?"}
+                      {tableNameMap.get(guest.tableId ?? "") ?? "Table"} {"\u2022"} Seat {guest.seatIndex ?? "?"}
                     </p>
                   </div>
                   <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">

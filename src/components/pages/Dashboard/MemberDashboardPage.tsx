@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useEventContext } from "../../../context/EventContext";
 import { useDashboardApi } from "../../../api/hooks/useDashboardApi";
 import { Button } from "../../atoms/Button";
+import { PageLoader } from "../../atoms/PageLoader";
 import {
   CalendarIcon,
   LocationMarkerIcon,
@@ -40,7 +41,7 @@ function formatRelativeTime(timestamp: string): string {
 export default function MemberDashboardPage() {
   const navigate = useNavigate();
   const { eventId } = useEventContext();
-  const { data: dashboard } = useDashboardApi(eventId || "");
+  const { data: dashboard, isLoading } = useDashboardApi(eventId || "");
 
   // Countdown timer state
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0 });
@@ -71,7 +72,7 @@ export default function MemberDashboardPage() {
     return () => clearInterval(interval);
   }, [dashboard?.eventStats?.eventDate]);
 
-  if (!eventId || !dashboard) {
+  if (!eventId) {
     return (
       <div className="space-y-6">
         <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 rounded-2xl p-8 text-center">
@@ -96,6 +97,10 @@ export default function MemberDashboardPage() {
         </div>
       </div>
     );
+  }
+
+  if (isLoading || !dashboard) {
+    return <PageLoader message="Loading dashboard..." />;
   }
 
   return (

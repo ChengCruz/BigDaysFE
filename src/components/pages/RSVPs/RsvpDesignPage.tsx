@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../../atoms/Button";
+import { Spinner } from "../../atoms/Spinner";
 import { useEventContext } from "../../../context/EventContext";
 import { useFormFields, type FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
 import { useRsvpDesign, useSaveRsvpDesign } from "../../../api/hooks/useRsvpDesignApi";
@@ -856,7 +857,10 @@ export default function RsvpDesignPage() {
             Arrange media-backed blocks, tie existing questions, and preview a wedding invite card that guests can scroll through. Editing stays on this page—open the modal preview to see it exactly like your guests.
           </p>
           {isLoadingDesign && (
-            <p className="text-sm text-blue-600">Loading saved design...</p>
+            <div className="flex items-center gap-2 text-sm text-primary">
+              <Spinner />
+              <span>Loading saved design...</span>
+            </div>
           )}
           {isSaveSuccess && (
             <p className="text-sm text-green-600">Design saved successfully!</p>

@@ -1,5 +1,6 @@
 // src/components/pages/Wallet/WalletPage.tsx
 import { useState, useContext } from "react";
+import { PageLoader } from "../../atoms/PageLoader";
 import { Button } from "../../atoms/Button";
 import { useEventContext } from "../../../context/EventContext";
 import { AuthContext } from "../../../context/AuthProvider";
@@ -71,14 +72,7 @@ export default function WalletPage() {
 
   // Loading state
   if (walletLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-gray-500 dark:text-gray-400">Loading wallet...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader message="Loading wallet..." />;
   }
 
   // Error state
