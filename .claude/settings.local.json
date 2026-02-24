@@ -13,7 +13,14 @@
       "mcp__playwright__browser_resize",
       "mcp__playwright__browser_evaluate",
       "mcp__playwright__browser_wait_for",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Skill(log-memory)",
+      "Bash(claude mcp:*)",
+      "Bash(npx:*)",
+      "Bash(cd /c/MyBigDays/my-big-day && node test-rsvp.mjs 2>&1)",
+      "Bash(echo screenshot not found:*)",
+      "Bash(cd /c/MyBigDays/my-big-day && node test-rsvp2.mjs 2>&1)"
     ]
   }
 }

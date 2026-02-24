@@ -3,9 +3,11 @@ import { Link, useParams } from "react-router-dom";
 
 import { FullPagePreview, type FlowPreset, type RsvpBlock } from "./RsvpDesignPage";
 import { Button } from "../../atoms/Button";
+import { Spinner } from "../../atoms/Spinner";
 
 type Snapshot = {
   eventTitle?: string;
+  eventGuid?: string;
   blocks?: RsvpBlock[];
   flowPreset?: FlowPreset;
   global?: {
@@ -20,39 +22,73 @@ type Snapshot = {
 export default function RsvpSharePreviewPage() {
   const { token } = useParams<{ token: string }>();
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token || typeof window === "undefined") return;
-    const stored = window.localStorage.getItem(`rsvp-share-${token}`);
-    if (!stored) return;
-    try {
-      setSnapshot(JSON.parse(stored));
-    } catch {
-      setSnapshot(null);
+    if (!token || typeof window === "undefined") {
+      setLoading(false);
+      return;
     }
+    const stored = window.localStorage.getItem(`rsvp-share-${token}`);
+    if (stored) {
+      try {
+        setSnapshot(JSON.parse(stored));
+      } catch {
+        setSnapshot(null);
+      }
+    }
+    setLoading(false);
   }, [token]);
 
   const background = snapshot?.global ?? {};
   const flowPreset = snapshot?.flowPreset ?? "serene";
+  const submitUrl = token ? `/rsvp/submit/${token}` : null;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
+        <Spinner />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-950 to-black px-4 py-10 text-white">
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-white/60">Guest preview</p>
-            <h1 className="text-3xl font-bold">{snapshot?.eventTitle ?? "Shared RSVP preview"}</h1>
-            <p className="text-sm text-white/70">This view mirrors the public invite experience generated from the designer.</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-white/60">
+              Guest preview
+            </p>
+            <h1 className="text-3xl font-bold">
+              {snapshot?.eventTitle ?? "Shared RSVP preview"}
+            </h1>
+            <p className="text-sm text-white/70">
+              This view mirrors the public invite experience generated from the
+              designer.
+            </p>
           </div>
-          <Link to="/login">
-            <Button variant="secondary">Back to dashboard</Button>
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            {submitUrl && (
+              <Link to={submitUrl}>
+                <Button>RSVP Now</Button>
+              </Link>
+            )}
+            <Link to="/login">
+              <Button variant="secondary">Back to dashboard</Button>
+            </Link>
+          </div>
         </div>
 
         {!snapshot?.blocks?.length ? (
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white/80">
-            <p className="text-lg font-semibold text-white">This preview link is empty.</p>
-            <p className="text-sm">Ask the host to regenerate a link from the designer so you can view the invite card.</p>
+            <p className="text-lg font-semibold text-white">
+              This preview link is empty.
+            </p>
+            <p className="text-sm">
+              Ask the host to regenerate a link from the designer so you can
+              view the invite card.
+            </p>
           </div>
         ) : (
           <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl">
@@ -65,6 +101,14 @@ export default function RsvpSharePreviewPage() {
               accentColor={background.accentColor ?? "#f97316"}
               flowPreset={flowPreset}
             />
+          </div>
+        )}
+
+        {submitUrl && (
+          <div className="flex justify-center pt-2 pb-6">
+            <Link to={submitUrl}>
+              <Button className="min-w-[180px]">Submit your RSVP →</Button>
+            </Link>
           </div>
         )}
       </div>

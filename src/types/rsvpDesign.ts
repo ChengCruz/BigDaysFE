@@ -69,6 +69,25 @@ export type RsvpBlock =
       activeImageId?: string;
       caption?: string;
       height?: "short" | "medium" | "tall"; // String values
+    })
+  | (RsvpBlockBase & {
+      type: "attendance";
+      title?: string;       // "Will you be attending?"
+      subtitle?: string;    // "Please let us know"
+      width?: "full" | "half";
+    })
+  | (RsvpBlockBase & {
+      type: "guestDetails";
+      title?: string;       // "Your details"
+      subtitle?: string;
+      width?: "full" | "half";
+      showFields?: {
+        name?: boolean;
+        email?: boolean;
+        phone?: boolean;
+        pax?: boolean;
+        guestType?: boolean;
+      };
     });
 
 export interface RsvpDesign {
@@ -79,9 +98,14 @@ export interface RsvpDesign {
   globalBackgroundColor: string;
   globalOverlay: number;
   accentColor: string;
-  version?: number; // Backend-managed version number, needed for publish
+  /** Optional ambient background music URL shown to guests as a floating player */
+  globalMusicUrl?: string;
+  eventGuid?: string;           // Needed by guest page to fetch form fields
+  version?: number;             // Backend-managed version number, needed for publish
   shareToken?: string | null;
   publicLink?: string | null;
+  /** Embedded form field definitions so the public page is self-contained (no auth needed) */
+  formFieldConfigs?: import("../api/hooks/useFormFieldsApi").FormFieldConfig[];
 }
 
 /**
@@ -142,7 +166,8 @@ export interface ApiBlock {
   height?: string;
   
   // Form field
-  formFieldId?: number; // Numeric ID instead of string GUID
+  formFieldId?: number; // Numeric ID (legacy)
+  questionId?: string;  // String GUID — primary identifier
   placeholder?: string;
   required?: boolean;
   hint?: string;
@@ -156,6 +181,9 @@ export interface ApiBlock {
   sectionImage?: ApiBlockMedia | null;
   background?: ApiBlockBackground;
   
+  // Guest details field toggles
+  showFields?: Record<string, boolean>;
+
   // Share info
   share?: ApiShareInfo;
 }
@@ -168,6 +196,7 @@ export interface ApiTheme {
     assetUrl: string;
   };
   overlayOpacity: number;
+  musicUrl?: string;
 }
 
 export interface ApiLayout {
@@ -183,6 +212,8 @@ export interface ApiDesign {
   previewModes: string[];
   blocks: ApiBlock[];
   flowPreset: string;
+  /** Embedded form field configs so guest page needs no auth */
+  formFieldConfigs?: import("../api/hooks/useFormFieldsApi").FormFieldConfig[];
 }
 
 export interface ApiRsvpDesignPayload {
