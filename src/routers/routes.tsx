@@ -60,6 +60,9 @@ export default function AppRoutes() {
 
   return (
     <Routes>
+      {/* ─── STANDALONE PUBLIC (no navbar/footer) ───────── */}
+      <Route path="/rsvp/submit/:token" element={<RSVPPublicPage />} />
+
       {/* ─── PUBLIC ───────────────────────────────────────── */}
       <Route element={<PublicTemplate />}>
         <Route path="/" element={<LandingPage />} />
@@ -68,6 +71,7 @@ export default function AppRoutes() {
         {/* public landing pages */}
         <Route path="/events" element={<EventPublicPage />} />
         <Route path="/rsvp" element={<RSVPPublicPage />} />
+        {/* Admin read-only preview page */}
         <Route path="/rsvp/share/:token" element={<RsvpSharePreviewPage />} />
         {/* … other public pages … */}
       </Route>

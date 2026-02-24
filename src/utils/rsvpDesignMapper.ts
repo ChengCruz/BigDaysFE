@@ -83,8 +83,10 @@ function transformBlockToBackend(
       base.required = block.required;
       base.width = block.width === "full" ? 100 : 50; // String → Number
       base.hint = block.hint;
-      // Convert string GUID to numeric ID (if questionId is numeric string)
+      // Preserve questionId as string GUID for round-trip
       if (block.questionId) {
+        base.questionId = block.questionId;
+        // Also set numeric formFieldId for legacy backends
         const numericId = parseInt(block.questionId, 10);
         base.formFieldId = isNaN(numericId) ? undefined : numericId;
       }
@@ -105,6 +107,21 @@ function transformBlockToBackend(
       base.activeImageId = block.activeImageId;
       base.caption = block.caption;
       base.height = block.height; // Keep as string
+      break;
+
+    case "attendance":
+      base.title = block.title;
+      base.subtitle = block.subtitle;
+      base.width = block.width === "half" ? 50 : 100;
+      break;
+
+    case "guestDetails":
+      base.title = block.title;
+      base.subtitle = block.subtitle;
+      base.width = block.width === "half" ? 50 : 100;
+      if (block.showFields) {
+        base.showFields = { ...block.showFields };
+      }
       break;
   }
 
@@ -181,7 +198,8 @@ function transformBlockToFrontend(block: ApiBlock): RsvpBlock {
         required: block.required ?? false,
         width: block.width === 50 ? "half" : "full", // Number → String
         hint: block.hint,
-        questionId: block.formFieldId?.toString(), // Convert to string
+        // Prefer string questionId (GUID), fall back to numeric formFieldId
+        questionId: block.questionId ?? block.formFieldId?.toString(),
       };
 
     case "cta":
@@ -205,6 +223,31 @@ function transformBlockToFrontend(block: ApiBlock): RsvpBlock {
         activeImageId: block.activeImageId,
         caption: block.caption,
         height: (block.height as "short" | "medium" | "tall") ?? "medium",
+      };
+
+    case "attendance":
+      return {
+        ...base,
+        type: "attendance",
+        title: block.title ?? "Will you be attending?",
+        subtitle: block.subtitle,
+        width: block.width === 50 ? "half" : "full",
+      };
+
+    case "guestDetails":
+      return {
+        ...base,
+        type: "guestDetails",
+        title: block.title ?? "Your details",
+        subtitle: block.subtitle,
+        width: block.width === 50 ? "half" : "full",
+        showFields: (block.showFields as Record<string, boolean>) ?? {
+          name: true,
+          email: true,
+          phone: true,
+          pax: true,
+          guestType: true,
+        },
       };
 
     default:
@@ -243,6 +286,7 @@ export function mapToBackendPayload(
           assetUrl: frontendDesign.globalBackgroundAsset,
         },
         overlayOpacity: frontendDesign.globalOverlay,
+        musicUrl: frontendDesign.globalMusicUrl ?? undefined,
       },
       layout: {
         width: 1200, // Default layout width
@@ -253,6 +297,7 @@ export function mapToBackendPayload(
         transformBlockToBackend(block, frontendDesign.accentColor)
       ),
       flowPreset: frontendDesign.flowPreset,
+      formFieldConfigs: frontendDesign.formFieldConfigs,
     },
     isPublished,
     isDraft,
@@ -272,6 +317,8 @@ export function mapToFrontendDesign(
   const version = 'version' in backendPayload ? backendPayload.version : undefined;
   const shareToken = 'shareToken' in backendPayload ? backendPayload.shareToken : undefined;
 
+  const eventGuid = 'eventGuid' in backendPayload ? (backendPayload as ApiRsvpDesign).eventGuid : undefined;
+
   return {
     blocks: design.blocks.map(transformBlockToFrontend),
     flowPreset:
@@ -282,9 +329,12 @@ export function mapToFrontendDesign(
     globalBackgroundColor: design.theme.background.color ?? "#f6f1e4",
     globalOverlay: design.theme.overlayOpacity ?? 0.25,
     accentColor: design.theme.accentColor ?? "#f97316",
-    version, // Store backend-managed version for publish endpoint
+    globalMusicUrl: design.theme.musicUrl ?? undefined,
+    eventGuid,           // Preserved so the guest page can fetch form fields
+    version,             // Store backend-managed version for publish endpoint
     shareToken: shareToken ?? null,
-    publicLink: null, // Public link is generated client-side
+    publicLink: null,    // Public link is generated client-side
+    formFieldConfigs: design.formFieldConfigs,
   };
 }
 
@@ -333,12 +383,17 @@ export function createDefaultDesign(eventTitle?: string): Partial<RsvpDesign> {
       },
       {
         id: uid(),
-        type: "formField",
-        label: "Guest name",
-        placeholder: "Your full name",
-        required: true,
-        width: "full",
-        hint: "Pulled from your RSVP questions",
+        type: "attendance",
+        title: "Will you be attending?",
+        subtitle: "Please let us know",
+        background: { images: [], overlay: 0.4 },
+      },
+      {
+        id: uid(),
+        type: "guestDetails",
+        title: "Your details",
+        subtitle: "Tell us about yourself",
+        showFields: { name: true, email: true, phone: true, pax: true, guestType: true },
         background: { images: [], overlay: 0.4 },
       },
     ],
