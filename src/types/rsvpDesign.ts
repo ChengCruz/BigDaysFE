@@ -56,12 +56,16 @@ export type RsvpBlock =
       width: "full" | "half"; // String values
       hint?: string;
       questionId?: string; // String GUID
+      fieldCardColor?: string;      // card background (default #ffffff)
+      fieldCardTextColor?: string;  // card text/label color (default #111827)
     })
   | (RsvpBlockBase & {
       type: "cta";
       label: string;
       href?: string;
       align: "left" | "center" | "right";
+      ctaColor?: string;     // button background (defaults to accentColor)
+      ctaTextColor?: string; // button text color (default #0f172a)
     })
   | (RsvpBlockBase & {
       type: "image";
@@ -86,6 +90,8 @@ export type RsvpBlock =
         phone?: boolean;
         pax?: boolean;
       };
+      cardColor?: string;      // background color of the input card (default #ffffff)
+      cardTextColor?: string;  // text color inside the input card (default #111827)
     });
 
 export interface RsvpDesign {
@@ -98,6 +104,10 @@ export interface RsvpDesign {
   accentColor: string;
   /** Optional ambient background music URL shown to guests as a floating player */
   globalMusicUrl?: string;
+  /** Submit button customization */
+  submitButtonColor?: string;
+  submitButtonTextColor?: string;
+  submitButtonLabel?: string;
   eventGuid?: string;           // Needed by guest page to fetch form fields
   version?: number;             // Backend-managed version number, needed for publish
   shareToken?: string | null;
@@ -174,6 +184,8 @@ export interface ApiBlock {
   // CTA fields
   ctaLabel?: string;
   href?: string;
+  ctaColor?: string;
+  ctaTextColor?: string;
   
   // Section background
   sectionImage?: ApiBlockMedia | null;
@@ -181,6 +193,12 @@ export interface ApiBlock {
   
   // Guest details field toggles
   showFields?: Record<string, boolean>;
+
+  // Card / field appearance colors (guestDetails + formField)
+  cardColor?: string;
+  cardTextColor?: string;
+  fieldCardColor?: string;
+  fieldCardTextColor?: string;
 
   // Share info
   share?: ApiShareInfo;
@@ -195,6 +213,9 @@ export interface ApiTheme {
   };
   overlayOpacity: number;
   musicUrl?: string;
+  submitButtonColor?: string;
+  submitButtonTextColor?: string;
+  submitButtonLabel?: string;
 }
 
 export interface ApiLayout {

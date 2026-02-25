@@ -90,12 +90,16 @@ function transformBlockToBackend(
         const numericId = parseInt(block.questionId, 10);
         base.formFieldId = isNaN(numericId) ? undefined : numericId;
       }
+      if (block.fieldCardColor) base.fieldCardColor = block.fieldCardColor;
+      if (block.fieldCardTextColor) base.fieldCardTextColor = block.fieldCardTextColor;
       break;
 
     case "cta":
       base.ctaLabel = block.label; // label → ctaLabel
       base.href = block.href;
       base.align = block.align;
+      if (block.ctaColor) base.ctaColor = block.ctaColor;
+      if (block.ctaTextColor) base.ctaTextColor = block.ctaTextColor;
       break;
 
     case "image":
@@ -200,6 +204,8 @@ function transformBlockToFrontend(block: ApiBlock): RsvpBlock {
         hint: block.hint,
         // Prefer string questionId (GUID), fall back to numeric formFieldId
         questionId: block.questionId ?? block.formFieldId?.toString(),
+        fieldCardColor: block.fieldCardColor,
+        fieldCardTextColor: block.fieldCardTextColor,
       };
 
     case "cta":
@@ -209,6 +215,8 @@ function transformBlockToFrontend(block: ApiBlock): RsvpBlock {
         label: block.ctaLabel ?? block.label ?? "",
         href: block.href,
         align: (block.align as "left" | "center" | "right") ?? "center",
+        ctaColor: block.ctaColor,
+        ctaTextColor: block.ctaTextColor,
       };
 
     case "image":
@@ -246,6 +254,8 @@ function transformBlockToFrontend(block: ApiBlock): RsvpBlock {
           phone: true,
           pax: true,
         },
+        cardColor: block.cardColor,
+        cardTextColor: block.cardTextColor,
       };
 
     default:
@@ -285,6 +295,9 @@ export function mapToBackendPayload(
         },
         overlayOpacity: frontendDesign.globalOverlay,
         musicUrl: frontendDesign.globalMusicUrl ?? undefined,
+        submitButtonColor: frontendDesign.submitButtonColor,
+        submitButtonTextColor: frontendDesign.submitButtonTextColor,
+        submitButtonLabel: frontendDesign.submitButtonLabel,
       },
       layout: {
         width: 1200, // Default layout width
@@ -328,6 +341,9 @@ export function mapToFrontendDesign(
     globalOverlay: design.theme.overlayOpacity ?? 0.25,
     accentColor: design.theme.accentColor ?? "#f97316",
     globalMusicUrl: design.theme.musicUrl ?? undefined,
+    submitButtonColor: design.theme.submitButtonColor,
+    submitButtonTextColor: design.theme.submitButtonTextColor,
+    submitButtonLabel: design.theme.submitButtonLabel,
     eventGuid,           // Preserved so the guest page can fetch form fields
     version,             // Store backend-managed version for publish endpoint
     shareToken: shareToken ?? null,

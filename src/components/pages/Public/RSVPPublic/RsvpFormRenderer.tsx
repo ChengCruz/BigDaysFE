@@ -220,7 +220,13 @@ export default function RsvpFormRenderer({
               <p className="mt-0.5 text-xs text-white/60">{block.subtitle}</p>
             )}
           </div>
-          <div className="rounded-xl bg-white p-4 shadow-sm space-y-4 text-gray-900">
+          <div
+            className="rounded-xl p-4 shadow-sm space-y-4"
+            style={{
+              backgroundColor: block.cardColor ?? "#ffffff",
+              color: block.cardTextColor ?? "#111827",
+            }}
+          >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {show.name !== false && (
                 <FormField
@@ -288,7 +294,13 @@ export default function RsvpFormRenderer({
 
       inner = (
         <div className={block.width === "half" ? "md:max-w-[50%]" : "w-full"}>
-          <div className="rounded-xl bg-white p-4 shadow-sm text-gray-900">
+          <div
+            className="rounded-xl p-4 shadow-sm"
+            style={{
+              backgroundColor: block.fieldCardColor ?? "#ffffff",
+              color: block.fieldCardTextColor ?? "#111827",
+            }}
+          >
             {isCheckboxGroup ? (
               <div className="space-y-2">
                 <p className="text-sm font-medium text-gray-700">
@@ -329,18 +341,33 @@ export default function RsvpFormRenderer({
         </div>
       );
     } else if (block.type === "cta") {
+      const btnStyle = {
+        background: block.ctaColor ?? accentColor,
+        color: block.ctaTextColor ?? "#0f172a",
+      };
+      const btnCls =
+        "inline-block rounded-full px-8 py-3 text-sm font-semibold shadow-lg transition hover:opacity-90";
       inner = (
         <div
           className={`flex ${
             block.align === "center" ? "justify-center" : block.align === "right" ? "justify-end" : "justify-start"
           }`}
         >
-          <span
-            className="inline-block rounded-full px-8 py-3 text-sm font-semibold shadow-lg"
-            style={{ background: accentColor, color: "#0f172a" }}
-          >
-            {block.label}
-          </span>
+          {block.href && block.href !== "#" ? (
+            <a
+              href={block.href}
+              target="_blank"
+              rel="noreferrer"
+              className={btnCls}
+              style={btnStyle}
+            >
+              {block.label}
+            </a>
+          ) : (
+            <button type="button" className={btnCls} style={btnStyle}>
+              {block.label}
+            </button>
+          )}
         </div>
       );
     } else if (block.type === "image") {
@@ -447,10 +474,13 @@ export default function RsvpFormRenderer({
               type="submit"
               disabled={isSubmitting}
               className="flex min-w-[220px] items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-semibold shadow-xl transition hover:opacity-90 disabled:opacity-60"
-              style={{ background: accentColor, color: "#0f172a" }}
+              style={{
+                background: design.submitButtonColor ?? accentColor,
+                color: design.submitButtonTextColor ?? "#0f172a",
+              }}
             >
               {isSubmitting && <Spinner />}
-              {isSubmitting ? "Submitting..." : "Submit RSVP"}
+              {isSubmitting ? "Submitting..." : (design.submitButtonLabel || "Submit RSVP")}
             </button>
           </div>
         </div>

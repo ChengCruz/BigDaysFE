@@ -341,6 +341,9 @@ export default function RsvpDesignPage() {
   const [accentColor, setAccentColor] = useState("#f97316");
   const [flowPreset, setFlowPreset] = useState<FlowPreset>("serene");
   const [globalMusicUrl, setGlobalMusicUrl] = useState("");
+  const [submitButtonColor, setSubmitButtonColor] = useState("");
+  const [submitButtonTextColor, setSubmitButtonTextColor] = useState("");
+  const [submitButtonLabel, setSubmitButtonLabel] = useState("");
   const [showPreview, setShowPreview] = useState(false);
   const [previewMode, setPreviewMode] = useState<"mobile" | "desktop">("mobile");
   const [publicLink, setPublicLink] = useState<string | null>(null);
@@ -379,6 +382,9 @@ export default function RsvpDesignPage() {
     if (savedDesign.accentColor) setAccentColor(savedDesign.accentColor);
     if (savedDesign.flowPreset) setFlowPreset(savedDesign.flowPreset);
     if (savedDesign.globalMusicUrl) setGlobalMusicUrl(savedDesign.globalMusicUrl);
+    if (savedDesign.submitButtonColor) setSubmitButtonColor(savedDesign.submitButtonColor);
+    if (savedDesign.submitButtonTextColor) setSubmitButtonTextColor(savedDesign.submitButtonTextColor);
+    if (savedDesign.submitButtonLabel) setSubmitButtonLabel(savedDesign.submitButtonLabel);
     if (savedDesign.version !== undefined) setVersion(savedDesign.version);
     if (savedDesign.shareToken) {
       setShareToken(savedDesign.shareToken);
@@ -391,7 +397,7 @@ export default function RsvpDesignPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (shareToken) persistShareSnapshot(shareToken);
-  }, [shareToken, blocks, globalBackgroundAsset, globalBackgroundColor, globalBackgroundType, globalOverlay, accentColor, flowPreset, globalMusicUrl]);
+  }, [shareToken, blocks, globalBackgroundAsset, globalBackgroundColor, globalBackgroundType, globalOverlay, accentColor, flowPreset, globalMusicUrl, submitButtonColor, submitButtonTextColor, submitButtonLabel]);
 
   // ── Helpers ────────────────────────────────────────────────────────────
   const toImageAsset = (file: File) => {
@@ -416,6 +422,9 @@ export default function RsvpDesignPage() {
           overlay: globalOverlay,
           accentColor,
           musicUrl: globalMusicUrl || undefined,
+          submitButtonColor: submitButtonColor || undefined,
+          submitButtonTextColor: submitButtonTextColor || undefined,
+          submitButtonLabel: submitButtonLabel || undefined,
         },
         formFieldConfigs: availableQuestions,
       })
@@ -549,6 +558,25 @@ export default function RsvpDesignPage() {
       )
     );
 
+  const removeBackgroundImageFromBlock = (blockId: string, imageId: string) =>
+    setBlocks((prev) =>
+      prev.map((b) => {
+        if (b.id !== blockId) return b;
+        const remaining = (b.background?.images ?? []).filter((img) => img.id !== imageId);
+        return {
+          ...b,
+          background: {
+            images: remaining,
+            activeImageId:
+              b.background?.activeImageId === imageId
+                ? remaining[0]?.id
+                : b.background?.activeImageId,
+            overlay: b.background?.overlay ?? 0.4,
+          },
+        } as RsvpBlock;
+      })
+    );
+
   const setOverlayForBlock = (blockId: string, overlay: number) =>
     setBlocks((prev) =>
       prev.map((b) =>
@@ -598,6 +626,9 @@ export default function RsvpDesignPage() {
       globalOverlay,
       accentColor,
       globalMusicUrl: globalMusicUrl || undefined,
+      submitButtonColor: submitButtonColor || undefined,
+      submitButtonTextColor: submitButtonTextColor || undefined,
+      submitButtonLabel: submitButtonLabel || undefined,
       shareToken,
       publicLink,
       formFieldConfigs: availableQuestions,
@@ -651,7 +682,7 @@ export default function RsvpDesignPage() {
       />
 
       {/* Main designer layout */}
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3 xl:items-start">
         {/* Left: block list + add menu */}
         <div className="xl:col-span-1">
           <BlockList
@@ -668,8 +699,8 @@ export default function RsvpDesignPage() {
           />
         </div>
 
-        {/* Right: global settings + block editor */}
-        <div className="space-y-5 xl:col-span-2">
+        {/* Right: global settings + block editor — sticky so it stays visible while scrolling blocks */}
+        <div className="space-y-5 xl:col-span-2 xl:sticky xl:top-4 xl:max-h-[calc(100vh-5rem)] xl:overflow-y-auto xl:pb-2">
           <GlobalSettingsPanel
             globalBackgroundType={globalBackgroundType}
             globalBackgroundColor={globalBackgroundColor}
@@ -677,6 +708,9 @@ export default function RsvpDesignPage() {
             accentColor={accentColor}
             flowPreset={flowPreset}
             globalMusicUrl={globalMusicUrl}
+            submitButtonColor={submitButtonColor}
+            submitButtonTextColor={submitButtonTextColor}
+            submitButtonLabel={submitButtonLabel}
             hasBackgroundAsset={!!globalBackgroundAsset}
             onChange={(patch) => {
               if (patch.globalBackgroundType !== undefined) setGlobalBackgroundType(patch.globalBackgroundType);
@@ -685,6 +719,9 @@ export default function RsvpDesignPage() {
               if (patch.accentColor !== undefined) setAccentColor(patch.accentColor);
               if (patch.flowPreset !== undefined) setFlowPreset(patch.flowPreset);
               if (patch.globalMusicUrl !== undefined) setGlobalMusicUrl(patch.globalMusicUrl);
+              if (patch.submitButtonColor !== undefined) setSubmitButtonColor(patch.submitButtonColor);
+              if (patch.submitButtonTextColor !== undefined) setSubmitButtonTextColor(patch.submitButtonTextColor);
+              if (patch.submitButtonLabel !== undefined) setSubmitButtonLabel(patch.submitButtonLabel);
             }}
             onUploadBackground={handleBackgroundUpload}
           />
@@ -698,6 +735,7 @@ export default function RsvpDesignPage() {
             onAddBackgroundImages={addBackgroundImagesToBlock}
             onSetActiveBackground={setActiveBackgroundForBlock}
             onSetOverlay={setOverlayForBlock}
+            onRemoveBackgroundImage={removeBackgroundImageFromBlock}
             onSetSectionImage={setSectionImageForBlock}
             onClearSectionImage={clearSectionImage}
             onReplaceImage={replaceImageForBlock}
