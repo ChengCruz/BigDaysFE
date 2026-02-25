@@ -19,8 +19,8 @@ export function TableSummary() {
         {table.guests.map(g => (
           <li key={g.id} className="p-3 bg-white dark:bg-gray-800 rounded shadow">
             <p className="font-medium">{g.guestName}</p>
-            <p className="text-sm">Status: {g.status}</p>
-            <p className="text-sm">Type: {g.guestType}</p>
+            {g.phoneNo && <p className="text-sm">Phone: {g.phoneNo}</p>}
+            {g.noOfPax !== undefined && <p className="text-sm">Pax: {g.noOfPax}</p>}
           </li>
         ))}
       </ul>

@@ -59,7 +59,7 @@ export default function RsvpFormRenderer({
         type: "guestDetails",
         title: "Your details",
         subtitle: "Tell us about yourself",
-        showFields: { name: true, email: true, phone: true, pax: true },
+        showFields: { name: true, phone: true, pax: true },
       });
     }
     return result;

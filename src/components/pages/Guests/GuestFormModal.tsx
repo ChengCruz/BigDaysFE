@@ -24,7 +24,7 @@ export const GuestFormModal: React.FC<Props> = ({
   guest,
   eventId,
 }) => {
-  const { user } = useAuth();
+  useAuth();
   const { event } = useEventContext()!;
   const createGuest = useCreateGuest(eventId);
   const updateGuest = useUpdateGuest(eventId);
