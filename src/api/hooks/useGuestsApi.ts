@@ -134,6 +134,44 @@ export function useGuestsByTable(eventId: string, tableId: string) {
   });
 }
 
+export function useCreateGuest(eventId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: {
+      eventGuid: string;
+      guestName?: string;
+      pax?: number;
+      phoneNo?: string;
+      groupId?: string;
+      rsvpId?: string;
+      tableId?: string;
+    }) => client.post(GuestEndpoints.create, payload).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["guests", eventId] });
+    },
+  });
+}
+
+export function useUpdateGuest(eventId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: {
+      guestId: string;
+      name?: string;
+      pax?: number;
+      phoneNo?: string;
+      flag?: string;       // guestType → flag
+      notes?: string;      // remarks → notes
+      groupId?: string;
+      tableId?: string;
+      seatIndex?: number;
+    }) => client.put(GuestEndpoints.update, payload).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["guests", eventId] });
+    },
+  });
+}
+
 export function useAssignGuestToTable(eventId: string) {
   const qc = useQueryClient();
   return useMutation({

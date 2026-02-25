@@ -490,10 +490,8 @@ export function BlockEditor({
           <div className="space-y-2">
             {([
               { key: "name", label: "Name" },
-              { key: "email", label: "Email" },
               { key: "phone", label: "Phone number" },
               { key: "pax", label: "Number of guests" },
-              { key: "guestType", label: "Guest type (Family/Friend/VIP)" },
             ] as const).map(({ key, label }) => (
               <label key={key} className="flex cursor-pointer items-center gap-2">
                 <input

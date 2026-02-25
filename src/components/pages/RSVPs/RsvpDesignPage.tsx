@@ -96,7 +96,7 @@ function renderBlockPreview(block: RsvpBlock, accentColor: string): React.ReactN
         </div>
       );
     case "guestDetails": {
-      const fields = block.showFields ?? { name: true, email: true, phone: true, pax: true, guestType: true };
+      const fields = block.showFields ?? { name: true, phone: true, pax: true };
       const visible = Object.entries(fields).filter(([, v]) => v !== false).map(([k]) => k);
       return (
         <div className="space-y-1.5">
@@ -329,7 +329,7 @@ export default function RsvpDesignPage() {
       type: "guestDetails",
       title: "Your details",
       subtitle: "Tell us about yourself",
-      showFields: { name: true, email: true, phone: true, pax: true, guestType: true },
+      showFields: { name: true, phone: true, pax: true },
       background: { images: [], overlay: 0.4 },
     },
   ]);
@@ -430,7 +430,7 @@ export default function RsvpDesignPage() {
       text:         { id, type: "text",         body: "Tell your guests what to expect.", width: "full", align: "left", muted: false, background: { images: [], overlay: 0.4 } },
       info:         { id, type: "info",         label: "Highlight", content: "Dress code, parking, or venue info", accent: "bg-white/20 text-white border border-white/30", background: { images: [], overlay: 0.4 } },
       attendance:   { id, type: "attendance",   title: "Will you be attending?", subtitle: "Please let us know", background: { images: [], overlay: 0.4 } },
-      guestDetails: { id, type: "guestDetails", title: "Your details", subtitle: "Tell us about yourself", showFields: { name: true, email: true, phone: true, pax: true, guestType: true }, background: { images: [], overlay: 0.4 } },
+      guestDetails: { id, type: "guestDetails", title: "Your details", subtitle: "Tell us about yourself", showFields: { name: true, phone: true, pax: true }, background: { images: [], overlay: 0.4 } },
       formField:    { id, type: "formField",    label: "Custom field", placeholder: "Placeholder", required: false, width: "full", background: { images: [], overlay: 0.4 } },
       cta:          { id, type: "cta",          label: "Open RSVP", href: "#", align: "center", background: { images: [], overlay: 0.4 } },
       image:        { id, type: "image",        images: [], activeImageId: undefined, caption: "Add captions", height: "medium", background: { images: [], overlay: 0.4 } },
@@ -459,7 +459,7 @@ export default function RsvpDesignPage() {
 
   const insertQuestionBlock = (questionId: string) => {
     if (!questionId) return;
-    const field = availableQuestions.find((f) => (f.id ?? f.questionId) === questionId);
+    const field = availableQuestions.find((f) => String(f.id ?? f.questionId) === String(questionId));
     if (!field) return;
     setBlocks((prev) => {
       if (prev.some((b) => b.type === "formField" && b.questionId === questionId)) return prev;
@@ -472,7 +472,7 @@ export default function RsvpDesignPage() {
         required: field.isRequired ?? false,
         width: "full",
         hint: field.typeKey ? `${field.typeKey}${field.isRequired ? " · required" : ""}` : undefined,
-        questionId: field.id ?? field.questionId,
+        questionId: String(field.id ?? field.questionId ?? ""),
         background: { images: [], overlay: 0.4 },
       };
       setSelectedId(id);
@@ -482,7 +482,7 @@ export default function RsvpDesignPage() {
 
   const applyQuestionToBlock = (blockId: string, questionId: string | undefined) => {
     if (!questionId) return;
-    const field = availableQuestions.find((f) => (f.id ?? f.questionId) === questionId);
+    const field = availableQuestions.find((f) => String(f.id ?? f.questionId) === String(questionId));
     if (!field) return;
     setBlocks((prev) =>
       prev.map((b) => {
@@ -607,7 +607,9 @@ export default function RsvpDesignPage() {
 
   const generatePublicLink = () => {
     const token = uid();
-    const link = `${window.location.origin}/rsvp/submit/${token}`;
+    // Include ?event={eventId} so external users on other devices can load the
+    // design via GET /RsvpDesign/{eventGuid}/design (requires only apiKey+author, no JWT)
+    const link = `${window.location.origin}/rsvp/submit/${token}?event=${eventId}`;
     setShareToken(token);
     setPublicLink(link);
     setLinkCopied(false);

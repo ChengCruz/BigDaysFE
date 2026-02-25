@@ -45,6 +45,8 @@ export const TablesEndpoints = {
 export const GuestEndpoints = {
   all: (id: string) => `/Guest/ByEvent/${id}`,
   byTable: (tableId: string) => `/Guest/ByTable/${tableId}`,
+  create: "/Guest/Create",
+  update: "/Guest/Update",
   assignTable: (guestId: string, tableId: string) => `/Guest/${guestId}/AssignTable/${tableId}`,
   unassignTable: (guestId: string) => `/Guest/${guestId}/UnassignTable`,
 };
@@ -95,7 +97,7 @@ export const FormFieldsEndpoints = {
 };
 
 export const PublicRsvpEndpoints = {
-  submit: (eventId: string) => `/events/${eventId}/rsvps/public`,
+  submit: () => `/rsvp/Create`,
   designByToken: (token: string) => `/RsvpDesign/public/${token}`,
 };
 

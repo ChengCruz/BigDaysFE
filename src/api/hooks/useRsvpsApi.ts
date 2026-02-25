@@ -12,8 +12,6 @@ export interface Rsvp {
   guestName: string; // human-friendly name used in UI
   noOfPax?: number;
   name?: string; // original api field (optional)
-  status?: string;
-  guestType?: string;
   createdBy?: string;
   updatedBy?: string;
   remarks?: string;
@@ -61,8 +59,6 @@ export function useRsvpsApi(eventId: string) {
         guestName: r.guestName ?? r.name ?? "",
         noOfPax: r.noOfPax !== undefined && r.noOfPax !== null ? r.noOfPax : 1,
         name: r.name,
-        status: r.status ?? "",
-        guestType: r.guestType ?? "",
         createdBy: r.createdBy ?? "",
         remarks: r.remarks ?? "",
         phoneNo: r.phoneNo ?? "",

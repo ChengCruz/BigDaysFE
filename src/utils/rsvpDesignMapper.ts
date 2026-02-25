@@ -243,10 +243,8 @@ function transformBlockToFrontend(block: ApiBlock): RsvpBlock {
         width: block.width === 50 ? "half" : "full",
         showFields: (block.showFields as Record<string, boolean>) ?? {
           name: true,
-          email: true,
           phone: true,
           pax: true,
-          guestType: true,
         },
       };
 
@@ -393,7 +391,7 @@ export function createDefaultDesign(eventTitle?: string): Partial<RsvpDesign> {
         type: "guestDetails",
         title: "Your details",
         subtitle: "Tell us about yourself",
-        showFields: { name: true, email: true, phone: true, pax: true, guestType: true },
+        showFields: { name: true, phone: true, pax: true },
         background: { images: [], overlay: 0.4 },
       },
     ],

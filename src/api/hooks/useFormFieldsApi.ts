@@ -52,8 +52,10 @@ export function useFormFields(eventId?: string, options?: { enabled?: boolean })
       };
 
       return (Array.isArray(raw) ? raw : []).map((r: any) => ({
-        questionId: r.id ?? r.questionId,
-        id: r.id ?? r.questionId,
+        // QuestionDto.questionId is an integer from the API. Always stringify so
+        // comparisons with select onChange values (always strings) work correctly.
+        questionId: String(r.questionId ?? r.id ?? ""),
+        id: String(r.questionId ?? r.id ?? ""),
         eventId: r.eventId,
         label: r.label ?? r.text ?? r.name ?? "",
         name: r.name ?? (r.label ?? r.text ?? "").toLowerCase().replace(/\s+/g, "_"),

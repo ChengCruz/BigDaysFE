@@ -7,7 +7,7 @@
 // 4. On submit, posts answers to the public RSVP API.
 // 5. Shows RsvpSuccessScreen after a successful submission.
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Spinner } from "../../../atoms/Spinner";
 import {
@@ -19,9 +19,12 @@ import RsvpSuccessScreen from "./RsvpSuccessScreen";
 
 export default function RSVPPublicPage() {
   const { token } = useParams<{ token: string }>();
+  const [searchParams] = useSearchParams();
+  // ?event={eventGuid} is embedded in the link for cross-device design loading
+  const eventGuid = searchParams.get("event") ?? undefined;
 
   // Load the design by token (formFieldConfigs are embedded in the design)
-  const { data: design, isLoading: loadingDesign } = usePublicRsvpDesign(token);
+  const { data: design, isLoading: loadingDesign } = usePublicRsvpDesign(token, eventGuid);
 
   const submitMutation = useSubmitPublicRsvp();
   const [submitted, setSubmitted] = useState(false);

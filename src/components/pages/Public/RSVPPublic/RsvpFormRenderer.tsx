@@ -19,16 +19,6 @@ interface Props {
   isSubmitting: boolean;
 }
 
-function isValidEmail(v: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-}
-
-const GUEST_TYPES = ["Family", "Friend", "VIP", "Other"] as const;
-const STATUS_OPTIONS = [
-  { value: "Yes", label: "Yes, I'll be there", icon: "\u2713", activeClass: "border-emerald-400 bg-emerald-500/20 text-emerald-300" },
-  { value: "No",  label: "Sorry, can't make it", icon: "\u2715", activeClass: "border-rose-400 bg-rose-500/20 text-rose-300" },
-  { value: "Maybe", label: "Maybe / Tentative", icon: "~", activeClass: "border-amber-400 bg-amber-500/20 text-amber-300" },
-] as const;
 
 export default function RsvpFormRenderer({
   design,
@@ -69,7 +59,7 @@ export default function RsvpFormRenderer({
         type: "guestDetails",
         title: "Your details",
         subtitle: "Tell us about yourself",
-        showFields: { name: true, email: true, phone: true, pax: true, guestType: true },
+        showFields: { name: true, email: true, phone: true, pax: true },
       });
     }
     return result;
@@ -77,9 +67,6 @@ export default function RsvpFormRenderer({
 
   // ── Core fields ──────────────────────────────────────────────────────────
   const [guestName, setGuestName] = useState("");
-  const [guestEmail, setGuestEmail] = useState("");
-  const [status, setStatus] = useState<"Yes" | "No" | "Maybe" | null>(null);
-  const [guestType, setGuestType] = useState<string>("Family");
   const [noOfPax, setNoOfPax] = useState<number>(1);
   const [phoneNo, setPhoneNo] = useState("");
 
@@ -133,15 +120,10 @@ export default function RsvpFormRenderer({
     // Find guestDetails block to check which fields are visible
     const guestBlock = blocks.find((b) => b.type === "guestDetails");
     const showFields = (guestBlock?.type === "guestDetails" ? guestBlock.showFields : undefined) ?? {
-      name: true, email: true, phone: true, pax: true, guestType: true,
+      name: true, phone: true, pax: true,
     };
 
     if (showFields.name !== false && !guestName.trim()) errs.guestName = "Name is required";
-    if (showFields.email !== false) {
-      if (!guestEmail.trim()) errs.guestEmail = "Email is required";
-      else if (!isValidEmail(guestEmail)) errs.guestEmail = "Enter a valid email address";
-    }
-    if (!status) errs.status = "Please select an attendance option";
     if (showFields.phone !== false && !phoneNo.trim()) errs.phoneNo = "Phone number is required";
     if (showFields.pax !== false && (!noOfPax || noOfPax < 1)) errs.noOfPax = "Please enter the number of guests";
 
@@ -170,9 +152,6 @@ export default function RsvpFormRenderer({
     await onSubmit({
       eventId,
       guestName: guestName.trim(),
-      guestEmail: guestEmail.trim(),
-      status: status!,
-      guestType,
       noOfPax,
       phoneNo: phoneNo.trim(),
       answers,
@@ -229,41 +208,10 @@ export default function RsvpFormRenderer({
         </div>
       );
     } else if (block.type === "attendance") {
-      inner = (
-        <div className={`space-y-4 ${block.width === "half" ? "md:max-w-[50%]" : "w-full"}`}>
-          <div>
-            <p className="text-sm font-semibold text-white">
-              {block.title || "Will you be attending?"}
-              <span className="ml-1 text-rose-400">*</span>
-            </p>
-            {block.subtitle && (
-              <p className="mt-0.5 text-xs text-white/60">{block.subtitle}</p>
-            )}
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {STATUS_OPTIONS.map(({ value, label, icon, activeClass }) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => { setStatus(value); clearError("status"); }}
-                className={`rounded-xl border-2 py-3 text-xs font-semibold transition ${
-                  status === value
-                    ? activeClass
-                    : "border-white/20 bg-white/5 text-white/80 hover:border-white/40 hover:bg-white/10"
-                }`}
-              >
-                <span className="block text-base">{icon}</span>
-                {label}
-              </button>
-            ))}
-          </div>
-          {errors.status && (
-            <p className="text-xs text-rose-400">{errors.status}</p>
-          )}
-        </div>
-      );
+      // Attendance (status) is not supported by the API — skip rendering
+      return null;
     } else if (block.type === "guestDetails") {
-      const show = block.showFields ?? { name: true, email: true, phone: true, pax: true, guestType: true };
+      const show = block.showFields ?? { name: true, phone: true, pax: true };
       inner = (
         <div className={`space-y-4 ${block.width === "half" ? "md:max-w-[50%]" : "w-full"}`}>
           <div>
@@ -283,17 +231,6 @@ export default function RsvpFormRenderer({
                   onChange={(e) => { setGuestName(e.target.value); clearError("guestName"); }}
                   placeholder="Full name"
                   error={errors.guestName}
-                />
-              )}
-              {show.email !== false && (
-                <FormField
-                  label="Email address"
-                  type="email"
-                  required
-                  value={guestEmail}
-                  onChange={(e) => { setGuestEmail(e.target.value); clearError("guestEmail"); }}
-                  placeholder="you@example.com"
-                  error={errors.guestEmail}
                 />
               )}
               {show.phone !== false && (
@@ -323,27 +260,6 @@ export default function RsvpFormRenderer({
                 />
               )}
             </div>
-            {show.guestType !== false && (
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-700">How do you know the couple?</p>
-                <div className="flex flex-wrap gap-2">
-                  {GUEST_TYPES.map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => setGuestType(type)}
-                      className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
-                        guestType === type
-                          ? "border-primary bg-primary text-white"
-                          : "border-gray-200 text-gray-600 hover:border-primary hover:text-primary"
-                      }`}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       );

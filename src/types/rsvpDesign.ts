@@ -83,10 +83,8 @@ export type RsvpBlock =
       width?: "full" | "half";
       showFields?: {
         name?: boolean;
-        email?: boolean;
         phone?: boolean;
         pax?: boolean;
-        guestType?: boolean;
       };
     });
 
