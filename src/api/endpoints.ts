@@ -3,6 +3,7 @@
 
 export const AuthEndpoints = {
   login: "/User/Login",
+  logout: "/User/Logout",
   me: "/auth/me",
 };
 
@@ -60,8 +61,8 @@ export const SeatingEndpoints = {
 };
 
 export const UsersEndpoints = {
-  all: "/users",
-  byId: (id: string) => `/users/${id}`,
+  all: "/User/GetUsersList",
+  byGuid: (guid: string) => `/User/guid/${guid}`,
   create: "/users",
   update: (id: string) => `/users/${id}`,
   delete: (id: string) => `/users/${id}`,
