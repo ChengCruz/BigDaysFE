@@ -48,6 +48,8 @@ export interface FormFieldProps {
   /** Textarea only */
   rows?: number;
 
+  autoComplete?: string;
+
   /** Optional helper or error text */
   hint?: string;
   error?: string;
@@ -69,6 +71,7 @@ export function FormField({
   placeholder,
   disabled,
   autoFocus,
+  autoComplete,
   min,
   max,
   step,
@@ -174,6 +177,7 @@ export function FormField({
           disabled={disabled}
           required={required}
           autoFocus={autoFocus}
+          autoComplete={autoComplete}
           min={min}
           max={max}
           step={step}

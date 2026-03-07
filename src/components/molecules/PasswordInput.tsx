@@ -1,6 +1,7 @@
 // src/components/molecules/PasswordInput.tsx
 import React, { useState } from "react";
-import { EyeIcon, EyeOffIcon } from "@heroicons/react/outline";
+import EyeIcon from "@heroicons/react/outline/EyeIcon";
+import EyeOffIcon from "@heroicons/react/outline/EyeOffIcon";
 import {
   PASSWORD_REQUIREMENTS,
   getPasswordStrength,
