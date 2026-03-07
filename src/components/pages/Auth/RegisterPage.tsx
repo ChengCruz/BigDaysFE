@@ -1,14 +1,12 @@
 // src/components/pages/Auth/RegisterPage.tsx
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { FormField } from "../../molecules/FormField";
 import { PasswordInput } from "../../molecules/PasswordInput";
 import { Button } from "../../atoms/Button";
 import { validatePassword } from "../../../utils/passwordValidation";
 
 export default function RegisterPage() {
-  const nav = useNavigate();
-
   const [formData, setFormData] = useState({
     name: "",
     email: "",

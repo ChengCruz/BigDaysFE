@@ -32,10 +32,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [tempUser, setTempUser] = useState<typeof TEMP_USER | null>(() =>
     localStorage.getItem("token") === TEMP_TOKEN ? TEMP_USER : null
   );
-  const [hasToken, setHasToken] = useState(
-    () => !!localStorage.getItem("token") && localStorage.getItem("token") !== TEMP_TOKEN
-  );
-
   const { data: profile, isLoading } = useQuery({
     queryKey: ["me"],
     queryFn: () => client.get(AuthEndpoints.me).then((r) => r.data),
@@ -53,7 +49,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     await loginMutation.mutateAsync(creds);
-    setHasToken(true);
   };
 
   const logout = async () => {
@@ -62,7 +57,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // If temp user, just clear locally
     if (token === TEMP_TOKEN) {
       localStorage.removeItem("token");
-      setHasToken(false);
       setTempUser(null);
       window.location.replace("/login");
       return;
@@ -75,7 +69,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Logout API error:", error);
     } finally {
       // Always clear local state and redirect
-      setHasToken(false);
       setTempUser(null);
       window.location.replace("/login");
     }
