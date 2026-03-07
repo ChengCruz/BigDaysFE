@@ -35,6 +35,7 @@ import UsersPage from "../components/pages/Users/UsersPage";
 import EditUserModal from "../components/pages/Users/EditUserModal";
 
 import WalletPage from "../components/pages/Wallet/WalletPage";
+import BackgroundsPage from "../components/pages/Backgrounds/BackgroundsPage";
 
 import MemberDashboardPage from "../components/pages/Dashboard/MemberDashboardPage";
 
@@ -145,6 +146,9 @@ export default function AppRoutes() {
 
         {/* WALLET */}
         <Route path="wallet" element={<WalletPage />} />
+
+        {/* AI BACKGROUNDS */}
+        <Route path="backgrounds" element={<BackgroundsPage />} />
 
         {/* any other /app/* → back to dashboard */}
         <Route path="*" element={<Navigate to="/app/dashboard" replace />} />

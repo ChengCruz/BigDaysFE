@@ -105,6 +105,16 @@ export const RsvpDesignEndpoints = {
   publish: (eventGuid: string, version: number) => `/RsvpDesign/${eventGuid}/design/${version}/publish`,
 };
 
+export const AiBackgroundEndpoints = {
+  all: (eventGuid: string) => `/AiBackground/List/${eventGuid}`,
+  byId: (bgGuid: string) => `/AiBackground/${bgGuid}`,
+  generate: "/AiBackground/Generate",
+  delete: (bgGuid: string) => `/AiBackground/Delete/${bgGuid}`,
+  status: (bgGuid: string) => `/AiBackground/Status/${bgGuid}`,
+  presets: "/AiBackground/Presets",
+  presetsByCategory: (cat: string) => `/AiBackground/Presets/${cat}`,
+};
+
 export const DashboardEndpoints = {
   summary: (eventGuid: string) => `/Dashboard/Summary/${eventGuid}`,
 };

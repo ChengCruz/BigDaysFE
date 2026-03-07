@@ -19,6 +19,7 @@ import {
   HomeIcon,
   ViewGridIcon,
   HeartIcon,
+  PhotographIcon,
 } from "@heroicons/react/solid";
 import { useEventContext } from "../../context/EventContext";
 import { useAuth } from "../../api/hooks/useAuth";
@@ -38,6 +39,7 @@ const links: SidebarLink[] = [
   { to: "/app/tables", label: "Tables", Icon: TableIcon, end: true },
   { to: "/app/tables/floorplan", label: "Floor Plan", Icon: ViewGridIcon },
   { to: "/app/wallet", label: "Wallet", Icon: CurrencyDollarIcon },
+  { to: "/app/backgrounds", label: "AI Backgrounds", Icon: PhotographIcon },
   { to: "/app/users", label: "Users", Icon: UserIcon },
 ];
 
