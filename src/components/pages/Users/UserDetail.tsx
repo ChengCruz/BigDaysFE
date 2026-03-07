@@ -1,13 +1,13 @@
 // src/components/pages/Users/UserDetail.tsx
 import { PageLoader } from "../../atoms/PageLoader";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useUserApi } from "../../../api/hooks/useUsersApi";
+import { useUserByGuidApi } from "../../../api/hooks/useUsersApi";
 import { Button } from "../../atoms/Button";
 
 export default function UserDetail() {
   const { id } = useParams<{ id: string }>();
   const nav    = useNavigate();
-  const { data: u, isLoading, isError } = useUserApi(id!);
+  const { data: u, isLoading, isError } = useUserByGuidApi(id!);
 
   if (isLoading) return <PageLoader />;
   if (isError || !u) return <p>Couldn’t load user.</p>;

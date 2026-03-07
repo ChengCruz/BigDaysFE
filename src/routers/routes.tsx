@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, Outlet, useNavigate } from "react-router-dom";
 
 import LandingPage from "../components/pages/Landing/LandingPage";
 import LoginPage from "../components/pages/Auth/LoginPage";
+import RegisterPage from "../components/pages/Auth/RegisterPage";
 import PublicTemplate from "../components/templates/PublicTemplate";
 import DashboardTemplate from "../components/templates/DashboardTemplate";
 
@@ -67,6 +68,7 @@ export default function AppRoutes() {
       <Route element={<PublicTemplate />}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
         {/* public landing pages */}
         <Route path="/events" element={<EventPublicPage />} />

@@ -10,7 +10,10 @@ export interface LoginPayload {
 
 export interface LoginResponse {
   token: string;
-  user: { id: string; name: string; email: string };
+}
+
+export interface LogoutResponse {
+  message: string;
 }
 
 export function useAuthApi() {
@@ -27,5 +30,16 @@ export function useAuthApi() {
     }
   );
 
-  return { login };
+  const logout = useMutation<LogoutResponse, Error, void>(
+    {
+      mutationFn: () =>
+        client.post<LogoutResponse>(AuthEndpoints.logout).then(r => r.data),
+      onSettled: () => {
+        localStorage.removeItem("token");
+        qc.clear();
+      },
+    }
+  );
+
+  return { login, logout };
 }
