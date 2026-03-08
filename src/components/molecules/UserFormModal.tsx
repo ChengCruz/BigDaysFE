@@ -9,7 +9,7 @@ import { FormError } from "./FormError";
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  initial?: { id: string; name: string; email: string };
+  initial?: { userGuid: string; fullName: string; email: string };
 }
 
 export const UserFormModal: React.FC<Props> = ({
@@ -17,15 +17,15 @@ export const UserFormModal: React.FC<Props> = ({
   onClose,
   initial,
 }) => {
-  const [name, setName] = useState(initial?.name || "");
+  const [name, setName] = useState(initial?.fullName || "");
   const [email, setEmail] = useState(initial?.email || "");
   const createUser = useCreateUser();
-  const updateUser = useUpdateUser(initial?.id || "");
+  const updateUser = useUpdateUser(initial?.userGuid || "");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      setName(initial?.name || "");
+      setName(initial?.fullName || "");
       setEmail(initial?.email || "");
     }
   }, [isOpen, initial]);
@@ -34,7 +34,7 @@ export const UserFormModal: React.FC<Props> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const data = { name, email };
+    const data = { fullName: name, email };
     try {
       if (isEdit && initial) {
         await updateUser.mutateAsync(data);

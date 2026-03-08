@@ -3,35 +3,37 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { UsersEndpoints } from "../endpoints";
 
-export function useUsersApi() {
+export function useUsersListApi() {
   return useQuery({
-    queryKey: ["users"],
+    queryKey: ["users", "list"],
     queryFn: async () => (await client.get(UsersEndpoints.all)).data,
     staleTime: 5 * 60_000,
+    enabled: false, // Don't auto-fetch, only fetch when manually triggered
   });
 }
 
-export function useUserApi(id: string) {
+export function useUserByGuidApi(guid: string) {
   return useQuery({
-    queryKey: ["user", id],
-    queryFn: async () => (await client.get(UsersEndpoints.byId(id))).data,
+    queryKey: ["user", "guid", guid],
+    queryFn: async () => (await client.get(UsersEndpoints.byGuid(guid))).data,
+    enabled: !!guid,
   });
 }
 
 export function useCreateUser() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { name: string; email: string }) =>
+    mutationFn: async (data: { fullName: string; email: string }) =>
       (await client.post(UsersEndpoints.create, data)).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
   });
 }
 
-export function useUpdateUser(id: string) {
+export function useUpdateUser(userGuid: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { name: string; email: string }) =>
-      (await client.put(UsersEndpoints.update(id), data)).data,
+    mutationFn: async (data: { fullName: string; email: string }) =>
+      (await client.put(UsersEndpoints.update(userGuid), data)).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
   });
 }
@@ -39,8 +41,8 @@ export function useUpdateUser(id: string) {
 export function useDeleteUser() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) =>
-      (await client.delete(UsersEndpoints.delete(id))).data,
+    mutationFn: async (userGuid: string) =>
+      (await client.delete(UsersEndpoints.delete(userGuid))).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
   });
 }

@@ -1,6 +1,6 @@
 // src/components/pages/Auth/LoginPage.tsx
 import React, { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../../api/hooks/useAuth";
 import { FormField } from "../../molecules/FormField";
 import { Button } from "../../atoms/Button";
@@ -48,6 +48,16 @@ export default function LoginPage() {
       <Button type="submit" variant="primary" disabled={loading}>
         {loading ? "Signing in…" : "Sign In"}
       </Button>
+
+      <div className="text-center text-sm">
+        <span className="text-muted">Don't have an account? </span>
+        <Link
+          to="/register"
+          className="text-primary hover:underline font-medium"
+        >
+          Create Account
+        </Link>
+      </div>
     </form>
   );
 }
