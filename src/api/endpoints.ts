@@ -4,6 +4,7 @@
 export const AuthEndpoints = {
   login: "/User/Login",
   logout: "/User/Logout",
+  refreshToken: "/User/RefreshToken",
   me: "/auth/me",
 };
 
@@ -66,6 +67,7 @@ export const UsersEndpoints = {
   create: "/users",
   update: (id: string) => `/users/${id}`,
   delete: (id: string) => `/users/${id}`,
+  updatePassword: "/User/UpdatePassword",
 };
 
 export const WalletEndpoints = {

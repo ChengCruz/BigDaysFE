@@ -1,12 +1,18 @@
-import { createContext, useState, type ReactNode } from "react";
+import { createContext, useState, useEffect, type ReactNode } from "react";
 import client from "../api/client";
-import { useAuthApi, type LoginPayload } from "../api/hooks/useAuthApi";
-import { useQuery } from "@tanstack/react-query";
+import { useAuthApi, type LoginPayload, type AuthResponse } from "../api/hooks/useAuthApi";
 import { AuthEndpoints } from "../api/endpoints";
-import { getUserGuidFromToken, getUserRoleFromToken } from "../utils/jwtUtils";
+import { tokenStore } from "../utils/tokenStore";
+import { decodeJwt, getUserGuidFromToken, getUserRoleFromToken } from "../utils/jwtUtils";
+
+interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+}
 
 interface AuthCtx {
-  user: { id: string; name: string; email: string } | null;
+  user: AuthUser | null;
   userGuid: string | null;
   userRole: number | null;
   login: (data: LoginPayload) => Promise<void>;
@@ -22,71 +28,106 @@ export const AuthContext = createContext<AuthCtx>({
   logout: () => {},
   loading: false,
 });
+
 // TODO: remove once backend fixes /User/Login SQL bug
 const TEMP_TOKEN = "temp-admin-token";
-const TEMP_USER = { id: "temp-admin", name: "Admin", email: "admin@bigdays.com" };
+const TEMP_REFRESH = "temp-refresh-token";
+const TEMP_USER: AuthUser = { id: "temp-admin", name: "Admin", email: "admin@bigdays.com" };
+
+function userFromToken(token: string | null): AuthUser | null {
+  if (!token || token === TEMP_TOKEN) return null;
+  const payload = decodeJwt(token);
+  if (!payload?.sub) return null;
+  return {
+    id: payload.sub,
+    name: payload.email ?? payload.sub,
+    email: payload.email ?? "",
+  };
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { login: loginMutation, logout: logoutMutation } = useAuthApi();
+  const [loading, setLoading] = useState(true);
+  // Incrementing this forces a re-render when the in-memory token changes
+  const [tokenVersion, setTokenVersion] = useState(0);
 
-  const [tempUser, setTempUser] = useState<typeof TEMP_USER | null>(() =>
-    localStorage.getItem("token") === TEMP_TOKEN ? TEMP_USER : null
-  );
-  const { data: profile, isLoading } = useQuery({
-    queryKey: ["me"],
-    queryFn: () => client.get(AuthEndpoints.me).then((r) => r.data),
-    enabled: false,
-  });
+  // Silent session restore on app startup
+  useEffect(() => {
+    const stored = localStorage.getItem("refreshToken");
+    if (!stored) {
+      setLoading(false);
+      return;
+    }
 
-  const token = localStorage.getItem("token");
-  const userGuid = token !== TEMP_TOKEN ? getUserGuidFromToken(token) : "temp-admin";
-  const userRole = token !== TEMP_TOKEN ? getUserRoleFromToken(token) : 1;
+    // Temp-admin shortcut
+    if (stored === TEMP_REFRESH) {
+      tokenStore.set(TEMP_TOKEN);
+      setTokenVersion(v => v + 1);
+      setLoading(false);
+      return;
+    }
+
+    client
+      .post<AuthResponse>(AuthEndpoints.refreshToken, { refreshToken: stored })
+      .then(({ data }) => {
+        tokenStore.set(data.accessToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+        setTokenVersion(v => v + 1);
+      })
+      .catch(() => {
+        tokenStore.clear();
+        localStorage.removeItem("refreshToken");
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const accessToken = tokenStore.get();
+  const isTempUser = accessToken === TEMP_TOKEN;
+  const user = isTempUser ? TEMP_USER : userFromToken(accessToken);
+  const userGuid = isTempUser ? "temp-admin" : getUserGuidFromToken(accessToken);
+  const userRole = isTempUser ? 1 : getUserRoleFromToken(accessToken);
 
   const login = async (creds: LoginPayload): Promise<void> => {
     if (creds.email === TEMP_USER.email && creds.password === "Abc123") {
-      localStorage.setItem("token", TEMP_TOKEN);
-      setTempUser(TEMP_USER);
+      tokenStore.set(TEMP_TOKEN);
+      localStorage.setItem("refreshToken", TEMP_REFRESH);
+      setTokenVersion(v => v + 1);
       return;
     }
     await loginMutation.mutateAsync(creds);
+    setTokenVersion(v => v + 1);
   };
 
   const logout = async () => {
-    const token = localStorage.getItem("token");
-    
-    // If temp user, just clear locally
-    if (token === TEMP_TOKEN) {
-      localStorage.removeItem("token");
-      setTempUser(null);
-      window.location.replace("/login");
-      return;
-    }
-    
-    // Call backend logout API
     try {
-      await logoutMutation.mutateAsync();
+      if (!isTempUser) {
+        await logoutMutation.mutateAsync();
+      }
     } catch (error) {
       console.error("Logout API error:", error);
     } finally {
-      // Always clear local state and redirect
-      setTempUser(null);
+      tokenStore.clear();
+      localStorage.removeItem("refreshToken");
+      setTokenVersion(v => v + 1);
       window.location.replace("/login");
     }
   };
+
+  // tokenVersion is used only to trigger re-renders when token changes
+  void tokenVersion;
 
   return (
     <AuthContext.Provider
       value={{
-        user: tempUser ?? profile ?? null,
+        user,
         userGuid,
         userRole,
         login,
         logout,
-        loading: isLoading || loginMutation.isPending,
+        loading: loading || loginMutation.isPending,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
 }
-

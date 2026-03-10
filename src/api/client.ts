@@ -1,20 +1,95 @@
 // src/api/client.ts
 import axios from "axios";
+import { tokenStore } from "../utils/tokenStore";
+import { AuthEndpoints } from "./endpoints";
 
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_BASE, // e.g. "https://api.mybigday.com"
   headers: { "Content-Type": "application/json" },
 });
 
+// --- Request interceptor: attach access token + api keys ---
 client.interceptors.request.use(cfg => {
-  const token = localStorage.getItem("token");
+  const token = tokenStore.get();
   if (token) cfg.headers!["Authorization"] = `Bearer ${token}`;
-    // Attach required headers for your API
-  const apiKey = import.meta.env.VITE_API_KEY;   // store in .env
-  const author = import.meta.env.VITE_API_AUTHOR; // store in .env
+  const apiKey = import.meta.env.VITE_API_KEY;
+  const author = import.meta.env.VITE_API_AUTHOR;
   if (apiKey) cfg.headers!["apiKey"] = apiKey;
   if (author) cfg.headers!["author"] = author;
   return cfg;
 });
+
+// --- Response interceptor: silent refresh on 401 ---
+let isRefreshing = false;
+let pendingQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = [];
+
+function processQueue(error: unknown, token: string | null) {
+  pendingQueue.forEach(p => error ? p.reject(error) : p.resolve(token!));
+  pendingQueue = [];
+}
+
+client.interceptors.response.use(
+  res => res,
+  async error => {
+    const original = error.config;
+
+    // Only attempt refresh on 401, and not for the refresh/login endpoints themselves
+    if (
+      error.response?.status !== 401 ||
+      original._retry ||
+      original.url === AuthEndpoints.refreshToken ||
+      original.url === AuthEndpoints.login
+    ) {
+      return Promise.reject(error);
+    }
+
+    const storedRefreshToken = localStorage.getItem("refreshToken");
+    if (!storedRefreshToken) {
+      if (window.location.pathname !== "/login") {
+        window.location.replace("/login");
+      }
+      return Promise.reject(error);
+    }
+
+    if (isRefreshing) {
+      // Queue requests that arrive while a refresh is already in flight
+      return new Promise((resolve, reject) => {
+        pendingQueue.push({
+          resolve: (token) => {
+            original.headers["Authorization"] = `Bearer ${token}`;
+            resolve(client(original));
+          },
+          reject,
+        });
+      });
+    }
+
+    original._retry = true;
+    isRefreshing = true;
+
+    try {
+      const { data } = await client.post(AuthEndpoints.refreshToken, {
+        refreshToken: storedRefreshToken,
+      });
+
+      tokenStore.set(data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
+
+      processQueue(null, data.accessToken);
+      original.headers["Authorization"] = `Bearer ${data.accessToken}`;
+      return client(original);
+    } catch (refreshError) {
+      processQueue(refreshError, null);
+      tokenStore.clear();
+      localStorage.removeItem("refreshToken");
+      if (window.location.pathname !== "/login") {
+        window.location.replace("/login");
+      }
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
+    }
+  }
+);
 
 export default client;

@@ -2,14 +2,19 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { AuthEndpoints } from "../endpoints";
+import { tokenStore } from "../../utils/tokenStore";
 
 export interface LoginPayload {
   email: string;
   password: string;
 }
 
-export interface LoginResponse {
-  token: string;
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  userGuid: string;
+  role: number;
 }
 
 export interface LogoutResponse {
@@ -19,27 +24,25 @@ export interface LogoutResponse {
 export function useAuthApi() {
   const qc = useQueryClient();
 
-  const login = useMutation<LoginResponse, Error, LoginPayload>(
-    {
-      mutationFn: (data: LoginPayload) =>
-        client.post<LoginResponse>(AuthEndpoints.login, data).then(r => r.data),
-      onSuccess: ({ token }) => {
-        localStorage.setItem("token", token);
-        qc.invalidateQueries({ queryKey: ["me"] });
-      },
-    }
-  );
+  const login = useMutation<AuthResponse, Error, LoginPayload>({
+    mutationFn: (data: LoginPayload) =>
+      client.post<AuthResponse>(AuthEndpoints.login, data).then(r => r.data),
+    onSuccess: (data) => {
+      tokenStore.set(data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
+      qc.invalidateQueries({ queryKey: ["me"] });
+    },
+  });
 
-  const logout = useMutation<LogoutResponse, Error, void>(
-    {
-      mutationFn: () =>
-        client.post<LogoutResponse>(AuthEndpoints.logout).then(r => r.data),
-      onSettled: () => {
-        localStorage.removeItem("token");
-        qc.clear();
-      },
-    }
-  );
+  const logout = useMutation<LogoutResponse, Error, void>({
+    mutationFn: () =>
+      client.post<LogoutResponse>(AuthEndpoints.logout).then(r => r.data),
+    onSettled: () => {
+      tokenStore.clear();
+      localStorage.removeItem("refreshToken");
+      qc.clear();
+    },
+  });
 
   return { login, logout };
 }

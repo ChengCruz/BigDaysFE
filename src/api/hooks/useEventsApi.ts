@@ -49,10 +49,11 @@ function toEvent(e: ApiEvent): Event {
 /**
  * Get all events
  */
-export function useEventsApi(includeDeleted = false) {
+export function useEventsApi(includeDeleted = false, opts?: { enabled?: boolean }) {
   return useQuery<Event[]>({
     // include includeDeleted in the cache key so toggling updates cache correctly
     queryKey: ["events", includeDeleted],
+    enabled: opts?.enabled ?? true,
     queryFn: async () => {
       const res = await client.get<ApiResponse<ApiEvent[]>>(EventsEndpoints.all);
       const items = Array.isArray(res.data?.data) ? res.data.data : [];

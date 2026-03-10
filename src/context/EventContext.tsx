@@ -1,6 +1,7 @@
 // src/context/EventContext.tsx
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { useEventsApi, type Event } from "../api/hooks/useEventsApi";
+import { tokenStore } from "../utils/tokenStore";
 
 interface EventContextValue {
   eventId?: string;
@@ -25,7 +26,8 @@ const EventContext = createContext<EventContextValue>({
 });
 
 export function EventProvider({ children }: { children: ReactNode }) {
-  const { data: events } = useEventsApi();
+  const isAuthenticated = !!tokenStore.get();
+  const { data: events } = useEventsApi(false, { enabled: isAuthenticated });
   const [eventId, _setEventId] = useState<string | undefined>(
     () => localStorage.getItem("eventId") || undefined
   );
