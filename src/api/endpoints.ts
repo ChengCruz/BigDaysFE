@@ -111,3 +111,22 @@ export const RsvpDesignEndpoints = {
 export const DashboardEndpoints = {
   summary: (eventGuid: string) => `/Dashboard/Summary/${eventGuid}`,
 };
+
+export const FloorPlanEndpoints = {
+  get: (eventGuid: string) => `/FloorPlan/${eventGuid}`,
+  save: (eventGuid: string) => `/FloorPlan/${eventGuid}`,
+};
+
+export const QrEndpoints = {
+  generateAll: (eventId: string) => `/qr/generate-all/${eventId}`,
+  listByEvent: (eventId: string) => `/qr/list/${eventId}`,
+  revoke: (token: string) => `/qr/revoke/${token}`,
+};
+
+export const CheckInEndpoints = {
+  scan: `/checkin/scan`,
+};
+
+export const PublicQrEndpoints = {
+  lookup: (eventId: string) => `/qr/lookup/${eventId}`,
+};
