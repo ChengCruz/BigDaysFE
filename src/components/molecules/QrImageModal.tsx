@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function QrImageModal({ isOpen, guestName, token, onClose }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
 
   function handleDownload() {
     const canvas = canvasRef.current?.querySelector("canvas") as HTMLCanvasElement | null;
