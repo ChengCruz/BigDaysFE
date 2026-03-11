@@ -15,39 +15,32 @@ export interface FloorItem {
   meta?: Record<string, unknown>;
 }
 
-const STORAGE_PREFIX = "floorplan-";
-
-function loadItems(eventId: string): FloorItem[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_PREFIX + eventId);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveItems(eventId: string, items: FloorItem[]) {
-  localStorage.setItem(STORAGE_PREFIX + eventId, JSON.stringify(items));
-}
-
-export function useFloorPlanState(eventId: string) {
-  const [floorItems, setFloorItems] = useState<FloorItem[]>(() => loadItems(eventId));
+/**
+ * Manages floor plan item state.
+ * Initial items are loaded from the API (passed in via initialItems/isLoaded).
+ * On eventId change the state resets so the next API load repopulates it.
+ */
+export function useFloorPlanState(
+  eventId: string,
+  initialItems: FloorItem[],
+  isLoaded: boolean
+) {
+  const [floorItems, setFloorItems] = useState<FloorItem[]>([]);
   const initializedRef = useRef(false);
 
-  // Reload when eventId changes
+  // Reset when the event changes so the incoming API data is accepted fresh
   useEffect(() => {
-    setFloorItems(loadItems(eventId));
     initializedRef.current = false;
+    setFloorItems([]);
   }, [eventId]);
 
-  // Persist on every change (skip initial load)
+  // Populate from API data exactly once per event (even if the list is empty)
   useEffect(() => {
-    if (!initializedRef.current) {
+    if (isLoaded && !initializedRef.current) {
       initializedRef.current = true;
-      return;
+      setFloorItems(initialItems);
     }
-    saveItems(eventId, floorItems);
-  }, [eventId, floorItems]);
+  }, [isLoaded, initialItems]);
 
   const addItem = useCallback((item: FloorItem) => {
     setFloorItems((prev) => [...prev, item]);
@@ -69,10 +62,9 @@ export function useFloorPlanState(eventId: string) {
         const nonTables = prev.filter((i) => i.type !== "table");
         const tables = prev.filter((i) => i.type === "table");
         const toArrange = tables.filter((t) => tableIds.includes(t.id));
-        // Calculate spacing based on the largest table in each row/column
         const maxW = Math.max(...toArrange.map((t) => t.width), 100);
         const maxH = Math.max(...toArrange.map((t) => t.height), 100);
-        const spacingX = maxW + 80; // table width + gap for seats + margin
+        const spacingX = maxW + 80;
         const spacingY = maxH + 80;
         const offsetX = 60;
         const offsetY = 60;
@@ -92,7 +84,6 @@ export function useFloorPlanState(eventId: string) {
   const tableDimensions = useCallback(
     (capacity: number, shape: string): { width: number; height: number } => {
       if (shape === "rect") {
-        // Long table: wider, shorter
         const w = Math.max(160, 60 + capacity * 14);
         return { width: w, height: 70 };
       }
@@ -107,16 +98,13 @@ export function useFloorPlanState(eventId: string) {
     []
   );
 
-  /** Ensure every API table has a floor item; add missing ones.
-   *  Also patches existing table items that are missing meta.shape.
-   *  @param defaultShape — shape used for newly added tables (default "round") */
+  /** Ensure every API table has a floor item; add missing ones. */
   const syncTables = useCallback(
     (apiTables: { id: string; capacity: number }[], defaultShape: string = "round") => {
       setFloorItems((prev) => {
         let changed = false;
         const capacityMap = new Map(apiTables.map((t) => [t.id, t.capacity]));
 
-        // Patch existing tables missing meta.shape or with wrong dimensions
         const patched = prev.map((item) => {
           if (item.type === "table" && (!item.meta || !item.meta.shape)) {
             changed = true;
