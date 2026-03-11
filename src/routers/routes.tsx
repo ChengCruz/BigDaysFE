@@ -54,6 +54,8 @@ import { TableLayoutPlanner } from "../components/pages/Tables/TableLayoutPlanne
 import { TablePrintView } from "../components/pages/Tables/TablePrintView";
 import { TableSummary } from "../components/pages/Tables/TableSummary";
 import FloorPlanPage from "../components/pages/Tables/FloorPlanPage";
+import CheckInPage from "../components/pages/CheckIn/CheckInPage";
+import QrLookupPage from "../components/pages/Public/QrLookup/QrLookupPage";
 // …and other Public pages…
 
 export default function AppRoutes() {
@@ -75,6 +77,8 @@ export default function AppRoutes() {
         <Route path="/rsvp" element={<RSVPPublicPage />} />
         {/* Admin read-only preview page */}
         <Route path="/rsvp/share/:token" element={<RsvpSharePreviewPage />} />
+        {/* Guest self-service QR lookup */}
+        <Route path="/qr/lookup/:eventId" element={<QrLookupPage />} />
         {/* … other public pages … */}
       </Route>
 
@@ -144,6 +148,9 @@ export default function AppRoutes() {
           />
           <Route path=":id/edit" element={<EditUserModal />} />
         </Route>
+
+        {/* CHECK-IN */}
+        <Route path="checkin" element={<CheckInPage />} />
 
         {/* WALLET */}
         <Route path="wallet" element={<WalletPage />} />

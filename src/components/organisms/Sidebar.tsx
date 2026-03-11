@@ -19,6 +19,7 @@ import {
   HomeIcon,
   ViewGridIcon,
   HeartIcon,
+  QrcodeIcon,
 } from "@heroicons/react/solid";
 import { useEventContext } from "../../context/EventContext";
 import { useAuth } from "../../api/hooks/useAuth";
@@ -35,6 +36,7 @@ const links: SidebarLink[] = [
   { to: "/app/events", label: "Events", Icon: CalendarIcon },
   { to: "/app/rsvps", label: "RSVPs", Icon: ClipboardListIcon },
   { to: "/app/guests", label: "Guests", Icon: UserGroupIcon },
+  { to: "/app/checkin", label: "Check-in", Icon: QrcodeIcon },
   { to: "/app/tables", label: "Tables", Icon: TableIcon, end: true },
   { to: "/app/tables/floorplan", label: "Floor Plan", Icon: ViewGridIcon },
   { to: "/app/wallet", label: "Wallet", Icon: CurrencyDollarIcon },

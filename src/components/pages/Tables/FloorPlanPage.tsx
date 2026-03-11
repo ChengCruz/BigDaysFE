@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useEventContext } from "../../../context/EventContext";
 import { useTablesApi, useDeleteTable } from "../../../api/hooks/useTablesApi";
 import { useGuestsApi, useAssignGuestToTable, useUnassignGuestFromTable } from "../../../api/hooks/useGuestsApi";
+import { useGetFloorPlan, useSaveFloorPlan } from "../../../api/hooks/useFloorPlanApi";
 import { useFloorPlanState } from "./useFloorPlanState";
 import type { FloorItemType } from "./useFloorPlanState";
 import { FloorCanvas } from "./FloorCanvas";
@@ -21,6 +22,8 @@ export default function FloorPlanPage() {
   const { eventId } = useEventContext();
   const { data: tables = [], isLoading: tablesLoading } = useTablesApi(eventId ?? "");
   const { data: guests = [], isLoading: guestsLoading } = useGuestsApi(eventId ?? "");
+  const { data: apiFloorItems = [], isLoading: floorPlanLoading, isSuccess: floorPlanLoaded } = useGetFloorPlan(eventId ?? "");
+  const saveFloorPlan = useSaveFloorPlan(eventId ?? "");
   const assignGuest = useAssignGuestToTable(eventId ?? "");
   const unassignGuest = useUnassignGuestFromTable(eventId ?? "");
   const deleteTable = useDeleteTable(eventId ?? "");
@@ -33,7 +36,7 @@ export default function FloorPlanPage() {
     autoArrange,
     syncTables,
     changeTableShape,
-  } = useFloorPlanState(eventId ?? "");
+  } = useFloorPlanState(eventId ?? "", apiFloorItems, floorPlanLoaded);
 
   // Canvas state
   const [zoom, setZoom] = useState(1);
@@ -251,8 +254,11 @@ export default function FloorPlanPage() {
   }, []);
 
   const handleSaveLayout = useCallback(() => {
-    showToast("Layout saved!", "\ud83d\udcbe");
-  }, [showToast]);
+    saveFloorPlan.mutate(floorItems, {
+      onSuccess: () => showToast("Layout saved!", "\ud83d\udcbe"),
+      onError: () => showToast("Failed to save layout", "\u274c"),
+    });
+  }, [saveFloorPlan, floorItems, showToast]);
 
   const handleResetView = useCallback(() => {
     setZoom(1);
@@ -320,6 +326,22 @@ export default function FloorPlanPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
             </svg>
             <span className="hidden sm:inline">Auto-Arrange</span>
+          </button>
+          <button
+            onClick={handleSaveLayout}
+            disabled={saveFloorPlan.isPending}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm transition active:scale-[0.97] disabled:opacity-60"
+          >
+            {saveFloorPlan.isPending ? (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-3.5 w-3.5 animate-spin">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-3.5 w-3.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+              </svg>
+            )}
+            <span className="hidden sm:inline">{saveFloorPlan.isPending ? "Saving..." : "Save Layout"}</span>
           </button>
           <button
             onClick={() => { setEditTableId(null); setShowTableModal(true); }}
@@ -467,13 +489,6 @@ export default function FloorPlanPage() {
 
           <div className="w-px h-5 bg-gray-200 dark:bg-gray-700" />
 
-          {/* Save */}
-          <button onClick={handleSaveLayout} className={iconBtn} title="Save layout">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
-            </svg>
-          </button>
-
           {/* Print */}
           <button onClick={() => window.print()} className={iconBtn} title="Print layout">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
@@ -485,7 +500,7 @@ export default function FloorPlanPage() {
 
       {/* ── Canvas + Guest Panel ── */}
       <div className="flex-1 flex gap-3 overflow-hidden px-5 pb-4 min-h-0">
-        {tablesLoading || guestsLoading ? (
+        {tablesLoading || guestsLoading || floorPlanLoading ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 text-primary animate-fade-in">
             <Spinner />
             <p className="text-sm text-text/50 dark:text-white/50">Loading floor plan...</p>

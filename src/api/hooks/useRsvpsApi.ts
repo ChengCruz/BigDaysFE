@@ -22,10 +22,6 @@ export interface Rsvp {
 // Input shape when creating a new RSVP
 export type CreateRsvpInput = Omit<Rsvp, "id"> & { guestName?: string };
 
-// Input shape when updating
-export interface UpdateRsvpInput extends Partial<CreateRsvpInput> {
-  id: string;
-}
 
 // export function useRsvpsApi() {
 //   return useQuery({

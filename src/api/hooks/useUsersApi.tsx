@@ -6,7 +6,7 @@ import { UsersEndpoints } from "../endpoints";
 export function useUsersListApi() {
   return useQuery({
     queryKey: ["users", "list"],
-    queryFn: async () => (await client.get(UsersEndpoints.all)).data,
+    queryFn: async () => (await client.get(UsersEndpoints.all)).data.data,
     staleTime: 5 * 60_000,
     enabled: false, // Don't auto-fetch, only fetch when manually triggered
   });
@@ -15,7 +15,7 @@ export function useUsersListApi() {
 export function useUserByGuidApi(guid: string) {
   return useQuery({
     queryKey: ["user", "guid", guid],
-    queryFn: async () => (await client.get(UsersEndpoints.byGuid(guid))).data,
+    queryFn: async () => (await client.get(UsersEndpoints.byGuid(guid))).data.data,
     enabled: !!guid,
   });
 }
@@ -32,7 +32,7 @@ export function useCreateUser() {
 export function useUpdateUser(userGuid: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { fullName: string; email: string }) =>
+    mutationFn: async (data: { fullName: string; email: string; role?: number }) =>
       (await client.put(UsersEndpoints.update(userGuid), data)).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
   });
@@ -44,5 +44,12 @@ export function useDeleteUser() {
     mutationFn: async (userGuid: string) =>
       (await client.delete(UsersEndpoints.delete(userGuid))).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
+  });
+}
+
+export function useUpdatePassword() {
+  return useMutation({
+    mutationFn: async (data: { id: number; email: string; oldPassword: string; newPassword: string }) =>
+      (await client.post(UsersEndpoints.updatePassword, data)).data,
   });
 }
