@@ -72,7 +72,7 @@ export default function RegisterPage() {
       </div>
 
       <FormField
-        label="Full Name"
+        label="Name"
         type="text"
         value={formData.name}
         onChange={handleChange("name")}
