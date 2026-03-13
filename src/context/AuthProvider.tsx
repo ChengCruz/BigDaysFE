@@ -29,13 +29,8 @@ export const AuthContext = createContext<AuthCtx>({
   loading: false,
 });
 
-// TODO: remove once backend fixes /User/Login SQL bug
-const TEMP_TOKEN = "temp-admin-token";
-const TEMP_REFRESH = "temp-refresh-token";
-const TEMP_USER: AuthUser = { id: "temp-admin", name: "Admin", email: "admin@bigdays.com" };
-
 function userFromToken(token: string | null): AuthUser | null {
-  if (!token || token === TEMP_TOKEN) return null;
+  if (!token) return null;
   const payload = decodeJwt(token);
   if (!payload?.sub) return null;
   return {
@@ -59,14 +54,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Temp-admin shortcut
-    if (stored === TEMP_REFRESH) {
-      tokenStore.set(TEMP_TOKEN);
-      setTokenVersion(v => v + 1);
-      setLoading(false);
-      return;
-    }
-
     client
       .post<AuthResponse>(AuthEndpoints.refreshToken, { refreshToken: stored })
       .then(({ data }) => {
@@ -82,27 +69,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const accessToken = tokenStore.get();
-  const isTempUser = accessToken === TEMP_TOKEN;
-  const user = isTempUser ? TEMP_USER : userFromToken(accessToken);
-  const userGuid = isTempUser ? "temp-admin" : getUserGuidFromToken(accessToken);
-  const userRole = isTempUser ? 1 : getUserRoleFromToken(accessToken);
+  const user = userFromToken(accessToken);
+  const userGuid = getUserGuidFromToken(accessToken);
+  const userRole = getUserRoleFromToken(accessToken);
 
   const login = async (creds: LoginPayload): Promise<void> => {
-    if (creds.email === TEMP_USER.email && creds.password === "Abc123") {
-      tokenStore.set(TEMP_TOKEN);
-      localStorage.setItem("refreshToken", TEMP_REFRESH);
-      setTokenVersion(v => v + 1);
-      return;
-    }
     await loginMutation.mutateAsync(creds);
     setTokenVersion(v => v + 1);
   };
 
   const logout = async () => {
     try {
-      if (!isTempUser) {
-        await logoutMutation.mutateAsync();
-      }
+      await logoutMutation.mutateAsync();
     } catch (error) {
       console.error("Logout API error:", error);
     } finally {
