@@ -14,6 +14,7 @@ const ROLE_LABELS: Record<number, string> = {
   1: "Super Admin",
   2: "Admin",
   3: "Member",
+  6: "Staff",
 };
 
 function getRoleLabel(role?: number) {

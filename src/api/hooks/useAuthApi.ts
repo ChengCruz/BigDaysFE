@@ -11,7 +11,6 @@ export interface LoginPayload {
 
 export interface AuthResponse {
   accessToken: string;
-  refreshToken: string;
   expiresIn: number;
   userGuid: string;
   role: number;
@@ -29,7 +28,6 @@ export function useAuthApi() {
       client.post<AuthResponse>(AuthEndpoints.login, data).then(r => r.data),
     onSuccess: (data) => {
       tokenStore.set(data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
       qc.invalidateQueries({ queryKey: ["me"] });
     },
   });
@@ -39,7 +37,6 @@ export function useAuthApi() {
       client.post<LogoutResponse>(AuthEndpoints.logout).then(r => r.data),
     onSettled: () => {
       tokenStore.clear();
-      localStorage.removeItem("refreshToken");
       qc.clear();
     },
   });
