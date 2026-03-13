@@ -47,23 +47,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [tokenVersion, setTokenVersion] = useState(0);
 
   // Silent session restore on app startup
+  // The HttpOnly refreshToken cookie is sent automatically by the browser
   useEffect(() => {
-    const stored = localStorage.getItem("refreshToken");
-    if (!stored) {
-      setLoading(false);
-      return;
-    }
-
     client
-      .post<AuthResponse>(AuthEndpoints.refreshToken, { refreshToken: stored })
+      .post<AuthResponse>(AuthEndpoints.refreshToken)
       .then(({ data }) => {
         tokenStore.set(data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
         setTokenVersion(v => v + 1);
       })
       .catch(() => {
         tokenStore.clear();
-        localStorage.removeItem("refreshToken");
       })
       .finally(() => setLoading(false));
   }, []);
@@ -85,7 +78,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Logout API error:", error);
     } finally {
       tokenStore.clear();
-      localStorage.removeItem("refreshToken");
       setTokenVersion(v => v + 1);
       window.location.replace("/login");
     }
