@@ -6,6 +6,7 @@ import { AuthEndpoints } from "./endpoints";
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_BASE, // e.g. "https://api.mybigday.com"
   headers: { "Content-Type": "application/json" },
+  withCredentials: true, // send HttpOnly cookies (refreshToken) cross-origin
 });
 
 // --- Request interceptor: attach access token + api keys ---
@@ -43,14 +44,6 @@ client.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const storedRefreshToken = localStorage.getItem("refreshToken");
-    if (!storedRefreshToken) {
-      if (window.location.pathname !== "/login") {
-        window.location.replace("/login");
-      }
-      return Promise.reject(error);
-    }
-
     if (isRefreshing) {
       // Queue requests that arrive while a refresh is already in flight
       return new Promise((resolve, reject) => {
@@ -68,12 +61,10 @@ client.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const { data } = await client.post(AuthEndpoints.refreshToken, {
-        refreshToken: storedRefreshToken,
-      });
+      // No body needed — the HttpOnly cookie is sent automatically
+      const { data } = await client.post(AuthEndpoints.refreshToken);
 
       tokenStore.set(data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
 
       processQueue(null, data.accessToken);
       original.headers["Authorization"] = `Bearer ${data.accessToken}`;
@@ -81,7 +72,6 @@ client.interceptors.response.use(
     } catch (refreshError) {
       processQueue(refreshError, null);
       tokenStore.clear();
-      localStorage.removeItem("refreshToken");
       if (window.location.pathname !== "/login") {
         window.location.replace("/login");
       }
