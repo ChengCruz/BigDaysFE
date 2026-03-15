@@ -2,7 +2,7 @@ import { createContext, useState, useEffect, type ReactNode } from "react";
 import client from "../api/client";
 import { useAuthApi, type LoginPayload, type AuthResponse } from "../api/hooks/useAuthApi";
 import { AuthEndpoints } from "../api/endpoints";
-import { tokenStore } from "../utils/tokenStore";
+import { tokenStore, sessionHint } from "../utils/tokenStore";
 import { decodeJwt, getUserGuidFromToken, getUserRoleFromToken } from "../utils/jwtUtils";
 
 interface AuthUser {
@@ -46,9 +46,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Incrementing this forces a re-render when the in-memory token changes
   const [tokenVersion, setTokenVersion] = useState(0);
 
-  // Silent session restore on app startup
-  // The HttpOnly refreshToken cookie is sent automatically by the browser
+  // Silent session restore on app startup.
+  // Only attempt refresh if the session hint flag exists, to avoid a noisy
+  // 401 in the console when the user has never logged in.
   useEffect(() => {
+    if (!sessionHint.exists()) {
+      setLoading(false);
+      return;
+    }
     client
       .post<AuthResponse>(AuthEndpoints.refreshToken)
       .then(({ data }) => {
@@ -57,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         tokenStore.clear();
+        sessionHint.clear();
       })
       .finally(() => setLoading(false));
   }, []);

@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { AuthEndpoints } from "../endpoints";
-import { tokenStore } from "../../utils/tokenStore";
+import { tokenStore, sessionHint } from "../../utils/tokenStore";
 
 export interface LoginPayload {
   email: string;
@@ -28,6 +28,7 @@ export function useAuthApi() {
       client.post<AuthResponse>(AuthEndpoints.login, data).then(r => r.data),
     onSuccess: (data) => {
       tokenStore.set(data.accessToken);
+      sessionHint.set();
       qc.invalidateQueries({ queryKey: ["me"] });
     },
   });
@@ -37,6 +38,7 @@ export function useAuthApi() {
       client.post<LogoutResponse>(AuthEndpoints.logout).then(r => r.data),
     onSettled: () => {
       tokenStore.clear();
+      sessionHint.clear();
       qc.clear();
     },
   });
