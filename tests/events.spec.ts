@@ -65,6 +65,72 @@ test.describe('Events — Create', () => {
     await expect(page.locator('text=New Event')).toBeVisible();
   });
 
+  test('validation — shows error when title is empty', async ({ page }) => {
+    await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
+    await page.fill('input[type="date"]', '2026-12-01');
+    await page.fill('input[type="number"]', '10');
+    await page.locator('input[type="text"]').nth(0).fill('Grand Ballroom');
+    await page.locator('input[type="text"]').nth(1).fill('A beautiful event');
+    await page.click('button:has-text("Create")');
+    await expect(page.locator('text=Title cannot be empty.')).toBeVisible();
+    await expect(page.locator('text=New Event')).toBeVisible();
+  });
+
+  test('validation — shows error when date is empty', async ({ page }) => {
+    await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
+    await page.locator('input[type="text"]').first().fill('My Test Wedding');
+    await page.fill('input[type="number"]', '10');
+    await page.locator('input[type="text"]').nth(1).fill('Grand Ballroom');
+    await page.locator('input[type="text"]').nth(2).fill('A beautiful event');
+    await page.click('button:has-text("Create")');
+    await expect(page.locator('text=Date cannot be empty.')).toBeVisible();
+    await expect(page.locator('text=New Event')).toBeVisible();
+  });
+
+  test('validation — shows error when number of tables is 0', async ({ page }) => {
+    await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
+    await page.locator('input[type="text"]').first().fill('My Test Wedding');
+    await page.fill('input[type="date"]', '2026-12-01');
+    await page.fill('input[type="number"]', '0');
+    await page.locator('input[type="text"]').nth(1).fill('Grand Ballroom');
+    await page.locator('input[type="text"]').nth(2).fill('A beautiful event');
+    await page.click('button:has-text("Create")');
+    await expect(page.locator('text=Number of tables cannot be empty.')).toBeVisible();
+    await expect(page.locator('text=New Event')).toBeVisible();
+  });
+
+  test('validation — shows error when description is empty', async ({ page }) => {
+    await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
+    await page.locator('input[type="text"]').first().fill('My Test Wedding');
+    await page.fill('input[type="date"]', '2026-12-01');
+    await page.fill('input[type="number"]', '10');
+    await page.locator('input[type="text"]').nth(0).fill('Grand Ballroom');
+    await page.click('button:has-text("Create")');
+    await expect(page.locator('text=Description cannot be empty.')).toBeVisible();
+    await expect(page.locator('text=New Event')).toBeVisible();
+  });
+
+  test('validation — shows error when location is empty', async ({ page }) => {
+    await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
+    await page.locator('input[type="text"]').first().fill('My Test Wedding');
+    await page.fill('input[type="date"]', '2026-12-01');
+    await page.fill('input[type="number"]', '10');
+    await page.locator('input[type="text"]').nth(1).fill('A beautiful event');
+    await page.click('button:has-text("Create")');
+    await expect(page.locator('text=Location cannot be empty.')).toBeVisible();
+    await expect(page.locator('text=New Event')).toBeVisible();
+  });
+
+  test('validation — all field errors shown on completely empty submit', async ({ page }) => {
+    await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
+    await page.click('button:has-text("Create")');
+    await expect(page.locator('text=Title cannot be empty.')).toBeVisible();
+    await expect(page.locator('text=Date cannot be empty.')).toBeVisible();
+    await expect(page.locator('text=Number of tables cannot be empty.')).toBeVisible();
+    await expect(page.locator('text=Description cannot be empty.')).toBeVisible();
+    await expect(page.locator('text=Location cannot be empty.')).toBeVisible();
+  });
+
   test('fills all fields and submits → modal closes', async ({ page }) => {
     await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
 

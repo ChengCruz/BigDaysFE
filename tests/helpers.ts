@@ -77,6 +77,83 @@ export const MOCK_TRANSACTION = {
   remarks: '',
 };
 
+export const MOCK_TABLE_GUID = 'table-guid-0001';
+
+export const MOCK_TABLE = {
+  tableId: MOCK_TABLE_GUID,
+  tableName: 'Table A',
+  maxSeats: 8,
+  guests: [],
+  assignedCount: 0,
+};
+
+// Unassigned guest (flag → guestType = "Family")
+export const MOCK_GUEST = {
+  guestId: 'guest-guid-0001',
+  name: 'Alice Smith',
+  phoneNo: '+1234567890',
+  pax: 2,
+  flag: 'Family',
+  notes: 'Vegetarian',
+  tableId: null,
+  eventGuid: MOCK_EVENT_GUID,
+};
+
+// Assigned guest (flag → guestType = "VIP", has tableId)
+export const MOCK_GUEST_ASSIGNED = {
+  guestId: 'guest-guid-0002',
+  name: 'Bob Jones',
+  phoneNo: '+0987654321',
+  pax: 1,
+  flag: 'VIP',
+  notes: '',
+  tableId: MOCK_TABLE_GUID,
+  eventGuid: MOCK_EVENT_GUID,
+};
+
+export const MOCK_DASHBOARD = {
+  eventStats: {
+    eventName: 'Test Wedding',
+    eventDate: '2027-12-01',
+    eventTime: '10:00:00',
+    eventLocation: 'Test Venue',
+    noOfTable: 10,
+  },
+  rsvpStats: {
+    totalRsvpsReceived: 45,
+    comingCount: 40,
+    notComingCount: 5,
+    pendingCount: 10,
+    totalGuestsConfirmed: 50,
+    responseRate: 90,
+    newConfirmationsToday: 2,
+  },
+  tableStats: {
+    totalTables: 10,
+    arrangedTables: 8,
+    assignedGuests: 35,
+    unassignedGuests: 5,
+    totalSeats: 80,
+    occupiedSeats: 35,
+  },
+  budgetStats: {
+    totalBudget: 50000,
+    spentAmount: 12500,
+    remainingAmount: 37500,
+    spentPercentage: 25,
+    status: 0, // 0 = under_budget
+  },
+  recentActivity: [
+    {
+      activityType: 'rsvp',
+      description: 'Alice Smith confirmed attendance',
+      details: 'Coming with 2 guests',
+      timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+      icon: '✅',
+    },
+  ],
+};
+
 // ── API mock helper ───────────────────────────────────────────────────────────
 
 /** Intercept all API calls and return mock responses. Call this in beforeEach. */
@@ -221,7 +298,67 @@ export async function mockApi(page: Page) {
       });
     }
 
-    // ── Guests / RSVPs / other ────────────────────────────────────────────────
+    // ── Tables ────────────────────────────────────────────────────────────────
+    if (/\/TableArrangement\//i.test(url) && method === 'GET') {
+      return route.fulfill({
+        status: 200,
+        json: { isSuccess: true, data: { tables: [MOCK_TABLE] } },
+      });
+    }
+    if (/\/TableArrangement\//i.test(url)) {
+      return route.fulfill({
+        status: 200,
+        json: { isSuccess: true, data: MOCK_TABLE },
+      });
+    }
+
+    // ── Guests ────────────────────────────────────────────────────────────────
+    if (/\/Guest\/ByEvent\//i.test(url) && method === 'GET') {
+      return route.fulfill({
+        status: 200,
+        json: { isSuccess: true, data: [MOCK_GUEST, MOCK_GUEST_ASSIGNED] },
+      });
+    }
+    if (/\/Guest\/ByTable\//i.test(url) && method === 'GET') {
+      return route.fulfill({
+        status: 200,
+        json: { isSuccess: true, data: [MOCK_GUEST_ASSIGNED] },
+      });
+    }
+    if (/\/Guest\/Create/i.test(url) && method === 'POST') {
+      return route.fulfill({
+        status: 200,
+        json: { isSuccess: true, data: MOCK_GUEST },
+      });
+    }
+    if (/\/Guest\/Update/i.test(url) && (method === 'PUT' || method === 'PATCH')) {
+      return route.fulfill({
+        status: 200,
+        json: { isSuccess: true, data: MOCK_GUEST },
+      });
+    }
+    if (/\/Guest\/.*\/AssignTable\//i.test(url) && method === 'POST') {
+      return route.fulfill({
+        status: 200,
+        json: { isSuccess: true, data: { ...MOCK_GUEST, tableId: MOCK_TABLE_GUID } },
+      });
+    }
+    if (/\/Guest\/.*\/UnassignTable/i.test(url) && method === 'POST') {
+      return route.fulfill({
+        status: 200,
+        json: { isSuccess: true, data: { ...MOCK_GUEST_ASSIGNED, tableId: null } },
+      });
+    }
+
+    // ── Dashboard ─────────────────────────────────────────────────────────────
+    if (/\/Dashboard\/Summary\//i.test(url) && method === 'GET') {
+      return route.fulfill({
+        status: 200,
+        json: { isSuccess: true, data: MOCK_DASHBOARD },
+      });
+    }
+
+    // ── RSVPs / other ─────────────────────────────────────────────────────────
     return route.fulfill({
       status: 200,
       json: { isSuccess: true, data: [] },
