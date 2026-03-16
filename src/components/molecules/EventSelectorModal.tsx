@@ -82,7 +82,7 @@ export function EventSelectorModal() {
 
       {/* selector panel */}
       <div className="fixed inset-0 z-60 flex items-center justify-center p-4 overflow-auto">
-        <div className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl grid md:grid-cols-[1fr_1.15fr] overflow-hidden border border-primary/10">
+        <div className="w-full max-w-5xl h-[90vh] bg-white rounded-2xl shadow-2xl grid md:grid-cols-[1fr_1.15fr] overflow-hidden border border-primary/10">
           <div className="relative bg-gradient-to-br from-primary via-slate-900 to-secondary text-white p-8 flex flex-col gap-6">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_22%,rgba(255,255,255,0.08),transparent_35%),radial-gradient(circle_at_88%_12%,rgba(255,255,255,0.12),transparent_35%)]" />
             <div className="relative space-y-3">
@@ -127,7 +127,7 @@ export function EventSelectorModal() {
             </div>
           </div>
 
-          <div className="flex flex-col bg-accent/30">
+          <div className="flex flex-col bg-accent/30 min-h-0 overflow-hidden">
             <div className="flex items-start justify-between px-6 py-5 border-b border-gray-200">
               <div className="space-y-1">
                 <p className="text-xs uppercase tracking-wide text-gray-500">Event library</p>
@@ -144,7 +144,7 @@ export function EventSelectorModal() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 scrollbar-thin scrollbar-thumb-primary/20">
+            <div className="flex-1 overflow-y-auto min-h-0 px-6 py-4 space-y-3">
               {events.length === 0 ? (
                 <div className="h-full min-h-[280px] flex items-center justify-center text-center p-6 bg-white rounded-xl border border-dashed border-primary/20">
                   <div className="space-y-2">
@@ -225,9 +225,9 @@ export function EventSelectorModal() {
                               e.stopPropagation();
                               handleSelect(evt.id);
                             }}
-                            className={`flex-1 justify-center ${isActive ? "bg-emerald-600 hover:bg-emerald-500" : ""}`}
+                            className={isActive ? "!bg-none !bg-emerald-600 hover:!bg-emerald-500 !shadow-emerald-500/25" : ""}
                           >
-                            {isActive ? "Using this event" : "Use this event"}
+                            {isActive ? "Event in use" : "Use this event"}
                           </Button>
                           <Button
                             variant="secondary"
