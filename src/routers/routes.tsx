@@ -40,6 +40,7 @@ import WalletPage from "../components/pages/Wallet/WalletPage";
 import MemberDashboardPage from "../components/pages/Dashboard/MemberDashboardPage";
 
 import RSVPPublicPage from "../components/pages/Public/RSVPPublic/RSVPPublicPage";
+import RsvpBySlugPage from "../components/pages/Public/RSVPPublic/RsvpBySlugPage";
 import EventPublicPage from "../components/pages/Public/EventsPublic/EventsPublicPage";
 import { EventFormModal } from "../components/molecules/EventFormModal";
 import { NewRsvpModal } from "../components/pages/RSVPs/NewRsvpModal";
@@ -65,6 +66,7 @@ export default function AppRoutes() {
     <Routes>
       {/* ─── STANDALONE PUBLIC (no navbar/footer) ───────── */}
       <Route path="/rsvp/submit/:token" element={<RSVPPublicPage />} />
+      <Route path="/rsvp/:slug" element={<RsvpBySlugPage />} />
 
       {/* ─── PUBLIC ───────────────────────────────────────── */}
       <Route element={<PublicTemplate />}>

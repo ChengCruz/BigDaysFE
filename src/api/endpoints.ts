@@ -104,6 +104,10 @@ export const PublicRsvpEndpoints = {
   designByToken: (token: string) => `/RsvpDesign/public/${token}`,
 };
 
+export const PublicEventEndpoints = {
+  bySlug: (slug: string) => `/rsvp/${slug}`,
+};
+
 export const RsvpDesignEndpoints = {
   get: (eventGuid: string) => `/RsvpDesign/${eventGuid}/design`,
   save: (eventGuid: string) => `/RsvpDesign/${eventGuid}/design`,
