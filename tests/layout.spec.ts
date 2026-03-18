@@ -53,6 +53,8 @@ test.describe('Dashboard pages layout', () => {
     await mockApi(page);
     await page.goto('/login');
     await setMockAuth(page);
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
   });
 
   test('dashboard renders correctly', async ({ page }) => {

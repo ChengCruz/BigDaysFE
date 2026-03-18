@@ -61,6 +61,7 @@ export const MOCK_WALLET = {
   totalSpent: 12500,
   totalIncome: 0,
   remainingBudget: 37500,
+  currency: 'MYR',
 };
 
 export const MOCK_TRANSACTION = {
@@ -70,11 +71,13 @@ export const MOCK_TRANSACTION = {
   transactionName: 'Venue Deposit',
   amount: 5000,
   transactionDate: '2026-06-01',
-  type: 'debit',
-  category: 'venue',
-  paymentStatus: 'paid',
-  vendorName: 'Grand Ballroom',
-  remarks: '',
+  type: 1, // TransactionType.Debit = 1 (number)
+  category: 'Venue',
+  // paymentStatus and vendorName stored in remarks JSON (parsed by parseTransaction)
+  remarks: JSON.stringify({
+    _extended: { paymentStatus: 'Paid', vendorName: 'Grand Ballroom', vendorContact: '', dueDate: null },
+    notes: '',
+  }),
 };
 
 export const MOCK_TABLE_GUID = 'table-guid-0001';
@@ -109,6 +112,17 @@ export const MOCK_GUEST_ASSIGNED = {
   notes: '',
   tableId: MOCK_TABLE_GUID,
   eventGuid: MOCK_EVENT_GUID,
+};
+
+export const MOCK_RSVP = {
+  id: 'rsvp-guid-0001',
+  rsvpId: 'rsvp-guid-0001',
+  rsvpGuid: 'rsvp-guid-0001',
+  guestName: 'Charlie Brown',
+  noOfPax: 3,
+  phoneNo: '+60123456789',
+  remarks: 'Needs parking',
+  eventId: MOCK_EVENT_GUID,
 };
 
 export const MOCK_DASHBOARD = {
@@ -255,6 +269,32 @@ export async function mockApi(page: Page) {
       return route.fulfill({
         status: 200,
         json: { isSuccess: true, data: [MOCK_EVENT] },
+      });
+    }
+
+    // ── RSVPs ─────────────────────────────────────────────────────────────────
+    if (/\/rsvp\/GetRsvp\/List\//i.test(url) && method === 'GET') {
+      return route.fulfill({
+        status: 200,
+        json: { isSuccess: true, data: [MOCK_RSVP] },
+      });
+    }
+    if (/\/rsvp\/Create/i.test(url) && method === 'POST') {
+      return route.fulfill({
+        status: 200,
+        json: { isSuccess: true, data: { ...MOCK_RSVP, id: 'rsvp-guid-0002', guestName: 'New Guest' } },
+      });
+    }
+    if (/\/rsvp\/Update/i.test(url) && method === 'POST') {
+      return route.fulfill({
+        status: 200,
+        json: { isSuccess: true, data: MOCK_RSVP },
+      });
+    }
+    if (/\/rsvp\/Delete/i.test(url) && method === 'POST') {
+      return route.fulfill({
+        status: 200,
+        json: { isSuccess: true, message: 'RSVP deleted.' },
       });
     }
 
@@ -419,6 +459,11 @@ export async function gotoAuthenticated(page: Page, path: string) {
   await page.evaluate((eventGuid) => {
     localStorage.setItem('eventId', eventGuid);
   }, MOCK_EVENT_GUID);
+  // Navigate to events page first to load event context (unless target is already events)
+  if (!path.includes('/app/events')) {
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
+  }
   if (!page.url().includes(path)) {
     await page.goto(path);
   }
@@ -461,6 +506,11 @@ export async function gotoAuthenticatedAsMember(page: Page, path: string) {
   await page.evaluate((eventGuid) => {
     localStorage.setItem('eventId', eventGuid);
   }, MOCK_EVENT_GUID);
+  // Navigate to events page first to load event context (unless target is already events)
+  if (!path.includes('/app/events')) {
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
+  }
   if (!page.url().includes(path)) {
     await page.goto(path);
   }

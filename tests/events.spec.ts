@@ -17,6 +17,39 @@ test.describe('Events — Read (list)', () => {
     await expect(page.locator(`text=${MOCK_EVENT.title}`).first()).toBeVisible();
   });
 
+  test('event card shows location from API response', async ({ page }) => {
+    // MOCK_EVENT.eventLocation = 'Test Venue'
+    await expect(page.locator('text=Test Venue').first()).toBeVisible();
+  });
+
+  test('event card shows description from API response', async ({ page }) => {
+    // MOCK_EVENT.eventDescription = 'A test event'
+    await expect(page.locator('text=A test event').first()).toBeVisible();
+  });
+
+  test('event card shows table count from API response', async ({ page }) => {
+    // MOCK_EVENT.noOfTable = 10 → "Tables: 10"
+    await expect(page.locator('text=Tables: 10').first()).toBeVisible();
+  });
+
+  test('active event stat card shows count of 1', async ({ page }) => {
+    // 1 active event (MOCK_EVENT.isDeleted=false)
+    const activeCard = page.locator('text=Active events').locator('..');
+    await expect(activeCard.locator('text=1')).toBeVisible();
+  });
+
+  test('archived event stat card shows count of 0', async ({ page }) => {
+    // MOCK_EVENT.isDeleted=false → 0 archived
+    const archivedCard = page.locator('text=Archived events').locator('..');
+    await expect(archivedCard.locator('text=0')).toBeVisible();
+  });
+
+  test('active event banner shows event title', async ({ page }) => {
+    // MOCK_EVENT is the active event (eventId in localStorage matches)
+    await expect(page.locator('text=Active event')).toBeVisible();
+    await expect(page.locator(`text=${MOCK_EVENT.title}`).first()).toBeVisible();
+  });
+
   test('search input is visible and accepts input', async ({ page }) => {
     const search = page.locator('input[placeholder="Search by name or location"]');
     await expect(search).toBeVisible();
@@ -34,6 +67,28 @@ test.describe('Events — Read (list)', () => {
 
   test('shows "Show archived" toggle button', async ({ page }) => {
     await expect(page.locator('button:has-text("Show archived")')).toBeVisible();
+  });
+
+  test('search with no match shows "No events match your filters."', async ({ page }) => {
+    await page.fill('input[placeholder="Search by name or location"]', 'zzz_no_match_999');
+    await expect(page.locator('text=No events match your filters.')).toBeVisible();
+  });
+});
+
+test.describe('Events — Error state', () => {
+  test('shows error message when events API fails', async ({ page }) => {
+    await mockApi(page);
+    await page.route('**/__mock_api__/**', async route => {
+      if (/\/event\//i.test(route.request().url()) && route.request().method() === 'GET') {
+        return route.fulfill({ status: 500, json: { isSuccess: false, message: 'Server error' } });
+      }
+      return route.fallback();
+    });
+    await page.goto('/login');
+    await setMockAuth(page);
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('text=Failed to load events.')).toBeVisible({ timeout: 5000 });
   });
 });
 

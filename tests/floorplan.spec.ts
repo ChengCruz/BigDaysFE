@@ -32,6 +32,8 @@ async function gotoFloorPlanWithData(page: Parameters<typeof gotoAuthenticated>[
   });
   await page.goto('/login');
   await setMockAuth(page);
+  await page.goto('/app/events');
+  await page.waitForLoadState('networkidle');
   await page.goto('/app/tables/floorplan');
   await page.waitForLoadState('networkidle');
 }
@@ -193,6 +195,21 @@ test.describe('Floor Plan — With table & guest data', () => {
   test('unassigned guest badge is visible when guests are unassigned', async ({ page }) => {
     // MOCK_GUEST has tableId: null → unassigned
     await expect(page.locator('text=/\\d+ unassigned/')).toBeVisible();
+  });
+
+  test('unassigned count shows exactly 1 (matching MOCK_GUEST with tableId: null)', async ({ page }) => {
+    // 1 guest (MOCK_GUEST) has tableId: null
+    await expect(page.locator('text=/1 unassigned/')).toBeVisible();
+  });
+
+  test('seated count shows 1 assigned guest (matching MOCK_GUEST_ASSIGNED)', async ({ page }) => {
+    // MOCK_GUEST_ASSIGNED has tableId set — 1 assigned out of 2 guests
+    await expect(page.locator('text=/1\\/\\d+ seated/')).toBeVisible();
+  });
+
+  test('event name in header matches MOCK_EVENT', async ({ page }) => {
+    // The floor plan header shows the current event name
+    await expect(page.locator('text=Test Wedding').first()).toBeVisible();
   });
 });
 

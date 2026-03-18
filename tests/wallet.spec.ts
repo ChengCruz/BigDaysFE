@@ -36,6 +36,8 @@ test.describe('Wallet — No wallet state', () => {
     });
     await page.goto('/login');
     await setMockAuth(page);
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
     await page.goto('/app/wallet');
     await page.waitForLoadState('networkidle');
 

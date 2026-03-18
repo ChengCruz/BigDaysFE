@@ -103,6 +103,8 @@ test.describe('Tables — Read (list)', () => {
     await mockTablesApi(page);
     await page.goto('/login');
     await setMockAuth(page);
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
     await page.goto('/app/tables');
     await page.waitForLoadState('networkidle');
   });
@@ -116,6 +118,24 @@ test.describe('Tables — Read (list)', () => {
     await expect(page.locator('text=Seated Guests')).toBeVisible();
     await expect(page.locator('text=Unassigned')).toBeVisible();
     await expect(page.locator('text=Total Capacity')).toBeVisible();
+  });
+
+  test('Total Tables count matches API response (2 tables)', async ({ page }) => {
+    // MOCK_TABLE + MOCK_TABLE_2 = 2 tables
+    const totalCard = page.locator('text=Total Tables').locator('..');
+    await expect(totalCard.locator('text=2')).toBeVisible();
+  });
+
+  test('Total Capacity matches API response (8 + 6 = 14)', async ({ page }) => {
+    // MOCK_TABLE.capacity=8, MOCK_TABLE_2.capacity=6 → total=14
+    const capacityCard = page.locator('text=Total Capacity').locator('..');
+    await expect(capacityCard.locator('text=14')).toBeVisible();
+  });
+
+  test('Seated Guests count shows 0 (no guests assigned to these tables)', async ({ page }) => {
+    // MOCK_GUEST has tableId=null → 0 seated
+    const seatedCard = page.locator('text=Seated Guests').locator('..');
+    await expect(seatedCard.locator('text=0')).toBeVisible();
   });
 
   test('renders table cards', async ({ page }) => {
@@ -158,6 +178,8 @@ test.describe('Tables — Create', () => {
     await mockTablesApi(page);
     await page.goto('/login');
     await setMockAuth(page);
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
     await page.goto('/app/tables');
     await page.waitForLoadState('networkidle');
   });
@@ -195,6 +217,8 @@ test.describe('Tables — Delete', () => {
     await mockTablesApi(page);
     await page.goto('/login');
     await setMockAuth(page);
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
     await page.goto('/app/tables');
     await page.waitForLoadState('networkidle');
   });
@@ -226,6 +250,8 @@ test.describe('Tables — Filter', () => {
     await mockTablesApi(page);
     await page.goto('/login');
     await setMockAuth(page);
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
     await page.goto('/app/tables');
     await page.waitForLoadState('networkidle');
   });
@@ -265,6 +291,8 @@ test.describe('Tables — Empty state', () => {
     });
     await page.goto('/login');
     await setMockAuth(page);
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
     await page.goto('/app/tables');
     await page.waitForLoadState('networkidle');
   });
@@ -279,6 +307,27 @@ test.describe('Tables — Empty state', () => {
 
   test('shows "All guests have been assigned!" in unassigned panel when no guests', async ({ page }) => {
     await expect(page.locator('text=All guests have been assigned!')).toBeVisible();
+  });
+});
+
+// ── Error state ────────────────────────────────────────────────────────────────
+
+test.describe('Tables — Error state', () => {
+  test('shows error message when tables API fails', async ({ page }) => {
+    await mockApi(page);
+    await page.route('**/__mock_api__/**', async route => {
+      if (/\/TableArrangement\/Summary\//i.test(route.request().url()) && route.request().method() === 'GET') {
+        return route.fulfill({ status: 500, json: { isSuccess: false, message: 'Server error' } });
+      }
+      return route.fallback();
+    });
+    await page.goto('/login');
+    await setMockAuth(page);
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
+    await page.goto('/app/tables');
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('text=Failed to load data.')).toBeVisible({ timeout: 5000 });
   });
 });
 

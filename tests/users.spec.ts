@@ -2,7 +2,7 @@
  * Users CRUD tests — Profile view, Change Password, Admin: Create/Edit/Delete users.
  */
 import { test, expect } from '@playwright/test';
-import { gotoAuthenticated, gotoAuthenticatedAsMember, MOCK_MEMBER_USER, MOCK_USER_LIST } from './helpers';
+import { gotoAuthenticated, gotoAuthenticatedAsMember, mockApi, setMockAuth, MOCK_MEMBER_USER, MOCK_USER_LIST } from './helpers';
 
 // ── My Profile (non-admin view) ───────────────────────────────────────────────
 // Uses Member role so UsersPage renders the profile + change password view (not admin list)
@@ -26,6 +26,11 @@ test.describe('Users — My Profile', () => {
     await expect(page.locator('input[placeholder="Enter current password"]')).toBeVisible();
     await expect(page.locator('input[placeholder="Enter new password"]')).toBeVisible();
     await expect(page.locator('input[placeholder="Re-enter new password"]')).toBeVisible();
+  });
+
+  test('role label displayed matches API response (User role)', async ({ page }) => {
+    // MOCK_MEMBER_USER.role = 3 → displayed as "User" or "Member"
+    await expect(page.locator('text=/User|Member/i').first()).toBeVisible();
   });
 });
 
@@ -83,12 +88,45 @@ test.describe('Users — Admin: All Users list', () => {
     }
   });
 
+  test('shows all user emails from API response', async ({ page }) => {
+    for (const user of MOCK_USER_LIST) {
+      await expect(page.locator(`text=${user.email}`).first()).toBeVisible();
+    }
+  });
+
   test('"New User" button is visible', async ({ page }) => {
     await expect(page.locator('button:has-text("New User")')).toBeVisible();
   });
 
   test('"View My Profile" button is visible', async ({ page }) => {
     await expect(page.locator('button:has-text("View My Profile")')).toBeVisible();
+  });
+});
+
+// ── Error state ───────────────────────────────────────────────────────────────
+
+test.describe('Users — Error state', () => {
+  test('shows error message when user profile API fails', async ({ page }) => {
+    await mockApi(page);
+    // Override user fetch to return 500
+    await page.route('**/__mock_api__/**', async route => {
+      const url = route.request().url();
+      if (/\/User\/Refresh/i.test(url) || /\/User\//i.test(url)) {
+        return route.fulfill({ status: 500, json: { isSuccess: false, message: 'Server error' } });
+      }
+      return route.fallback();
+    });
+    await page.goto('/login');
+    await setMockAuth(page);
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
+    await page.goto('/app/users');
+    await page.waitForLoadState('networkidle');
+    // Should show error state or unable-to-load warning banner
+    const errorMsg = page.locator('text=Failed to load user profile.').or(
+      page.locator('text=Unable to load user profile')
+    );
+    await expect(errorMsg.first()).toBeVisible({ timeout: 5000 });
   });
 });
 

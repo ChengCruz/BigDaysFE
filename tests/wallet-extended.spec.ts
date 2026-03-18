@@ -19,6 +19,8 @@ test.describe('Wallet — Setup Wallet Modal (create)', () => {
     });
     await page.goto('/login');
     await setMockAuth(page);
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
     await page.goto('/app/wallet');
     await page.waitForLoadState('networkidle');
     await page.click('button:has-text("Setup Wallet")');
@@ -153,8 +155,38 @@ test.describe('Wallet — Summary Cards', () => {
     await expect(page.locator('text=Pending Payments')).toBeVisible();
   });
 
-  test('currency badge shows wallet currency', async ({ page }) => {
-    await expect(page.locator(`text=${MOCK_WALLET.currency ?? 'MYR'}`).first()).toBeVisible();
+  test('currency badge shows wallet currency (MYR)', async ({ page }) => {
+    await expect(page.locator(`text=${MOCK_WALLET.currency}`).first()).toBeVisible();
+  });
+
+  test('Total Budget value matches MOCK_WALLET.totalBudget (RM 50,000.00)', async ({ page }) => {
+    // formatAmount(50000, 'RM') → "RM 50,000.00" (en-MY locale)
+    await expect(page.locator('text=/RM\\s*50[,.]?000/').first()).toBeVisible();
+  });
+
+  test('Current Spending value matches sum of debit transactions (RM 5,000.00)', async ({ page }) => {
+    // MOCK_TRANSACTION type=1 (Debit), amount=5000 → currentSpending=5000
+    await expect(page.locator('text=/RM\\s*5[,.]?000/').first()).toBeVisible();
+  });
+
+  test('Remaining Budget value matches totalBudget - currentSpending (RM 45,000.00)', async ({ page }) => {
+    // 50000 - 5000 = 45000
+    await expect(page.locator('text=/RM\\s*45[,.]?000/').first()).toBeVisible();
+  });
+
+  test('Current Spending percentage badge shows 10%', async ({ page }) => {
+    // 5000 / 50000 * 100 = 10%
+    await expect(page.locator('text=10%').first()).toBeVisible();
+  });
+
+  test('"✓ All paid" indicator shown when no pending transactions', async ({ page }) => {
+    // MOCK_TRANSACTION.paymentStatus = 'Paid' → pendingCount=0 → "✓ All paid"
+    await expect(page.locator('text=All paid')).toBeVisible();
+  });
+
+  test('vendor name from transaction remarks appears in transaction table', async ({ page }) => {
+    // MOCK_TRANSACTION remarks._extended.vendorName = 'Grand Ballroom'
+    await expect(page.locator('text=Grand Ballroom').first()).toBeVisible();
   });
 
   test('clicking "edit budget" opens Update Wallet modal', async ({ page }) => {
@@ -264,6 +296,8 @@ test.describe('Wallet — Error State', () => {
     });
     await page.goto('/login');
     await setMockAuth(page);
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
     await page.goto('/app/wallet');
     await page.waitForLoadState('networkidle');
 
@@ -280,6 +314,8 @@ test.describe('Wallet — Error State', () => {
     });
     await page.goto('/login');
     await setMockAuth(page);
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
     await page.goto('/app/wallet');
     await page.waitForLoadState('networkidle');
 

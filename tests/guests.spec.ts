@@ -27,6 +27,30 @@ test.describe('Guests — Read (list)', () => {
     await expect(page.locator('text=VIPs')).toBeVisible();
   });
 
+  test('Total Guests count matches API response (2 guests)', async ({ page }) => {
+    // MOCK_GUEST + MOCK_GUEST_ASSIGNED = 2 guests from API
+    const totalCard = page.locator('text=Total Guests').locator('..');
+    await expect(totalCard.locator('text=2')).toBeVisible();
+  });
+
+  test('Assigned count matches API response (1 assigned guest)', async ({ page }) => {
+    // MOCK_GUEST_ASSIGNED has tableId set → 1 assigned
+    const assignedCard = page.locator('text=Assigned').first().locator('..');
+    await expect(assignedCard.locator('text=1')).toBeVisible();
+  });
+
+  test('Unassigned count matches API response (1 unassigned guest)', async ({ page }) => {
+    // MOCK_GUEST has tableId: null → 1 unassigned
+    const unassignedCard = page.locator('text=Unassigned').locator('..');
+    await expect(unassignedCard.locator('text=1')).toBeVisible();
+  });
+
+  test('VIPs count matches API response (1 VIP)', async ({ page }) => {
+    // MOCK_GUEST_ASSIGNED has flag='VIP' → 1 VIP
+    const vipCard = page.locator('text=VIPs').locator('..');
+    await expect(vipCard.locator('text=1')).toBeVisible();
+  });
+
   test('renders unassigned guest card with name', async ({ page }) => {
     await expect(page.locator(`text=${MOCK_GUEST.name}`).first()).toBeVisible();
   });
@@ -67,6 +91,49 @@ test.describe('Guests — Read (list)', () => {
 
   test('shows note about guests being created from RSVP submissions', async ({ page }) => {
     await expect(page.locator('text=Guests are automatically created')).toBeVisible();
+  });
+
+  test('unassigned guest phone number matches API response', async ({ page }) => {
+    // MOCK_GUEST.phoneNo = '+1234567890'
+    const guestCard = page.locator('li').filter({ hasText: MOCK_GUEST.name });
+    await expect(guestCard.locator(`text=${MOCK_GUEST.phoneNo}`)).toBeVisible();
+  });
+
+  test('assigned guest phone number matches API response', async ({ page }) => {
+    // MOCK_GUEST_ASSIGNED.phoneNo = '+0987654321'
+    const guestCard = page.locator('li').filter({ hasText: MOCK_GUEST_ASSIGNED.name });
+    await expect(guestCard.locator(`text=${MOCK_GUEST_ASSIGNED.phoneNo}`)).toBeVisible();
+  });
+
+  test('unassigned guest pax count matches API response', async ({ page }) => {
+    // MOCK_GUEST.pax = 2 → displays "2" somewhere in the card
+    const guestCard = page.locator('li').filter({ hasText: MOCK_GUEST.name });
+    await expect(guestCard.locator(`text=${MOCK_GUEST.pax}`).first()).toBeVisible();
+  });
+
+  test('assigned guest pax count matches API response', async ({ page }) => {
+    // MOCK_GUEST_ASSIGNED.pax = 1 → displays "1" somewhere in the card
+    const guestCard = page.locator('li').filter({ hasText: MOCK_GUEST_ASSIGNED.name });
+    await expect(guestCard.locator(`text=${MOCK_GUEST_ASSIGNED.pax}`).first()).toBeVisible();
+  });
+});
+
+test.describe('Guests — Error state', () => {
+  test('shows error message when guests API fails', async ({ page }) => {
+    await mockApi(page);
+    await page.route('**/__mock_api__/**', async route => {
+      if (/\/Guest\/ByEvent\//i.test(route.request().url()) && route.request().method() === 'GET') {
+        return route.fulfill({ status: 500, json: { isSuccess: false, message: 'Server error' } });
+      }
+      return route.fallback();
+    });
+    await page.goto('/login');
+    await setMockAuth(page);
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
+    await page.goto('/app/guests');
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('text=Failed to load guests.')).toBeVisible({ timeout: 5000 });
   });
 });
 
@@ -164,6 +231,8 @@ test.describe('Guests — Empty state (no guests)', () => {
     });
     await page.goto('/login');
     await setMockAuth(page);
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
     await page.goto('/app/guests');
     await page.waitForLoadState('networkidle');
   });
