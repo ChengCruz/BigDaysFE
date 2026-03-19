@@ -92,6 +92,25 @@ export type RsvpBlock =
       };
       cardColor?: string;      // background color of the input card (default #ffffff)
       cardTextColor?: string;  // text color inside the input card (default #111827)
+    })
+  // ── V2 event-linked block types ──────────────────────────────────────────
+  | (RsvpBlockBase & {
+      type: "eventDetails";
+      title?: string;          // section heading override
+      showDate?: boolean;      // default true
+      showTime?: boolean;      // default true
+      showLocation?: boolean;  // default true
+    })
+  | (RsvpBlockBase & {
+      type: "countdown";
+      label?: string;          // e.g. "Counting down to your big day"
+      targetDate?: string;     // ISO date override; falls back to event.date
+    })
+  | (RsvpBlockBase & {
+      type: "map";
+      address?: string;        // text address override; falls back to event.location
+      mapLabel?: string;       // e.g. "Venue"
+      showDirections?: boolean; // show "Get Directions" link, default true
     });
 
 export interface RsvpDesign {

@@ -127,6 +127,28 @@ function transformBlockToBackend(
         base.showFields = { ...block.showFields };
       }
       break;
+
+    // ── V2 event-linked block types ─────────────────────────────────────
+    case "eventDetails":
+      base.title = block.title;
+      // Reuse showFields for date/time/location toggles
+      base.showFields = {
+        date:     block.showDate     ?? true,
+        time:     block.showTime     ?? true,
+        location: block.showLocation ?? true,
+      };
+      break;
+
+    case "countdown":
+      base.label = block.label;
+      base.hint  = block.targetDate; // reuse hint to store ISO date override
+      break;
+
+    case "map":
+      base.label   = block.mapLabel;
+      base.content = block.address;
+      base.required = block.showDirections ?? true; // reuse required (boolean) for showDirections
+      break;
   }
 
   return base;
@@ -258,8 +280,36 @@ function transformBlockToFrontend(block: ApiBlock): RsvpBlock {
         cardTextColor: block.cardTextColor,
       };
 
+    // ── V2 event-linked block types ─────────────────────────────────────
+    case "eventDetails":
+      return {
+        ...base,
+        type: "eventDetails",
+        title: block.title,
+        showDate:     (block.showFields as Record<string, boolean>)?.date     ?? true,
+        showTime:     (block.showFields as Record<string, boolean>)?.time     ?? true,
+        showLocation: (block.showFields as Record<string, boolean>)?.location ?? true,
+      };
+
+    case "countdown":
+      return {
+        ...base,
+        type: "countdown",
+        label:      block.label,
+        targetDate: block.hint, // restored from hint field
+      };
+
+    case "map":
+      return {
+        ...base,
+        type: "map",
+        mapLabel:       block.label,
+        address:        block.content,
+        showDirections: block.required ?? true,
+      };
+
     default:
-      // Fallback for unknown types
+      // Fallback for truly unknown types
       return {
         ...base,
         type: "text",

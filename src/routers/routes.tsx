@@ -13,6 +13,7 @@ import EditEventModal from "../components/pages/Events/EditEventModal";
 
 import RsvpsPage from "../components/pages/RSVPs/RsvpsPage";
 import RsvpDesignPage from "../components/pages/RSVPs/RsvpDesignPage";
+import RsvpDesignV2Page from "../components/pages/RSVPs/RsvpDesignV2Page";
 import RsvpSharePreviewPage from "../components/pages/RSVPs/RsvpSharePreviewPage";
 // import RsvpDetail from "../components/pages/RSVPs/RsvpDetail";
 // import rsvp from "../components/pages/RSVPs/NewRsvpModal";
@@ -106,6 +107,7 @@ export default function AppRoutes() {
         <Route path="rsvps" element={<Outlet />}>
           <Route index element={<RsvpsPage />} />
           <Route path="designer" element={<RsvpDesignPage />} />
+          <Route path="designer-v2" element={<RsvpDesignV2Page />} />
           <Route path="new" element={<NewRsvpModal />} />
           <Route path=":id/edit" element={<EditRsvpModal />} />
         </Route>

@@ -1,10 +1,9 @@
 // src/components/pages/Rsvps/RsvpsPage.tsx
 import { PageLoader } from "../../atoms/PageLoader";
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import toast from "react-hot-toast";
-import { ViewGridIcon, ViewListIcon } from "@heroicons/react/outline";
+import { ViewGridIcon, ViewListIcon, ClipboardListIcon, UserGroupIcon } from "@heroicons/react/outline";
 import { Link } from "react-router-dom";
 import {
   useRsvpsApi,
@@ -13,29 +12,33 @@ import {
   useDeleteRsvp,
   type Rsvp,
 } from "../../../api/hooks/useRsvpsApi";
+import { useEventRsvpInternal } from "../../../api/hooks/useEventsApi";
 import { RsvpFormModal } from "../../molecules/RsvpFormModal";
+import { ImportRsvpsModal } from "../../molecules/ImportRsvpsModal";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { Button } from "../../atoms/Button";
 import { useEventContext } from "../../../context/EventContext";
 import { useAuth } from "../../../api/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { NoEventsState } from "../../molecules/NoEventsState";
+import { StatsCard } from "../../atoms/StatsCard";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function RsvpsPage() {
-  const { eventId } = useEventContext()!;
+  const { eventId, event } = useEventContext()!;
   const { data: rsvps = [], isLoading, isError } = useRsvpsApi(eventId!);
   const createRsvp = useCreateRsvp(eventId!);
   const updateRsvp = useUpdateRsvp(eventId!);
   const deleteRsvp = useDeleteRsvp(eventId!);
+  const { data: formFields = [], isLoading: formFieldsLoading } = useEventRsvpInternal(eventId ?? undefined);
   const { user } = useAuth();
   const actor = user?.id ?? user?.name ?? "System";
   const qc = useQueryClient();
 
   const [modal, setModal] = useState<{ open: boolean; rsvp?: Rsvp }>({ open: false });
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; rsvp: Rsvp | null }>({ open: false, rsvp: null });
-  const fileInput = useRef<HTMLInputElement>(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
@@ -79,69 +82,24 @@ export default function RsvpsPage() {
     saveAs(new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })]), "rsvps.xlsx");
   };
 
-  const handleImportClick = () => fileInput.current?.click();
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      try {
-        const arr = ev.target?.result;
-        if (!arr) throw new Error("Empty file");
-        const wb = XLSX.read(arr, { type: "array" });
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1, defval: "" });
-        const headers = (rows[0] as string[]).map((h) => h.trim().toLowerCase().replace(/\s+/g, ""));
-        let success = 0;
-        for (const row of rows.slice(1)) {
-          const obj = Object.fromEntries(row.map((c, i) => [headers[i], String(c)]));
-          const payload = { guestName: obj["guestname"] || "", noOfPax: Number(obj["noofpax"] || 1), phoneNo: obj["phoneno"] || "", remarks: obj["remarks"] || "" };
-          const existing = rsvps.find((r) => r.name === payload.guestName);
-          if (existing) {
-            const guid = existing.rsvpGuid ?? existing.rsvpId ?? existing.id;
-            await updateRsvp.mutateAsync({ rsvpGuid: guid, ...payload, updatedBy: actor });
-          } else {
-            await createRsvp.mutateAsync(payload);
-          }
-          success++;
-        }
-        toast.success(`Imported ${success} rows`);
-      } catch (err) {
-        console.error(err);
-        toast.error(err instanceof Error ? err.message : "Import failed");
-      } finally {
-        if (fileInput.current) fileInput.current.value = "";
-      }
-    };
-    reader.onerror = () => toast.error("File read error");
-    reader.readAsArrayBuffer(f);
-  };
-
   return (
     <>
-      {/* ─── STAT CARDS ───────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="p-5 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col gap-1">
-          <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Total RSVPs</p>
-          <p className="text-3xl font-bold text-primary">{totals.total}</p>
-        </div>
-        <div className="p-5 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col gap-1">
-          <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Total Pax</p>
-          <p className="text-3xl font-bold text-green-600 dark:text-green-400">{totals.pax}</p>
-        </div>
-      </div>
-
       {/* ─── HEADER + ACTIONS ─────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-5 gap-3">
-        <h2 className="text-2xl font-semibold text-primary">RSVPs</h2>
+        <div>
+          <h2 className="text-2xl font-semibold text-primary">RSVPs</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Track guest responses and manage invitations</p>
+        </div>
         <div className="flex flex-wrap gap-2">
           <Link to="/app/rsvps/designer">
             <Button variant="secondary">Design RSVP Card</Button>
           </Link>
+          <Link to="/app/rsvps/designer-v2" target="_blank" rel="noopener noreferrer">
+            <Button variant="secondary">Design V2 ↗</Button>
+          </Link>
           <Button onClick={() => setModal({ open: true })}>+ New RSVP</Button>
-          <Button disabled variant="secondary" onClick={handleImportClick}>
+          <Button variant="secondary" onClick={() => setImportModalOpen(true)}>
             Import
-            <span className="ml-1.5 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">Soon</span>
           </Button>
           <Button disabled variant="secondary" onClick={handleExport}>
             Export
@@ -150,7 +108,11 @@ export default function RsvpsPage() {
         </div>
       </div>
 
-      <input ref={fileInput} type="file" accept=".csv,.xlsx" className="hidden" onChange={handleFile} />
+      {/* ─── STAT CARDS ───────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <StatsCard label="Total RSVPs" value={totals.total} variant="primary" size="sm" icon={<ClipboardListIcon className="w-4 h-4" />} />
+        <StatsCard label="Total Pax" value={totals.pax} variant="success" size="sm" icon={<UserGroupIcon className="w-4 h-4" />} />
+      </div>
 
       {/* ─── FILTERS ──────────────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center gap-3 mb-5">
@@ -297,6 +259,18 @@ export default function RsvpsPage() {
           </div>
         )}
       </DeleteConfirmationModal>
+
+      <ImportRsvpsModal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        eventId={eventId!}
+        eventTitle={event?.title ?? "event"}
+        formFields={formFields}
+        formFieldsLoading={formFieldsLoading}
+        existingRsvps={rsvps}
+        actor={actor}
+        onImportComplete={() => qc.invalidateQueries({ queryKey: ["rsvps", eventId] })}
+      />
     </>
   );
 }
