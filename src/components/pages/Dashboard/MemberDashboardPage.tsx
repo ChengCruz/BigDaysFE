@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEventContext } from "../../../context/EventContext";
 import { useDashboardApi } from "../../../api/hooks/useDashboardApi";
@@ -15,6 +15,28 @@ import {
   TableIcon,
   CashIcon,
 } from "@heroicons/react/solid";
+
+const ALMOST_THERE_MSGS = [
+  "The excitement is building as your wedding day gets closer 🎉",
+  "Only a little more time before your forever begins 💫",
+  "You are so close to the moment you have been waiting for 🤍",
+];
+const TODAY_MSGS = [
+  "Today is your wedding day and it is finally here 💍",
+  "This is the moment where your forever begins 🤍",
+  "Everything has led to this beautiful day ✨",
+];
+const PAST_MSGS = [
+  "Your wedding day has passed but your journey together continues 🤍",
+  "A beautiful day has ended and a lifetime together begins ✨",
+  "The celebration is over but your story together goes on 🥂",
+];
+const FAR_MSGS = [
+  "Your big day is coming and every day brings you closer 💍",
+  "Counting down to the start of your forever ✨",
+  "A beautiful day is waiting for you ahead 🤍",
+];
+const randomMsg = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
 
 // Helper function to format relative time
 function formatRelativeTime(timestamp: string): string {
@@ -45,6 +67,12 @@ export default function MemberDashboardPage() {
 
   // Countdown timer state
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0 });
+  const [eventStatus, setEventStatus] = useState<'before' | 'today' | 'past'>('before');
+
+  const todayMsg   = useMemo(() => randomMsg(TODAY_MSGS),        [eventStatus]);
+  const pastMsg    = useMemo(() => randomMsg(PAST_MSGS),         [eventStatus]);
+  const almostMsg  = useMemo(() => randomMsg(ALMOST_THERE_MSGS), [eventStatus]);
+  const farMsg     = useMemo(() => randomMsg(FAR_MSGS),          [eventStatus]);
 
   // Update countdown every minute
   useEffect(() => {
@@ -61,8 +89,12 @@ export default function MemberDashboardPage() {
         const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         setCountdown({ days, hours, minutes });
+        setEventStatus('before');
       } else {
         setCountdown({ days: 0, hours: 0, minutes: 0 });
+        const eventDay = new Date(eventDate).toDateString();
+        const today = new Date().toDateString();
+        setEventStatus(eventDay === today ? 'today' : 'past');
       }
     };
 
@@ -150,10 +182,13 @@ export default function MemberDashboardPage() {
           </div>
 
           <div className="flex flex-col items-center gap-2">
-            {countdown.days === 0 && countdown.hours === 0 && countdown.minutes === 0 ? (
-              // Event day has arrived
+            {eventStatus === 'today' ? (
               <div className="text-center py-4">
-                <p className="text-2xl font-bold text-white">Today is your big day! 🎉</p>
+                <p className="text-2xl font-bold text-white">{todayMsg}</p>
+              </div>
+            ) : eventStatus === 'past' ? (
+              <div className="text-center py-4">
+                <p className="text-xl font-semibold text-white/90">{pastMsg}</p>
               </div>
             ) : (
               // Show countdown
@@ -173,7 +208,7 @@ export default function MemberDashboardPage() {
                   </div>
                 </div>
                 <p className="text-white/90 text-sm font-medium">
-                  {countdown.days < 15 ? "Almost there! 🎉" : "until your big day"}
+                  {countdown.days < 15 ? almostMsg : farMsg}
                 </p>
               </>
             )}

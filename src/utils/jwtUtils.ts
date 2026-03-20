@@ -18,6 +18,19 @@ const ROLE_MAP: Record<string, number> = {
   Staff: 6,
 };
 
+// Maps role integer values to display labels
+export const ROLE_LABELS: Record<number, string> = {
+  1: "Super Admin",
+  2: "Admin",
+  3: "Member",
+  6: "Staff",
+};
+
+export function getRoleLabel(role?: number | null): string {
+  if (role == null) return "—";
+  return ROLE_LABELS[role] ?? `Role ${role}`;
+}
+
 /**
  * Decode JWT token to get payload
  * @param token - JWT token string

@@ -148,18 +148,21 @@ export const QuickSetupModal: React.FC<Props> = ({ isOpen, onClose }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Bulk Create Tables"
-      className="!max-w-4xl"
+      title="Quick Table Setup"
+      className="!max-w-xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <FormError message={error} />}
 
-        {/* Note 1: Quick Setup for preset categories */}
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-3 mb-4">
-          <p className="text-sm text-indigo-700 dark:text-indigo-300">
-            <strong>Quick Setup:</strong> Enter quantities for each category.
-            Tables will be auto-named (e.g., vip1, vip2, bridefamily1, friends1, etc.)
-          </p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 -mt-1">
+          Enter a quantity for each category. Tables are auto-named (e.g., vip1, vip2, friends1…)
+        </p>
+
+        {/* Column headers */}
+        <div className="grid grid-cols-12 gap-3 px-3">
+          <div className="col-span-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Category</div>
+          <div className="col-span-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Tables</div>
+          <div className="col-span-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Seats each</div>
         </div>
 
         <div className="space-y-3">
@@ -186,11 +189,8 @@ export const QuickSetupModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   placeholder="0"
                   value={cat.quantity || ""}
                   onChange={(e) => handleQuantityChange(index, e.target.value)}
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-accent text-gray-900 dark:text-white"
+                  className="w-full border border-primary/20 dark:border-primary/30 rounded-lg p-2 bg-white dark:bg-accent text-gray-900 dark:text-white"
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  tables
-                </p>
               </div>
 
               {/* Capacity Input */}
@@ -200,12 +200,9 @@ export const QuickSetupModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   min="1"
                   value={cat.capacity}
                   onChange={(e) => handleCapacityChange(index, e.target.value)}
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-accent text-gray-900 dark:text-white"
+                  className="w-full border border-primary/20 dark:border-primary/30 rounded-lg p-2 bg-white dark:bg-accent text-gray-900 dark:text-white"
                   disabled={cat.quantity === 0}
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  seats each
-                </p>
               </div>
             </div>
           ))}
@@ -217,15 +214,7 @@ export const QuickSetupModal: React.FC<Props> = ({ isOpen, onClose }) => {
             Custom Tables (Optional)
           </h3>
 
-          {/* Note 2: Custom Bulk Create */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-3">
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              <strong>Example:</strong> Prefix "family" with 5 tables creates: family1,
-              family2, family3, family4, family5
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-12 gap-3 items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+          <div className="grid grid-cols-12 gap-3 items-center p-4 bg-white dark:bg-accent/50 rounded-lg border border-gray-200 dark:border-gray-700">
             {/* Custom Prefix Input */}
             <div className="col-span-4">
               <label className="font-medium text-sm text-gray-700 dark:text-gray-300 block mb-1">
@@ -236,11 +225,9 @@ export const QuickSetupModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 placeholder="e.g., family, special"
                 value={customPrefix}
                 onChange={(e) => setCustomPrefix(e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-accent text-gray-900 dark:text-white"
+                className="w-full border border-primary/20 dark:border-primary/30 rounded-lg p-2 bg-white dark:bg-accent text-gray-900 dark:text-white"
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                (prefix1, prefix2...)
-              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">prefix1, prefix2…</p>
             </div>
 
             {/* Quantity Input */}
@@ -254,11 +241,8 @@ export const QuickSetupModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 placeholder="0"
                 value={customQuantity}
                 onChange={(e) => setCustomQuantity(e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-accent text-gray-900 dark:text-white"
+                className="w-full border border-primary/20 dark:border-primary/30 rounded-lg p-2 bg-white dark:bg-accent text-gray-900 dark:text-white"
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                tables
-              </p>
             </div>
 
             {/* Capacity Input */}
@@ -271,12 +255,9 @@ export const QuickSetupModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 min="1"
                 value={customCapacity}
                 onChange={(e) => setCustomCapacity(e.target.value)}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-accent text-gray-900 dark:text-white"
+                className="w-full border border-primary/20 dark:border-primary/30 rounded-lg p-2 bg-white dark:bg-accent text-gray-900 dark:text-white"
                 disabled={!customQuantity || Number(customQuantity) === 0}
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                seats each
-              </p>
             </div>
           </div>
         </div>

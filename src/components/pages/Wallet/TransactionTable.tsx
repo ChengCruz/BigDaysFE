@@ -8,6 +8,7 @@ import type { Wallet } from "../../../types/wallet";
 import { CURRENCY_CONFIG } from "../../../types/wallet";
 import { useDeleteTransaction } from "../../../api/hooks/useTransactionApi";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
+import { PencilIcon, TrashIcon } from "@heroicons/react/outline";
 
 interface TransactionTableProps {
   wallet: Wallet;
@@ -378,7 +379,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition"
                             title="Edit"
                           >
-                            ✏️
+                            <PencilIcon className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(txn)}
@@ -386,7 +387,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                             className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition disabled:opacity-50"
                             title="Delete"
                           >
-                            🗑️
+                            <TrashIcon className="h-4 w-4" />
                           </button>
                         </div>
                       </td>

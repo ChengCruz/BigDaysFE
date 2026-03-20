@@ -52,3 +52,31 @@
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
 }
+
+/* 6. Floor plan print — show canvas only */
+@media print {
+  body * { visibility: hidden; }
+  .floor-canvas,
+  .floor-canvas * { visibility: visible; }
+  .floor-canvas {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    /* Force backgrounds and gradients to print */
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+    /* Plain white background — no faint grid lines */
+    background: white !important;
+  }
+  .floor-canvas * {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+  .fp-no-print { visibility: hidden !important; }
+  .floor-canvas [data-floor-item] > div { outline: none !important; }
+}

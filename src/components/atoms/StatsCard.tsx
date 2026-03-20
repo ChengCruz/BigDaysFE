@@ -6,6 +6,7 @@ export interface StatsCardProps {
   value: number | string;
   variant?: "primary" | "secondary" | "accent" | "success" | "warning";
   icon?: React.ReactNode;
+  size?: "sm" | "md";
 }
 
 export const StatsCard: React.FC<StatsCardProps> = ({
@@ -13,8 +14,8 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   value,
   variant = "primary",
   icon,
+  size = "md",
 }) => {
-  // Map variant to color classes using project's color system
   const colorClasses = {
     primary: "text-primary bg-primary/5 border-primary/20",
     secondary: "text-secondary bg-secondary/5 border-secondary/20",
@@ -31,24 +32,28 @@ export const StatsCard: React.FC<StatsCardProps> = ({
     warning: "text-amber-600 dark:text-amber-400",
   };
 
+  const padding = size === "sm" ? "p-2.5" : "p-4";
+  const valueSize = size === "sm" ? "text-lg font-bold" : "text-2xl font-bold";
+  const iconSize = size === "sm" ? "w-4 h-4" : "w-5 h-5";
+
   return (
-    <div
-      className={`p-4 rounded-xl border ${colorClasses[variant]} transition-all hover:shadow-md`}
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
+    <div className={`${padding} rounded-xl border ${colorClasses[variant]} transition-all hover:shadow-md`}>
+      <div className="flex items-center justify-between gap-2">
+        {/* Left: icon + label */}
+        <div className="flex items-center gap-1.5 min-w-0">
+          {icon && (
+            <div className={`${iconSize} ${valueColorClasses[variant]} opacity-80 flex-shrink-0`}>
+              {icon}
+            </div>
+          )}
+          <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide truncate">
             {label}
           </p>
-          <p className={`text-2xl font-bold ${valueColorClasses[variant]}`}>
-            {value}
-          </p>
         </div>
-        {icon && (
-          <div className={`ml-3 ${valueColorClasses[variant]} opacity-80`}>
-            {icon}
-          </div>
-        )}
+        {/* Right: value */}
+        <p className={`${valueSize} ${valueColorClasses[variant]} flex-shrink-0`}>
+          {value}
+        </p>
       </div>
     </div>
   );
