@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { EventsEndpoints } from "../endpoints";
+import type { FormFieldConfig } from "./useFormFieldsApi";
 
 // --- API payload ---
 type ApiEvent = {
@@ -183,6 +184,38 @@ export function useDeactivateEvent() {
     },
     onError: (err, id) => {
       console.error("[onError] deactivating", id, err);
+    },
+  });
+}
+
+const TYPE_KEY_MAP: Record<number, FormFieldConfig["typeKey"]> = {
+  0: "text", 1: "textarea", 2: "select", 3: "radio",
+  4: "checkbox", 5: "email", 6: "number", 7: "date",
+};
+
+/** Fetch internal RSVP template (event + questions, no design) for a given event GUID. */
+export function useEventRsvpInternal(eventId?: string) {
+  return useQuery<FormFieldConfig[]>({
+    queryKey: ["eventRsvpInternal", eventId],
+    enabled: !!eventId,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const res = await client.get(EventsEndpoints.eventRsvpInternal(eventId!));
+      const data = res.data?.data ?? res.data;
+      const questions: any[] = data?.questions ?? [];
+      return questions.map((q: any) => ({
+        questionId: String(q.questionId ?? q.id ?? ""),
+        id: String(q.questionId ?? q.id ?? ""),
+        eventId: q.eventId,
+        label: q.label ?? q.text ?? q.name ?? "",
+        name: q.name ?? (q.label ?? q.text ?? "").toLowerCase().replace(/\s+/g, "_"),
+        text: q.text ?? q.label ?? "",
+        isRequired: q.isRequired ?? q.required ?? false,
+        type: typeof q.type === "number" ? q.type : undefined,
+        typeKey: typeof q.type === "number" ? TYPE_KEY_MAP[q.type] : (q.typeKey ?? q.type),
+        options: Array.isArray(q.options) ? q.options : typeof q.options === "string" ? q.options : undefined,
+        order: q.order ?? 0,
+      } as FormFieldConfig));
     },
   });
 }

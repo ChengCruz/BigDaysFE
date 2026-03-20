@@ -1,7 +1,7 @@
 // src/components/pages/Guests/GuestsPage.tsx
 import { PageLoader } from "../../atoms/PageLoader";
 import { useState, useMemo } from "react";
-import { UserGroupIcon, UserIcon } from "@heroicons/react/solid";
+import { UserGroupIcon, UserIcon, CheckCircleIcon, StarIcon } from "@heroicons/react/solid";
 import {
   useGuestsApi,
   useAssignGuestToTable,
@@ -15,10 +15,10 @@ import { useEventContext } from "../../../context/EventContext";
 import toast from "react-hot-toast";
 import { GuestFormModal } from "./GuestFormModal";
 import { NoEventsState } from "../../molecules/NoEventsState";
-import { useGenerateQrApi, useQrListApi, useRevokeQrApi } from "../../../api/hooks/useQrApi";
-import type { QrStatus, QrToken } from "../../../types/qr";
-import QrStatusBadge from "../../molecules/QrStatusBadge";
-import QrImageModal from "../../molecules/QrImageModal";
+// TODO: QR features are deferred from this page for now.
+// Future plan: show a simple read-only status badge per guest card
+// e.g. "QR Ready" | "Awaiting QR" | "Checked In" | "QR Revoked"
+// Full actions (Generate All, View QR, Revoke) to be decided on separately.
 
 export default function GuestsPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
@@ -28,10 +28,6 @@ export default function GuestsPage() {
   const assignGuestToTable = useAssignGuestToTable(eventId!);
   const unassignGuestFromTable = useUnassignGuestFromTable(eventId!);
 
-  const { data: qrTokens } = useQrListApi(eventId ?? "");
-  const generateQr = useGenerateQrApi();
-  const revokeQr = useRevokeQrApi();
-
   const [guestTypeFilter, setGuestTypeFilter] = useState<string>("All");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [modal, setModal] = useState<{ open: boolean; guest?: Guest }>({
@@ -40,8 +36,6 @@ export default function GuestsPage() {
   const [assignModal, setAssignModal] = useState<{ open: boolean; guest?: Guest }>({
     open: false,
   });
-  const [qrModal, setQrModal] = useState<{ open: boolean; guestName: string; token: string } | null>(null);
-
   // Calculate statistics
   const stats = useMemo(() => {
     const total = guests.length;
@@ -51,19 +45,6 @@ export default function GuestsPage() {
 
     return { total, assigned, unassigned, vips };
   }, [guests]);
-
-  // QR token lookup map by guestId
-  const qrMap = useMemo(
-    () => Object.fromEntries((qrTokens ?? []).map((t) => [t.guestId, t])),
-    [qrTokens]
-  );
-
-  function getQrStatus(token?: QrToken): QrStatus {
-    if (!token) return "None";
-    if (token.checkedInAt) return "CheckedIn";
-    if (token.isRevoked) return "Revoked";
-    return "Generated";
-  }
 
   // Create table lookup map
   const tableMap = useMemo(() => {
@@ -126,54 +107,25 @@ export default function GuestsPage() {
 
   return (
     <>
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <StatsCard
-          label="Total Guests"
-          value={stats.total}
-          variant="primary"
-          icon={<UserGroupIcon className="h-6 w-6" />}
-        />
-        <StatsCard
-          label="Assigned"
-          value={stats.assigned}
-          variant="success"
-          icon={<UserIcon className="h-6 w-6" />}
-        />
-        <StatsCard
-          label="Unassigned"
-          value={stats.unassigned}
-          variant="warning"
-          icon={<UserIcon className="h-6 w-6" />}
-        />
-        <StatsCard
-          label="VIPs"
-          value={stats.vips}
-          variant="accent"
-          icon={<UserIcon className="h-6 w-6" />}
-        />
-      </div>
-
       {/* Header + Controls */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
-        <h2 className="text-2xl font-semibold text-primary">Guests</h2>
+        <div>
+          <h2 className="text-2xl font-semibold text-primary">Guests</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage and organize your guest list</p>
+        </div>
         <div className="flex flex-wrap gap-2 items-center">
-          <Button
-            onClick={() =>
-              generateQr.mutate(eventId!, {
-                onSuccess: (res) =>
-                  toast.success(`Generated ${res.generated}, Skipped ${res.skipped} (already had QR)`),
-                onError: () => toast.error("Failed to generate QR codes"),
-              })
-            }
-            disabled={generateQr.isPending}
-          >
-            {generateQr.isPending ? "Generating..." : "Generate QR Codes"}
-          </Button>
           <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-sm text-blue-700 dark:text-blue-300">
             <span className="font-medium">Note:</span> Guests are automatically created when RSVP submissions include attendees (pax &gt; 0). <br></br>Guest deletion is only available through the RSVP module.
           </div>
         </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <StatsCard label="Total Guests" value={stats.total} variant="primary" size="sm" icon={<UserGroupIcon className="w-4 h-4" />} />
+        <StatsCard label="Assigned" value={stats.assigned} variant="success" size="sm" icon={<CheckCircleIcon className="w-4 h-4" />} />
+        <StatsCard label="Unassigned" value={stats.unassigned} variant="warning" size="sm" icon={<UserIcon className="w-4 h-4" />} />
+        <StatsCard label="VIPs" value={stats.vips} variant="accent" size="sm" icon={<StarIcon className="w-4 h-4" />} />
       </div>
 
       {/* Filters */}
@@ -216,9 +168,6 @@ export default function GuestsPage() {
         <ul className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filteredGuests.map((guest) => {
             const isAssigned = !!guest.tableId;
-            const qrToken = qrMap[guest.id] ?? qrMap[guest.guestId ?? ""];
-            const qrStatus = getQrStatus(qrToken);
-
             return (
               <li
                 key={guest.id}
@@ -280,7 +229,6 @@ export default function GuestsPage() {
                     >
                       {guest.guestType || "Other"}
                     </span>
-                    <QrStatusBadge status={qrStatus} />
                   </div>
 
                   {/* Table Assignment Display */}
@@ -324,38 +272,9 @@ export default function GuestsPage() {
                     <Button
                       variant="primary"
                       onClick={() => setAssignModal({ open: true, guest })}
-                      className="!bg-green-600 !text-white hover:!bg-green-700"
+                      className="![background-image:none] !bg-green-600 !shadow-green-600/25 hover:!bg-green-700"
                     >
                       Assign Table
-                    </Button>
-                  )}
-                  {(qrStatus === "Generated" || qrStatus === "CheckedIn") && (
-                    <Button
-                      variant="secondary"
-                      onClick={() =>
-                        setQrModal({
-                          open: true,
-                          guestName: guest.guestName ?? guest.name ?? "",
-                          token: qrToken!.token,
-                        })
-                      }
-                    >
-                      View QR
-                    </Button>
-                  )}
-                  {qrStatus === "Generated" && (
-                    <Button
-                      variant="secondary"
-                      className="!bg-red-600 !text-white hover:!bg-red-700"
-                      onClick={() => {
-                        if (!window.confirm(`Revoke QR for ${guest.guestName ?? guest.name}?`)) return;
-                        revokeQr.mutate(
-                          { token: qrToken!.token, eventId: eventId! },
-                          { onSuccess: () => toast.success("QR revoked"), onError: () => toast.error("Failed to revoke QR") }
-                        );
-                      }}
-                    >
-                      Revoke
                     </Button>
                   )}
                 </div>
@@ -363,16 +282,6 @@ export default function GuestsPage() {
             );
           })}
         </ul>
-      )}
-
-      {/* QR Image Modal */}
-      {qrModal && (
-        <QrImageModal
-          isOpen={qrModal.open}
-          guestName={qrModal.guestName}
-          token={qrModal.token}
-          onClose={() => setQrModal(null)}
-        />
       )}
 
       {/* Guest Form Modal */}
