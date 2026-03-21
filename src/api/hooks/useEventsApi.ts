@@ -2,27 +2,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { EventsEndpoints } from "../endpoints";
 import type { FormFieldConfig } from "./useFormFieldsApi";
-
-// --- API payload ---
-type ApiEvent = {
-  eventID: string;
-  eventGuid: string;
-  eventName: string;
-  eventDate: string;
-  eventTime: string;
-  eventLocation: string;
-  noOfTable?: number;
-  eventDescription?: string;
-  isDeleted?: boolean;
-};
-
-type ApiResponse<T> = {
-  data: T;
-  isSuccess: boolean;
-  statusCode: number;
-  message: string;
-  errorCode?: string | null;
-};
+import type { ApiEvent } from "../../types/event";
+import type { ApiResponse } from "../../types/api";
+import { TYPE_KEY_MAP } from "../../utils/eventUtils";
 
 // --- App-facing Event model ---
 export interface Event {
@@ -156,7 +138,6 @@ export function useActivateEvent() {
     mutationFn: async (id: string) => {
       // Most backends expect POST for activate/deactivate
       // If your API needs a body, send { eventID: id } instead of {}
-      console.log("[mutate] activate", id);
       const res = await client.put(EventsEndpoints.activateEvent(id));
       return res.data;
     },
@@ -171,27 +152,14 @@ export function useDeactivateEvent() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      console.log("[mutate] deactivate", id);
       const res = await client.put(EventsEndpoints.deactivateEvent(id));
       return res.data;
     },
-    onMutate: (id) => {
-      console.log("[onMutate] deactivating", id);
-    },
-    onSuccess: (_data, id) => {
-      console.log("[onSuccess] deactivated", id);
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["events"] });
-    },
-    onError: (err, id) => {
-      console.error("[onError] deactivating", id, err);
     },
   });
 }
-
-const TYPE_KEY_MAP: Record<number, FormFieldConfig["typeKey"]> = {
-  0: "text", 1: "textarea", 2: "select", 3: "radio",
-  4: "checkbox", 5: "email", 6: "number", 7: "date",
-};
 
 /** Fetch internal RSVP template (event + questions, no design) for a given event GUID. */
 export function useEventRsvpInternal(eventId?: string) {

@@ -14,26 +14,24 @@ import { CategoryBreakdown } from "./CategoryBreakdown";
 import { TransactionTable } from "./TransactionTable";
 import type { Transaction } from "../../../types/transaction";
 import { NoEventsState } from "../../molecules/NoEventsState";
+import { ErrorState } from "../../atoms/ErrorState";
 
 export default function WalletPage() {
+  // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────
   const { eventId } = useEventContext()!;
-
-  // Show "no events" state if no events exist
-  if (!eventId) return <NoEventsState title="No Events for Budget Tracking" message="Create your first event to start managing your budget and tracking expenses." />;
-
   const { user } = useContext(AuthContext);
-  
+
   // Fetch wallet data
   const {
     data: wallet,
     isLoading: walletLoading,
     isError: walletError,
-  } = useWalletsApi(eventId!);
+  } = useWalletsApi(eventId ?? "");
 
   // Fetch transactions (only if wallet exists)
   const {
     data: transactions = [],
-  } = useTransactionsApi(wallet?.walletGuid || "", eventId!);
+  } = useTransactionsApi(wallet?.walletGuid ?? "", eventId ?? "");
 
   // Modal states
   const [setupWalletModal, setSetupWalletModal] = useState<{ open: boolean; editMode: boolean }>({
@@ -47,6 +45,11 @@ export default function WalletPage() {
     open: false,
   });
   const [exportModal, setExportModal] = useState(false);
+
+  // ─── Early returns AFTER hooks ───────────────────────────────────────────────
+
+  // Show "no events" state if no events exist
+  if (!eventId) return <NoEventsState title="No Events for Budget Tracking" message="Create your first event to start managing your budget and tracking expenses." />;
 
   // Handle wallet setup/edit
   const handleOpenSetupWallet = (editMode: boolean = false) => {
@@ -77,16 +80,7 @@ export default function WalletPage() {
 
   // Error state
   if (walletError) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <p className="text-red-500 mb-4">Failed to load wallet data</p>
-          <Button onClick={() => window.location.reload()} variant="secondary">
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
+    return <ErrorState message="Failed to load wallet data." onRetry={() => window.location.reload()} />;
   }
 
   // No wallet - show setup prompt
@@ -131,7 +125,7 @@ export default function WalletPage() {
           isOpen={setupWalletModal.open}
           onClose={handleCloseSetupWallet}
           eventGuid={eventId!}
-          userId={user?.id || "todo"}
+          userId={user?.id ?? ""}
           wallet={null}
         />
       </div>

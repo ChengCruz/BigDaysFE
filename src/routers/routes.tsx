@@ -58,6 +58,7 @@ import { TableSummary } from "../components/pages/Tables/TableSummary";
 import FloorPlanPage from "../components/pages/Tables/FloorPlanPage";
 import CheckInPage from "../components/pages/CheckIn/CheckInPage";
 import QrLookupPage from "../components/pages/Public/QrLookup/QrLookupPage";
+import RequireAuth from "../components/RequireAuth";
 // …and other Public pages…
 
 export default function AppRoutes() {
@@ -86,7 +87,7 @@ export default function AppRoutes() {
       </Route>
 
       {/* ─── PROTECTED / DASHBOARD ─────────────────────────── */}
-      <Route path="/app" element={<DashboardTemplate />}>
+      <Route path="/app" element={<RequireAuth><DashboardTemplate /></RequireAuth>}>
         <Route index element={<Navigate to="dashboard" replace />} />
 
         {/* DASHBOARD */}

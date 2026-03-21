@@ -34,20 +34,16 @@ export function useWalletsApi(eventId: string) {
       try {
         const response = await client.get(WalletEndpoints.getByEvent(eventId));
         
-        console.log("Wallet API Response:", response.data); // Debug log
-        
         // Handle both direct data and wrapped response formats
         const wallets = response.data?.data ?? response.data;
         
         // API returns array, get first wallet
         if (!wallets || !Array.isArray(wallets) || wallets.length === 0) {
-          console.log("No wallet found in response"); // Debug log
           return null;
         }
 
         const apiWallet: WalletApiResponse = wallets[0];
-        console.log("Found wallet (raw):", apiWallet); // Debug log
-        
+
         // Map backend response to frontend type (budget → totalBudget)
         const wallet = mapApiResponseToWallet(apiWallet);
         
@@ -56,15 +52,11 @@ export function useWalletsApi(eventId: string) {
           const localBudget = getBudget(wallet.walletGuid);
           if (localBudget !== null) {
             wallet.totalBudget = localBudget;
-            console.log("Using localStorage budget (fallback):", localBudget);
           }
-        } else {
-          console.log("Using backend budget:", wallet.totalBudget);
         }
         
         return wallet;
       } catch (error: any) {
-        console.error("Wallet API Error:", error); // Debug log
         // If 404, wallet doesn't exist yet - return null
         if (error.response?.status === 404) {
           return null;
@@ -139,12 +131,8 @@ export function useCreateWallet() {
         budget: totalBudget,
       };
       
-      console.log("Creating wallet, payload:", payload);
-      
       const response = await client.post(WalletEndpoints.create, payload);
       const apiWallet: WalletApiResponse = response.data?.data ?? response.data;
-
-      console.log("Wallet created, backend response:", apiWallet);
 
       // Map backend response to frontend type (budget → totalBudget)
       const wallet = mapApiResponseToWallet(apiWallet);
@@ -152,7 +140,6 @@ export function useCreateWallet() {
       // Backup to localStorage for safety
       if (totalBudget !== undefined && wallet.walletGuid) {
         saveBudget(wallet.walletGuid, totalBudget);
-        console.log("Saved budget to localStorage as backup:", totalBudget);
       }
 
       return wallet;
@@ -185,12 +172,8 @@ export function useUpdateWallet() {
         budget: totalBudget,
       };
       
-      console.log("Updating wallet, payload:", payload);
-      
       const response = await client.post(WalletEndpoints.update, payload);
       const apiWallet: WalletApiResponse = response.data?.data ?? response.data;
-
-      console.log("Wallet updated, backend response:", apiWallet);
 
       // Map backend response to frontend type (budget → totalBudget)
       const wallet = mapApiResponseToWallet(apiWallet);
@@ -198,7 +181,6 @@ export function useUpdateWallet() {
       // Update localStorage backup
       if (totalBudget !== undefined && wallet.walletGuid) {
         saveBudget(wallet.walletGuid, totalBudget);
-        console.log("Updated budget in localStorage as backup:", totalBudget);
       }
 
       return wallet;
@@ -236,28 +218,6 @@ export function useDeleteWallet() {
       queryClient.invalidateQueries({ queryKey: ["wallet", data.walletGuid] });
       // Also invalidate transactions
       queryClient.invalidateQueries({ queryKey: ["transactions", data.walletGuid] });
-    },
-  });
-}
-
-/**
- * Update wallet budget (localStorage only)
- */
-export function useUpdateWalletBudget() {
-  const queryClient = useQueryClient();
-
-  return useMutation<
-    void,
-    Error,
-    { walletGuid: string; eventGuid: string; totalBudget: number }
-  >({
-    mutationFn: async ({ walletGuid, totalBudget }) => {
-      saveBudget(walletGuid, totalBudget);
-    },
-    onSuccess: (_, variables) => {
-      // Invalidate wallet queries to trigger refetch with updated budget
-      queryClient.invalidateQueries({ queryKey: ["wallet", variables.eventGuid] });
-      queryClient.invalidateQueries({ queryKey: ["wallet", variables.walletGuid] });
     },
   });
 }

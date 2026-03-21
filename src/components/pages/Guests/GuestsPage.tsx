@@ -1,5 +1,6 @@
 // src/components/pages/Guests/GuestsPage.tsx
 import { PageLoader } from "../../atoms/PageLoader";
+import { ErrorState } from "../../atoms/ErrorState";
 import { useState, useMemo } from "react";
 import { UserGroupIcon, UserIcon, CheckCircleIcon, StarIcon } from "@heroicons/react/solid";
 import {
@@ -15,6 +16,7 @@ import { useEventContext } from "../../../context/EventContext";
 import toast from "react-hot-toast";
 import { GuestFormModal } from "./GuestFormModal";
 import { NoEventsState } from "../../molecules/NoEventsState";
+import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 // TODO: QR features are deferred from this page for now.
 // Future plan: show a simple read-only status badge per guest card
 // e.g. "QR Ready" | "Awaiting QR" | "Checked In" | "QR Revoked"
@@ -36,6 +38,7 @@ export default function GuestsPage() {
   const [assignModal, setAssignModal] = useState<{ open: boolean; guest?: Guest }>({
     open: false,
   });
+  const [unassignConfirm, setUnassignConfirm] = useState<Guest | null>(null);
   // Calculate statistics
   const stats = useMemo(() => {
     const total = guests.length;
@@ -70,39 +73,43 @@ export default function GuestsPage() {
   if (!eventId) return <NoEventsState title="No Events for Guest Management" message="Create your first event to start adding and managing your guest list." />;
 
   if (guestsLoading || tablesLoading) return <PageLoader message="Loading guests..." />;
-  if (guestsError) return <p>Failed to load guests.</p>;
+  if (guestsError) return <ErrorState message="Failed to load guests." onRetry={() => window.location.reload()} />;
 
   // Note: Guest deletion is not available in this module.
   // Guests can only be deleted through the RSVP module, as they are managed as part of RSVP records.
 
   // Handle assign table
-  const handleAssignTable = async (guest: Guest, tableId: string) => {
-    try {
-      await assignGuestToTable.mutateAsync({
-        guestId: guest.guestId ?? guest.id,
-        tableId: tableId,
-      });
-      toast.success(`${guest.guestName || guest.name} assigned to table successfully`);
-      setAssignModal({ open: false });
-    } catch (err) {
-      console.error("Assign table error:", err);
-      toast.error("Failed to assign guest to table");
-    }
+  const handleAssignTable = (guest: Guest, tableId: string) => {
+    assignGuestToTable.mutate({
+      guestId: guest.guestId ?? guest.id,
+      tableId: tableId,
+    }, {
+      onSuccess: () => {
+        toast.success(`${guest.guestName || guest.name} assigned to table successfully`);
+        setAssignModal({ open: false });
+      },
+      onError: () => {
+        toast.error("Failed to assign guest to table");
+      },
+    });
   };
 
   // Handle unassign table
-  const handleUnassignTable = async (guest: Guest) => {
-    if (!window.confirm(`Remove ${guest.guestName || guest.name} from ${tableMap.get(guest.tableId || "")}?`)) {
-      return;
-    }
+  const handleUnassignTable = (guest: Guest) => {
+    setUnassignConfirm(guest);
+  };
 
-    try {
-      await unassignGuestFromTable.mutateAsync(guest.guestId ?? guest.id);
-      toast.success(`${guest.guestName || guest.name} unassigned from table successfully`);
-    } catch (err) {
-      console.error("Unassign table error:", err);
-      toast.error("Failed to unassign guest from table");
-    }
+  const confirmUnassignTable = () => {
+    if (!unassignConfirm) return;
+    unassignGuestFromTable.mutate(unassignConfirm.guestId ?? unassignConfirm.id, {
+      onSuccess: () => {
+        toast.success(`${unassignConfirm.guestName || unassignConfirm.name} unassigned from table successfully`);
+        setUnassignConfirm(null);
+      },
+      onError: () => {
+        toast.error("Failed to unassign guest from table");
+      },
+    });
   };
 
   return (
@@ -283,6 +290,21 @@ export default function GuestsPage() {
           })}
         </ul>
       )}
+
+      {/* Unassign Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={!!unassignConfirm}
+        isDeleting={unassignGuestFromTable.isPending}
+        title="Unassign Guest from Table"
+        description="This will remove the guest from their assigned table."
+        onConfirm={confirmUnassignTable}
+        onCancel={() => setUnassignConfirm(null)}
+      >
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          Remove <strong>{unassignConfirm?.guestName || unassignConfirm?.name}</strong> from{" "}
+          <strong>{tableMap.get(unassignConfirm?.tableId || "")}</strong>?
+        </p>
+      </DeleteConfirmationModal>
 
       {/* Guest Form Modal */}
       <GuestFormModal
