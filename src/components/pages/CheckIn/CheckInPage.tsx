@@ -45,7 +45,7 @@ export default function CheckInPage() {
       .start(
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
-        async (decodedText) => {
+        async (decodedText: string) => {
           if (isProcessing.current) return;
           isProcessing.current = true;
           setScanState({ status: "loading" });

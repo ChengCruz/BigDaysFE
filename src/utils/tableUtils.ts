@@ -15,8 +15,6 @@ export function normalizeTable(table: ApiTable): TableBase {
     id: table.tableId,
     name: table.tableName,
     capacity: table.maxSeats,
-    guests: table.guests ?? [],
-    assignedCount: table.assignedCount ?? table.guests?.length ?? 0,
     extraGuests: table.extraGuests,
     layout: table.layout,
   };

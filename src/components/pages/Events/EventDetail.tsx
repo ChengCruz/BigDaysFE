@@ -8,13 +8,20 @@ import { ImportRsvpsModal } from "../../molecules/ImportRsvpsModal";
 import { RsvpExportButton } from "./RsvpExportButton";
 import { useFormFields, useCreateFormField, useUpdateFormField, useDeleteFormField, type FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
 import { FieldBuilderModal } from "../../molecules/FieldBuilderModal";
+import { useRsvpsApi } from "../../../api/hooks/useRsvpsApi";
+import { useAuth } from "../../../api/hooks/useAuth";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
   const { data: event, isLoading, isError } = useEventApi(id!);
 const [impOpen, setImpOpen] = useState(false);
 
-  const { data: fields } = useFormFields(id!);
+  const { data: fields, isLoading: formFieldsLoading } = useFormFields(id!);
+  const { data: rsvps = [] } = useRsvpsApi(id!);
+  const { user } = useAuth();
+  const actor = user?.id ?? user?.name ?? "System";
+  const qc = useQueryClient();
   const createField = useCreateFormField(id!);
   // const getUpdateField = (fieldId: string) => useUpdateFormField(id!, fieldId);
   const updateField = useUpdateFormField(id!);
@@ -37,7 +44,17 @@ const [impOpen, setImpOpen] = useState(false);
         </Link>
       </header>
       <div className="flex space-x-4 mb-6">
-      <ImportRsvpsModal isOpen={impOpen} onClose={() => setImpOpen(false)} eventId={id!} />
+      <ImportRsvpsModal
+        isOpen={impOpen}
+        onClose={() => setImpOpen(false)}
+        eventId={id!}
+        eventTitle={event?.title ?? ""}
+        formFields={fields ?? []}
+        formFieldsLoading={formFieldsLoading}
+        existingRsvps={rsvps}
+        actor={actor}
+        onImportComplete={() => qc.invalidateQueries({ queryKey: ["rsvps", id] })}
+      />
       <Button onClick={() => setImpOpen(true)}>Import RSVPs</Button>
       <RsvpExportButton eventId={id!} />
     </div>

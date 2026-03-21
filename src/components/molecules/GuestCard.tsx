@@ -1,6 +1,6 @@
 // src/components/molecules/GuestCard.tsx
 import React, { useState } from "react";
-import { MenuAlt4Icon } from "@heroicons/react/outline";
+import { MenuIcon } from "@heroicons/react/outline";
 
 export interface GuestCardProps {
   guest: {
@@ -55,7 +55,7 @@ export const GuestCard: React.FC<GuestCardProps> = ({
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-1.5 min-w-0">
-          <MenuAlt4Icon className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 flex-shrink-0" />
+          <MenuIcon className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 flex-shrink-0" />
           <h4 className="font-semibold text-sm text-gray-900 dark:text-white truncate">
             {guest.guestName}
           </h4>

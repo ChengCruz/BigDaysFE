@@ -65,7 +65,7 @@ export function useEventBySlug(slug: string | undefined) {
       design.formFieldConfigs = formFields;
 
       return {
-        eventId: design.eventGuid,
+        eventId: design.eventGuid ?? "",
         eventName: event?.eventName ?? "",
         design,
         formFields,
