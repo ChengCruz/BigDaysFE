@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { TablesEndpoints, GuestEndpoints } from "../endpoints";
 import type { Rsvp } from "./useRsvpsApi";
+import { normalizeTable } from "../../utils/tableUtils";
 
 //
 // ——— Types ——————————————————————————————————————————————————————————
@@ -36,21 +37,10 @@ export function useTablesApi(eventId:string) {
       let tables = data?.data?.tables || data?.tables || data?.data || data || [];
       
       if (!Array.isArray(tables)) {
-        console.warn('Unexpected tables API response format:', data);
         return [];
       }
-      
-      // Convert API field names to frontend field names
-      // Note: API uses different naming conventions (see .cursor/CONVENTIONS.md)
-      return tables.map((table: any) => ({
-        id: table.tableId,                    // API → Frontend
-        name: table.tableName,                 // API → Frontend
-        capacity: table.maxSeats,              // API → Frontend
-        guests: table.guests || [],            // Include guests if present
-        assignedCount: table.assignedCount ?? table.guests?.length ?? 0, // Calculate if not provided
-        extraGuests: table.extraGuests,        // Optional field
-        layout: table.layout,                  // Optional field
-      }));
+
+      return tables.map(normalizeTable);
     },
     enabled: Boolean(eventId),
     staleTime: 5 * 60_000,
@@ -75,24 +65,16 @@ export function useTableApi(tableId: string) {
 //
 
 function invalidate(qc: ReturnType<typeof useQueryClient>, tableId?: string, eventId?: string) {
-  // Force refetch by invalidating and refetching
   if (tableId) {
     qc.invalidateQueries({ queryKey: ["tables", tableId] });
-    qc.refetchQueries({ queryKey: ["tables", tableId] });
   }
   if (eventId) {
     qc.invalidateQueries({ queryKey: ["tables", eventId] });
     qc.invalidateQueries({ queryKey: ["rsvps", eventId] });
     qc.invalidateQueries({ queryKey: ["guests", eventId] });
-    // Force refetch tables, rsvps, and guests
-    qc.refetchQueries({ queryKey: ["tables", eventId] });
-    qc.refetchQueries({ queryKey: ["rsvps", eventId] });
-    qc.refetchQueries({ queryKey: ["guests", eventId] });
   }
-  // Only invalidate all tables if no specific IDs provided
   if (!tableId && !eventId) {
     qc.invalidateQueries({ queryKey: ["tables"] });
-    qc.refetchQueries({ queryKey: ["tables"] });
   }
 }
 

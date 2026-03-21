@@ -7,11 +7,7 @@ import { PublicEventEndpoints } from "../endpoints";
 import type { RsvpDesign, ApiRsvpDesign } from "../../types/rsvpDesign";
 import { mapToFrontendDesign } from "../../utils/rsvpDesignMapper";
 import type { FormFieldConfig } from "./useFormFieldsApi";
-
-const TYPE_KEY_MAP: Record<number, string> = {
-  0: "text", 1: "textarea", 2: "select", 3: "radio",
-  4: "checkbox", 5: "email", 6: "number", 7: "date",
-};
+import { TYPE_KEY_MAP } from "../../utils/eventUtils";
 
 export interface EventRsvpTemplate {
   eventId: string;

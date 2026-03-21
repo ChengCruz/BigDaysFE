@@ -102,11 +102,11 @@ export const FormFieldsEndpoints = {
 
 export const PublicRsvpEndpoints = {
   submit: () => `/rsvp/Create`,
-  designByToken: (token: string) => `/RsvpDesign/public/${token}`,
+  designByToken: (token: string) => `/RsvpDesign/share/${token}`,
 };
 
 export const PublicEventEndpoints = {
-  bySlug: (slug: string) => `/rsvp/${slug}`,
+  bySlug: (slug: string) => `/event/eventRsvp/slug/${slug}`,
 };
 
 export const RsvpDesignEndpoints = {

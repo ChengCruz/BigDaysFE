@@ -5,18 +5,17 @@ import client from "../client";
 import { PublicRsvpEndpoints, RsvpDesignEndpoints } from "../endpoints";
 import type { RsvpDesign, ApiRsvpDesign } from "../../types/rsvpDesign";
 import { mapToFrontendDesign } from "../../utils/rsvpDesignMapper";
-
-const TYPE_KEY_MAP: Record<number, string> = {
-  0: "text", 1: "textarea", 2: "select", 3: "radio",
-  4: "checkbox", 5: "email", 6: "number", 7: "date",
-};
+import { TYPE_KEY_MAP } from "../../utils/eventUtils";
 
 /**
  * Fetch RSVP design by share token (no auth required).
- * Tries the backend public endpoint first, then the localStorage snapshot,
- * then the admin design endpoint using eventGuid (only needs apiKey+author headers,
- * no JWT — so external users can load the design cross-device when the link
- * includes ?event={eventGuid}).
+ * Tries the backend public endpoint first, then the admin design endpoint
+ * using eventGuid (only needs apiKey+author headers, no JWT — so external
+ * users can load the design cross-device when the link includes ?event={eventGuid}).
+ *
+ * Note: localStorage snapshot is intentionally NOT used here as a fallback —
+ * it is only valid in the same browser that designed the RSVP (admin's device).
+ * The preview page (RsvpSharePreviewPage) reads localStorage directly for that use case.
  */
 export function usePublicRsvpDesign(
   token: string | undefined,
@@ -44,31 +43,7 @@ export function usePublicRsvpDesign(
         }
       }
 
-      // 2. localStorage snapshot (created by the designer — same-browser fallback)
-      if (token && typeof window !== "undefined") {
-        const stored = window.localStorage.getItem(`rsvp-share-${token}`);
-        if (stored) {
-          try {
-            const snap = JSON.parse(stored);
-            return {
-              blocks: snap.blocks ?? [],
-              flowPreset: snap.flowPreset ?? "serene",
-              globalBackgroundType: snap.global?.backgroundType ?? "color",
-              globalBackgroundAsset: snap.global?.backgroundAsset ?? "",
-              globalBackgroundColor: snap.global?.backgroundColor ?? "#0f172a",
-              globalOverlay: snap.global?.overlay ?? 0.3,
-              accentColor: snap.global?.accentColor ?? "#f97316",
-              globalMusicUrl: snap.global?.musicUrl ?? undefined,
-              eventGuid: snap.eventGuid ?? eventGuid ?? undefined,
-              formFieldConfigs: snap.formFieldConfigs ?? [],
-            } as RsvpDesign;
-          } catch {
-            // Ignore corrupt snapshot
-          }
-        }
-      }
-
-      // 3. Load design via eventGuid from the admin endpoint
+      // 2. Load design via eventGuid from the admin endpoint
       // GET /RsvpDesign/{eventGuid}/design only requires apiKey+author headers (no JWT),
       // so it works for unauthenticated guests when the share link includes ?event=.
       if (eventGuid) {

@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { GuestEndpoints } from "../endpoints";
+import { normalizeGuest } from "../../utils/guestUtils";
 
 /**
  * Guest API Field Mapping (API → UI)
@@ -58,35 +59,7 @@ export function useGuestsApi(eventId: string) {
       // Ensure it's always an array
       const arr = Array.isArray(data) ? data : [];
 
-      return arr.map((g: any) => ({
-        id: g.guestId ?? g.id,
-        
-        // Guest API fields (preserve original)
-        guestId: g.guestId,
-        eventId: g.eventId,
-        eventGuid: g.eventGuid,
-        rsvpId: g.rsvpId,
-        tableId: g.tableId ?? undefined,
-        name: g.name ?? "",
-        phoneNo: g.phoneNo ?? "",
-        pax: g.pax ?? 1,
-        groupId: g.groupId,
-        seatIndex: g.seatIndex,
-        flag: g.flag,
-        notes: g.notes ?? "",
-        createdDate: g.createdDate,
-        lastUpdated: g.lastUpdated,
-        isDeleted: g.isDeleted ?? false,
-        createdBy: g.createdBy ?? "",
-        updatedBy: g.updatedBy ?? "",
-        
-        // RSVP-compatible aliases (for UI compatibility)
-        guestName: g.name ?? "", // name → guestName
-        noOfPax: g.pax ?? 1, // pax → noOfPax
-        guestType: g.flag || g.groupId || "Other", // flag → guestType
-        remarks: g.notes ?? "", // notes → remarks
-        status: "Confirmed", // default status for guests
-      } as Guest));
+      return arr.map(normalizeGuest);
     },
     staleTime: 60_000,
     enabled: Boolean(eventId),
@@ -101,33 +74,7 @@ export function useGuestsByTable(eventId: string, tableId: string) {
       const data = res.data?.data ?? res.data;
       const arr = Array.isArray(data) ? data : [];
 
-      return arr.map((g: any) => ({
-        id: g.guestId ?? g.id,
-        guestId: g.guestId,
-        eventId: g.eventId,
-        eventGuid: g.eventGuid,
-        rsvpId: g.rsvpId,
-        tableId: g.tableId ?? undefined,
-        name: g.name ?? "",
-        phoneNo: g.phoneNo ?? "",
-        pax: g.pax ?? 1,
-        groupId: g.groupId,
-        seatIndex: g.seatIndex,
-        flag: g.flag,
-        notes: g.notes ?? "",
-        createdDate: g.createdDate,
-        lastUpdated: g.lastUpdated,
-        isDeleted: g.isDeleted ?? false,
-        createdBy: g.createdBy ?? "",
-        updatedBy: g.updatedBy ?? "",
-        
-        // RSVP-compatible aliases (for UI compatibility)
-        guestName: g.name ?? "", // name → guestName
-        noOfPax: g.pax ?? 1, // pax → noOfPax
-        guestType: g.flag || g.groupId || "Other", // flag → guestType
-        remarks: g.notes ?? "", // notes → remarks
-        status: "Confirmed", // default status for guests
-      } as Guest));
+      return arr.map(normalizeGuest);
     },
     staleTime: 60_000,
     enabled: Boolean(eventId) && Boolean(tableId),
@@ -180,8 +127,6 @@ export function useAssignGuestToTable(eventId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["guests", eventId] });
       qc.invalidateQueries({ queryKey: ["tables", eventId] });
-      qc.refetchQueries({ queryKey: ["guests", eventId] });
-      qc.refetchQueries({ queryKey: ["tables", eventId] });
     },
   });
 }
@@ -194,8 +139,6 @@ export function useUnassignGuestFromTable(eventId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["guests", eventId] });
       qc.invalidateQueries({ queryKey: ["tables", eventId] });
-      qc.refetchQueries({ queryKey: ["guests", eventId] });
-      qc.refetchQueries({ queryKey: ["tables", eventId] });
     },
   });
 }
