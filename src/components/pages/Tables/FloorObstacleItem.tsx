@@ -131,6 +131,7 @@ export const FloorObstacleItem: React.FC<Props> = ({ item, zoom, selected, onSel
       {/* Resize handle when selected */}
       {selected && (
         <div
+          className="fp-no-print"
           onMouseDown={(e) => {
             e.stopPropagation();
             e.preventDefault();

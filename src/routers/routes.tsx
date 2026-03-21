@@ -13,6 +13,7 @@ import EditEventModal from "../components/pages/Events/EditEventModal";
 
 import RsvpsPage from "../components/pages/RSVPs/RsvpsPage";
 import RsvpDesignPage from "../components/pages/RSVPs/RsvpDesignPage";
+import RsvpDesignV2Page from "../components/pages/RSVPs/RsvpDesignV2Page";
 import RsvpSharePreviewPage from "../components/pages/RSVPs/RsvpSharePreviewPage";
 // import RsvpDetail from "../components/pages/RSVPs/RsvpDetail";
 // import rsvp from "../components/pages/RSVPs/NewRsvpModal";
@@ -40,6 +41,7 @@ import WalletPage from "../components/pages/Wallet/WalletPage";
 import MemberDashboardPage from "../components/pages/Dashboard/MemberDashboardPage";
 
 import RSVPPublicPage from "../components/pages/Public/RSVPPublic/RSVPPublicPage";
+import RsvpBySlugPage from "../components/pages/Public/RSVPPublic/RsvpBySlugPage";
 import EventPublicPage from "../components/pages/Public/EventsPublic/EventsPublicPage";
 import { EventFormModal } from "../components/molecules/EventFormModal";
 import { NewRsvpModal } from "../components/pages/RSVPs/NewRsvpModal";
@@ -56,6 +58,7 @@ import { TableSummary } from "../components/pages/Tables/TableSummary";
 import FloorPlanPage from "../components/pages/Tables/FloorPlanPage";
 import CheckInPage from "../components/pages/CheckIn/CheckInPage";
 import QrLookupPage from "../components/pages/Public/QrLookup/QrLookupPage";
+import RequireAuth from "../components/RequireAuth";
 // …and other Public pages…
 
 export default function AppRoutes() {
@@ -65,6 +68,7 @@ export default function AppRoutes() {
     <Routes>
       {/* ─── STANDALONE PUBLIC (no navbar/footer) ───────── */}
       <Route path="/rsvp/submit/:token" element={<RSVPPublicPage />} />
+      <Route path="/rsvp/:slug" element={<RsvpBySlugPage />} />
 
       {/* ─── PUBLIC ───────────────────────────────────────── */}
       <Route element={<PublicTemplate />}>
@@ -83,7 +87,7 @@ export default function AppRoutes() {
       </Route>
 
       {/* ─── PROTECTED / DASHBOARD ─────────────────────────── */}
-      <Route path="/app" element={<DashboardTemplate />}>
+      <Route path="/app" element={<RequireAuth><DashboardTemplate /></RequireAuth>}>
         <Route index element={<Navigate to="dashboard" replace />} />
 
         {/* DASHBOARD */}
@@ -104,6 +108,7 @@ export default function AppRoutes() {
         <Route path="rsvps" element={<Outlet />}>
           <Route index element={<RsvpsPage />} />
           <Route path="designer" element={<RsvpDesignPage />} />
+          <Route path="designer-v2" element={<RsvpDesignV2Page />} />
           <Route path="new" element={<NewRsvpModal />} />
           <Route path=":id/edit" element={<EditRsvpModal />} />
         </Route>

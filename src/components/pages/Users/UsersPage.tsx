@@ -9,18 +9,7 @@ import { PasswordInput } from "../../molecules/PasswordInput";
 import { FormError } from "../../molecules/FormError";
 import { useAuth } from "../../../api/hooks/useAuth";
 import { validatePassword } from "../../../utils/passwordValidation";
-
-const ROLE_LABELS: Record<number, string> = {
-  1: "Super Admin",
-  2: "Admin",
-  3: "Member",
-  6: "Staff",
-};
-
-function getRoleLabel(role?: number) {
-  if (role === undefined || role === null) return "—";
-  return ROLE_LABELS[role] || `Role ${role}`;
-}
+import { getRoleLabel } from "../../../utils/jwtUtils";
 
 function formatDate(dateStr?: string) {
   if (!dateStr) return "—";
@@ -127,12 +116,22 @@ export default function UsersPage() {
     }
   };
 
-  // ─── Non-admin: inline editable profile + change password ─────────────────
+  // ─── Non-admin: two-column profile + change password ─────────────────────
+  const initials = currentUser?.fullName
+    ?.split(" ")
+    .map((w: string) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() ?? "?";
+
   if (!isAdmin) {
     return (
       <>
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold text-primary">My Profile</h2>
+          <div>
+            <h2 className="text-2xl font-semibold text-primary">My Profile</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Update your profile and account settings</p>
+          </div>
         </div>
 
         {!currentUser ? (
@@ -142,78 +141,80 @@ export default function UsersPage() {
             </p>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 max-w-xl space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
-            {/* Account Info (read-only) */}
-            <div className="grid grid-cols-3 gap-3 bg-gray-50 dark:bg-gray-900/40 rounded-lg p-3 text-sm">
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Role</p>
-                <p className="font-medium">{getRoleLabel(currentUser.role)}</p>
+            {/* Left: Profile summary card */}
+            <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              {/* Avatar */}
+              <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-2xl font-bold mb-4">
+                {initials}
               </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Created</p>
-                <p className="font-medium">{formatDate(currentUser.createdDate)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Last Modified</p>
-                <p className="font-medium">{formatDate(currentUser.lastUpdated)}</p>
+
+              <h3 className="text-xl font-semibold">{currentUser.fullName}</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{currentUser.email}</p>
+
+              {/* Role badge */}
+              <span className="inline-block mt-3 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                {getRoleLabel(currentUser.role)}
+              </span>
+
+              {/* Metadata */}
+              <div className="mt-6 space-y-2 text-sm border-t border-gray-200 dark:border-gray-700 pt-4">
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-gray-400">Member since</span>
+                  <span className="font-medium">{formatDate(currentUser.createdDate)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-gray-400">Last updated</span>
+                  <span className="font-medium">{formatDate(currentUser.lastUpdated)}</span>
+                </div>
               </div>
             </div>
 
-            {/* Profile info (read-only) */}
-            <div className="space-y-3">
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Name</p>
-                <p className="font-medium">{currentUser.fullName}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Email</p>
-                <p className="font-medium text-gray-500 dark:text-gray-400">{currentUser.email}</p>
-              </div>
+            {/* Right: Change password */}
+            <div className="lg:col-span-3 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  Change Password
+                </h4>
+                {pwdError && <FormError message={pwdError} />}
+                {pwdSuccess && (
+                  <p className="text-sm text-green-600 dark:text-green-400">Password updated successfully.</p>
+                )}
+                <PasswordInput
+                  label="Current Password"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  required
+                  placeholder="Enter current password"
+                  autoComplete="current-password"
+                />
+                <PasswordInput
+                  label="New Password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  showValidation
+                  showStrength
+                  required
+                  placeholder="Enter new password"
+                  autoComplete="new-password"
+                />
+                <PasswordInput
+                  label="Confirm New Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  placeholder="Re-enter new password"
+                  autoComplete="new-password"
+                />
+                <div className="flex justify-end">
+                  <Button type="submit" loading={updatePassword.isPending}>
+                    {updatePassword.isPending ? "Updating…" : "Update Password"}
+                  </Button>
+                </div>
+              </form>
             </div>
 
-            {/* Change Password */}
-            <div className="border-t border-gray-200 dark:border-gray-700" />
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                Change Password
-              </h4>
-              {pwdError && <FormError message={pwdError} />}
-              {pwdSuccess && (
-                <p className="text-sm text-green-600 dark:text-green-400">Password updated successfully.</p>
-              )}
-              <PasswordInput
-                label="Current Password"
-                value={oldPassword}
-                onChange={(e) => setOldPassword(e.target.value)}
-                required
-                placeholder="Enter current password"
-                autoComplete="current-password"
-              />
-              <PasswordInput
-                label="New Password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                showValidation
-                showStrength
-                required
-                placeholder="Enter new password"
-                autoComplete="new-password"
-              />
-              <PasswordInput
-                label="Confirm New Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                placeholder="Re-enter new password"
-                autoComplete="new-password"
-              />
-              <div className="flex justify-end">
-                <Button type="submit" loading={updatePassword.isPending}>
-                  {updatePassword.isPending ? "Updating…" : "Update Password"}
-                </Button>
-              </div>
-            </form>
           </div>
         )}
       </>
@@ -226,9 +227,14 @@ export default function UsersPage() {
   return (
     <>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-primary">
-          {showAllUsers ? "All Users" : "My Profile"}
-        </h2>
+        <div>
+          <h2 className="text-2xl font-semibold text-primary">
+            {showAllUsers ? "All Users" : "My Profile"}
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {showAllUsers ? "Manage user accounts and permissions" : "Update your profile and account settings"}
+          </p>
+        </div>
         <div className="flex gap-2">
           {!showAllUsers && (
             <Button onClick={handleViewAllUsers} disabled={loadingAllUsers}>

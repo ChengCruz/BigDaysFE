@@ -1,5 +1,6 @@
 // src/components/molecules/GuestCard.tsx
 import React, { useState } from "react";
+import { MenuIcon } from "@heroicons/react/outline";
 
 export interface GuestCardProps {
   guest: {
@@ -41,7 +42,7 @@ export const GuestCard: React.FC<GuestCardProps> = ({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
       className={`
-        p-3 rounded-lg border-2 border-dashed border-gray-200 
+        p-3 rounded-lg border border-gray-200
         bg-white dark:bg-accent/50 dark:border-gray-600
         transition-all cursor-grab active:cursor-grabbing
         touch-none select-none
@@ -53,9 +54,12 @@ export const GuestCard: React.FC<GuestCardProps> = ({
       aria-label={`Drag ${guest.guestName} to assign to a table`}
     >
       <div className="flex items-start justify-between mb-2">
-        <h4 className="font-semibold text-sm text-gray-900 dark:text-white">
-          {guest.guestName}
-        </h4>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <MenuIcon className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 flex-shrink-0" />
+          <h4 className="font-semibold text-sm text-gray-900 dark:text-white truncate">
+            {guest.guestName}
+          </h4>
+        </div>
         {guest.paxCount && guest.paxCount > 1 && (
           <span className="ml-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300 rounded">
             +{guest.paxCount - 1}

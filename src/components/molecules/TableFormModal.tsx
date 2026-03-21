@@ -90,7 +90,11 @@ export const TableFormModal: React.FC<Props> = ({
           <Button variant="secondary" onClick={onClose} type="button">
             Cancel
           </Button>
-          <Button variant="primary" type="submit">
+          <Button
+            variant="primary"
+            type="submit"
+            loading={createTable.isPending || updateTableInfo.isPending}
+          >
             {isEdit ? "Save" : "Create"}
           </Button>
         </div>

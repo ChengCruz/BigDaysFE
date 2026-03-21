@@ -1,11 +1,12 @@
 // src/utils/jwtUtils.ts
 
 interface JwtPayload {
-  sub?: string; // UserGuid
+  sub?: string;
   email?: string;
   role?: string | string[];
   exp?: number;
-  [key: string]: unknown; // allows accessing non-standard claim names
+  // .NET ClaimTypes.Role serialized as the full URI
+  'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'?: string | string[];
 }
 
 // Maps BE UserRole enum names to their integer values
@@ -17,6 +18,20 @@ const ROLE_MAP: Record<string, number> = {
   Guest: 5,
   Staff: 6,
 };
+
+// Maps role integer values to display labels
+export const ROLE_LABELS: Record<number, string> = {
+  1: "Super Admin",
+  2: "Admin",
+  3: "Member",
+  6: "Staff",
+};
+
+export function getRoleLabel(role?: number | null): string {
+  if (role === undefined || role === null) return "—";
+  if (!Number.isFinite(role)) return "—";
+  return ROLE_LABELS[role] ?? `Role ${role}`;
+}
 
 /**
  * Decode JWT token to get payload
@@ -65,7 +80,7 @@ export function getUserRoleFromToken(token: string | null): number | null {
   if (!payload) return null;
 
   // Check both short ("role") and full .NET URI claim names
-  const raw = payload.role ?? payload[DOTNET_ROLE_CLAIM] as string | string[] | undefined;
+  const raw = payload.role ?? payload[DOTNET_ROLE_CLAIM];
   if (!raw) return null;
 
   // The BE JWT role claim is a string name (e.g. "Admin") or array of names

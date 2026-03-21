@@ -2,6 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { FormFieldsEndpoints } from "../endpoints";
+import { TYPE_KEY_MAP } from "../../utils/eventUtils";
 
 /** UI model for the modal / page */
 export interface FormFieldConfig {
@@ -38,18 +39,6 @@ export function useFormFields(eventId?: string, options?: { enabled?: boolean })
 
       const res = await client.get(FormFieldsEndpoints.all(eventId));
       const raw = res.data?.data ?? [];
-
-      // Map numeric API DTOs to a consistent UI shape
-      const TYPE_KEY_MAP: Record<number, FormFieldConfig["typeKey"]> = {
-        0: "text",
-        1: "textarea",
-        2: "select",
-        3: "radio",
-        4: "checkbox",
-        5: "email",
-        6: "number",
-        7: "date",
-      };
 
       return (Array.isArray(raw) ? raw : []).map((r: any) => ({
         // QuestionDto.questionId is an integer from the API. Always stringify so

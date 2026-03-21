@@ -40,6 +40,9 @@ export function useAuthApi() {
       tokenStore.clear();
       sessionHint.clear();
       qc.clear();
+      localStorage.removeItem("eventId");
+      const walletKeys = Object.keys(localStorage).filter(k => k.startsWith("wallet-budget-"));
+      walletKeys.forEach(k => localStorage.removeItem(k));
     },
   });
 

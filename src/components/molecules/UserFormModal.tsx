@@ -7,13 +7,7 @@ import { Button } from "../atoms/Button";
 import { useCreateUser, useUpdateUser, useUpdatePassword } from "../../api/hooks/useUsersApi";
 import { FormError } from "./FormError";
 import { validatePassword } from "../../utils/passwordValidation";
-
-const ROLE_LABELS: Record<number, string> = {
-  1: "Super Admin",
-  2: "Admin",
-  3: "Member",
-  6: "Staff",
-};
+import { ROLE_LABELS } from "../../utils/jwtUtils";
 
 
 function formatDate(dateStr?: string) {

@@ -3,6 +3,14 @@ import React, { useState } from "react";
 import { Button } from "../atoms/Button";
 import { XIcon } from "@heroicons/react/outline";
 
+const categoryDisplayNames: Record<string, string> = {
+  vip: "VIP",
+  "family-bride": "Family — Bride",
+  "family-groom": "Family — Groom",
+  friends: "Friends",
+  colleagues: "Colleagues",
+};
+
 export interface TableCardProps {
   table: {
     id: string;
@@ -97,11 +105,10 @@ export const TableCard: React.FC<TableCardProps> = ({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={`
-        relative rounded-xl shadow-lg overflow-hidden transition-all
-        ${isDragOver && canAcceptDrop ? "ring-4 ring-primary ring-offset-2 shadow-2xl scale-[1.02]" : ""}
+        relative rounded-xl shadow-sm overflow-hidden transition-all
+        ${isDragOver && canAcceptDrop ? "ring-4 ring-primary ring-offset-2 shadow-lg scale-[1.02]" : ""}
         ${!canAcceptDrop && draggedGuest ? "opacity-50 cursor-not-allowed" : ""}
-        ${isFull ? "opacity-75" : ""}
-        hover:shadow-xl
+        hover:shadow-md
       `}
       role="region"
       aria-label={`${table.name} - ${table.assignedCount} of ${table.capacity} seats filled`}
@@ -114,7 +121,7 @@ export const TableCard: React.FC<TableCardProps> = ({
         {table.category && (
           <div className="flex items-center gap-2">
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors.badge}`}>
-              {table.category}
+              {categoryDisplayNames[table.category] ?? table.category}
             </span>
           </div>
         )}
@@ -196,9 +203,9 @@ export const TableCard: React.FC<TableCardProps> = ({
             Edit
           </Button>
           <Button
-            variant="secondary"
+            variant="ghost"
             onClick={() => onDelete?.(table.id)}
-            className="text-sm py-2"
+            className="!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-900/20 text-sm py-2"
           >
             Delete
           </Button>

@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useEventContext } from "../../../context/EventContext";
 import { useFormFields, type FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
 import { useRsvpDesign, useSaveRsvpDesign } from "../../../api/hooks/useRsvpDesignApi";
+import { useUploadMedia } from "../../../api/hooks/useMediaApi";
 import type { RsvpBlock, RsvpDesign, FlowPreset } from "../../../types/rsvpDesign";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { DesignToolbar } from "./designer/DesignToolbar";
@@ -295,6 +296,7 @@ export default function RsvpDesignPage() {
     isSuccess: isSaveSuccess,
     data: saveResponse,
   } = useSaveRsvpDesign(eventId ?? "");
+  const { mutateAsync: uploadMedia } = useUploadMedia();
 
   // ── Design state ───────────────────────────────────────────────────────
   const [isDesignLoaded, setIsDesignLoaded] = useState(false);
@@ -406,6 +408,39 @@ export default function RsvpDesignPage() {
     return { id: uid(), src: url, alt: file.name };
   };
 
+  // After BE confirms upload, swap the temporary blob URL with the real CDN URL.
+  const replaceBlobSrc = (assetId: string, realUrl: string, blobUrl: string) => {
+    setBlocks((prev) =>
+      prev.map((b) => {
+        const hasSectionImg = b.sectionImage?.id === assetId;
+        const hasBgImg = b.background?.images?.some((img) => img.id === assetId) ?? false;
+        const hasBlockImg = b.type === "image" && b.images.some((img) => img.id === assetId);
+        if (!hasSectionImg && !hasBgImg && !hasBlockImg) return b;
+        return {
+          ...b,
+          ...(hasSectionImg ? { sectionImage: { ...b.sectionImage!, src: realUrl } } : {}),
+          ...(hasBgImg
+            ? { background: { ...b.background!, images: b.background!.images.map((img) => img.id === assetId ? { ...img, src: realUrl } : img) } }
+            : {}),
+          ...(hasBlockImg && b.type === "image"
+            ? { images: b.images.map((img) => img.id === assetId ? { ...img, src: realUrl } : img) }
+            : {}),
+        } as RsvpBlock;
+      })
+    );
+    const idx = objectUrlRefs.current.indexOf(blobUrl);
+    if (idx !== -1) { URL.revokeObjectURL(blobUrl); objectUrlRefs.current.splice(idx, 1); }
+  };
+
+  // Fire-and-forget: upload a file, then replace the blob URL once BE responds.
+  // Silently falls back to blob URL if BE endpoint is not yet available.
+  const uploadAssetAsync = (asset: { id: string; src: string }, file: File) => {
+    if (!eventId) return;
+    uploadMedia({ file, eventGuid: eventId })
+      .then((result) => replaceBlobSrc(asset.id, result.url, asset.src))
+      .catch(() => { /* keep blob URL as session-only fallback */ });
+  };
+
   const persistShareSnapshot = (token: string) => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
@@ -443,6 +478,9 @@ export default function RsvpDesignPage() {
       formField:    { id, type: "formField",    label: "Custom field", placeholder: "Placeholder", required: false, width: "full", background: { images: [], overlay: 0.4 } },
       cta:          { id, type: "cta",          label: "Open RSVP", href: "#", align: "center", background: { images: [], overlay: 0.4 } },
       image:        { id, type: "image",        images: [], activeImageId: undefined, caption: "Add captions", height: "medium", background: { images: [], overlay: 0.4 } },
+      eventDetails: { id, type: "eventDetails", title: "Event Details", showDate: true, showTime: true, showLocation: true, background: { images: [], overlay: 0.4 } },
+      countdown:    { id, type: "countdown",    label: "Counting down to your big day", background: { images: [], overlay: 0.4 } },
+      map:          { id, type: "map",          mapLabel: "Venue", showDirections: true, background: { images: [], overlay: 0.4 } },
     };
     setBlocks((prev) => [...prev, defaults[type]]);
     setSelectedId(id);
@@ -510,9 +548,18 @@ export default function RsvpDesignPage() {
 
   // ── Image operations ───────────────────────────────────────────────────
   const handleBackgroundUpload = (file: File) => {
-    const url = URL.createObjectURL(file);
-    objectUrlRefs.current.push(url);
-    setGlobalBackgroundAsset(url);
+    const blobUrl = URL.createObjectURL(file);
+    objectUrlRefs.current.push(blobUrl);
+    setGlobalBackgroundAsset(blobUrl);
+    if (eventId) {
+      uploadMedia({ file, eventGuid: eventId })
+        .then((result) => {
+          setGlobalBackgroundAsset((current) => (current === blobUrl ? result.url : current));
+          const idx = objectUrlRefs.current.indexOf(blobUrl);
+          if (idx !== -1) { URL.revokeObjectURL(blobUrl); objectUrlRefs.current.splice(idx, 1); }
+        })
+        .catch(() => {});
+    }
   };
 
   const handleImageUploadBlock = (files: FileList) => {
@@ -528,6 +575,7 @@ export default function RsvpDesignPage() {
     };
     setBlocks((prev) => [...prev, block]);
     setSelectedId(block.id);
+    Array.from(files).forEach((file, i) => uploadAssetAsync(gallery[i], file));
   };
 
   const addBackgroundImagesToBlock = (blockId: string, files: FileList) => {
@@ -547,6 +595,7 @@ export default function RsvpDesignPage() {
         } as RsvpBlock;
       })
     );
+    Array.from(files).forEach((file, i) => uploadAssetAsync(gallery[i], file));
   };
 
   const setActiveBackgroundForBlock = (blockId: string, imageId: string) =>
@@ -589,6 +638,7 @@ export default function RsvpDesignPage() {
   const setSectionImageForBlock = (blockId: string, file: File) => {
     const asset = toImageAsset(file);
     setBlocks((prev) => prev.map((b) => (b.id === blockId ? { ...b, sectionImage: asset } : b)));
+    uploadAssetAsync(asset, file);
   };
 
   const clearSectionImage = (blockId: string) =>
@@ -602,16 +652,19 @@ export default function RsvpDesignPage() {
         return { ...b, images: [asset, ...b.images], activeImageId: asset.id };
       })
     );
+    uploadAssetAsync(asset, file);
   };
 
   const appendImagesToBlock = (blockId: string, files: FileList) => {
+    const newAssets = Array.from(files).map(toImageAsset);
     setBlocks((prev) =>
       prev.map((b) => {
         if (b.id !== blockId || b.type !== "image") return b;
-        const nextImages = [...b.images, ...Array.from(files).map(toImageAsset)];
+        const nextImages = [...b.images, ...newAssets];
         return { ...b, images: nextImages, activeImageId: b.activeImageId ?? nextImages[0]?.id };
       })
     );
+    Array.from(files).forEach((file, i) => uploadAssetAsync(newAssets[i], file));
   };
 
   // ── Save + share ───────────────────────────────────────────────────────

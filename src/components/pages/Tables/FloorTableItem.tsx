@@ -104,24 +104,7 @@ function seatPositions(
   return seats;
 }
 
-const TABLE_COLORS = [
-  "linear-gradient(135deg, #7c3aed, #a855f7)",
-  "linear-gradient(135deg, #ec4899, #f43f5e)",
-  "linear-gradient(135deg, #3b82f6, #2563eb)",
-  "linear-gradient(135deg, #22c55e, #16a34a)",
-  "linear-gradient(135deg, #f97316, #ea580c)",
-  "linear-gradient(135deg, #8b5cf6, #6366f1)",
-  "linear-gradient(135deg, #06b6d4, #0891b2)",
-  "linear-gradient(135deg, #eab308, #ca8a04)",
-];
-
-function getTableColor(id: string): string {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
-  }
-  return TABLE_COLORS[Math.abs(hash) % TABLE_COLORS.length];
-}
+const TABLE_COLOR = "linear-gradient(135deg, #6366f1, #7c3aed)";
 
 export const FloorTableItem: React.FC<Props> = ({
   item,
@@ -203,12 +186,15 @@ export const FloorTableItem: React.FC<Props> = ({
   if (!table) return null;
 
   const capacity = table.capacity || 8;
-  const assigned = assignedGuests.length;
   const shape = (item.meta?.shape as string) || "round";
-  const bgColor = getTableColor(item.id);
+  const bgColor = TABLE_COLOR;
 
   const isRound = shape === "round";
   const borderRadius = isRound ? "50%" : shape === "rect" ? 12 : 8;
+
+  // Expand guests by pax so a guest with pax=2 occupies 2 seats
+  const expandedGuests = assignedGuests.flatMap((g) => Array(g.pax ?? 1).fill(g));
+  const assigned = expandedGuests.length;
 
   const seats = seatPositions(shape, capacity, item.width, item.height);
 
@@ -231,7 +217,7 @@ export const FloorTableItem: React.FC<Props> = ({
     >
       {/* Seats around the table */}
       {seats.map((pos, idx) => {
-        const guest = assignedGuests[idx];
+        const guest = expandedGuests[idx];
         const occupied = !!guest;
         const isVip = guest?.flag === "VIP";
         return (
@@ -318,6 +304,7 @@ export const FloorTableItem: React.FC<Props> = ({
       {/* Resize handle when selected */}
       {selected && (
         <div
+          className="fp-no-print"
           onMouseDown={(e) => {
             e.stopPropagation();
             e.preventDefault();

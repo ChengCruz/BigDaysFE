@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { type Rsvp, type CreateRsvpInput } from "../../api/hooks/useRsvpsApi";
 import { useAuth } from "../../api/hooks/useAuth";
-import { useFormFields } from "../../api/hooks/useFormFieldsApi";
+import { useEventRsvpInternal } from "../../api/hooks/useEventsApi";
 import { Modal } from "./Modal";
 import { FormField } from "./FormField";
 import { Button } from "../atoms/Button";
@@ -29,7 +29,7 @@ export const RsvpFormModal: React.FC<Props> = ({
   const [remarks, setRemarks] = useState(initial?.remarks ?? "");
 
   const [extras, setExtras] = useState<Record<string, string>>({});
-  const { data: formFields = [] } = useFormFields(eventId);
+  const { data: formFields = [] } = useEventRsvpInternal(eventId);
   const [initialized, setInitialized] = useState(false);
   const [guestNameError, setGuestNameError] = useState("");
   const [phoneNoError, setPhoneNoError] = useState("");

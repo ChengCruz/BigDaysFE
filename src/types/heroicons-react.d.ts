@@ -10,6 +10,14 @@ declare module "@heroicons/react/outline" {
   export const SparklesIcon: React.FC<React.SVGProps<SVGSVGElement>>;
   export const SwitchHorizontalIcon: React.FC<React.SVGProps<SVGSVGElement>>;
   export const UserGroupIcon: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const ArchiveIcon: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const ClipboardListIcon: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const CollectionIcon: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const UserIcon: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const ChevronDownIcon: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const ChartBarIcon: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const PencilIcon: React.FC<React.SVGProps<SVGSVGElement>>;
+  export const TrashIcon: React.FC<React.SVGProps<SVGSVGElement>>;
 
   // add any other icons you end up using...
 }

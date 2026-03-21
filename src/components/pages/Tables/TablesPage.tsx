@@ -1,5 +1,6 @@
 // src/components/pages/Tables/TablesPage.tsx
 import { PageLoader } from "../../atoms/PageLoader";
+import { ErrorState } from "../../atoms/ErrorState";
 import {
   useTablesApi,
   useDeleteTable,
@@ -21,6 +22,7 @@ import { useState, useMemo } from "react";
 import { useEventContext } from "../../../context/EventContext";
 import toast from "react-hot-toast";
 import { NoEventsState } from "../../molecules/NoEventsState";
+import { ChevronDownIcon, CollectionIcon, UserGroupIcon, UserIcon, ChartBarIcon } from "@heroicons/react/outline";
 
 export default function TablesPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
@@ -108,7 +110,7 @@ export default function TablesPage() {
   if (!eventId) return <NoEventsState title="No Events for Table Management" message="Create your first event to start organizing seating arrangements and table assignments." />;
 
   if (tablesLoading || guestsLoading) return <PageLoader message="Loading tables..." />;
-  if (tablesError || guestsError) return <p>Failed to load data.</p>;
+  if (tablesError || guestsError) return <ErrorState message="Failed to load data." onRetry={() => window.location.reload()} />;
 
   // Drag and drop handlers
   const handleDragStart = (guestId: string) => {
@@ -147,11 +149,15 @@ export default function TablesPage() {
     }
 
     // Call the assign API
-    assignGuest.mutate({ guestId, tableId });
+    assignGuest.mutate({ guestId, tableId }, {
+      onError: () => toast.error("Failed to assign guest to table"),
+    });
   };
 
   const handleUnassignGuest = (guestId: string) => {
-    unassignGuest.mutate(guestId);
+    unassignGuest.mutate(guestId, {
+      onError: () => toast.error("Failed to unassign guest from table"),
+    });
   };
 
   const handleEditTable = (tableId: string) => {
@@ -177,56 +183,30 @@ export default function TablesPage() {
 
   const confirmDelete = () => {
     if (deletingTable) {
-      deleteTable.mutate(deletingTable.id);
+      deleteTable.mutate(deletingTable.id, {
+        onError: () => toast.error("Failed to delete table"),
+      });
       setDeletingTable(null);
     }
   };
 
   return (
     <div className="flex flex-col h-full">
-      {/* Stats Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <StatsCard 
-          label="Total Tables" 
-          value={stats.totalTables} 
-          variant="primary"
-        />
-        <StatsCard 
-          label="Seated Guests" 
-          value={stats.seatedGuests} 
-          variant="success"
-        />
-        <StatsCard 
-          label="Unassigned" 
-          value={stats.unassigned} 
-          variant="warning"
-        />
-        <StatsCard 
-          label="Total Capacity" 
-          value={stats.totalCapacity} 
-          variant="secondary"
-        />
-      </div>
-
       {/* Page Title & Actions */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
-        <h2 className="text-2xl font-semibold text-primary">Table Arrangement</h2>
+        <div>
+          <h2 className="text-2xl font-semibold text-primary">Table Arrangement</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Organize seating and arrange guests by table</p>
+        </div>
         <div className="flex flex-wrap gap-2">
-          <Button 
-            variant="secondary" 
-            disabled
-            className="opacity-50 cursor-not-allowed flex items-center gap-2"
-            title="Coming Soon"
-          >
+          <Button variant="secondary" disabled>
             Auto-Assign
-            <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-0.5 rounded-full ml-1">
-              Coming Soon
-            </span>
+            <span className="ml-1.5 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">Soon</span>
           </Button>
           <Dropdown
             trigger={
-              <Button>
-                + New Table <span className="ml-1">▼</span>
+              <Button className="flex items-center gap-1.5">
+                + New Table <ChevronDownIcon className="w-4 h-4" />
               </Button>
             }
           >
@@ -255,10 +235,18 @@ export default function TablesPage() {
         </div>
       </div>
 
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <StatsCard label="Total Tables" value={stats.totalTables} variant="primary" size="sm" icon={<CollectionIcon className="w-4 h-4" />} />
+        <StatsCard label="Seated Guests" value={stats.seatedGuests} variant="success" size="sm" icon={<UserGroupIcon className="w-4 h-4" />} />
+        <StatsCard label="Unassigned" value={stats.unassigned} variant="warning" size="sm" icon={<UserIcon className="w-4 h-4" />} />
+        <StatsCard label="Total Capacity" value={stats.totalCapacity} variant="secondary" size="sm" icon={<ChartBarIcon className="w-4 h-4" />} />
+      </div>
+
       {/* Filter Bar */}
       <div className="flex flex-col md:flex-row md:items-center mb-4 gap-4">
-        <select 
-          className="w-full md:w-1/4 border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-accent text-gray-900 dark:text-white" 
+        <select
+          className="w-full md:w-1/4 border border-primary/20 dark:border-primary/30 rounded-lg p-2 bg-white dark:bg-accent text-gray-900 dark:text-white"
           value={filterType} 
           onChange={(e) => setFilterType(e.target.value as any)}
         >
@@ -268,7 +256,7 @@ export default function TablesPage() {
         </select>
         <input 
           placeholder="Search guests or tables..."
-          className="w-full md:flex-1 border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-accent text-gray-900 dark:text-white"
+          className="w-full md:flex-1 border border-primary/20 dark:border-primary/30 rounded-lg p-2 bg-white dark:bg-accent text-gray-900 dark:text-white"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />

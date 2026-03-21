@@ -23,6 +23,7 @@ import {
 } from "@heroicons/react/solid";
 import { useEventContext } from "../../context/EventContext";
 import { useAuth } from "../../api/hooks/useAuth";
+import { getRoleLabel } from "../../utils/jwtUtils";
 
 interface SidebarLink {
   to: string;
@@ -50,7 +51,8 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { event, openSelector, mustChooseEvent } = useEventContext();
-  const { user, logout } = useAuth();
+  const { user, userRole, logout } = useAuth();
+  const displayRole = userRole != null ? getRoleLabel(userRole) : null;
 
   const [collapsed, setCollapsed] = React.useState(false);
 
@@ -187,8 +189,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <UserCircleIcon className="h-5 w-5 text-primary dark:text-white/70" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{user?.name ?? "User"}</p>
-                  <p className="text-xs text-text/50 dark:text-white/40 truncate">{user?.email ?? ""}</p>
+                  <p className="text-sm font-medium truncate">{user?.email ?? ""}</p>
+                  {displayRole && <p className="text-xs text-text/50 dark:text-white/40 truncate">{displayRole}</p>}
                 </div>
                 <button
                   onClick={logout}

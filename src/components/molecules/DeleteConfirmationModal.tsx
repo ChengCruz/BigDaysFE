@@ -74,7 +74,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
           <Button
             onClick={onConfirm}
             disabled={isDeleting}
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            className="![background-image:none] flex-1 !bg-red-600 !text-white !shadow-red-600/25 hover:!bg-red-700"
           >
             {isDeleting ? (
               <div className="flex items-center justify-center gap-2">

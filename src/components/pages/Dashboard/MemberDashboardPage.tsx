@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEventContext } from "../../../context/EventContext";
 import { useDashboardApi } from "../../../api/hooks/useDashboardApi";
@@ -14,7 +14,30 @@ import {
   MailIcon,
   TableIcon,
   CashIcon,
+  QrcodeIcon,
 } from "@heroicons/react/solid";
+
+const ALMOST_THERE_MSGS = [
+  "The excitement is building as your wedding day gets closer 🎉",
+  "Only a little more time before your forever begins 💫",
+  "You are so close to the moment you have been waiting for 🤍",
+];
+const TODAY_MSGS = [
+  "Today is your wedding day and it is finally here 💍",
+  "This is the moment where your forever begins 🤍",
+  "Everything has led to this beautiful day ✨",
+];
+const PAST_MSGS = [
+  "Your wedding day has passed but your journey together continues 🤍",
+  "A beautiful day has ended and a lifetime together begins ✨",
+  "The celebration is over but your story together goes on 🥂",
+];
+const FAR_MSGS = [
+  "Your big day is coming and every day brings you closer 💍",
+  "Counting down to the start of your forever ✨",
+  "A beautiful day is waiting for you ahead 🤍",
+];
+const randomMsg = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
 
 // Helper function to format relative time
 function formatRelativeTime(timestamp: string): string {
@@ -45,6 +68,12 @@ export default function MemberDashboardPage() {
 
   // Countdown timer state
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0 });
+  const [eventStatus, setEventStatus] = useState<'before' | 'today' | 'past'>('before');
+
+  const todayMsg   = useMemo(() => randomMsg(TODAY_MSGS),        [eventStatus]);
+  const pastMsg    = useMemo(() => randomMsg(PAST_MSGS),         [eventStatus]);
+  const almostMsg  = useMemo(() => randomMsg(ALMOST_THERE_MSGS), [eventStatus]);
+  const farMsg     = useMemo(() => randomMsg(FAR_MSGS),          [eventStatus]);
 
   // Update countdown every minute
   useEffect(() => {
@@ -61,8 +90,12 @@ export default function MemberDashboardPage() {
         const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         setCountdown({ days, hours, minutes });
+        setEventStatus('before');
       } else {
         setCountdown({ days: 0, hours: 0, minutes: 0 });
+        const eventDay = new Date(eventDate).toDateString();
+        const today = new Date().toDateString();
+        setEventStatus(eventDay === today ? 'today' : 'past');
       }
     };
 
@@ -150,10 +183,13 @@ export default function MemberDashboardPage() {
           </div>
 
           <div className="flex flex-col items-center gap-2">
-            {countdown.days === 0 && countdown.hours === 0 && countdown.minutes === 0 ? (
-              // Event day has arrived
+            {eventStatus === 'today' ? (
               <div className="text-center py-4">
-                <p className="text-2xl font-bold text-white">Today is your big day! 🎉</p>
+                <p className="text-2xl font-bold text-white">{todayMsg}</p>
+              </div>
+            ) : eventStatus === 'past' ? (
+              <div className="text-center py-4">
+                <p className="text-xl font-semibold text-white/90">{pastMsg}</p>
               </div>
             ) : (
               // Show countdown
@@ -173,7 +209,7 @@ export default function MemberDashboardPage() {
                   </div>
                 </div>
                 <p className="text-white/90 text-sm font-medium">
-                  {countdown.days < 15 ? "Almost there! 🎉" : "until your big day"}
+                  {countdown.days < 15 ? almostMsg : farMsg}
                 </p>
               </>
             )}
@@ -317,7 +353,10 @@ export default function MemberDashboardPage() {
               <div className="h-10 w-10 rounded-xl bg-purple-100 dark:bg-purple-900/50 grid place-items-center">
                 <MailIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
-              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Send Invites</span>
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                Send Invites
+                <span className="text-xs bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded-full leading-none">Soon</span>
+              </span>
             </button>
             <button
               onClick={() => navigate("/app/tables")}
@@ -336,6 +375,15 @@ export default function MemberDashboardPage() {
                 <CurrencyDollarIcon className="h-5 w-5 text-pink-600 dark:text-pink-400" />
               </div>
               <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Add Expense</span>
+            </button>
+            <button
+              onClick={() => navigate("/app/checkin")}
+              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-950/20 border border-teal-100 dark:border-teal-800 hover:border-teal-200 dark:hover:border-teal-700 hover:shadow-md transition group"
+            >
+              <div className="h-10 w-10 rounded-xl bg-teal-100 dark:bg-teal-900/50 group-hover:bg-teal-200 dark:group-hover:bg-teal-800 grid place-items-center transition">
+                <QrcodeIcon className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+              </div>
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Check In</span>
             </button>
           </div>
         </div>

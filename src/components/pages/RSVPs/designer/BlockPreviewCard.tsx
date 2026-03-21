@@ -12,6 +12,9 @@ const BLOCK_LABEL: Record<RsvpBlock["type"], string> = {
   image: "Image gallery",
   attendance: "Attendance",
   guestDetails: "Guest details",
+  eventDetails: "Event Details",
+  countdown: "Countdown",
+  map: "Map",
 };
 
 const BLOCK_ICON: Record<RsvpBlock["type"], string> = {
@@ -23,6 +26,9 @@ const BLOCK_ICON: Record<RsvpBlock["type"], string> = {
   image: "🖼",
   attendance: "✓",
   guestDetails: "👤",
+  eventDetails: "📅",
+  countdown: "⏱",
+  map: "📍",
 };
 
 // Brief one-line preview for each block type

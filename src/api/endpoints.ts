@@ -20,6 +20,7 @@ export const EventsEndpoints = {
   delete: (id: string) => `/events/${id}`,
   importRsvps: (eventId: string) => `/events/${eventId}/rsvps/import`,
   exportRsvps: (eventId: string) => `/events/${eventId}/rsvps/export`,
+  eventRsvpInternal: (eventGuid: string) => `/event/eventRsvpInternal/${eventGuid}`,
 };
 
 export const RsvpsEndpoints = {
@@ -101,7 +102,11 @@ export const FormFieldsEndpoints = {
 
 export const PublicRsvpEndpoints = {
   submit: () => `/rsvp/Create`,
-  designByToken: (token: string) => `/RsvpDesign/public/${token}`,
+  designByToken: (token: string) => `/RsvpDesign/share/${token}`,
+};
+
+export const PublicEventEndpoints = {
+  bySlug: (slug: string) => `/event/eventRsvp/slug/${slug}`,
 };
 
 export const RsvpDesignEndpoints = {
@@ -123,6 +128,10 @@ export const QrEndpoints = {
   generateAll: (eventId: string) => `/qr/generate-all/${eventId}`,
   listByEvent: (eventId: string) => `/qr/list/${eventId}`,
   revoke: (token: string) => `/qr/revoke/${token}`,
+};
+
+export const MediaEndpoints = {
+  upload: "/Media/Upload",
 };
 
 export const CheckInEndpoints = {

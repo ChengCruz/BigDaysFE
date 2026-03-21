@@ -10,7 +10,8 @@ import { Button } from "../../atoms/Button";
 import { Outlet, useNavigate, useSearchParams } from "react-router-dom";
 import { useEventContext } from "../../../context/EventContext";
 import { CheckCircleIcon } from "@heroicons/react/solid";
-import { CalendarIcon, LocationMarkerIcon } from "@heroicons/react/outline";
+import { CalendarIcon, LocationMarkerIcon, ArchiveIcon } from "@heroicons/react/outline";
+import { StatsCard } from "../../atoms/StatsCard";
 
 export default function EventsPage() {
   const [showArchived, setShowArchived] = useState(false);
@@ -81,7 +82,12 @@ export default function EventsPage() {
     : undefined;
 
   if (isLoading) return <PageLoader message="Loading events..." />;
-  if (isError) return <p>Failed to load events.</p>;
+  if (isError) return (
+    <div className="p-6 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 text-center space-y-1">
+      <p className="text-base font-semibold text-red-700 dark:text-red-300">Failed to load events</p>
+      <p className="text-sm text-red-600 dark:text-red-400">Please refresh the page or try again later.</p>
+    </div>
+  );
 
   return (
     <>
@@ -89,7 +95,7 @@ export default function EventsPage() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-2xl font-semibold text-primary">Your Events</h2>
-            <p className="text-sm text-gray-600">Prioritize the next celebration or revisit archived plans.</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Prioritize the next celebration or revisit archived plans.</p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Button
@@ -102,13 +108,13 @@ export default function EventsPage() {
         </div>
 
         {activeEvent && (
-          <div className="p-4 rounded-xl border border-primary/25 bg-white shadow-sm shadow-primary/10 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="p-4 rounded-xl border border-primary/25 bg-white dark:bg-accent dark:border-primary/30 shadow-sm shadow-primary/10 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div className="flex items-start gap-3">
               <CheckCircleIcon className="w-6 h-6 text-primary mt-0.5" />
               <div>
                 <p className="text-xs uppercase tracking-wide text-primary font-semibold">Active event</p>
                 <p className="text-lg font-semibold text-gray-800">{activeEvent.title}</p>
-                <p className="text-sm text-gray-600 flex items-center gap-2">
+                <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
                   <CalendarIcon className="w-4 h-4" />
                   {new Date(activeEvent.date).toLocaleDateString()} •
                   <span className="flex items-center gap-1">
@@ -127,21 +133,10 @@ export default function EventsPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="p-4 rounded-lg bg-white shadow-sm border border-primary/10">
-            <p className="text-sm text-gray-500">Active events</p>
-            <p className="text-2xl font-semibold text-primary">{activeCount}</p>
-          </div>
-          <div className="p-4 rounded-lg bg-white shadow-sm border border-primary/10">
-            <p className="text-sm text-gray-500">Archived events</p>
-            <p className="text-2xl font-semibold text-secondary">{archivedCount}</p>
-          </div>
-          <div className="p-4 rounded-lg bg-white shadow-sm border border-primary/10">
-            <p className="text-sm text-gray-500">Upcoming next</p>
-            <p className="text-md text-gray-700">
-              {nextEventDate ? nextEventDate.toLocaleDateString() : "Add a date"}
-            </p>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <StatsCard label="Active Events" value={activeCount} variant="primary" size="sm" icon={<CheckCircleIcon className="w-4 h-4" />} />
+          <StatsCard label="Archived Events" value={archivedCount} variant="warning" size="sm" icon={<ArchiveIcon className="w-4 h-4" />} />
+          <StatsCard label="Upcoming Next" value={nextEventDate ? nextEventDate.toLocaleDateString() : "—"} variant="secondary" size="sm" icon={<CalendarIcon className="w-4 h-4" />} />
         </div>
 
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -163,15 +158,12 @@ export default function EventsPage() {
               <option value="name">Alphabetical</option>
             </select>
           </div>
-          <div className="hidden lg:block text-right text-sm text-gray-500">
-            Welcome to <span className="text-secondary font-semibold">My Big Day</span>
-          </div>
         </div>
 
         {filteredEvents.length === 0 ? (
           <div className="p-6 rounded-lg border-2 border-dashed border-primary/25 text-center space-y-2 bg-white/70">
             <p className="text-lg font-semibold">No events match your filters.</p>
-            <p className="text-sm text-gray-600">Create one to start planning or clear the search.</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Create one to start planning or clear the search.</p>
             <Button onClick={() => setModal({ open: true })}>Create your first event</Button>
           </div>
         ) : (
@@ -183,61 +175,52 @@ export default function EventsPage() {
               return (
                 <li
                   key={ev.id}
-                  className={`p-4 rounded-xl border shadow-sm transition hover:shadow-md bg-white/90 backdrop-blur dark:bg-gray-800 ${
-                    isActive ? "border-primary" : "border-gray-100"
+                  className={`rounded-xl border shadow-sm transition hover:shadow-md bg-white/90 backdrop-blur dark:bg-gray-800 overflow-hidden ${
+                    isActive ? "border-primary" : "border-gray-100 dark:border-white/10"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{ev.title}</h3>
-                        {isActive && (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                            <CheckCircleIcon className="w-4 h-4" /> Active
-                          </span>
-                        )}
-                        {isArchived && (
-                          <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">
-                            Archived
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center gap-1"><CalendarIcon className="w-4 h-4" />
-                          {new Date(ev.date).toLocaleDateString()}
+                  {/* Card body */}
+                  <div className="p-4 space-y-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{ev.title}</h3>
+                      {isActive && (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                          <CheckCircleIcon className="w-4 h-4" /> Active
                         </span>
-                        <span className="inline-flex items-center gap-1"><LocationMarkerIcon className="w-4 h-4" />
-                          {ev.location || "Add a venue"}
-                        </span>
-                      </p>
-                      {ev.description && (
-                        <p className="text-sm text-gray-500 line-clamp-2">{ev.description}</p>
                       )}
-                      <div className="text-xs text-gray-500 flex items-center gap-3">
-                        <span>Tables: {ev.noOfTable ?? "Not set"}</span>
-                        <span className="w-1 h-1 rounded-full bg-gray-300" />
-                        <span>{isArchived ? "Archived plan" : "Ready for guests"}</span>
-                      </div>
+                      {isArchived && (
+                        <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">
+                          Archived
+                        </span>
+                      )}
                     </div>
-                    <div className="flex flex-col gap-2">
-                      <Button
-                        onClick={() => {
-                          setEventId(ev.id);
-                          navigate("/app/rsvps");
-                        }}
-                      >
-                        {isActive ? "✓ Active" : "Select event"}
-                      </Button>
-                      <Button variant="secondary" onClick={() => navigate(`${ev.id}/form-fields`)}>
-                        Form fields
-                      </Button>
-                      <Button variant="secondary" onClick={() => navigate(`${ev.id}/edit`)}>
-                        Edit details
-                      </Button>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-1">
+                        <CalendarIcon className="w-4 h-4" />
+                        {new Date(ev.date).toLocaleDateString()}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <LocationMarkerIcon className="w-4 h-4" />
+                        {ev.location || "Add a venue"}
+                      </span>
+                    </p>
+                    {ev.description && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{ev.description}</p>
+                    )}
+                    <div className="flex items-center gap-3 text-sm font-medium text-gray-600 dark:text-gray-300">
+                      <span>Tables: {ev.noOfTable ?? "Not set"}</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+                      <span>{isArchived ? "Archived plan" : "Ready for guests"}</span>
+                    </div>
+                  </div>
+
+                  {/* Card footer */}
+                  <div className="px-4 py-2.5 border-t border-gray-100 dark:border-white/10 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1">
                       {isArchived ? (
                         <Button
-                          variant="primary"
-                          style={{ backgroundColor: "#16a34a", borderColor: "#16a34a" }}
+                          variant="ghost"
+                          className="![background-image:none] !text-green-600 hover:!bg-green-50 dark:hover:!bg-green-900/20 !text-sm !px-2.5"
                           onClick={() => activateEvent.mutate(ev.id)}
                           disabled={activateEvent.isPending}
                         >
@@ -245,15 +228,38 @@ export default function EventsPage() {
                         </Button>
                       ) : (
                         <Button
-                          variant="secondary"
-                          style={{ backgroundColor: "#dc2626", borderColor: "#dc2626" }}
+                          variant="ghost"
+                          className="!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-900/20 !text-sm !px-2.5"
                           onClick={() => deactivateEvent.mutate(ev.id)}
                           disabled={deactivateEvent.isPending}
                         >
-                          {deactivateEvent.isPending ? "Deactivating…" : "Archive"}
+                          {deactivateEvent.isPending ? "Archiving…" : "Archive"}
                         </Button>
                       )}
+                      <span className="w-px h-4 bg-gray-200 dark:bg-white/10" />
+                      <Button
+                        variant="ghost"
+                        className="!text-sm !px-2.5"
+                        onClick={() => navigate(`${ev.id}/form-fields`)}
+                      >
+                        Form fields
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="!text-sm !px-2.5"
+                        onClick={() => navigate(`${ev.id}/edit`)}
+                      >
+                        Edit
+                      </Button>
                     </div>
+                    <Button
+                      onClick={() => {
+                        setEventId(ev.id);
+                        navigate("/app/rsvps");
+                      }}
+                    >
+                      {isActive ? "✓ Active" : "Select →"}
+                    </Button>
                   </div>
                 </li>
               );

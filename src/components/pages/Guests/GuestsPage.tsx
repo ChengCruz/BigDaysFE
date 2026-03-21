@@ -1,7 +1,8 @@
 // src/components/pages/Guests/GuestsPage.tsx
 import { PageLoader } from "../../atoms/PageLoader";
+import { ErrorState } from "../../atoms/ErrorState";
 import { useState, useMemo } from "react";
-import { UserGroupIcon, UserIcon } from "@heroicons/react/solid";
+import { UserGroupIcon, UserIcon, CheckCircleIcon, StarIcon } from "@heroicons/react/solid";
 import {
   useGuestsApi,
   useAssignGuestToTable,
@@ -15,10 +16,12 @@ import { useEventContext } from "../../../context/EventContext";
 import toast from "react-hot-toast";
 import { GuestFormModal } from "./GuestFormModal";
 import { NoEventsState } from "../../molecules/NoEventsState";
-import { useGenerateQrApi, useQrListApi, useRevokeQrApi } from "../../../api/hooks/useQrApi";
-import type { QrStatus, QrToken } from "../../../types/qr";
-import QrStatusBadge from "../../molecules/QrStatusBadge";
-import QrImageModal from "../../molecules/QrImageModal";
+import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
+import { Modal } from "../../molecules/Modal";
+// TODO: QR features are deferred from this page for now.
+// Future plan: show a simple read-only status badge per guest card
+// e.g. "QR Ready" | "Awaiting QR" | "Checked In" | "QR Revoked"
+// Full actions (Generate All, View QR, Revoke) to be decided on separately.
 
 export default function GuestsPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
@@ -28,10 +31,7 @@ export default function GuestsPage() {
   const assignGuestToTable = useAssignGuestToTable(eventId!);
   const unassignGuestFromTable = useUnassignGuestFromTable(eventId!);
 
-  const { data: qrTokens } = useQrListApi(eventId ?? "");
-  const generateQr = useGenerateQrApi();
-  const revokeQr = useRevokeQrApi();
-
+  const [bannerDismissed, setBannerDismissed] = useState(() => sessionStorage.getItem("guestBannerDismissed") === "1");
   const [guestTypeFilter, setGuestTypeFilter] = useState<string>("All");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [modal, setModal] = useState<{ open: boolean; guest?: Guest }>({
@@ -40,8 +40,7 @@ export default function GuestsPage() {
   const [assignModal, setAssignModal] = useState<{ open: boolean; guest?: Guest }>({
     open: false,
   });
-  const [qrModal, setQrModal] = useState<{ open: boolean; guestName: string; token: string } | null>(null);
-
+  const [unassignConfirm, setUnassignConfirm] = useState<Guest | null>(null);
   // Calculate statistics
   const stats = useMemo(() => {
     const total = guests.length;
@@ -51,19 +50,6 @@ export default function GuestsPage() {
 
     return { total, assigned, unassigned, vips };
   }, [guests]);
-
-  // QR token lookup map by guestId
-  const qrMap = useMemo(
-    () => Object.fromEntries((qrTokens ?? []).map((t) => [t.guestId, t])),
-    [qrTokens]
-  );
-
-  function getQrStatus(token?: QrToken): QrStatus {
-    if (!token) return "None";
-    if (token.checkedInAt) return "CheckedIn";
-    if (token.isRevoked) return "Revoked";
-    return "Generated";
-  }
 
   // Create table lookup map
   const tableMap = useMemo(() => {
@@ -89,91 +75,75 @@ export default function GuestsPage() {
   if (!eventId) return <NoEventsState title="No Events for Guest Management" message="Create your first event to start adding and managing your guest list." />;
 
   if (guestsLoading || tablesLoading) return <PageLoader message="Loading guests..." />;
-  if (guestsError) return <p>Failed to load guests.</p>;
+  if (guestsError) return <ErrorState message="Failed to load guests." onRetry={() => window.location.reload()} />;
 
   // Note: Guest deletion is not available in this module.
   // Guests can only be deleted through the RSVP module, as they are managed as part of RSVP records.
 
   // Handle assign table
-  const handleAssignTable = async (guest: Guest, tableId: string) => {
-    try {
-      await assignGuestToTable.mutateAsync({
-        guestId: guest.guestId ?? guest.id,
-        tableId: tableId,
-      });
-      toast.success(`${guest.guestName || guest.name} assigned to table successfully`);
-      setAssignModal({ open: false });
-    } catch (err) {
-      console.error("Assign table error:", err);
-      toast.error("Failed to assign guest to table");
-    }
+  const handleAssignTable = (guest: Guest, tableId: string) => {
+    assignGuestToTable.mutate({
+      guestId: guest.guestId ?? guest.id,
+      tableId: tableId,
+    }, {
+      onSuccess: () => {
+        toast.success(`${guest.guestName || guest.name} assigned to table successfully`);
+        setAssignModal({ open: false });
+      },
+      onError: () => {
+        toast.error("Failed to assign guest to table");
+      },
+    });
   };
 
   // Handle unassign table
-  const handleUnassignTable = async (guest: Guest) => {
-    if (!window.confirm(`Remove ${guest.guestName || guest.name} from ${tableMap.get(guest.tableId || "")}?`)) {
-      return;
-    }
+  const handleUnassignTable = (guest: Guest) => {
+    setUnassignConfirm(guest);
+  };
 
-    try {
-      await unassignGuestFromTable.mutateAsync(guest.guestId ?? guest.id);
-      toast.success(`${guest.guestName || guest.name} unassigned from table successfully`);
-    } catch (err) {
-      console.error("Unassign table error:", err);
-      toast.error("Failed to unassign guest from table");
-    }
+  const confirmUnassignTable = () => {
+    if (!unassignConfirm) return;
+    unassignGuestFromTable.mutate(unassignConfirm.guestId ?? unassignConfirm.id, {
+      onSuccess: () => {
+        toast.success(`${unassignConfirm.guestName || unassignConfirm.name} unassigned from table successfully`);
+        setUnassignConfirm(null);
+      },
+      onError: () => {
+        toast.error("Failed to unassign guest from table");
+      },
+    });
   };
 
   return (
     <>
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <StatsCard
-          label="Total Guests"
-          value={stats.total}
-          variant="primary"
-          icon={<UserGroupIcon className="h-6 w-6" />}
-        />
-        <StatsCard
-          label="Assigned"
-          value={stats.assigned}
-          variant="success"
-          icon={<UserIcon className="h-6 w-6" />}
-        />
-        <StatsCard
-          label="Unassigned"
-          value={stats.unassigned}
-          variant="warning"
-          icon={<UserIcon className="h-6 w-6" />}
-        />
-        <StatsCard
-          label="VIPs"
-          value={stats.vips}
-          variant="accent"
-          icon={<UserIcon className="h-6 w-6" />}
-        />
-      </div>
-
       {/* Header + Controls */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
-        <h2 className="text-2xl font-semibold text-primary">Guests</h2>
-        <div className="flex flex-wrap gap-2 items-center">
-          <Button
-            onClick={() =>
-              generateQr.mutate(eventId!, {
-                onSuccess: (res) =>
-                  toast.success(`Generated ${res.generated}, Skipped ${res.skipped} (already had QR)`),
-                onError: () => toast.error("Failed to generate QR codes"),
-              })
-            }
-            disabled={generateQr.isPending}
-          >
-            {generateQr.isPending ? "Generating..." : "Generate QR Codes"}
-          </Button>
-          <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-sm text-blue-700 dark:text-blue-300">
-            <span className="font-medium">Note:</span> Guests are automatically created when RSVP submissions include attendees (pax &gt; 0). <br></br>Guest deletion is only available through the RSVP module.
-          </div>
+        <div>
+          <h2 className="text-2xl font-semibold text-primary">Guests</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage and organize your guest list</p>
         </div>
+        {!bannerDismissed && (
+          <div className="flex items-start gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-sm text-blue-700 dark:text-blue-300">
+            <span className="flex-1">
+              <span className="font-medium">Note:</span> Guests are automatically created when RSVP submissions include attendees (pax &gt; 0). Guest deletion is only available through the RSVP module.
+            </span>
+            <button
+              onClick={() => { setBannerDismissed(true); sessionStorage.setItem("guestBannerDismissed", "1"); }}
+              className="flex-shrink-0 text-blue-400 hover:text-blue-600 dark:hover:text-blue-200 transition text-base leading-none mt-0.5"
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <StatsCard label="Total Guests" value={stats.total} variant="primary" size="sm" icon={<UserGroupIcon className="w-4 h-4" />} />
+        <StatsCard label="Assigned" value={stats.assigned} variant="success" size="sm" icon={<CheckCircleIcon className="w-4 h-4" />} />
+        <StatsCard label="Unassigned" value={stats.unassigned} variant="warning" size="sm" icon={<UserIcon className="w-4 h-4" />} />
+        <StatsCard label="VIPs" value={stats.vips} variant="accent" size="sm" icon={<StarIcon className="w-4 h-4" />} />
       </div>
 
       {/* Filters */}
@@ -181,7 +151,7 @@ export default function GuestsPage() {
         <select
           value={guestTypeFilter}
           onChange={(e) => setGuestTypeFilter(e.target.value)}
-          className="w-full md:w-1/4 border rounded-xl p-2 bg-white dark:bg-accent dark:border-white/10"
+          className="w-full md:w-1/4 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           {["All", "Family", "VIP", "Friend", "Other"].map((t) => (
             <option key={t} value={t}>
@@ -195,7 +165,7 @@ export default function GuestsPage() {
           placeholder="Search guests by name..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full md:flex-1 border rounded-xl p-2 bg-white dark:bg-accent dark:border-white/10"
+          className="w-full md:flex-1 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/20"
         />
       </div>
 
@@ -216,9 +186,6 @@ export default function GuestsPage() {
         <ul className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filteredGuests.map((guest) => {
             const isAssigned = !!guest.tableId;
-            const qrToken = qrMap[guest.id] ?? qrMap[guest.guestId ?? ""];
-            const qrStatus = getQrStatus(qrToken);
-
             return (
               <li
                 key={guest.id}
@@ -280,7 +247,6 @@ export default function GuestsPage() {
                     >
                       {guest.guestType || "Other"}
                     </span>
-                    <QrStatusBadge status={qrStatus} />
                   </div>
 
                   {/* Table Assignment Display */}
@@ -313,50 +279,19 @@ export default function GuestsPage() {
                     Edit
                   </Button>
                   {guest.tableId ? (
-                    <Button
-                      variant="secondary"
+                    <button
                       onClick={() => handleUnassignTable(guest)}
-                      className="!bg-orange-600 !text-white hover:!bg-orange-700"
+                      className="px-3 py-1.5 text-sm font-medium rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition-colors"
                     >
                       Unassign
-                    </Button>
+                    </button>
                   ) : (
-                    <Button
-                      variant="primary"
+                    <button
                       onClick={() => setAssignModal({ open: true, guest })}
-                      className="!bg-green-600 !text-white hover:!bg-green-700"
+                      className="px-3 py-1.5 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
                     >
                       Assign Table
-                    </Button>
-                  )}
-                  {(qrStatus === "Generated" || qrStatus === "CheckedIn") && (
-                    <Button
-                      variant="secondary"
-                      onClick={() =>
-                        setQrModal({
-                          open: true,
-                          guestName: guest.guestName ?? guest.name ?? "",
-                          token: qrToken!.token,
-                        })
-                      }
-                    >
-                      View QR
-                    </Button>
-                  )}
-                  {qrStatus === "Generated" && (
-                    <Button
-                      variant="secondary"
-                      className="!bg-red-600 !text-white hover:!bg-red-700"
-                      onClick={() => {
-                        if (!window.confirm(`Revoke QR for ${guest.guestName ?? guest.name}?`)) return;
-                        revokeQr.mutate(
-                          { token: qrToken!.token, eventId: eventId! },
-                          { onSuccess: () => toast.success("QR revoked"), onError: () => toast.error("Failed to revoke QR") }
-                        );
-                      }}
-                    >
-                      Revoke
-                    </Button>
+                    </button>
                   )}
                 </div>
               </li>
@@ -365,15 +300,20 @@ export default function GuestsPage() {
         </ul>
       )}
 
-      {/* QR Image Modal */}
-      {qrModal && (
-        <QrImageModal
-          isOpen={qrModal.open}
-          guestName={qrModal.guestName}
-          token={qrModal.token}
-          onClose={() => setQrModal(null)}
-        />
-      )}
+      {/* Unassign Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={!!unassignConfirm}
+        isDeleting={unassignGuestFromTable.isPending}
+        title="Unassign Guest from Table"
+        description="This will remove the guest from their assigned table."
+        onConfirm={confirmUnassignTable}
+        onCancel={() => setUnassignConfirm(null)}
+      >
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          Remove <strong>{unassignConfirm?.guestName || unassignConfirm?.name}</strong> from{" "}
+          <strong>{tableMap.get(unassignConfirm?.tableId || "")}</strong>?
+        </p>
+      </DeleteConfirmationModal>
 
       {/* Guest Form Modal */}
       <GuestFormModal
@@ -384,45 +324,43 @@ export default function GuestsPage() {
       />
 
       {/* Table Assignment Modal */}
-      {assignModal.open && assignModal.guest && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-accent rounded-xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-              Assign {assignModal.guest.guestName} to Table
-            </h3>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {tables.length === 0 ? (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                  No tables available. Please create tables first.
-                </p>
-              ) : (
-                tables.map((table) => (
-                  <button
-                    key={table.id}
-                    onClick={() => handleAssignTable(assignModal.guest!, table.id)}
-                    className="w-full text-left p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-primary dark:hover:border-primary hover:bg-primary/5 transition-colors"
-                  >
-                    <p className="font-semibold text-gray-900 dark:text-white">
-                      {table.name}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Capacity: {table.capacity}
-                    </p>
-                  </button>
-                ))
-              )}
-            </div>
-            <div className="mt-4 flex justify-end">
-              <Button
-                variant="secondary"
-                onClick={() => setAssignModal({ open: false })}
+      <Modal
+        isOpen={assignModal.open && !!assignModal.guest}
+        title={`Assign ${assignModal.guest?.guestName ?? ""} to Table`}
+        onClose={() => setAssignModal({ open: false })}
+        className="max-w-md"
+      >
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {tables.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+              No tables available. Please create tables first.
+            </p>
+          ) : (
+            tables.map((table) => (
+              <button
+                key={table.id}
+                onClick={() => handleAssignTable(assignModal.guest!, table.id)}
+                className="w-full text-left p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-primary dark:hover:border-primary hover:bg-primary/5 transition-colors"
               >
-                Cancel
-              </Button>
-            </div>
-          </div>
+                <p className="font-semibold text-gray-900 dark:text-white">
+                  {table.name}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Capacity: {table.capacity}
+                </p>
+              </button>
+            ))
+          )}
         </div>
-      )}
+        <div className="mt-4 flex justify-end">
+          <Button
+            variant="secondary"
+            onClick={() => setAssignModal({ open: false })}
+          >
+            Cancel
+          </Button>
+        </div>
+      </Modal>
     </>
   );
 }

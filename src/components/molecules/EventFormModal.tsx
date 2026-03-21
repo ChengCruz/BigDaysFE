@@ -54,6 +54,13 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
   const createEvt = useCreateEvent();
   const updateEvt = useUpdateEvent();
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    title?: string;
+    date?: string;
+    noOfTable?: string;
+    description?: string;
+    location?: string;
+  }>({});
 
   useEffect(() => {
     if (isOpen) {
@@ -63,6 +70,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
       setDescription(initial?.description || "");
       setLocation(initial?.location || "");
       setError(null);
+      setFieldErrors({});
     }
   }, [isOpen, initial]);
 
@@ -70,6 +78,17 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errs: typeof fieldErrors = {};
+    if (!title.trim()) errs.title = "Title cannot be empty.";
+    if (!date) errs.date = "Date cannot be empty.";
+    if (!noOfTable || noOfTable <= 0) errs.noOfTable = "Number of tables cannot be empty.";
+    if (!description.trim()) errs.description = "Description cannot be empty.";
+    if (!location.trim()) errs.location = "Location cannot be empty.";
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      return;
+    }
+    setFieldErrors({});
     try {
       if (isEdit && initial) {
         const updated = await updateEvt.mutateAsync({
@@ -114,28 +133,38 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
           label="Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          required
+          error={fieldErrors.title}
         />
         <FormField
           label="Date"
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
+          required
+          error={fieldErrors.date}
         />
         <FormField
           label="Number of Tables"
           type="number"
           value={noOfTable.toString()}
           onChange={(e) => setNoOfTable(Number(e.target.value))}
+          required
+          error={fieldErrors.noOfTable}
         />
         <FormField
           label="Description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+          required
+          error={fieldErrors.description}
         />
         <FormField
           label="Location"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
+          required
+          error={fieldErrors.location}
         />
         <div className="flex justify-end space-x-2">
           <Button type="button" variant="secondary" onClick={onClose}>
