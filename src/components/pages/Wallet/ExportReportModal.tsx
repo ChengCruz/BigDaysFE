@@ -146,12 +146,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
   };
 
   const handleExport = () => {
-    if (format === "csv") {
-      exportToCSV();
-    } else {
-      // TODO: Implement Excel and PDF export
-      alert(`${format.toUpperCase()} export coming soon!`);
-    }
+    exportToCSV();
   };
 
   return (
@@ -217,40 +212,17 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
                 CSV
               </span>
             </button>
-            <button
-              type="button"
-              onClick={() => setFormat("excel")}
-              className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition ${
-                format === "excel"
-                  ? "border-primary bg-primary/5"
-                  : "border-gray-200 dark:border-gray-700 hover:border-primary hover:bg-primary/5"
-              }`}
-            >
+            <div className="relative p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 flex flex-col items-center gap-2 opacity-50 cursor-not-allowed">
               <span className="text-2xl">📄</span>
-              <span className={`text-sm font-medium ${format === "excel" ? "text-primary" : "text-gray-600 dark:text-gray-400"}`}>
-                Excel
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setFormat("pdf")}
-              className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition ${
-                format === "pdf"
-                  ? "border-primary bg-primary/5"
-                  : "border-gray-200 dark:border-gray-700 hover:border-primary hover:bg-primary/5"
-              }`}
-            >
+              <span className="text-sm font-medium text-gray-400 dark:text-gray-500">Excel</span>
+              <span className="absolute -top-2 -right-2 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full leading-none">Soon</span>
+            </div>
+            <div className="relative p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 flex flex-col items-center gap-2 opacity-50 cursor-not-allowed">
               <span className="text-2xl">📝</span>
-              <span className={`text-sm font-medium ${format === "pdf" ? "text-primary" : "text-gray-600 dark:text-gray-400"}`}>
-                PDF
-              </span>
-            </button>
+              <span className="text-sm font-medium text-gray-400 dark:text-gray-500">PDF</span>
+              <span className="absolute -top-2 -right-2 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full leading-none">Soon</span>
+            </div>
           </div>
-          {format !== "csv" && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
-              Note: {format.toUpperCase()} export is coming soon. CSV is currently available.
-            </p>
-          )}
         </div>
 
         {/* Include Options */}

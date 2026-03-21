@@ -1,5 +1,6 @@
 // src/components/pages/Tables/TablesPage.tsx
 import { PageLoader } from "../../atoms/PageLoader";
+import { ErrorState } from "../../atoms/ErrorState";
 import {
   useTablesApi,
   useDeleteTable,
@@ -109,7 +110,7 @@ export default function TablesPage() {
   if (!eventId) return <NoEventsState title="No Events for Table Management" message="Create your first event to start organizing seating arrangements and table assignments." />;
 
   if (tablesLoading || guestsLoading) return <PageLoader message="Loading tables..." />;
-  if (tablesError || guestsError) return <p>Failed to load data.</p>;
+  if (tablesError || guestsError) return <ErrorState message="Failed to load data." onRetry={() => window.location.reload()} />;
 
   // Drag and drop handlers
   const handleDragStart = (guestId: string) => {
@@ -148,11 +149,15 @@ export default function TablesPage() {
     }
 
     // Call the assign API
-    assignGuest.mutate({ guestId, tableId });
+    assignGuest.mutate({ guestId, tableId }, {
+      onError: () => toast.error("Failed to assign guest to table"),
+    });
   };
 
   const handleUnassignGuest = (guestId: string) => {
-    unassignGuest.mutate(guestId);
+    unassignGuest.mutate(guestId, {
+      onError: () => toast.error("Failed to unassign guest from table"),
+    });
   };
 
   const handleEditTable = (tableId: string) => {
@@ -178,7 +183,9 @@ export default function TablesPage() {
 
   const confirmDelete = () => {
     if (deletingTable) {
-      deleteTable.mutate(deletingTable.id);
+      deleteTable.mutate(deletingTable.id, {
+        onError: () => toast.error("Failed to delete table"),
+      });
       setDeletingTable(null);
     }
   };

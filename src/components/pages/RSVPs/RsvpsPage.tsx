@@ -1,7 +1,7 @@
 // src/components/pages/Rsvps/RsvpsPage.tsx
 import { PageLoader } from "../../atoms/PageLoader";
+import { ErrorState } from "../../atoms/ErrorState";
 import React, { useState } from "react";
-import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { ViewGridIcon, ViewListIcon, ClipboardListIcon, UserGroupIcon } from "@heroicons/react/outline";
 import { Link } from "react-router-dom";
@@ -44,7 +44,7 @@ export default function RsvpsPage() {
 
   if (!eventId) return <NoEventsState title="No Events to Manage RSVPs" message="Create your first event to start managing guest responses and invitations." />;
   if (isLoading) return <PageLoader message="Loading RSVPs..." />;
-  if (isError) return <p className="text-red-500 p-4">Failed to load RSVPs.</p>;
+  if (isError) return <ErrorState message="Failed to load RSVPs." onRetry={() => window.location.reload()} />;
 
   const handleDelete = (rsvp: Rsvp) => setDeleteModal({ open: true, rsvp });
   const handleCancelDelete = () => setDeleteModal({ open: false, rsvp: null });
@@ -74,7 +74,8 @@ export default function RsvpsPage() {
     { total: 0, pax: 0 }
   );
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    const XLSX = await import("xlsx");
     const data = rsvps.map(({ eventId, ...rest }) => { void eventId; return rest; });
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();

@@ -14,6 +14,7 @@ import {
   MailIcon,
   TableIcon,
   CashIcon,
+  QrcodeIcon,
 } from "@heroicons/react/solid";
 
 const ALMOST_THERE_MSGS = [
@@ -352,7 +353,10 @@ export default function MemberDashboardPage() {
               <div className="h-10 w-10 rounded-xl bg-purple-100 dark:bg-purple-900/50 grid place-items-center">
                 <MailIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
-              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Send Invites</span>
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                Send Invites
+                <span className="text-xs bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded-full leading-none">Soon</span>
+              </span>
             </button>
             <button
               onClick={() => navigate("/app/tables")}
@@ -371,6 +375,15 @@ export default function MemberDashboardPage() {
                 <CurrencyDollarIcon className="h-5 w-5 text-pink-600 dark:text-pink-400" />
               </div>
               <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Add Expense</span>
+            </button>
+            <button
+              onClick={() => navigate("/app/checkin")}
+              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-950/20 border border-teal-100 dark:border-teal-800 hover:border-teal-200 dark:hover:border-teal-700 hover:shadow-md transition group"
+            >
+              <div className="h-10 w-10 rounded-xl bg-teal-100 dark:bg-teal-900/50 group-hover:bg-teal-200 dark:group-hover:bg-teal-800 grid place-items-center transition">
+                <QrcodeIcon className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+              </div>
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Check In</span>
             </button>
           </div>
         </div>

@@ -74,8 +74,8 @@ export default function RsvpSharePreviewPage() {
                 <Button>RSVP Now</Button>
               </Link>
             )}
-            <Link to="/login">
-              <Button variant="secondary">Back to dashboard</Button>
+            <Link to="/app/rsvps">
+              <Button variant="secondary">Back to RSVPs</Button>
             </Link>
           </div>
         </div>

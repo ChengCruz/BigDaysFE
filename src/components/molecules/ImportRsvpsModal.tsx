@@ -1,6 +1,5 @@
 // src/components/molecules/ImportRsvpsModal.tsx
 import React, { useState, useRef } from "react";
-import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import toast from "react-hot-toast";
 import { Modal } from "./Modal";
@@ -64,7 +63,8 @@ export const ImportRsvpsModal: React.FC<Props> = ({
 
   // ─── Template Download ───────────────────────────────────────────────────────
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
+    const XLSX = await import("xlsx");
     const customHeaders = formFields.map((f) => f.label ?? f.name ?? "");
     const allHeaders = [...STANDARD_HEADERS, ...customHeaders];
 
@@ -116,8 +116,9 @@ export const ImportRsvpsModal: React.FC<Props> = ({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
+        const XLSX = await import("xlsx");
         const arr = ev.target?.result;
         if (!arr) throw new Error("Empty file");
 

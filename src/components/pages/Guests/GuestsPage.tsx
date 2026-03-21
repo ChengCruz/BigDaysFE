@@ -17,6 +17,7 @@ import toast from "react-hot-toast";
 import { GuestFormModal } from "./GuestFormModal";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
+import { Modal } from "../../molecules/Modal";
 // TODO: QR features are deferred from this page for now.
 // Future plan: show a simple read-only status badge per guest card
 // e.g. "QR Ready" | "Awaiting QR" | "Checked In" | "QR Revoked"
@@ -30,6 +31,7 @@ export default function GuestsPage() {
   const assignGuestToTable = useAssignGuestToTable(eventId!);
   const unassignGuestFromTable = useUnassignGuestFromTable(eventId!);
 
+  const [bannerDismissed, setBannerDismissed] = useState(() => sessionStorage.getItem("guestBannerDismissed") === "1");
   const [guestTypeFilter, setGuestTypeFilter] = useState<string>("All");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [modal, setModal] = useState<{ open: boolean; guest?: Guest }>({
@@ -120,11 +122,20 @@ export default function GuestsPage() {
           <h2 className="text-2xl font-semibold text-primary">Guests</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage and organize your guest list</p>
         </div>
-        <div className="flex flex-wrap gap-2 items-center">
-          <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-sm text-blue-700 dark:text-blue-300">
-            <span className="font-medium">Note:</span> Guests are automatically created when RSVP submissions include attendees (pax &gt; 0). <br></br>Guest deletion is only available through the RSVP module.
+        {!bannerDismissed && (
+          <div className="flex items-start gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-sm text-blue-700 dark:text-blue-300">
+            <span className="flex-1">
+              <span className="font-medium">Note:</span> Guests are automatically created when RSVP submissions include attendees (pax &gt; 0). Guest deletion is only available through the RSVP module.
+            </span>
+            <button
+              onClick={() => { setBannerDismissed(true); sessionStorage.setItem("guestBannerDismissed", "1"); }}
+              className="flex-shrink-0 text-blue-400 hover:text-blue-600 dark:hover:text-blue-200 transition text-base leading-none mt-0.5"
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -140,7 +151,7 @@ export default function GuestsPage() {
         <select
           value={guestTypeFilter}
           onChange={(e) => setGuestTypeFilter(e.target.value)}
-          className="w-full md:w-1/4 border rounded-xl p-2 bg-white dark:bg-accent dark:border-white/10"
+          className="w-full md:w-1/4 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           {["All", "Family", "VIP", "Friend", "Other"].map((t) => (
             <option key={t} value={t}>
@@ -154,7 +165,7 @@ export default function GuestsPage() {
           placeholder="Search guests by name..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full md:flex-1 border rounded-xl p-2 bg-white dark:bg-accent dark:border-white/10"
+          className="w-full md:flex-1 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/20"
         />
       </div>
 
@@ -268,21 +279,19 @@ export default function GuestsPage() {
                     Edit
                   </Button>
                   {guest.tableId ? (
-                    <Button
-                      variant="secondary"
+                    <button
                       onClick={() => handleUnassignTable(guest)}
-                      className="!bg-orange-600 !text-white hover:!bg-orange-700"
+                      className="px-3 py-1.5 text-sm font-medium rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition-colors"
                     >
                       Unassign
-                    </Button>
+                    </button>
                   ) : (
-                    <Button
-                      variant="primary"
+                    <button
                       onClick={() => setAssignModal({ open: true, guest })}
-                      className="![background-image:none] !bg-green-600 !shadow-green-600/25 hover:!bg-green-700"
+                      className="px-3 py-1.5 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
                     >
                       Assign Table
-                    </Button>
+                    </button>
                   )}
                 </div>
               </li>
@@ -315,45 +324,43 @@ export default function GuestsPage() {
       />
 
       {/* Table Assignment Modal */}
-      {assignModal.open && assignModal.guest && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-accent rounded-xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-              Assign {assignModal.guest.guestName} to Table
-            </h3>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {tables.length === 0 ? (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                  No tables available. Please create tables first.
-                </p>
-              ) : (
-                tables.map((table) => (
-                  <button
-                    key={table.id}
-                    onClick={() => handleAssignTable(assignModal.guest!, table.id)}
-                    className="w-full text-left p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-primary dark:hover:border-primary hover:bg-primary/5 transition-colors"
-                  >
-                    <p className="font-semibold text-gray-900 dark:text-white">
-                      {table.name}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Capacity: {table.capacity}
-                    </p>
-                  </button>
-                ))
-              )}
-            </div>
-            <div className="mt-4 flex justify-end">
-              <Button
-                variant="secondary"
-                onClick={() => setAssignModal({ open: false })}
+      <Modal
+        isOpen={assignModal.open && !!assignModal.guest}
+        title={`Assign ${assignModal.guest?.guestName ?? ""} to Table`}
+        onClose={() => setAssignModal({ open: false })}
+        className="max-w-md"
+      >
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {tables.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+              No tables available. Please create tables first.
+            </p>
+          ) : (
+            tables.map((table) => (
+              <button
+                key={table.id}
+                onClick={() => handleAssignTable(assignModal.guest!, table.id)}
+                className="w-full text-left p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-primary dark:hover:border-primary hover:bg-primary/5 transition-colors"
               >
-                Cancel
-              </Button>
-            </div>
-          </div>
+                <p className="font-semibold text-gray-900 dark:text-white">
+                  {table.name}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Capacity: {table.capacity}
+                </p>
+              </button>
+            ))
+          )}
         </div>
-      )}
+        <div className="mt-4 flex justify-end">
+          <Button
+            variant="secondary"
+            onClick={() => setAssignModal({ open: false })}
+          >
+            Cancel
+          </Button>
+        </div>
+      </Modal>
     </>
   );
 }
