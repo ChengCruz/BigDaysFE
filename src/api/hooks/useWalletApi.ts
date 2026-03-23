@@ -185,9 +185,9 @@ export function useUpdateWallet() {
 
       return wallet;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["wallet", data.eventGuid] });
-      queryClient.invalidateQueries({ queryKey: ["wallet", data.walletGuid] });
+    onSuccess: (_data, variables) => {
+      // Update API returns bool, not wallet — just invalidate to trigger a fresh GET
+      queryClient.invalidateQueries({ queryKey: ["wallet", variables.eventGuid] });
     },
   });
 }
