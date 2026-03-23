@@ -6,6 +6,9 @@ export const AuthEndpoints = {
   logout: "/User/Logout",
   refreshToken: "/User/RefreshToken",
   me: "/auth/me",
+  register: "/User/Create",
+  forgotPassword: "/User/ForgotPassword",
+  resetPassword: "/User/ResetForgotPassword",
 };
 
 export const EventsEndpoints = {

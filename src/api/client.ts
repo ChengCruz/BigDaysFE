@@ -1,6 +1,7 @@
 // src/api/client.ts
 import axios from "axios";
 import { tokenStore } from "../utils/tokenStore";
+import { decodeJwt } from "../utils/jwtUtils";
 import { AuthEndpoints } from "./endpoints";
 
 const client = axios.create({
@@ -12,11 +13,19 @@ const client = axios.create({
 // --- Request interceptor: attach access token + api keys ---
 client.interceptors.request.use(cfg => {
   const token = tokenStore.get();
-  if (token) cfg.headers!["Authorization"] = `Bearer ${token}`;
+  if (token) {
+    cfg.headers!["Authorization"] = `Bearer ${token}`;
+    // Use the logged-in user's email as the author header
+    const payload = decodeJwt(token);
+    if (payload?.email) cfg.headers!["author"] = payload.email;
+  }
   const apiKey = import.meta.env.VITE_API_KEY;
-  const author = import.meta.env.VITE_API_AUTHOR;
   if (apiKey) cfg.headers!["apiKey"] = apiKey;
-  if (author) cfg.headers!["author"] = author;
+  // Fall back to env var author only when not logged in
+  if (!cfg.headers!["author"]) {
+    const envAuthor = import.meta.env.VITE_API_AUTHOR;
+    if (envAuthor) cfg.headers!["author"] = envAuthor;
+  }
   return cfg;
 });
 
