@@ -4,6 +4,7 @@ import { Routes, Route, Navigate, Outlet, useNavigate } from "react-router-dom";
 import LandingPage from "../components/pages/Landing/LandingPage";
 import LoginPage from "../components/pages/Auth/LoginPage";
 import RegisterPage from "../components/pages/Auth/RegisterPage";
+import ResetPasswordPage from "../components/pages/Auth/ResetPasswordPage";
 import PublicTemplate from "../components/templates/PublicTemplate";
 import DashboardTemplate from "../components/templates/DashboardTemplate";
 
@@ -75,6 +76,8 @@ export default function AppRoutes() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        {/* Dev/Staging only — blocked in prod via ResetPasswordPage internal guard */}
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* public landing pages */}
         <Route path="/events" element={<EventPublicPage />} />

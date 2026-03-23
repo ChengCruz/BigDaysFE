@@ -1,12 +1,18 @@
 // src/components/pages/Auth/RegisterPage.tsx
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { FormField } from "../../molecules/FormField";
 import { PasswordInput } from "../../molecules/PasswordInput";
 import { Button } from "../../atoms/Button";
 import { validatePassword } from "../../../utils/passwordValidation";
+import { useAuthApi } from "../../../api/hooks/useAuthApi";
+import { AuthContext } from "../../../context/AuthProvider";
+import toast from "react-hot-toast";
 
 export default function RegisterPage() {
+  const navigate = useNavigate();
+  const { register } = useAuthApi();
+  const { login, loading: authLoading } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -14,7 +20,6 @@ export default function RegisterPage() {
     confirmPassword: "",
   });
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));
@@ -36,26 +41,20 @@ export default function RegisterPage() {
       return;
     }
 
-    setLoading(true);
-
     try {
-      // TODO: Implement registration API call when backend is ready
-      // Example:
-      // await registerUser({
-      //   name: formData.name,
-      //   email: formData.email,
-      //   password: formData.password,
-      // });
-
-      // For now, show a message
-      alert("Registration is not yet implemented. Backend API required.");
-
-      // After successful registration, redirect to login
-      // nav("/login");
+      await register.mutateAsync({
+        fullName: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
+      await login({
+        email: formData.email,
+        password: formData.password,
+      });
+      toast.success("Welcome to MyBigDays! Let's set up your first event.");
+      navigate("/app/events");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Registration failed");
-    } finally {
-      setLoading(false);
+      setError(err.response?.data?.message || "Registration failed. Please try again.");
     }
   };
 
@@ -124,10 +123,10 @@ export default function RegisterPage() {
       <Button
         type="submit"
         variant="primary"
-        disabled={loading}
+        disabled={register.isPending || authLoading}
         className="w-full"
       >
-        {loading ? "Creating Account…" : "Create Account"}
+        {authLoading ? "Signing in…" : register.isPending ? "Creating Account…" : "Create Account"}
       </Button>
 
       <div className="text-center text-sm">

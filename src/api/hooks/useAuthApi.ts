@@ -9,6 +9,22 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface RegisterPayload {
+  email: string;
+  fullName: string;
+  password: string;
+}
+
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface ResetPasswordPayload {
+  email: string;
+  token: string;
+  newPassword: string;
+}
+
 export interface AuthResponse {
   accessToken: string;
   expiresIn: number;
@@ -33,6 +49,21 @@ export function useAuthApi() {
     },
   });
 
+  const register = useMutation<{ data: number; message: string; isSuccess: boolean }, Error, RegisterPayload>({
+    mutationFn: (data: RegisterPayload) =>
+      client.post(AuthEndpoints.register, data).then(r => r.data),
+  });
+
+  const forgotPassword = useMutation<{ data: boolean; message: string; isSuccess: boolean }, Error, ForgotPasswordPayload>({
+    mutationFn: (data: ForgotPasswordPayload) =>
+      client.post(AuthEndpoints.forgotPassword, data).then(r => r.data),
+  });
+
+  const resetPassword = useMutation<{ data: boolean; message: string; isSuccess: boolean }, Error, ResetPasswordPayload>({
+    mutationFn: (data: ResetPasswordPayload) =>
+      client.post(AuthEndpoints.resetPassword, data).then(r => r.data),
+  });
+
   const logout = useMutation<LogoutResponse, Error, void>({
     mutationFn: () =>
       client.post<LogoutResponse>(AuthEndpoints.logout).then(r => r.data),
@@ -46,5 +77,5 @@ export function useAuthApi() {
     },
   });
 
-  return { login, logout };
+  return { login, register, logout, forgotPassword, resetPassword };
 }
