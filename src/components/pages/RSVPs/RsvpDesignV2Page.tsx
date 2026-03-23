@@ -12,6 +12,7 @@ import { useRsvpDesign, useSaveRsvpDesign } from "../../../api/hooks/useRsvpDesi
 import { useUploadMedia } from "../../../api/hooks/useMediaApi";
 import type { RsvpBlock, RsvpDesign, FlowPreset } from "../../../types/rsvpDesign";
 import { NoEventsState } from "../../molecules/NoEventsState";
+import { PageLoader } from "../../atoms/PageLoader";
 import { BlockEditor } from "./designer/BlockEditor";
 import { GlobalSettingsPanel } from "./designer/GlobalSettingsPanel";
 import { Spinner } from "../../atoms/Spinner";
@@ -717,7 +718,7 @@ function LayerRow({
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function RsvpDesignV2Page() {
-  const { event, eventId } = useEventContext() ?? {};
+  const { event, eventId, eventsLoading } = useEventContext() ?? {};
 
   const { data: serverFormFields = [], isFetching: isFetchingQuestions } =
     useFormFields(eventId, { enabled: !!eventId });
@@ -1159,6 +1160,7 @@ export default function RsvpDesignV2Page() {
   };
 
   // ── Early return ──────────────────────────────────────────────────────────
+  if (eventsLoading) return <PageLoader message="Loading..." />;
   if (!eventId) {
     return (
       <NoEventsState

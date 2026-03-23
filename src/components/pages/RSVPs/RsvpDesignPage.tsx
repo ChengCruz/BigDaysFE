@@ -8,6 +8,7 @@ import { useRsvpDesign, useSaveRsvpDesign } from "../../../api/hooks/useRsvpDesi
 import { useUploadMedia } from "../../../api/hooks/useMediaApi";
 import type { RsvpBlock, RsvpDesign, FlowPreset } from "../../../types/rsvpDesign";
 import { NoEventsState } from "../../molecules/NoEventsState";
+import { PageLoader } from "../../atoms/PageLoader";
 import { DesignToolbar } from "./designer/DesignToolbar";
 import { BlockList } from "./designer/BlockList";
 import { BlockEditor } from "./designer/BlockEditor";
@@ -285,7 +286,7 @@ export function FullPagePreview({
 // RsvpDesignPage — main orchestrator
 // ─────────────────────────────────────────────────────────────────────────────
 export default function RsvpDesignPage() {
-  const { event, eventId } = useEventContext() ?? {};
+  const { event, eventId, eventsLoading } = useEventContext() ?? {};
   const { data: serverFormFields = [], isFetching: isFetchingQuestions } = useFormFields(eventId, {
     enabled: !!eventId,
   });
@@ -707,6 +708,7 @@ export default function RsvpDesignPage() {
   };
 
   // ── Early returns (after all hooks) ───────────────────────────────────
+  if (eventsLoading) return <PageLoader message="Loading..." />;
   if (!eventId) {
     return (
       <NoEventsState
