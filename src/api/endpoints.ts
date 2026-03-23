@@ -10,6 +10,7 @@ export const AuthEndpoints = {
 
 export const EventsEndpoints = {
   all: "/event/GetEventsList",
+  allByUser: "/event/GetEventsListByUser",
   byId: (id: string) => `/event/${id}`,
   create: "/event/Create",
   update: `/event/Update`,

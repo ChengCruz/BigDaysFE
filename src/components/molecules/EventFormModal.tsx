@@ -1,5 +1,5 @@
 // src/components/molecules/EventFormModal.tsx
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Modal } from "./Modal";
 import { FormField } from "./FormField";
 import { Button } from "../atoms/Button";
@@ -9,6 +9,7 @@ import {
   type Event,
 } from "../../api/hooks/useEventsApi";
 import { FormError } from "./FormError";
+import { AuthContext } from "../../context/AuthProvider";
 
 interface EventFormModalProps {
   isOpen: boolean;
@@ -19,22 +20,6 @@ interface EventFormModalProps {
   className?: string;
 }
 
-/** Normalizes API date strings like '2025-09-04T00:00:00' to '2025-09-04' for <input type="date"> */
-function toDateInputValue(raw?: string): string {
-  if (!raw) return "";
-  // If it's already YYYY-MM-DD, use as is
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-
-  // Try to parse any other format and return local YYYY-MM-DD
-  const d = new Date(raw);
-  if (isNaN(d.getTime())) {
-    // Fallback: slice the first 10 if the string looks ISO-like
-    return raw.slice(0, 10);
-  }
-  // Adjust for timezone so date inputs don't shift
-  const tz = d.getTimezoneOffset() * 60000;
-  return new Date(d.getTime() - tz).toISOString().slice(0, 10);
-}
 
 export const EventFormModal: React.FC<EventFormModalProps> = ({
   isOpen,
@@ -43,29 +28,33 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
   initial,
   className = "",
 }) => {
+  // Event date/time is stored as local (GMT+8) in the DB — use raw values directly.
   const [title, setTitle] = useState(initial?.title || "");
-  const [date, setDate] = useState<string>(toDateInputValue(initial?.date));
+  const [date, setDate] = useState<string>(initial?.date?.slice(0, 10) ?? "");
+  const [time, setTime] = useState<string>(initial?.time?.slice(0, 5) ?? "");
   const [noOfTable, setNoOfTable] = useState<number>(
     initial?.noOfTable ? Number(initial.noOfTable) : 0
   );
   const [description, setDescription] = useState(initial?.description || "");
   const [location, setLocation] = useState(initial?.location || "");
 
+  const { userGuid } = useContext(AuthContext);
   const createEvt = useCreateEvent();
   const updateEvt = useUpdateEvent();
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{
     title?: string;
     date?: string;
+    time?: string;
     noOfTable?: string;
-    description?: string;
     location?: string;
   }>({});
 
   useEffect(() => {
     if (isOpen) {
       setTitle(initial?.title || "");
-      setDate(toDateInputValue(initial?.date));  // <-- normalize here
+      setDate(initial?.date?.slice(0, 10) ?? "");
+      setTime(initial?.time?.slice(0, 5) ?? "");
       setNoOfTable(initial?.noOfTable ? Number(initial.noOfTable) : 0);
       setDescription(initial?.description || "");
       setLocation(initial?.location || "");
@@ -81,34 +70,36 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
     const errs: typeof fieldErrors = {};
     if (!title.trim()) errs.title = "Title cannot be empty.";
     if (!date) errs.date = "Date cannot be empty.";
+    if (!time) errs.time = "Time cannot be empty.";
     if (!noOfTable || noOfTable <= 0) errs.noOfTable = "Number of tables cannot be empty.";
-    if (!description.trim()) errs.description = "Description cannot be empty.";
     if (!location.trim()) errs.location = "Location cannot be empty.";
     if (Object.keys(errs).length > 0) {
       setFieldErrors(errs);
       return;
     }
     setFieldErrors({});
+    // Event date/time is stored as local (GMT+8) in the DB — send values as-is.
     try {
       if (isEdit && initial) {
         const updated = await updateEvt.mutateAsync({
           eventGuid: initial.id,
           name: title,
-          date, // already YYYY-MM-DD from input
-          time: "",
+          date,
+          time,
           description,
           location,
-          userID: 0,
+          userGuid: userGuid ?? "",
           noOfTable,
         });
         onSuccess?.(updated);
       } else {
         const created = await createEvt.mutateAsync({
           name: title,
-          date, // already YYYY-MM-DD
+          date,
+          time,
           description,
           location,
-          userID: "0",
+          userGuid: userGuid ?? "",
           noOfTable: noOfTable.toString(),
         });
         onSuccess?.(created);
@@ -144,6 +135,44 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
           required
           error={fieldErrors.date}
         />
+        <div className="space-y-1">
+          <label className="block font-medium">
+            Time <span className="ml-1 text-red-600">*</span>
+          </label>
+          <div className="flex gap-2">
+            <select
+              value={time ? time.split(":")[0] : ""}
+              onChange={(e) => {
+                const h = e.target.value;
+                const m = time ? (time.split(":")[1] ?? "00") : "00";
+                setTime(h ? `${h}:${m}` : "");
+              }}
+              className={`w-1/2 border rounded p-2 ${fieldErrors.time ? "border-red-500" : "border-gray-300"}`}
+            >
+              <option value="">-- Hour --</option>
+              {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map((h) => (
+                <option key={h} value={h}>{h}</option>
+              ))}
+            </select>
+            <select
+              value={time ? (time.split(":")[1] ?? "") : ""}
+              onChange={(e) => {
+                const m = e.target.value;
+                const h = time ? (time.split(":")[0] ?? "00") : "00";
+                setTime(`${h}:${m}`);
+              }}
+              className={`w-1/2 border rounded p-2 ${fieldErrors.time ? "border-red-500" : "border-gray-300"}`}
+            >
+              <option value="">-- Min --</option>
+              {["00", "15", "30", "45"].map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </div>
+          {fieldErrors.time && (
+            <p className="text-xs text-red-600">{fieldErrors.time}</p>
+          )}
+        </div>
         <FormField
           label="Number of Tables"
           type="number"
@@ -156,8 +185,6 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
           label="Description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          required
-          error={fieldErrors.description}
         />
         <FormField
           label="Location"

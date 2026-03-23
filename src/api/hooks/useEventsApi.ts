@@ -11,6 +11,7 @@ export interface Event {
   id: string;
   title: string;
   date: string;
+  time?: string;
   noOfTable?: number;
   description?: string;
   location?: string;
@@ -22,6 +23,7 @@ function toEvent(e: ApiEvent): Event {
     id: e.eventGuid.toString(),
     title: e.eventName,
     date: e.eventDate,
+    time: e.eventTime,
     noOfTable: e.noOfTable,
     description: e.eventDescription,
     location: e.eventLocation,
@@ -38,7 +40,7 @@ export function useEventsApi(includeDeleted = false, opts?: { enabled?: boolean 
     queryKey: ["events", includeDeleted],
     enabled: opts?.enabled ?? true,
     queryFn: async () => {
-      const res = await client.get<ApiResponse<ApiEvent[]>>(EventsEndpoints.all);
+      const res = await client.get<ApiResponse<ApiEvent[]>>(EventsEndpoints.allByUser);
       const items = Array.isArray(res.data?.data) ? res.data.data : [];
       if (includeDeleted) return items.map(toEvent);
       // Filter out deleted events (backend marks deactivated events with isDeleted = true)
@@ -75,9 +77,10 @@ export function useCreateEvent() {
     mutationFn: async (data: {
       name: string;
       date: string;
+      time: string;
       description: string;
       location: string;
-      userID: string;
+      userGuid: string;
       noOfTable: string;
     }) => {
       const res = await client.post(EventsEndpoints.create, data);
@@ -102,7 +105,7 @@ export function useUpdateEvent() {
       description: string;
       location: string;
       time: string;
-      userID: number;
+      userGuid: string;
       noOfTable: number;
     }) => {
       const res = await client.post(EventsEndpoints.update, data);
@@ -181,7 +184,7 @@ export function useEventRsvpInternal(eventId?: string) {
         isRequired: q.isRequired ?? q.required ?? false,
         type: typeof q.type === "number" ? q.type : undefined,
         typeKey: typeof q.type === "number" ? TYPE_KEY_MAP[q.type] : (q.typeKey ?? q.type),
-        options: Array.isArray(q.options) ? q.options : typeof q.options === "string" ? q.options : undefined,
+        options: Array.isArray(q.options) ? q.options : typeof q.options === "string" ? q.options.split(",").map((s: string) => s.trim()).filter(Boolean) : undefined,
         order: q.order ?? 0,
       } as FormFieldConfig));
     },

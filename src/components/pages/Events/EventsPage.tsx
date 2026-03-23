@@ -12,6 +12,7 @@ import { useEventContext } from "../../../context/EventContext";
 import { CheckCircleIcon } from "@heroicons/react/solid";
 import { CalendarIcon, LocationMarkerIcon, ArchiveIcon } from "@heroicons/react/outline";
 import { StatsCard } from "../../atoms/StatsCard";
+import { formatEventDate, formatEventTime } from "../../../utils/eventUtils";
 
 export default function EventsPage() {
   const [showArchived, setShowArchived] = useState(false);
@@ -116,7 +117,8 @@ export default function EventsPage() {
                 <p className="text-lg font-semibold text-gray-800">{activeEvent.title}</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
                   <CalendarIcon className="w-4 h-4" />
-                  {new Date(activeEvent.date).toLocaleDateString()} •
+                  {formatEventDate(activeEvent.date)}
+                  {activeEvent.time && ` · ${formatEventTime(activeEvent.date, activeEvent.time)}`} •
                   <span className="flex items-center gap-1">
                     <LocationMarkerIcon className="w-4 h-4" />
                     {activeEvent.location || "Add a venue"}
@@ -126,8 +128,14 @@ export default function EventsPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Button onClick={() => navigate("/app/rsvps")}>Continue planning</Button>
+              <Button variant="secondary" onClick={() => navigate("/app/rsvps/designer")}>
+                Design RSVP Card
+              </Button>
+              <a href="/app/rsvps/designer-v2" target="_blank" rel="noopener noreferrer">
+                <Button variant="secondary">Design V2 ↗</Button>
+              </a>
               <Button variant="secondary" onClick={() => navigate(`${activeEvent.id}/form-fields`)}>
-                Customize fields
+                RSVP Questions
               </Button>
             </div>
           </div>
@@ -136,7 +144,7 @@ export default function EventsPage() {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <StatsCard label="Active Events" value={activeCount} variant="primary" size="sm" icon={<CheckCircleIcon className="w-4 h-4" />} />
           <StatsCard label="Archived Events" value={archivedCount} variant="warning" size="sm" icon={<ArchiveIcon className="w-4 h-4" />} />
-          <StatsCard label="Upcoming Next" value={nextEventDate ? nextEventDate.toLocaleDateString() : "—"} variant="secondary" size="sm" icon={<CalendarIcon className="w-4 h-4" />} />
+          <StatsCard label="Upcoming Next" value={nextEventDate ? formatEventDate(nextEventDate.toISOString()) : "—"} variant="secondary" size="sm" icon={<CalendarIcon className="w-4 h-4" />} />
         </div>
 
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -197,7 +205,8 @@ export default function EventsPage() {
                     <p className="text-sm text-gray-600 dark:text-gray-400 flex flex-wrap items-center gap-2">
                       <span className="inline-flex items-center gap-1">
                         <CalendarIcon className="w-4 h-4" />
-                        {new Date(ev.date).toLocaleDateString()}
+                        {formatEventDate(ev.date)}
+                        {ev.time && ` · ${formatEventTime(ev.date, ev.time)}`}
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <LocationMarkerIcon className="w-4 h-4" />
@@ -210,7 +219,7 @@ export default function EventsPage() {
                     <div className="flex items-center gap-3 text-sm font-medium text-gray-600 dark:text-gray-300">
                       <span>Tables: {ev.noOfTable ?? "Not set"}</span>
                       <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
-                      <span>{isArchived ? "Archived plan" : "Ready for guests"}</span>
+                      <span>{isArchived ? "Archived plan" : ""}</span>
                     </div>
                   </div>
 
@@ -242,7 +251,7 @@ export default function EventsPage() {
                         className="!text-sm !px-2.5"
                         onClick={() => navigate(`${ev.id}/form-fields`)}
                       >
-                        Form fields
+                        RSVP Questions
                       </Button>
                       <Button
                         variant="ghost"
