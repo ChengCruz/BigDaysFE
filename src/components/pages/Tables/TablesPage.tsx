@@ -26,7 +26,7 @@ import { ChevronDownIcon, CollectionIcon, UserGroupIcon, UserIcon, ChartBarIcon 
 
 export default function TablesPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
-  const { eventId } = useEventContext()!;
+  const { eventId, eventsLoading } = useEventContext()!;
   const { data: tables = [], isLoading: tablesLoading, isError: tablesError } = useTablesApi(eventId!);
   const { data: guests = [], isLoading: guestsLoading, isError: guestsError } = useGuestsApi(eventId!);
   const deleteTable = useDeleteTable(eventId);
@@ -107,6 +107,7 @@ export default function TablesPage() {
   // ─── Early returns AFTER all hooks ─────────────────────────────────────────
 
   // Show "no events" state if no events exist (check BEFORE loading state)
+  if (eventsLoading) return <PageLoader message="Loading..." />;
   if (!eventId) return <NoEventsState title="No Events for Table Management" message="Create your first event to start organizing seating arrangements and table assignments." />;
 
   if (tablesLoading || guestsLoading) return <PageLoader message="Loading tables..." />;

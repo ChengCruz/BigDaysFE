@@ -6,34 +6,37 @@ import { TYPE_KEY_MAP } from "../../utils/eventUtils";
 
 /** UI model for the modal / page */
 export interface FormFieldConfig {
-  // identifiers (API may use questionId or id)
   questionId?: string;
   id?: string;
   eventGuid?: string;
 
-  // API DTO fields
-  text?: string; // question text
+  text?: string;
   isRequired?: boolean;
-  // numeric enum type used by API (0..7)
   type?: number;
   options?: string | string[];
   order?: number;
 
-  // UI-friendly fields (optional)
   label?: string;
   name?: string;
-  // string type used in some UI components
   typeKey?: "text" | "textarea" | "select" | "radio" | "checkbox" | "email" | "number" | "date";
+  isActive?: boolean;
 }
 
-/** Payload we actually send to the Question API (needs eventId too) */
+/** Payload we actually send to the Question API */
 export type QuestionPayload = FormFieldConfig;
 
-/** Optional: fetcher (kept as-is) */
+/** Payload for Activate / Deactivate endpoints */
+type QuestionTogglePayload = {
+  eventId: string;   // pass the event GUID here
+  isActive: boolean;
+  questionId: string;
+};
+
 export function useFormFields(eventId?: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["formFields", eventId],
     enabled: !!eventId && (options?.enabled ?? true),
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       if (!eventId) return [] as FormFieldConfig[];
 
@@ -41,21 +44,20 @@ export function useFormFields(eventId?: string, options?: { enabled?: boolean })
       const raw = res.data?.data ?? [];
 
       return (Array.isArray(raw) ? raw : []).map((r: any) => ({
-        // QuestionDto.questionId is an integer from the API. Always stringify so
-        // comparisons with select onChange values (always strings) work correctly.
         questionId: String(r.questionId ?? r.id ?? ""),
         id: String(r.questionId ?? r.id ?? ""),
-        eventId: r.eventId,
+        eventGuid: r.eventGuid,
         label: r.label ?? r.text ?? r.name ?? "",
         name: r.name ?? (r.label ?? r.text ?? "").toLowerCase().replace(/\s+/g, "_"),
         text: r.text ?? r.label ?? "",
         isRequired: r.isRequired ?? r.required ?? false,
+        isActive: r.isActive ?? true,
         type: typeof r.type === "number" ? r.type : undefined,
         typeKey: typeof r.type === "number" ? TYPE_KEY_MAP[r.type] : (r.typeKey ?? r.type),
         options: Array.isArray(r.options)
           ? r.options
           : typeof r.options === "string"
-          ? r.options
+          ? r.options.split(",").map((s: string) => s.trim()).filter(Boolean)
           : undefined,
         order: r.order ?? 0,
       } as FormFieldConfig));
@@ -67,11 +69,10 @@ export function useFormFields(eventId?: string, options?: { enabled?: boolean })
 export function useCreateFormField(eventId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    // allow optional eventId closure so callers can pass id when they want
     mutationFn: (payload: QuestionPayload) =>
       client.post(FormFieldsEndpoints.create(), payload).then((r) => r.data),
     onSuccess: (_d, vars) =>
-      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? (vars as any)?.eventId ?? (vars as any)?.eventGuid ?? (vars as any)?.eventGUID] }),
+      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? (vars as any)?.eventGuid] }),
   });
 }
 
@@ -79,26 +80,45 @@ export function useCreateFormField(eventId?: string) {
 export function useUpdateFormField(eventId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    // require id (or questionId) and allow eventId in the body
-    // The backend expects POST for question updates (not PUT)
-    mutationFn: (payload: QuestionPayload & { id?: string; questionId?: string }) => {
-      // Normalize to the API expected field name `questionId`
-      const body: any = { ...payload, questionId: payload.questionId ?? payload.id };
-      // Ensure we don't send `id` as well since API expects `questionId`
+    mutationFn: (payload: QuestionPayload & { questionId?: string }) => {
+      const body: any = { ...payload };
       delete body.id;
       return client.post(FormFieldsEndpoints.update(), body).then((r) => r.data);
     },
     onSuccess: (_d, vars) =>
-      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? (vars as any)?.eventId ?? (vars as any)?.eventGuid ?? (vars as any)?.eventGUID] }),
+      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? (vars as any)?.eventGuid] }),
   });
 }
 
-/** DELETE question */
-export function useDeleteFormField(eventId?: string) {
+/** DEACTIVATE question — { isActive: false, questionId, eventId } */
+export function useDeactivateFormField(eventGuid?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () =>
-      client.post(FormFieldsEndpoints.deactivate()).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["formFields", eventId] }),
+    mutationFn: (payload: QuestionTogglePayload) =>
+      client.post(FormFieldsEndpoints.deactivate(), payload).then((r) => r.data),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["formFields", eventGuid] }),
+  });
+}
+
+/** ACTIVATE question — { isActive: true, questionId, eventId } */
+export function useActivateFormField(eventGuid?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: QuestionTogglePayload) =>
+      client.post(FormFieldsEndpoints.activate(), payload).then((r) => r.data),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["formFields", eventGuid] }),
+  });
+}
+
+/** DELETE question (hard delete) — { eventId, isActive, questionId } */
+export function useDeleteFormField(eventGuid?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: QuestionTogglePayload) =>
+      client.post(FormFieldsEndpoints.delete(), payload).then((r) => r.data),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["formFields", eventGuid] }),
   });
 }

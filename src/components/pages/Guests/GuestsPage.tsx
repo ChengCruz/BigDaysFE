@@ -25,7 +25,7 @@ import { Modal } from "../../molecules/Modal";
 
 export default function GuestsPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
-  const { eventId } = useEventContext()!;
+  const { eventId, eventsLoading } = useEventContext()!;
   const { data: guests = [], isLoading: guestsLoading, isError: guestsError } = useGuestsApi(eventId!);
   const { data: tables = [], isLoading: tablesLoading } = useTablesApi(eventId!);
   const assignGuestToTable = useAssignGuestToTable(eventId!);
@@ -71,7 +71,7 @@ export default function GuestsPage() {
 
   // ─── Early returns after hooks ─────────────────────────────────────────
 
-  // Show "no events" state if no events exist (check BEFORE loading state)
+  if (eventsLoading) return <PageLoader message="Loading..." />;
   if (!eventId) return <NoEventsState title="No Events for Guest Management" message="Create your first event to start adding and managing your guest list." />;
 
   if (guestsLoading || tablesLoading) return <PageLoader message="Loading guests..." />;

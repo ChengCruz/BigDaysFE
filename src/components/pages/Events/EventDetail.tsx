@@ -7,10 +7,12 @@ import { Button } from "../../atoms/Button";
 import { ImportRsvpsModal } from "../../molecules/ImportRsvpsModal";
 import { RsvpExportButton } from "./RsvpExportButton";
 import { useFormFields, useCreateFormField, useUpdateFormField, useDeleteFormField, type FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
+import { formatEventDate, formatEventTime } from "../../../utils/eventUtils";
 import { FieldBuilderModal } from "../../molecules/FieldBuilderModal";
 import { useRsvpsApi } from "../../../api/hooks/useRsvpsApi";
 import { useAuth } from "../../../api/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
+import { ShareWithGuestsCard } from "../../molecules/ShareWithGuestsCard";
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -60,7 +62,8 @@ const [impOpen, setImpOpen] = useState(false);
     </div>
     
       <p className="text-gray-600 dark:text-gray-400">
-        Date: {event ? new Date(event.date).toLocaleDateString() : "N/A"}
+        Date: {event ? formatEventDate(event.date) : "N/A"}
+        {event?.time && ` · ${formatEventTime(event.date, event.time)} (GMT+8)`}
       </p>
 
       {/* You could embed sub‐lists here, e.g. RSVPs for this event */}
@@ -98,6 +101,10 @@ const [impOpen, setImpOpen] = useState(false);
          }}
        />
      </section>
+
+      <section className="mt-6">
+        <ShareWithGuestsCard eventId={id!} />
+      </section>
     </div>
   );
 }

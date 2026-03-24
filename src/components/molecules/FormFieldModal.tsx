@@ -27,7 +27,7 @@ interface Props {
   onSave: (payload: QuestionDto) => void;
 }
 
-/** String ⇄ number map for the API “type” enum */
+/** String ⇄ number map for the API "type" enum */
 const TYPE_MAP = {
   text: 0,
   textarea: 1,
@@ -39,6 +39,17 @@ const TYPE_MAP = {
   date: 7,
 } as const;
 type TypeKey = keyof typeof TYPE_MAP;
+
+export const TYPE_LABELS: Record<TypeKey, string> = {
+  text: "Short Text",
+  textarea: "Long Text",
+  select: "Dropdown",
+  radio: "Radio Buttons",
+  checkbox: "Checkbox",
+  email: "Email",
+  number: "Number",
+  date: "Date",
+};
 
 const REQUIRES_OPTIONS: TypeKey[] = ["select", "radio", "checkbox"];
 
@@ -96,7 +107,7 @@ export function FormFieldModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={initial ? "Edit Field" : "New Field"}
+      title={initial ? "Edit Question" : "New Question"}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <FormField
@@ -113,15 +124,12 @@ export function FormFieldModal({
             onChange={(e) => setTypeKey(e.target.value as TypeKey)}
             className="w-full border rounded p-2"
           >
-            {Object.keys(TYPE_MAP).map((k) => (
+            {(Object.keys(TYPE_MAP) as TypeKey[]).map((k) => (
               <option key={k} value={k}>
-                {k}
+                {TYPE_LABELS[k]}
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-gray-500">
-            This maps to API numeric codes (e.g. text=0, textarea=1, select=2, …).
-          </p>
         </div>
 
         <div className="flex items-center space-x-2">

@@ -14,6 +14,15 @@ import {
   useUpdateTransaction,
 } from "../../../api/hooks/useTransactionApi";
 
+/** Returns YYYY-MM-DD in the user's local timezone (safe for <input type="date">). */
+function toLocalDateString(d: Date): string {
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, "0"),
+    String(d.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
 interface TransactionFormModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -55,7 +64,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
       setAmount(transaction.amount.toString());
       setTransactionDate(
         transaction.transactionDate
-          ? new Date(transaction.transactionDate).toISOString().split("T")[0]
+          ? toLocalDateString(new Date(transaction.transactionDate))
           : ""
       );
       setCategory(transaction.category);
@@ -64,7 +73,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
       setPaymentStatus(transaction.paymentStatus || PaymentStatus.Paid);
       setDueDate(
         transaction.dueDate
-          ? new Date(transaction.dueDate).toISOString().split("T")[0]
+          ? toLocalDateString(new Date(transaction.dueDate))
           : ""
       );
       setReferenceId(transaction.referenceId || "");
@@ -80,7 +89,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
     setType(TransactionType.Debit);
     setTransactionName("");
     setAmount("");
-    setTransactionDate(new Date().toISOString().split("T")[0]);
+    setTransactionDate(toLocalDateString(new Date()));
     setCategory(TransactionCategory.Others);
     setVendorName("");
     setVendorContact("");

@@ -18,7 +18,7 @@ import { ErrorState } from "../../atoms/ErrorState";
 
 export default function WalletPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────
-  const { eventId } = useEventContext()!;
+  const { eventId, eventsLoading } = useEventContext()!;
   const { user } = useContext(AuthContext);
 
   // Fetch wallet data
@@ -49,6 +49,7 @@ export default function WalletPage() {
   // ─── Early returns AFTER hooks ───────────────────────────────────────────────
 
   // Show "no events" state if no events exist
+  if (eventsLoading) return <PageLoader message="Loading..." />;
   if (!eventId) return <NoEventsState title="No Events for Budget Tracking" message="Create your first event to start managing your budget and tracking expenses." />;
 
   // Handle wallet setup/edit

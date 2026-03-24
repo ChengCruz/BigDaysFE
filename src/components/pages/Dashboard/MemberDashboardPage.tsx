@@ -4,6 +4,7 @@ import { useEventContext } from "../../../context/EventContext";
 import { useDashboardApi } from "../../../api/hooks/useDashboardApi";
 import { Button } from "../../atoms/Button";
 import { PageLoader } from "../../atoms/PageLoader";
+import { NoEventsState } from "../../molecules/NoEventsState";
 import {
   CalendarIcon,
   LocationMarkerIcon,
@@ -16,6 +17,7 @@ import {
   CashIcon,
   QrcodeIcon,
 } from "@heroicons/react/solid";
+import { formatEventDate, formatEventTime } from "../../../utils/eventUtils";
 
 const ALMOST_THERE_MSGS = [
   "The excitement is building as your wedding day gets closer 🎉",
@@ -63,7 +65,7 @@ function formatRelativeTime(timestamp: string): string {
 
 export default function MemberDashboardPage() {
   const navigate = useNavigate();
-  const { eventId } = useEventContext();
+  const { eventId, eventsLoading } = useEventContext();
   const { data: dashboard, isLoading } = useDashboardApi(eventId || "");
 
   // Countdown timer state
@@ -106,29 +108,12 @@ export default function MemberDashboardPage() {
   }, [dashboard?.eventStats?.eventDate]);
 
   if (!eventId) {
+    if (eventsLoading) return <PageLoader message="Loading dashboard..." />;
     return (
-      <div className="space-y-6">
-        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 rounded-2xl p-8 text-center">
-          <div className="max-w-md mx-auto">
-            <div className="h-20 w-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 grid place-items-center">
-              <CalendarIcon className="h-10 w-10 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">
-              Welcome to MyBigDays! ✨
-            </h2>
-            <p className="text-slate-600 dark:text-slate-300 mb-6">
-              Select an event from the sidebar to get started with your planning dashboard
-            </p>
-            <Button
-              onClick={() => navigate("/app/events?new=1")}
-              className="inline-flex items-center gap-2"
-            >
-              <CalendarIcon className="h-5 w-5" />
-              Create Your First Event
-            </Button>
-          </div>
-        </div>
-      </div>
+      <NoEventsState
+        title="Welcome to MyBigDays! ✨"
+        message="Select an event from the sidebar to get started with your planning dashboard."
+      />
     );
   }
 
@@ -157,20 +142,18 @@ export default function MemberDashboardPage() {
 
         <div className="relative flex flex-col lg:flex-row lg:items-center gap-6">
           <div className="flex-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-sm font-medium mb-4">
-              <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
-              Active Event
-            </div>
             <h2 className="text-3xl font-bold mb-2">{dashboard.eventStats.eventName}</h2>
             <div className="flex flex-wrap items-center gap-4 text-white/80">
               {dashboard.eventStats.eventDate && (
                 <span className="flex items-center gap-1.5">
                   <CalendarIcon className="h-4 w-4" />
-                  {new Date(dashboard.eventStats.eventDate).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
+                  {formatEventDate(dashboard.eventStats.eventDate)}
+                  {dashboard.eventStats.eventTime && (
+                    <span className="flex items-center gap-1">
+                      <ClockIcon className="h-4 w-4" />
+                      {formatEventTime(dashboard.eventStats.eventDate, dashboard.eventStats.eventTime)}
+                    </span>
+                  )}
                 </span>
               )}
               {dashboard.eventStats.eventLocation && (

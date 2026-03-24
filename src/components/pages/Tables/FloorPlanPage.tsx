@@ -12,6 +12,7 @@ import { Button } from "../../atoms/Button";
 import { StatsCard } from "../../atoms/StatsCard";
 import { TableFormModal } from "../../molecules/TableFormModal";
 import { NoEventsState } from "../../molecules/NoEventsState";
+import { PageLoader } from "../../atoms/PageLoader";
 import { CollectionIcon, UserGroupIcon, UserIcon } from "@heroicons/react/outline";
 
 let idCounter = 0;
@@ -22,7 +23,7 @@ function uid() {
 type ToolMode = "select" | "round" | "rect" | "square";
 
 export default function FloorPlanPage() {
-  const { eventId } = useEventContext();
+  const { eventId, eventsLoading } = useEventContext();
   const { data: tables = [], isLoading: tablesLoading } = useTablesApi(eventId ?? "");
   const { data: guests = [], isLoading: guestsLoading } = useGuestsApi(eventId ?? "");
   const { data: apiFloorItems = [], isLoading: floorPlanLoading, isSuccess: floorPlanLoaded } = useGetFloorPlan(eventId ?? "");
@@ -283,6 +284,7 @@ export default function FloorPlanPage() {
   const selectedTable = selectedItem?.type === "table" ? tables.find((t) => t.id === selectedId) : null;
   const selectedShape = selectedItem?.type === "table" ? (selectedItem.meta?.shape as string) || "round" : null;
 
+  if (eventsLoading) return <PageLoader message="Loading..." />;
   if (!eventId) {
     return <NoEventsState title="No Event Selected" message="Select or create an event to start designing your floor plan." />;
   }

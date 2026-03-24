@@ -6,10 +6,14 @@ export const AuthEndpoints = {
   logout: "/User/Logout",
   refreshToken: "/User/RefreshToken",
   me: "/auth/me",
+  register: "/User/Create",
+  forgotPassword: "/User/ForgotPassword",
+  resetPassword: "/User/ResetForgotPassword",
 };
 
 export const EventsEndpoints = {
   all: "/event/GetEventsList",
+  allByUser: "/event/GetEventsListByUser",
   byId: (id: string) => `/event/${id}`,
   create: "/event/Create",
   update: `/event/Update`,
@@ -97,7 +101,7 @@ export const FormFieldsEndpoints = {
   update: () => `/question/Update`,
   activate: () => `/question/Activate`,
   deactivate: () => `/question/Deactivate`,
-  delete: (eventId: string, id: string) => `/events/${eventId}/rsvp-form-fields/${id}`,
+  delete: () => `/question/Delete`,
 };
 
 export const PublicRsvpEndpoints = {
@@ -113,6 +117,7 @@ export const RsvpDesignEndpoints = {
   get: (eventGuid: string) => `/RsvpDesign/${eventGuid}/design`,
   save: (eventGuid: string) => `/RsvpDesign/${eventGuid}/design`,
   publish: (eventGuid: string, version: number) => `/RsvpDesign/${eventGuid}/design/${version}/publish`,
+  shareToken: (eventGuid: string, version: number) => `/RsvpDesign/${eventGuid}/design/${version}/share-token`,
 };
 
 export const DashboardEndpoints = {

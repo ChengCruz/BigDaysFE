@@ -5,6 +5,7 @@ export type FieldType =
   | "email"
   | "number"
   | "date"
+  | "time"
   | "password"
   | "textarea"
   | "select"

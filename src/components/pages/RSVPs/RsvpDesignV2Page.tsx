@@ -4,14 +4,17 @@
 // Renders as a fixed full-screen overlay so it takes the whole tab.
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { useEventContext } from "../../../context/EventContext";
 import type { Event } from "../../../api/hooks/useEventsApi";
 import { useFormFields, type FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
 import { useRsvpDesign, useSaveRsvpDesign } from "../../../api/hooks/useRsvpDesignApi";
+import { FullPagePreview } from "./RsvpDesignPage";
 import { useUploadMedia } from "../../../api/hooks/useMediaApi";
 import type { RsvpBlock, RsvpDesign, FlowPreset } from "../../../types/rsvpDesign";
 import { NoEventsState } from "../../molecules/NoEventsState";
+import { PageLoader } from "../../atoms/PageLoader";
 import { BlockEditor } from "./designer/BlockEditor";
 import { GlobalSettingsPanel } from "./designer/GlobalSettingsPanel";
 import { Spinner } from "../../atoms/Spinner";
@@ -19,6 +22,10 @@ import { Spinner } from "../../atoms/Spinner";
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
 const uid = () => Math.random().toString(36).slice(2, 9);
+
+/** Returns true if a src value is a usable image URL (not a stale blob or bare UUID). */
+const isValidSrc = (src?: string | null): src is string =>
+  !!src && (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("blob:") || src.startsWith("/"));
 
 /** Returns true when the hex background is perceptually light (needs dark text). */
 function isLightColor(hex: string): boolean {
@@ -32,20 +39,24 @@ function isLightColor(hex: string): boolean {
 
 // ─── Block library ────────────────────────────────────────────────────────────
 
-const BLOCK_TYPES: { type: RsvpBlock["type"]; icon: string; label: string; desc: string }[] = [
+const CONTENT_BLOCKS: { type: RsvpBlock["type"]; icon: string; label: string; desc: string }[] = [
   { type: "headline",     icon: "Hₜ", label: "Headline",      desc: "Title & subtitle banner" },
   { type: "text",         icon: "¶",  label: "Text",          desc: "Body paragraph" },
   { type: "info",         icon: "ⓘ",  label: "Info badge",    desc: "Pill with label & value" },
-  { type: "attendance",   icon: "✓",  label: "Attendance",    desc: "Yes / No / Maybe picker" },
+  // { type: "attendance",   icon: "✓",  label: "Attendance",    desc: "Yes / No / Maybe picker" }, // hidden — not in use
   { type: "guestDetails", icon: "👤", label: "Guest details", desc: "Name · phone · pax" },
   { type: "formField",    icon: "✎",  label: "Form field",    desc: "Linked RSVP question" },
   { type: "cta",          icon: "→",  label: "CTA button",    desc: "Call-to-action button" },
   { type: "image",        icon: "🖼", label: "Image",         desc: "Photo or gallery block" },
-  // ── Event-linked (V2) ──────────────────────────────────────────────────
+];
+
+const FROM_EVENT_BLOCKS: { type: RsvpBlock["type"]; icon: string; label: string; desc: string }[] = [
   { type: "eventDetails", icon: "📅", label: "Event Details", desc: "Date · time · location" },
   { type: "countdown",    icon: "⏳", label: "Countdown",     desc: "Live timer to event day" },
   { type: "map",          icon: "📍", label: "Map / Venue",   desc: "Location + directions" },
 ];
+
+const BLOCK_TYPES = [...CONTENT_BLOCKS, ...FROM_EVENT_BLOCKS];
 
 const BLOCK_LABEL: Record<string, string> = Object.fromEntries(
   BLOCK_TYPES.map(({ type, label }) => [type, label])
@@ -94,7 +105,7 @@ function CountdownDisplay({
     : null;
 
   return (
-    <div className="px-8 py-12 text-center">
+    <div className="px-4 py-10 text-center">
       <p
         className="text-[10px] uppercase tracking-[0.28em] mb-6 font-semibold"
         style={{ color: accentColor }}
@@ -102,18 +113,18 @@ function CountdownDisplay({
         {label || "Counting down to your big day"}
       </p>
       {units ? (
-        <div className="flex items-end justify-center gap-4">
+        <div className="flex items-end justify-center gap-1.5 w-full">
           {units.map(({ v, u }, i) => (
             <React.Fragment key={u}>
-              <div className="text-center">
+              <div className="text-center flex-1 min-w-0">
                 <div
-                  className="text-5xl font-bold leading-none"
-                  style={{ fontFamily: "Georgia, serif", color: headingColor }}
+                  className="font-bold leading-none"
+                  style={{ fontFamily: "Georgia, serif", color: headingColor, fontSize: "2rem" }}
                 >
                   {String(v).padStart(2, "0")}
                 </div>
                 <div
-                  className="text-[10px] uppercase tracking-widest mt-2 font-semibold"
+                  className="text-[9px] uppercase tracking-widest mt-1.5 font-semibold"
                   style={{ color: bodyColor, opacity: 0.55 }}
                 >
                   {u}
@@ -121,7 +132,7 @@ function CountdownDisplay({
               </div>
               {i < 3 && (
                 <div
-                  className="text-3xl pb-4 font-light"
+                  className="text-xl pb-3 font-light shrink-0"
                   style={{ color: headingColor, opacity: 0.25 }}
                 >
                   :
@@ -168,7 +179,7 @@ function renderSectionContent(
       return (
         <div
           className={`px-10 py-16 text-${block.align ?? "center"}`}
-          style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+          style={{ fontFamily: block.fontFamily || "Georgia, 'Times New Roman', serif" }}
         >
           <p
             className="text-[10px] uppercase tracking-[0.28em] mb-4 font-semibold"
@@ -196,7 +207,10 @@ function renderSectionContent(
 
     case "text":
       return (
-        <div className={`px-10 py-8 text-${block.align ?? "left"}`}>
+        <div
+          className={`px-10 py-8 text-${block.align ?? "left"}`}
+          style={{ fontFamily: block.fontFamily || undefined }}
+        >
           <p
             className="text-sm leading-relaxed"
             style={{ color: block.muted ? clr.muted : clr.body }}
@@ -263,7 +277,7 @@ function renderSectionContent(
       return (
         <div className="px-10 py-10">
           <p className="text-sm font-semibold mb-1" style={{ color: clr.heading }}>
-            {block.title || "Your details"}
+            {block.title || "Guest Information"}
           </p>
           {block.subtitle && (
             <p className="text-xs mb-5" style={{ color: clr.muted }}>{block.subtitle}</p>
@@ -345,7 +359,7 @@ function renderSectionContent(
         block.height === "tall" ? "4 / 3" : block.height === "short" ? "16 / 5" : "16 / 7";
       return (
         <div style={{ aspectRatio: ratio }}>
-          {active?.src ? (
+          {isValidSrc(active?.src) ? (
             <img src={active.src} alt={active.alt ?? ""} className="w-full h-full object-cover" loading="lazy" />
           ) : (
             <div
@@ -428,47 +442,55 @@ function renderSectionContent(
     }
 
     case "map": {
-      const address = block.address ?? event?.location ?? event?.raw?.eventLocation ?? "Venue TBC";
+      const address = block.address ?? event?.location ?? event?.raw?.eventLocation ?? "";
       const mapLabel = block.mapLabel ?? "Venue";
       const showDirections = block.showDirections ?? true;
-      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+      const hasAddress = !!address;
+      const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(address)}&output=embed&hl=en`;
 
       return (
         <div className="relative overflow-hidden" style={{ aspectRatio: "16 / 7" }}>
-          {/* Grid-pattern map background */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: isLight ? "#e8ebe0" : "#1a2035",
-              backgroundImage: isLight
-                ? "repeating-linear-gradient(0deg,#d8dbd0 0,#d8dbd0 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,#d8dbd0 0,#d8dbd0 1px,transparent 1px,transparent 40px)"
-                : "repeating-linear-gradient(0deg,rgba(255,255,255,0.04) 0,rgba(255,255,255,0.04) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(255,255,255,0.04) 0,rgba(255,255,255,0.04) 1px,transparent 1px,transparent 40px)",
-            }}
-          />
-          {/* Centred content */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-            <div className="text-3xl drop-shadow">📍</div>
+          {hasAddress ? (
+            /* Real embedded map — pointer-events:none keeps canvas clicks on the block */
+            <iframe
+              title="Venue map"
+              src={embedUrl}
+              className="absolute inset-0 w-full h-full border-0"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              style={{ pointerEvents: "none" }}
+            />
+          ) : (
+            /* Placeholder when no address set yet */
             <div
-              className="rounded-xl px-4 py-2.5 text-center shadow-lg"
-              style={{ background: isLight ? "#fff" : "rgba(15,23,42,0.85)", border: `1px solid ${clr.pillBorder}` }}
+              className="absolute inset-0 flex flex-col items-center justify-center gap-2"
+              style={{ background: isLight ? "#e8ebe0" : "#1a2035" }}
             >
-              <p className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: accentColor }}>
-                {mapLabel}
+              <span className="text-3xl opacity-30">📍</span>
+              <p className="text-xs text-center px-6" style={{ color: clr.muted }}>
+                Add an address in the block settings to show a live map
               </p>
-              <p className="text-xs font-semibold" style={{ color: clr.heading }}>{address}</p>
             </div>
-            {showDirections && (
-              <a
-                href={mapsUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="text-[10px] font-semibold underline pointer-events-none"
-                style={{ color: accentColor }}
+          )}
+          {/* Bottom overlay card */}
+          {hasAddress && (
+            <div className="absolute bottom-3 left-0 right-0 flex flex-col items-center gap-1.5 pointer-events-none">
+              <div
+                className="rounded-xl px-4 py-2 text-center shadow-lg"
+                style={{ background: isLight ? "rgba(255,255,255,0.92)" : "rgba(15,23,42,0.85)", border: `1px solid ${clr.pillBorder}` }}
               >
-                Get Directions →
-              </a>
-            )}
-          </div>
+                <p className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: accentColor }}>
+                  {mapLabel}
+                </p>
+                <p className="text-xs font-semibold" style={{ color: clr.heading }}>{address}</p>
+              </div>
+              {showDirections && (
+                <span className="text-[10px] font-semibold underline" style={{ color: accentColor }}>
+                  Get Directions →
+                </span>
+              )}
+            </div>
+          )}
         </div>
       );
     }
@@ -615,7 +637,7 @@ function BlockItem({
         </p>
         <p className="text-[10px] text-gray-400 truncate">{desc}</p>
       </div>
-      <span className="ml-auto text-gray-300 group-hover:text-rose-300 text-xs shrink-0">+</span>
+      <span aria-hidden="true" className="ml-auto text-gray-300 group-hover:text-rose-300 text-xs shrink-0">+</span>
     </button>
   );
 }
@@ -717,9 +739,9 @@ function LayerRow({
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function RsvpDesignV2Page() {
-  const { event, eventId } = useEventContext() ?? {};
+  const { event, eventId, eventsLoading } = useEventContext() ?? {};
 
-  const { data: serverFormFields = [], isFetching: isFetchingQuestions } =
+  const { data: serverFormFields = [] } =
     useFormFields(eventId, { enabled: !!eventId });
   const { data: savedDesign, isLoading: isLoadingDesign } = useRsvpDesign(
     eventId ?? ""
@@ -740,12 +762,6 @@ export default function RsvpDesignV2Page() {
       title: "Welcome to our wedding",
       subtitle: "Save the date and RSVP below",
       align: "center", accent: "text-white",
-      background: { images: [], overlay: 0.4 },
-    },
-    {
-      id: uid(), type: "attendance",
-      title: "Will you be attending?",
-      subtitle: "Please let us know",
       background: { images: [], overlay: 0.4 },
     },
     {
@@ -772,15 +788,16 @@ export default function RsvpDesignV2Page() {
   const [submitButtonColor, setSubmitButtonColor]         = useState("");
   const [submitButtonTextColor, setSubmitButtonTextColor] = useState("");
   const [submitButtonLabel, setSubmitButtonLabel]         = useState("");
-  const [publicLink, setPublicLink]   = useState<string | null>(null);
-  const [shareToken, setShareToken]   = useState<string | null>(null);
-  const [linkCopied, setLinkCopied]   = useState(false);
-  const [_version, setVersion]        = useState<number | undefined>(undefined);
+  const [globalFontFamily, setGlobalFontFamily]           = useState("");
+  const [version, setVersion]         = useState<number | undefined>(undefined);
 
   // ── V2 UI state ──────────────────────────────────────────────────────────
   const [leftTab, setLeftTab]       = useState<"blocks" | "layers">("blocks");
   const [rightTab, setRightTab]     = useState<"block" | "page">("block");
   const [canvasMode, setCanvasMode] = useState<"mobile" | "desktop">("mobile");
+  const [contentOpen, setContentOpen]     = useState(true);
+  const [fromEventOpen, setFromEventOpen] = useState(true);
+  const [presetsOpen, setPresetsOpen]     = useState(true);
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
   const objectUrlRefs = useRef<string[]>([]);
@@ -809,27 +826,75 @@ export default function RsvpDesignV2Page() {
 
   // Load saved design (once)
   useEffect(() => {
-    if (!savedDesign || isDesignLoaded) return;
-    if (savedDesign.blocks?.length) setBlocks(savedDesign.blocks);
-    if (savedDesign.globalBackgroundType)  setGlobalBackgroundType(savedDesign.globalBackgroundType);
-    if (savedDesign.globalBackgroundAsset) setGlobalBackgroundAsset(savedDesign.globalBackgroundAsset);
-    if (savedDesign.globalBackgroundColor) setGlobalBackgroundColor(savedDesign.globalBackgroundColor);
-    if (savedDesign.globalOverlay !== undefined) setGlobalOverlay(savedDesign.globalOverlay);
-    if (savedDesign.accentColor)        setAccentColor(savedDesign.accentColor);
-    if (savedDesign.flowPreset)         setFlowPreset(savedDesign.flowPreset);
-    if (savedDesign.globalMusicUrl)     setGlobalMusicUrl(savedDesign.globalMusicUrl);
-    if (savedDesign.submitButtonColor)  setSubmitButtonColor(savedDesign.submitButtonColor);
-    if (savedDesign.submitButtonTextColor) setSubmitButtonTextColor(savedDesign.submitButtonTextColor);
-    if (savedDesign.submitButtonLabel)  setSubmitButtonLabel(savedDesign.submitButtonLabel);
-    if (savedDesign.version !== undefined) setVersion(savedDesign.version);
-    if (savedDesign.shareToken) {
-      setShareToken(savedDesign.shareToken);
-      setPublicLink(`${window.location.origin}/rsvp/submit/${savedDesign.shareToken}`);
+    if (isLoadingDesign || isDesignLoaded) return;
+    if (savedDesign?.blocks?.length) {
+      setBlocks(sanitizeBlocks(savedDesign.blocks));
+      if (savedDesign.globalBackgroundType)  setGlobalBackgroundType(savedDesign.globalBackgroundType);
+      if (savedDesign.globalBackgroundAsset && !isBlob(savedDesign.globalBackgroundAsset)) setGlobalBackgroundAsset(savedDesign.globalBackgroundAsset);
+      if (savedDesign.globalBackgroundColor) setGlobalBackgroundColor(savedDesign.globalBackgroundColor);
+      if (savedDesign.globalOverlay !== undefined) setGlobalOverlay(savedDesign.globalOverlay);
+      if (savedDesign.accentColor)        setAccentColor(savedDesign.accentColor);
+      if (savedDesign.flowPreset)         setFlowPreset(savedDesign.flowPreset);
+      if (savedDesign.globalMusicUrl)     setGlobalMusicUrl(savedDesign.globalMusicUrl);
+      if (savedDesign.submitButtonColor)  setSubmitButtonColor(savedDesign.submitButtonColor);
+      if (savedDesign.submitButtonTextColor) setSubmitButtonTextColor(savedDesign.submitButtonTextColor);
+      if (savedDesign.submitButtonLabel)  setSubmitButtonLabel(savedDesign.submitButtonLabel);
+      if (savedDesign.globalFontFamily)   setGlobalFontFamily(savedDesign.globalFontFamily);
+      if (savedDesign.version !== undefined) setVersion(savedDesign.version);
+    } else if (event?.title) {
+      // No saved design yet — seed the headline block with real event data
+      toast("No RSVP design has been created for this event yet. Start building one below!", { icon: "ℹ️" });
+      const parts: string[] = [];
+      if (event.date) {
+        try {
+          parts.push(new Date(event.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }));
+        } catch {
+          parts.push(event.date);
+        }
+      }
+      if (event.time) parts.push(event.time);
+      if (event.location) parts.push(event.location);
+      const subtitle = parts.length > 0 ? `Save the date — ${parts.join(" · ")}` : "Save the date and RSVP below";
+      setBlocks((prev) =>
+        prev.map((b) =>
+          b.type === "headline" ? { ...b, title: event.title, subtitle } : b
+        )
+      );
     }
     setIsDesignLoaded(true);
-  }, [savedDesign, isDesignLoaded]);
+  }, [isLoadingDesign, savedDesign, isDesignLoaded, event?.title]);
+
+  // ── Inject Google Fonts for the block font picker ─────────────────────────
+  useEffect(() => {
+    const id = "rsvp-designer-google-fonts";
+    if (document.getElementById(id)) return;
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href =
+      "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Cormorant+Garamond:wght@400;600&family=Lato:wght@400;700&family=Montserrat:wght@400;600&display=swap";
+    document.head.appendChild(link);
+  }, []);
 
   // ── Helpers ──────────────────────────────────────────────────────────────
+  const isBlob = (url: string) => url.startsWith("blob:");
+
+  // Strip blob URLs from blocks before saving/loading — blobs are session-only
+  // and become invalid after page reload, causing ERR_FILE_NOT_FOUND in preview.
+  const sanitizeBlocks = (rawBlocks: RsvpBlock[]): RsvpBlock[] =>
+    rawBlocks.map((b) => ({
+      ...b,
+      sectionImage: b.sectionImage
+        ? { ...b.sectionImage, src: isBlob(b.sectionImage.src) ? "" : b.sectionImage.src }
+        : b.sectionImage,
+      background: b.background
+        ? { ...b.background, images: b.background.images.map((img) => ({ ...img, src: isBlob(img.src) ? "" : img.src })) }
+        : b.background,
+      ...(b.type === "image"
+        ? { images: b.images.map((img) => ({ ...img, src: isBlob(img.src) ? "" : img.src })) }
+        : {}),
+    })) as RsvpBlock[];
+
   const toImageAsset = (file: File) => {
     const url = URL.createObjectURL(file);
     objectUrlRefs.current.push(url);
@@ -865,32 +930,14 @@ export default function RsvpDesignV2Page() {
   const uploadAssetAsync = (asset: { id: string; src: string }, file: File) => {
     if (!eventId) return;
     uploadMedia({ file, eventGuid: eventId })
-      .then((result) => replaceBlobSrc(asset.id, result.url, asset.src))
+      .then((result) => {
+        if (isValidSrc(result?.url)) {
+          replaceBlobSrc(asset.id, result.url, asset.src);
+        }
+      })
       .catch(() => { /* keep blob URL as session-only fallback */ });
   };
 
-  const persistShareSnapshot = (token: string) => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(
-      `rsvp-share-${token}`,
-      JSON.stringify({
-        eventTitle: event?.title ?? "RSVP invite",
-        eventGuid: eventId ?? undefined,
-        blocks, flowPreset,
-        global: {
-          backgroundColor: globalBackgroundColor,
-          backgroundType: globalBackgroundType,
-          backgroundAsset: globalBackgroundAsset,
-          overlay: globalOverlay, accentColor,
-          musicUrl: globalMusicUrl || undefined,
-          submitButtonColor: submitButtonColor || undefined,
-          submitButtonTextColor: submitButtonTextColor || undefined,
-          submitButtonLabel: submitButtonLabel || undefined,
-        },
-        formFieldConfigs: availableQuestions,
-      })
-    );
-  };
 
   // ── Block operations ─────────────────────────────────────────────────────
   const addBlock = (type: RsvpBlock["type"]) => {
@@ -900,7 +947,7 @@ export default function RsvpDesignV2Page() {
       text:         { id, type: "text",         body: "Tell your guests what to expect.", width: "full", align: "left", muted: false, background: { images: [], overlay: 0.4 } },
       info:         { id, type: "info",         label: "Highlight", content: "Dress code, parking, or venue info", accent: "bg-white/20 text-white border border-white/30", background: { images: [], overlay: 0.4 } },
       attendance:   { id, type: "attendance",   title: "Will you be attending?", subtitle: "Please let us know", background: { images: [], overlay: 0.4 } },
-      guestDetails: { id, type: "guestDetails", title: "Your details", subtitle: "Tell us about yourself", showFields: { name: true, phone: true, pax: true }, background: { images: [], overlay: 0.4 } },
+      guestDetails: { id, type: "guestDetails", title: "Guest Information", subtitle: "", showFields: { name: true, phone: true, pax: true }, background: { images: [], overlay: 0.4 } },
       formField:    { id, type: "formField",    label: "Custom field", placeholder: "Placeholder", required: false, width: "full", background: { images: [], overlay: 0.4 } },
       cta:          { id, type: "cta",          label: "Submit RSVP", href: "#", align: "center", background: { images: [], overlay: 0.4 } },
       image:        { id, type: "image",        images: [], activeImageId: undefined, caption: "Add a caption", height: "medium", background: { images: [], overlay: 0.4 } },
@@ -914,14 +961,26 @@ export default function RsvpDesignV2Page() {
     setRightTab("block");
   };
 
-  // Inserts attendance + guestDetails + cta as a preset group
+  // Inserts guestDetails + remarks + event questions + cta as a preset group
   const addRsvpFormPreset = () => {
-    const a = uid(), g = uid(), c = uid();
+    const g = uid(), r = uid(), c = uid();
+    const questionBlocks = availableQuestions.map((field) => ({
+      id: uid(),
+      type: "formField" as const,
+      label: field.label || (field as any).text || "Custom field",
+      placeholder: Array.isArray(field.options) ? String(field.options[0] ?? "") : "",
+      required: field.isRequired ?? false,
+      width: "full" as const,
+      hint: undefined,
+      questionId: String(field.id ?? (field as any).questionId ?? ""),
+      background: { images: [], overlay: 0.4 },
+    }));
     setBlocks((prev) => [
       ...prev,
-      { id: a, type: "attendance",   title: "Will you be attending?", subtitle: "Please let us know",   background: { images: [], overlay: 0.4 } },
-      { id: g, type: "guestDetails", title: "Your details",           subtitle: "Tell us about yourself", showFields: { name: true, phone: true, pax: true }, background: { images: [], overlay: 0.4 } },
-      { id: c, type: "cta",          label: "Submit RSVP",            href: "#", align: "center",        background: { images: [], overlay: 0.4 } },
+      { id: g, type: "guestDetails", title: "Guest Information",      subtitle: "", showFields: { name: true, phone: true, pax: true }, background: { images: [], overlay: 0.4 } },
+      { id: r, type: "formField",    label: "Remarks", placeholder: "Any notes or special requests…", required: false, width: "full", background: { images: [], overlay: 0.4 } },
+      ...questionBlocks,
+      { id: c, type: "cta",          label: "Submit RSVP",            href: "#", align: "center",          background: { images: [], overlay: 0.4 } },
     ]);
     setSelectedId(c);
     setLeftTab("layers");
@@ -960,30 +1019,6 @@ export default function RsvpDesignV2Page() {
     setBlocks(next);
   };
 
-  const insertQuestionBlock = (questionId: string) => {
-    if (!questionId) return;
-    const field = availableQuestions.find(
-      (f) => String(f.id ?? f.questionId) === String(questionId)
-    );
-    if (!field) return;
-    setBlocks((prev) => {
-      if (prev.some((b) => b.type === "formField" && b.questionId === questionId))
-        return prev;
-      const id = uid();
-      const block: Extract<RsvpBlock, { type: "formField" }> = {
-        id, type: "formField",
-        label: field.label || field.text || "Custom field",
-        placeholder: Array.isArray(field.options) ? String(field.options[0] ?? "") : "",
-        required: field.isRequired ?? false,
-        width: "full",
-        hint: field.typeKey ? `${field.typeKey}${field.isRequired ? " · required" : ""}` : undefined,
-        questionId: String(field.id ?? field.questionId ?? ""),
-        background: { images: [], overlay: 0.4 },
-      };
-      setSelectedId(id);
-      return [...prev, block];
-    });
-  };
 
   const applyQuestionToBlock = (blockId: string, questionId: string | undefined) => {
     if (!questionId) return;
@@ -1014,9 +1049,11 @@ export default function RsvpDesignV2Page() {
     if (eventId) {
       uploadMedia({ file, eventGuid: eventId })
         .then((result) => {
-          setGlobalBackgroundAsset((current) => (current === blobUrl ? result.url : current));
-          const idx = objectUrlRefs.current.indexOf(blobUrl);
-          if (idx !== -1) { URL.revokeObjectURL(blobUrl); objectUrlRefs.current.splice(idx, 1); }
+          if (isValidSrc(result?.url)) {
+            setGlobalBackgroundAsset((current) => (current === blobUrl ? result.url : current));
+            const idx = objectUrlRefs.current.indexOf(blobUrl);
+            if (idx !== -1) { URL.revokeObjectURL(blobUrl); objectUrlRefs.current.splice(idx, 1); }
+          }
         })
         .catch(() => {});
     }
@@ -1126,39 +1163,31 @@ export default function RsvpDesignV2Page() {
     Array.from(files).forEach((file, i) => uploadAssetAsync(newAssets[i], file));
   };
 
-  // ── Save / share ──────────────────────────────────────────────────────────
+  // ── Save / preview ────────────────────────────────────────────────────────
   const handleSave = () => {
     if (!eventId) return;
     const currentDesign: RsvpDesign = {
-      blocks, flowPreset,
-      globalBackgroundType, globalBackgroundAsset, globalBackgroundColor,
+      blocks: sanitizeBlocks(blocks), flowPreset,
+      globalBackgroundType, globalBackgroundAsset: isBlob(globalBackgroundAsset) ? "" : globalBackgroundAsset, globalBackgroundColor,
       globalOverlay, accentColor,
       globalMusicUrl: globalMusicUrl || undefined,
       submitButtonColor: submitButtonColor || undefined,
       submitButtonTextColor: submitButtonTextColor || undefined,
       submitButtonLabel: submitButtonLabel || undefined,
-      shareToken, publicLink,
+      globalFontFamily: globalFontFamily || undefined,
       formFieldConfigs: availableQuestions,
     };
-    saveDesign({ design: currentDesign, isPublished: false, isDraft: true, shareToken, publicLink });
+    saveDesign({ design: currentDesign, isPublished: false, isDraft: true });
   };
 
-  const generatePublicLink = () => {
-    const token = uid();
-    const link = `${window.location.origin}/rsvp/submit/${token}?event=${eventId}`;
-    setShareToken(token);
-    setPublicLink(link);
-    setLinkCopied(false);
-    persistShareSnapshot(token);
-  };
+  const [showPreview, setShowPreview] = useState(false);
 
-  const copyLink = async () => {
-    if (!publicLink || !navigator.clipboard) return;
-    await navigator.clipboard.writeText(publicLink);
-    setLinkCopied(true);
+  const handlePreview = () => {
+    setShowPreview(true);
   };
 
   // ── Early return ──────────────────────────────────────────────────────────
+  if (eventsLoading) return <PageLoader message="Loading..." />;
   if (!eventId) {
     return (
       <NoEventsState
@@ -1196,7 +1225,7 @@ export default function RsvpDesignV2Page() {
       >
         {/* Brand + back */}
         <Link
-          to="/app/rsvps"
+          to="/app/events"
           className="flex items-center gap-1.5 text-sm font-bold text-primary hover:opacity-80 transition shrink-0 mr-1"
         >
           ← Back
@@ -1253,22 +1282,13 @@ export default function RsvpDesignV2Page() {
           </span>
         )}
 
-        {/* Share link */}
-        {publicLink ? (
-          <button
-            onClick={copyLink}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-md text-gray-600 hover:border-primary hover:text-primary transition bg-white"
-          >
-            {linkCopied ? "✓ Copied!" : "🔗 Copy link"}
-          </button>
-        ) : (
-          <button
-            onClick={generatePublicLink}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-md text-gray-600 hover:border-primary hover:text-primary transition bg-white"
-          >
-            Generate link
-          </button>
-        )}
+        {/* Preview */}
+        <button
+          onClick={handlePreview}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-md text-gray-600 hover:border-primary hover:text-primary transition bg-white"
+        >
+          Preview
+        </button>
 
         {/* Save */}
         <button
@@ -1290,7 +1310,7 @@ export default function RsvpDesignV2Page() {
         ────────────────────────────────────────────────────── */}
         <aside
           className="flex flex-col overflow-hidden bg-white border-r border-gray-100 shrink-0"
-          style={{ width: 230 }}
+          style={{ width: 240 }}
         >
           {/* Tabs */}
           <div className="flex border-b border-gray-100 shrink-0">
@@ -1300,7 +1320,7 @@ export default function RsvpDesignV2Page() {
                 onClick={() => setLeftTab(tab)}
                 className={`flex-1 py-2.5 text-[11px] font-bold uppercase tracking-wider transition border-b-2 ${
                   leftTab === tab
-                    ? "border-[#c0415a] text-[#c0415a]"
+                    ? "border-primary text-primary"
                     : "border-transparent text-gray-400 hover:text-gray-600"
                 }`}
               >
@@ -1312,57 +1332,76 @@ export default function RsvpDesignV2Page() {
           {/* Blocks tab */}
           {leftTab === "blocks" && (
             <div className="flex-1 overflow-y-auto p-2">
-              {/* Standard blocks */}
-              <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                Content
-              </p>
-              {BLOCK_TYPES.slice(0, 8).map(({ type, icon, label, desc }) => (
+              {/* Content blocks */}
+              <button
+                type="button"
+                onClick={() => setContentOpen((o) => !o)}
+                className="flex items-center justify-between w-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-gray-600 motion-safe:transition-colors duration-150 ease-out"
+              >
+                <span>Content</span>
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 motion-safe:transition-transform duration-200 ${contentOpen ? "rotate-0" : "-rotate-90"}`}><polyline points="2 5 7 10 12 5" /></svg>
+              </button>
+              {contentOpen && CONTENT_BLOCKS.map(({ type, icon, label, desc }) => (
                 <BlockItem key={type} icon={icon} label={label} desc={desc} onAdd={() => addBlock(type)} />
               ))}
 
               {/* Event-linked blocks */}
               <div className="mt-3 border-t border-gray-100 pt-3">
-                <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                  From event
-                </p>
-                {BLOCK_TYPES.slice(8).map(({ type, icon, label, desc }) => (
+                <button
+                  type="button"
+                  onClick={() => setFromEventOpen((o) => !o)}
+                  className="flex items-center justify-between w-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-gray-600 motion-safe:transition-colors duration-150 ease-out"
+                >
+                  <span>From event</span>
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 motion-safe:transition-transform duration-200 ${fromEventOpen ? "rotate-0" : "-rotate-90"}`}><polyline points="2 5 7 10 12 5" /></svg>
+                </button>
+                {fromEventOpen && FROM_EVENT_BLOCKS.map(({ type, icon, label, desc }) => (
                   <BlockItem key={type} icon={icon} label={label} desc={desc} onAdd={() => addBlock(type)} />
                 ))}
               </div>
 
               {/* Presets */}
-              <div className="mt-3 border-t border-gray-100 pt-3 px-1">
-                <p className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                  Presets
-                </p>
+              <div className="mt-3 border-t border-gray-100 pt-3">
                 <button
                   type="button"
-                  onClick={addRsvpFormPreset}
-                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left border border-dashed border-gray-200 hover:border-rose-200 hover:bg-rose-50 cursor-pointer group transition"
+                  onClick={() => setPresetsOpen((o) => !o)}
+                  className="flex items-center justify-between w-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-gray-600 motion-safe:transition-colors duration-150 ease-out"
                 >
-                  <div className="w-7 h-7 rounded-md bg-gray-100 flex items-center justify-center text-sm shrink-0 group-hover:bg-rose-100 transition">
-                    📋
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-medium text-gray-500 group-hover:text-[#c0415a] leading-tight">RSVP Form</p>
-                    <p className="text-[10px] text-gray-400">Adds attendance + details + submit</p>
-                  </div>
+                  <span>Presets</span>
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 motion-safe:transition-transform duration-200 ${presetsOpen ? "rotate-0" : "-rotate-90"}`}><polyline points="2 5 7 10 12 5" /></svg>
                 </button>
+                {presetsOpen && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={addRsvpFormPreset}
+                      className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left border border-dashed border-gray-200 hover:border-rose-200 hover:bg-rose-50 cursor-pointer group transition"
+                    >
+                      <div className="w-7 h-7 rounded-md bg-gray-100 flex items-center justify-center text-sm shrink-0 group-hover:bg-rose-100 transition">
+                        📋
+                      </div>
+                      <div>
+                        <p className="text-[13px] font-medium text-gray-500 group-hover:text-[#c0415a] leading-tight">RSVP Form</p>
+                        <p className="text-[10px] text-gray-400">Adds guest details + questions + submit</p>
+                      </div>
+                    </button>
 
-                {/* Upload shortcut */}
-                <label className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left border border-dashed border-gray-200 hover:border-rose-200 hover:bg-rose-50 cursor-pointer group transition mt-1.5">
-                  <div className="w-7 h-7 rounded-md bg-gray-100 flex items-center justify-center text-sm shrink-0 group-hover:bg-rose-100 transition">
-                    📷
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-medium text-gray-500 group-hover:text-[#c0415a] leading-tight">Upload image</p>
-                    <p className="text-[10px] text-gray-400">Adds an image block</p>
-                  </div>
-                  <input
-                    type="file" accept="image/*" multiple className="hidden"
-                    onChange={(e) => e.target.files && handleImageUploadBlock(e.target.files)}
-                  />
-                </label>
+                    {/* Upload shortcut */}
+                    <label className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left border border-dashed border-gray-200 hover:border-rose-200 hover:bg-rose-50 cursor-pointer group transition mt-1.5">
+                      <div className="w-7 h-7 rounded-md bg-gray-100 flex items-center justify-center text-sm shrink-0 group-hover:bg-rose-100 transition">
+                        📷
+                      </div>
+                      <div>
+                        <p className="text-[13px] font-medium text-gray-500 group-hover:text-[#c0415a] leading-tight">Upload image</p>
+                        <p className="text-[10px] text-gray-400">Adds an image block</p>
+                      </div>
+                      <input
+                        type="file" accept="image/*" multiple className="hidden"
+                        onChange={(e) => e.target.files && handleImageUploadBlock(e.target.files)}
+                      />
+                    </label>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -1445,7 +1484,7 @@ export default function RsvpDesignV2Page() {
                 ? "w-[375px] rounded-[28px] shadow-[0_0_0_8px_#1a1a2e,0_24px_64px_rgba(0,0,0,0.45)]"
                 : "w-full max-w-2xl rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.22)]"
             }`}
-            style={{ ...frameBg, minHeight: 700 }}
+            style={{ ...frameBg, minHeight: 700, fontFamily: globalFontFamily || "Georgia, 'Times New Roman', serif" }}
             onClick={(e) => {
               if (e.currentTarget === e.target) setSelectedId(null);
             }}
@@ -1484,7 +1523,7 @@ export default function RsvpDesignV2Page() {
                   </p>
                 </div>
               )}
-              {blocks.map((block, i) => (
+              {blocks.map((block) => (
                 <CanvasBlock
                   key={block.id}
                   block={block} isSelected={selectedId === block.id}
@@ -1516,27 +1555,6 @@ export default function RsvpDesignV2Page() {
             </div>
           </div>
 
-          {/* Share link bar (below canvas) */}
-          {publicLink && (
-            <div className="mt-4 w-full max-w-2xl flex items-center gap-2 bg-white rounded-lg border border-gray-200 px-3 py-2 shadow-sm">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0">Share</span>
-              <input
-                value={publicLink} readOnly
-                className="flex-1 min-w-0 text-xs text-gray-500 font-mono bg-transparent focus:outline-none"
-              />
-              <button
-                onClick={copyLink}
-                className="shrink-0 text-xs font-semibold text-primary hover:underline"
-              >
-                {linkCopied ? "Copied!" : "Copy"}
-              </button>
-              <a href={publicLink} target="_blank" rel="noreferrer"
-                className="shrink-0 text-xs font-semibold text-gray-400 hover:text-primary transition"
-              >
-                Open ↗
-              </a>
-            </div>
-          )}
         </div>{/* end inner layout wrapper */}
         </main>
 
@@ -1545,7 +1563,7 @@ export default function RsvpDesignV2Page() {
         ────────────────────────────────────────────────────── */}
         <aside
           className="flex flex-col overflow-hidden bg-white border-l border-gray-100 shrink-0"
-          style={{ width: 268 }}
+          style={{ width: 360 }}
         >
           {/* Tabs */}
           <div className="flex border-b border-gray-100 shrink-0">
@@ -1555,7 +1573,7 @@ export default function RsvpDesignV2Page() {
                 onClick={() => setRightTab(tab)}
                 className={`flex-1 py-2.5 text-[11px] font-bold uppercase tracking-wider transition border-b-2 ${
                   rightTab === tab
-                    ? "border-[#c0415a] text-[#c0415a]"
+                    ? "border-primary text-primary"
                     : "border-transparent text-gray-400 hover:text-gray-600"
                 }`}
               >
@@ -1622,6 +1640,7 @@ export default function RsvpDesignV2Page() {
                 submitButtonColor={submitButtonColor}
                 submitButtonTextColor={submitButtonTextColor}
                 submitButtonLabel={submitButtonLabel}
+                globalFontFamily={globalFontFamily}
                 hasBackgroundAsset={!!globalBackgroundAsset}
                 onChange={(patch) => {
                   if (patch.globalBackgroundType !== undefined) setGlobalBackgroundType(patch.globalBackgroundType);
@@ -1633,6 +1652,7 @@ export default function RsvpDesignV2Page() {
                   if (patch.submitButtonColor !== undefined) setSubmitButtonColor(patch.submitButtonColor);
                   if (patch.submitButtonTextColor !== undefined) setSubmitButtonTextColor(patch.submitButtonTextColor);
                   if (patch.submitButtonLabel !== undefined) setSubmitButtonLabel(patch.submitButtonLabel);
+                  if (patch.globalFontFamily !== undefined) setGlobalFontFamily(patch.globalFontFamily);
                 }}
                 onUploadBackground={handleBackgroundUpload}
               />
@@ -1663,6 +1683,27 @@ export default function RsvpDesignV2Page() {
             : "Unsaved changes"}
         </span>
       </footer>
+
+      {/* Full-screen preview overlay — shows current in-memory state */}
+      {showPreview && (
+        <div className="fixed inset-0 z-[100] overflow-auto">
+          <button
+            onClick={() => setShowPreview(false)}
+            className="fixed top-4 right-4 z-[101] flex items-center gap-1.5 rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm hover:bg-black/80 transition"
+          >
+            ✕ Close Preview
+          </button>
+          <FullPagePreview
+            blocks={blocks}
+            backgroundColor={globalBackgroundColor}
+            backgroundAsset={globalBackgroundAsset}
+            backgroundType={globalBackgroundType}
+            overlay={globalOverlay}
+            accentColor={accentColor}
+            flowPreset={flowPreset}
+          />
+        </div>
+      )}
     </div>
   );
 }

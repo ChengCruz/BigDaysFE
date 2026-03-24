@@ -8,6 +8,7 @@ import { useRsvpDesign, useSaveRsvpDesign } from "../../../api/hooks/useRsvpDesi
 import { useUploadMedia } from "../../../api/hooks/useMediaApi";
 import type { RsvpBlock, RsvpDesign, FlowPreset } from "../../../types/rsvpDesign";
 import { NoEventsState } from "../../molecules/NoEventsState";
+import { PageLoader } from "../../atoms/PageLoader";
 import { DesignToolbar } from "./designer/DesignToolbar";
 import { BlockList } from "./designer/BlockList";
 import { BlockEditor } from "./designer/BlockEditor";
@@ -176,9 +177,9 @@ export function PhonePreview({
             return (
               <div
                 key={block.id}
-                className={`relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-3.5 transition duration-300 ${
+                className={`relative overflow-hidden py-3 transition duration-300 ${
                   flowPreset === "stacked" ? "scroll-snap-start" : ""
-                } ${flowPreset === "serene" ? "backdrop-blur" : ""}`}
+                } ${flowPreset === "serene" && i < blocks.length - 1 ? "border-b border-white/[0.06]" : ""}`}
                 style={{
                   backgroundImage: activeBg
                     ? `linear-gradient(rgba(15,23,42,${overlayStr}),rgba(15,23,42,${overlayStr})),url(${activeBg.src})`
@@ -193,7 +194,7 @@ export function PhonePreview({
                   <span className="h-1.5 w-1.5 rounded-full" style={{ background: accentColor }} />
                   {block.type}
                 </div>
-                <div className="text-white">{renderBlockPreview(block, accentColor)}</div>
+                <div className={`text-white ${flowPreset === "serene" ? "backdrop-blur-sm" : ""}`}>{renderBlockPreview(block, accentColor)}</div>
               </div>
             );
           })}
@@ -237,7 +238,7 @@ export function FullPagePreview({
       </div>
 
       <div
-        className={`relative mx-auto flex max-w-5xl flex-col gap-6 px-4 py-12 ${
+        className={`relative mx-auto flex max-w-2xl flex-col gap-0 px-4 py-16 ${
           flowPreset === "stacked" ? "scroll-snap-y scroll-smooth" : ""
         }`}
       >
@@ -253,9 +254,9 @@ export function FullPagePreview({
           return (
             <section
               key={block.id}
-              className={`group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl ring-1 ring-white/5 transition duration-500 ${
+              className={`group relative overflow-hidden py-10 px-2 transition duration-500 ${
                 flowPreset === "stacked" ? "scroll-snap-start" : ""
-              } ${lift}`}
+              } ${lift} ${flowPreset === "serene" && i < blocks.length - 1 ? "border-b border-white/[0.05]" : ""}`}
               style={{
                 backgroundImage: activeBg
                   ? `linear-gradient(rgba(15,23,42,${overlayStr}),rgba(15,23,42,${overlayStr})),url(${activeBg.src})`
@@ -265,14 +266,7 @@ export function FullPagePreview({
                 backgroundAttachment: flowPreset === "parallax" ? "fixed" : "scroll",
               }}
             >
-              <div className="mb-2 flex items-center justify-between text-[11px] uppercase tracking-[0.15em] text-white/60">
-                <span className="inline-flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full" style={{ background: accentColor }} />
-                  {block.type}
-                </span>
-                <span className="rounded-full bg-black/25 px-2 py-0.5 text-[10px]">Scene {i + 1}</span>
-              </div>
-              <div className="space-y-3 text-white">{renderBlockPreview(block, accentColor)}</div>
+              <div className="space-y-4 text-white">{renderBlockPreview(block, accentColor)}</div>
             </section>
           );
         })}
@@ -285,7 +279,7 @@ export function FullPagePreview({
 // RsvpDesignPage — main orchestrator
 // ─────────────────────────────────────────────────────────────────────────────
 export default function RsvpDesignPage() {
-  const { event, eventId } = useEventContext() ?? {};
+  const { event, eventId, eventsLoading } = useEventContext() ?? {};
   const { data: serverFormFields = [], isFetching: isFetchingQuestions } = useFormFields(eventId, {
     enabled: !!eventId,
   });
@@ -707,6 +701,7 @@ export default function RsvpDesignPage() {
   };
 
   // ── Early returns (after all hooks) ───────────────────────────────────
+  if (eventsLoading) return <PageLoader message="Loading..." />;
   if (!eventId) {
     return (
       <NoEventsState

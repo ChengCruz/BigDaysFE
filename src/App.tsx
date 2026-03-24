@@ -1,18 +1,18 @@
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthProvider";
-// import { UserProvider }  from "./context/UserContext";
+import { EventProvider } from "./context/EventContext";
 import Routes from "./routers/routes";
 
 function App() {
   return (
-    <ThemeProvider >
+    <ThemeProvider>
       <AuthProvider>
-        {/* <UserProvider> */}
+        <EventProvider>
           <BrowserRouter>
             <Routes />
           </BrowserRouter>
-        {/* </UserProvider> */}
+        </EventProvider>
       </AuthProvider>
     </ThemeProvider>
   );

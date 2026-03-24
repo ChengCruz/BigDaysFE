@@ -4,7 +4,6 @@ import { ErrorState } from "../../atoms/ErrorState";
 import React, { useState } from "react";
 import { saveAs } from "file-saver";
 import { ViewGridIcon, ViewListIcon, ClipboardListIcon, UserGroupIcon } from "@heroicons/react/outline";
-import { Link } from "react-router-dom";
 import {
   useRsvpsApi,
   useCreateRsvp,
@@ -26,7 +25,7 @@ import { StatsCard } from "../../atoms/StatsCard";
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function RsvpsPage() {
-  const { eventId, event } = useEventContext()!;
+  const { eventId, event, eventsLoading } = useEventContext()!;
   const { data: rsvps = [], isLoading, isError } = useRsvpsApi(eventId!);
   const createRsvp = useCreateRsvp(eventId!);
   const updateRsvp = useUpdateRsvp(eventId!);
@@ -42,6 +41,7 @@ export default function RsvpsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
+  if (eventsLoading) return <PageLoader message="Loading..." />;
   if (!eventId) return <NoEventsState title="No Events to Manage RSVPs" message="Create your first event to start managing guest responses and invitations." />;
   if (isLoading) return <PageLoader message="Loading RSVPs..." />;
   if (isError) return <ErrorState message="Failed to load RSVPs." onRetry={() => window.location.reload()} />;
@@ -92,12 +92,6 @@ export default function RsvpsPage() {
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Track guest responses and manage invitations</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link to="/app/rsvps/designer">
-            <Button variant="secondary">Design RSVP Card</Button>
-          </Link>
-          <Link to="/app/rsvps/designer-v2" target="_blank" rel="noopener noreferrer">
-            <Button variant="secondary">Design V2 ↗</Button>
-          </Link>
           <Button onClick={() => setModal({ open: true })}>+ New RSVP</Button>
           <Button variant="secondary" onClick={() => setImportModalOpen(true)}>
             Import

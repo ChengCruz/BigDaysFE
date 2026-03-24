@@ -20,27 +20,35 @@ import {
   ViewGridIcon,
   HeartIcon,
   QrcodeIcon,
+  QuestionMarkCircleIcon,
+  PhotographIcon,
 } from "@heroicons/react/solid";
 import { useEventContext } from "../../context/EventContext";
 import { useAuth } from "../../api/hooks/useAuth";
 import { getRoleLabel } from "../../utils/jwtUtils";
+import { formatEventDate, formatEventTime } from "../../utils/eventUtils";
 
 interface SidebarLink {
   to: string;
   label: string;
   Icon: React.FC<React.SVGProps<SVGSVGElement>>;
   end?: boolean;
+  sub?: boolean;
+  external?: boolean;
 }
 
 const links: SidebarLink[] = [
   { to: "/app/dashboard", label: "Dashboard", Icon: HomeIcon },
-  { to: "/app/events", label: "Events", Icon: CalendarIcon },
-  { to: "/app/rsvps", label: "RSVPs", Icon: ClipboardListIcon },
-  { to: "/app/guests", label: "Guests", Icon: UserGroupIcon },
-  { to: "/app/checkin", label: "Check-in", Icon: QrcodeIcon },
+  { to: "/app/events", label: "Events", Icon: CalendarIcon, end: true },
+  { to: "/app/rsvps/designer", label: "Design RSVP Card", Icon: PhotographIcon, sub: true },
+  { to: "/app/rsvps/designer-v2", label: "Design V2 ↗", Icon: PhotographIcon, sub: true, external: true },
+  { to: "/app/form-fields", label: "RSVP Questions", Icon: QuestionMarkCircleIcon, sub: true },
+  { to: "/app/rsvps", label: "RSVPs", Icon: ClipboardListIcon, end: true },
+  { to: "/app/guests", label: "Guests", Icon: UserGroupIcon, sub: true },
   { to: "/app/tables", label: "Tables", Icon: TableIcon, end: true },
-  { to: "/app/tables/floorplan", label: "Floor Plan", Icon: ViewGridIcon },
+  { to: "/app/tables/floorplan", label: "Floor Plan", Icon: ViewGridIcon, sub: true },
   { to: "/app/wallet", label: "Wallet", Icon: CurrencyDollarIcon },
+  { to: "/app/checkin", label: "Check-in", Icon: QrcodeIcon },
   { to: "/app/users", label: "Users", Icon: UserIcon },
 ];
 
@@ -142,6 +150,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       <p className="text-sm font-semibold truncate">
                         {event?.title ?? "No event selected"}
                       </p>
+                      {event?.date && (
+                        <p className="text-[11px] text-text/40 dark:text-white/30 truncate">
+                          {formatEventDate(event.date)}
+                          {event.time && ` · ${formatEventTime(event.date, event.time)}`}
+                        </p>
+                      )}
                     </div>
                   )}
                   {!collapsed && (
@@ -158,26 +172,46 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
             {/* Navigation links */}
             <nav className="space-y-0.5">
-              {links.map(({ to, label, Icon, end }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  end={end}
-                  title={label}
-                  onClick={onClose}
-                  className={({ isActive }) =>
-                    `group flex items-center gap-3 ${collapsed ? "justify-center px-2" : "px-3"} py-2.5 rounded-lg transition-colors text-sm
-                     ${
-                       isActive
-                         ? "bg-primary/10 text-primary font-semibold dark:bg-primary/20 dark:text-primary"
-                         : "text-text/70 hover:bg-primary/5 hover:text-text dark:text-white/60 dark:hover:bg-white/5 dark:hover:text-white"
-                     }`
-                  }
-                >
-                  <Icon className="h-5 w-5 flex-shrink-0" />
-                  {!collapsed && <span>{label}</span>}
-                </NavLink>
-              ))}
+              {links.map(({ to, label, Icon, end, sub, external }) =>
+                external ? (
+                  <a
+                    key={to}
+                    href={to}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={label}
+                    onClick={onClose}
+                    className={`group flex items-center gap-3 ${
+                      collapsed ? "justify-center px-2" : sub ? "pl-8 pr-3" : "px-3"
+                    } ${sub ? "py-2" : "py-2.5"} rounded-lg transition-colors ${sub ? "text-xs" : "text-sm"}
+                     text-text/70 hover:bg-primary/5 hover:text-text dark:text-white/60 dark:hover:bg-white/5 dark:hover:text-white`}
+                  >
+                    <Icon className={`${sub ? "h-4 w-4" : "h-5 w-5"} flex-shrink-0`} />
+                    {!collapsed && <span>{label}</span>}
+                  </a>
+                ) : (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    end={end}
+                    title={label}
+                    onClick={onClose}
+                    className={({ isActive }) =>
+                      `group flex items-center gap-3 ${
+                        collapsed ? "justify-center px-2" : sub ? "pl-8 pr-3" : "px-3"
+                      } ${sub ? "py-2" : "py-2.5"} rounded-lg transition-colors ${sub ? "text-xs" : "text-sm"}
+                       ${
+                         isActive
+                           ? "bg-primary/10 text-primary font-semibold dark:bg-primary/20 dark:text-primary"
+                           : "text-text/70 hover:bg-primary/5 hover:text-text dark:text-white/60 dark:hover:bg-white/5 dark:hover:text-white"
+                       }`
+                    }
+                  >
+                    <Icon className={`${sub ? "h-4 w-4" : "h-5 w-5"} flex-shrink-0`} />
+                    {!collapsed && <span>{label}</span>}
+                  </NavLink>
+                )
+              )}
             </nav>
           </div>
 

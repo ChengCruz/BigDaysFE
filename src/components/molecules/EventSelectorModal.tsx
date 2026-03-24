@@ -7,12 +7,14 @@ import {
   UserGroupIcon,
   XIcon,
 } from "@heroicons/react/outline";
+import ClockIcon from "@heroicons/react/outline/ClockIcon";
 import { useEventContext } from "../../context/EventContext";
 import {
   useDeactivateEvent,
   useActivateEvent,
   type Event,
 } from "../../api/hooks/useEventsApi";
+import { formatEventDate, formatEventTime } from "../../utils/eventUtils";
 import { Button } from "../atoms/Button";
 import { EventFormModal } from "./EventFormModal";
 import { CheckCircleIcon } from "@heroicons/react/solid";
@@ -68,8 +70,19 @@ export function EventSelectorModal() {
     ? "Pick an existing celebration or create a new one to continue planning."
     : "Keep everything in sync by switching the active event for tables, RSVPs, and wallet.";
 
+  const firstAvailableEvent = events.find(e => !e?.raw?.isDeleted) ?? events[0];
+  const canClose = !mustChooseEvent || events.length > 0;
+
+  const handleClose = () => {
+    if (mustChooseEvent && firstAvailableEvent) {
+      setEventId(firstAvailableEvent.id);
+    } else {
+      closeSelector();
+    }
+  };
+
   const handleBackdropClick = () => {
-    if (!mustChooseEvent) closeSelector();
+    if (canClose) handleClose();
   };
 
   return (
@@ -135,10 +148,10 @@ export function EventSelectorModal() {
                 <p className="text-sm text-gray-600">Select an event to continue. Everything else stays intact.</p>
               </div>
               <button
-                onClick={closeSelector}
+                onClick={handleClose}
                 className={`p-2 rounded-full border text-gray-500 hover:bg-gray-100 transition disabled:opacity-40 disabled:cursor-not-allowed`}
                 aria-label="Close selector"
-                disabled={mustChooseEvent}
+                disabled={!canClose}
               >
                 <XIcon className="h-5 w-5" />
               </button>
@@ -158,7 +171,8 @@ export function EventSelectorModal() {
                   {events.map((evt) => {
                     const isActive = eventId === evt.id;
                     const isArchived = Boolean(evt?.raw?.isDeleted);
-                    const eventDate = evt.date ? new Date(evt.date).toLocaleDateString() : "Date pending";
+                    const eventDate = formatEventDate(evt.date);
+                    const eventTime = formatEventTime(evt.date, evt.time);
 
                     return (
                       <li
@@ -203,6 +217,12 @@ export function EventSelectorModal() {
                             <div className="flex items-center gap-2">
                               <CalendarIcon className="w-4 h-4" />
                               <span>{eventDate}</span>
+                              {eventTime && (
+                                <>
+                                  <ClockIcon className="w-4 h-4 ml-1" />
+                                  <span>{eventTime}</span>
+                                </>
+                              )}
                             </div>
                             <div className="flex items-center gap-2">
                               <LocationMarkerIcon className="w-4 h-4" />
@@ -214,9 +234,9 @@ export function EventSelectorModal() {
                           )}
                           <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
                             <span className="px-2 py-1 rounded-full bg-accent/70">Tables: {evt.noOfTable ?? "-"}</span>
-                            <span className="px-2 py-1 rounded-full bg-accent/70">
-                              {isArchived ? "Archived plan" : "Live plan"}
-                            </span>
+                            {isArchived && (
+                              <span className="px-2 py-1 rounded-full bg-accent/70">Archived</span>
+                            )}
                           </div>
                         </div>
                         <div className="px-4 pb-4 pt-2 flex flex-wrap gap-2">

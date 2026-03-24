@@ -4,6 +4,9 @@ import type { CheckInErrorCode, CheckInResult } from "../../../types/qr";
 import { Button } from "../../atoms/Button";
 import { ManualCheckInModal } from "../../molecules/ManualCheckInModal";
 import { QrcodeIcon } from "@heroicons/react/solid";
+import { useEventContext } from "../../../context/EventContext";
+import { PageLoader } from "../../atoms/PageLoader";
+import { NoEventsState } from "../../molecules/NoEventsState";
 
 type ScanState =
   | { status: "idle" }
@@ -20,6 +23,7 @@ const errorMessages: Record<CheckInErrorCode | "UNKNOWN", string> = {
 };
 
 export default function CheckInPage() {
+  const { eventId, eventsLoading } = useEventContext();
   const scannerRef = useRef<any>(null);
   const scannerDivId = "qr-reader";
   const [scanState, setScanState] = useState<ScanState>({ status: "idle" });
@@ -27,9 +31,11 @@ export default function CheckInPage() {
   const [cameraActive, setCameraActive] = useState(false);
   const [manualModalOpen, setManualModalOpen] = useState(false);
   const checkIn = useCheckInScanApi();
-
   // Prevent scanning while a request is in flight
   const isProcessing = useRef(false);
+
+  if (eventsLoading) return <PageLoader message="Loading..." />;
+  if (!eventId) return <NoEventsState title="No Event Selected" message="Select or create an event to start checking in guests." />;
 
   useEffect(() => {
     if (!cameraActive) return;

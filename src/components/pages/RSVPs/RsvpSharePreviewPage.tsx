@@ -4,45 +4,55 @@ import { Link, useParams } from "react-router-dom";
 import { FullPagePreview, type FlowPreset, type RsvpBlock } from "./RsvpDesignPage";
 import { Button } from "../../atoms/Button";
 import { Spinner } from "../../atoms/Spinner";
+import client from "../../../api/client";
+import { PublicRsvpEndpoints } from "../../../api/endpoints";
+import type { ApiRsvpDesign } from "../../../types/rsvpDesign";
+import { mapToFrontendDesign } from "../../../utils/rsvpDesignMapper";
 
-type Snapshot = {
+type PreviewData = {
   eventTitle?: string;
-  eventGuid?: string;
-  blocks?: RsvpBlock[];
-  flowPreset?: FlowPreset;
-  global?: {
-    backgroundColor?: string;
-    backgroundAsset?: string;
-    backgroundType?: "color" | "image" | "video";
-    overlay?: number;
-    accentColor?: string;
-  };
+  blocks: RsvpBlock[];
+  flowPreset: FlowPreset;
+  backgroundColor: string;
+  backgroundAsset: string;
+  backgroundType: "color" | "image" | "video";
+  overlay: number;
+  accentColor: string;
 };
 
 export default function RsvpSharePreviewPage() {
   const { token } = useParams<{ token: string }>();
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [preview, setPreview] = useState<PreviewData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!token || typeof window === "undefined") {
+    if (!token) {
       setLoading(false);
       return;
     }
-    const stored = window.localStorage.getItem(`rsvp-share-${token}`);
-    if (stored) {
-      try {
-        setSnapshot(JSON.parse(stored));
-      } catch {
-        setSnapshot(null);
-      }
-    }
-    setLoading(false);
+    client
+      .get(PublicRsvpEndpoints.designByToken(token))
+      .then((res) => {
+        const apiDesign: ApiRsvpDesign = res.data?.data ?? res.data;
+        if (!apiDesign?.design) {
+          setError(true);
+          return;
+        }
+        const mapped = mapToFrontendDesign(apiDesign);
+        setPreview({
+          blocks: (mapped.blocks ?? []) as RsvpBlock[],
+          flowPreset: (mapped.flowPreset ?? "serene") as FlowPreset,
+          backgroundColor: mapped.globalBackgroundColor ?? "#0f172a",
+          backgroundAsset: mapped.globalBackgroundAsset ?? "",
+          backgroundType: (mapped.globalBackgroundType ?? "color") as "color" | "image" | "video",
+          overlay: mapped.globalOverlay ?? 0.3,
+          accentColor: mapped.accentColor ?? "#f97316",
+        });
+      })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
   }, [token]);
-
-  const background = snapshot?.global ?? {};
-  const flowPreset = snapshot?.flowPreset ?? "serene";
-  const submitUrl = token ? `/rsvp/submit/${token}` : null;
 
   if (loading) {
     return (
@@ -52,67 +62,33 @@ export default function RsvpSharePreviewPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-950 to-black px-4 py-10 text-white">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-white/60">
-              Guest preview
-            </p>
-            <h1 className="text-3xl font-bold">
-              {snapshot?.eventTitle ?? "Shared RSVP preview"}
-            </h1>
-            <p className="text-sm text-white/70">
-              This view mirrors the public invite experience generated from the
-              designer.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {submitUrl && (
-              <Link to={submitUrl}>
-                <Button>RSVP Now</Button>
-              </Link>
-            )}
+  if (error || !preview) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white px-4">
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-8 max-w-md text-center">
+          <p className="text-lg font-semibold text-white mb-2">Preview unavailable</p>
+          <p className="text-sm text-white/60">
+            This preview link is invalid or has expired. Ask the host to generate a new preview.
+          </p>
+          <div className="mt-6">
             <Link to="/app/rsvps">
               <Button variant="secondary">Back to RSVPs</Button>
             </Link>
           </div>
         </div>
-
-        {!snapshot?.blocks?.length ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white/80">
-            <p className="text-lg font-semibold text-white">
-              This preview link is empty.
-            </p>
-            <p className="text-sm">
-              Ask the host to regenerate a link from the designer so you can
-              view the invite card.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl">
-            <FullPagePreview
-              blocks={snapshot.blocks}
-              backgroundAsset={background.backgroundAsset ?? ""}
-              backgroundColor={background.backgroundColor ?? "#0f172a"}
-              backgroundType={background.backgroundType ?? "color"}
-              overlay={background.overlay ?? 0.3}
-              accentColor={background.accentColor ?? "#f97316"}
-              flowPreset={flowPreset}
-            />
-          </div>
-        )}
-
-        {submitUrl && (
-          <div className="flex justify-center pt-2 pb-6">
-            <Link to={submitUrl}>
-              <Button className="min-w-[180px]">Submit your RSVP →</Button>
-            </Link>
-          </div>
-        )}
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <FullPagePreview
+      blocks={preview.blocks}
+      backgroundColor={preview.backgroundColor}
+      backgroundAsset={preview.backgroundAsset}
+      backgroundType={preview.backgroundType}
+      overlay={preview.overlay}
+      accentColor={preview.accentColor}
+      flowPreset={preview.flowPreset}
+    />
   );
 }
-
