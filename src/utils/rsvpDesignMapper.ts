@@ -363,7 +363,7 @@ export function mapToBackendPayload(
         const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         const id = guidRegex.test(fc.questionId ?? "") ? fc.questionId
                  : guidRegex.test(fc.id ?? "") ? fc.id
-                 : null;
+                 : undefined;
         return {
           id,
           label: fc.label ?? fc.text,

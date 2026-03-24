@@ -1,13 +1,13 @@
 import { useState } from "react";
 import {
   CalendarIcon,
-  ClockIcon,
   LocationMarkerIcon,
   SparklesIcon,
   SwitchHorizontalIcon,
   UserGroupIcon,
   XIcon,
 } from "@heroicons/react/outline";
+import ClockIcon from "@heroicons/react/outline/ClockIcon";
 import { useEventContext } from "../../context/EventContext";
 import {
   useDeactivateEvent,
