@@ -21,7 +21,7 @@ export const Modal: React.FC<ModalProps> = ({
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-100 p-4">
       <div
         className={
-          "bg-background text-text rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden " +
+          "bg-background text-text rounded-xl shadow-xl max-w-lg w-full max-h-[95vh] flex flex-col overflow-hidden " +
           className
         }
       >
