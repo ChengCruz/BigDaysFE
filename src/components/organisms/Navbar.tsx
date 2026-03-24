@@ -4,6 +4,7 @@ import { useEventContext } from "../../context/EventContext";
 import MenuIcon from "@heroicons/react/outline/MenuIcon";
 import MoonIcon from "@heroicons/react/outline/MoonIcon";
 import SunIcon from "@heroicons/react/outline/SunIcon";
+import { formatEventDate } from "../../utils/eventUtils";
 
 export function Navbar({
   onMenuToggle,
@@ -32,15 +33,19 @@ export function Navbar({
             {event.date && (
               <>
                 <span className="text-text/20 dark:text-white/20">/</span>
-                <span className="text-text/40 dark:text-white/40">
-                  {new Date(event.date).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </span>
+                <span className="text-text/40 dark:text-white/40">{formatEventDate(event.date)}</span>
               </>
             )}
+            {event.time && (() => {
+              const [h, m] = event.time.split(":").map(Number);
+              if (isNaN(h)) return null;
+              const period = h >= 12 ? "PM" : "AM";
+              return (
+                <span className="text-text/40 dark:text-white/40">
+                  · {h % 12 || 12}:{String(m).padStart(2, "0")} {period}
+                </span>
+              );
+            })()}
           </div>
         )}
       </div>

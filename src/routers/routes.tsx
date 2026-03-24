@@ -1,4 +1,5 @@
 // src/routers/AppRoutes.tsx
+import React from "react";
 import { Routes, Route, Navigate, Outlet, useNavigate } from "react-router-dom";
 
 import LandingPage from "../components/pages/Landing/LandingPage";
@@ -6,7 +7,29 @@ import LoginPage from "../components/pages/Auth/LoginPage";
 import RegisterPage from "../components/pages/Auth/RegisterPage";
 import ResetPasswordPage from "../components/pages/Auth/ResetPasswordPage";
 import PublicTemplate from "../components/templates/PublicTemplate";
-import DashboardTemplate from "../components/templates/DashboardTemplate";
+import { Navbar } from "../components/organisms/Navbar";
+import { Sidebar } from "../components/organisms/Sidebar";
+import { EventSelectorModal } from "../components/molecules/EventSelectorModal";
+import { useEventContext } from "../context/EventContext";
+
+function AppLayout() {
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const { isSelectorOpen, mustChooseEvent, events = [] } = useEventContext();
+  const showSelector = isSelectorOpen || (mustChooseEvent && events.length > 0);
+
+  return (
+    <div className="flex h-screen bg-background dark:bg-slate-950 text-text">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="flex flex-col flex-1 min-w-0">
+        <Navbar onMenuToggle={() => setSidebarOpen(o => !o)} />
+        <main className="flex-1 p-6 overflow-auto">
+          <Outlet />
+        </main>
+      </div>
+      {showSelector && <EventSelectorModal />}
+    </div>
+  );
+}
 
 import EventsPage from "../components/pages/Events/EventsPage";
 // import EventFormModal from "../components/molecules/EventFormModal";
@@ -90,7 +113,7 @@ export default function AppRoutes() {
       </Route>
 
       {/* ─── PROTECTED / DASHBOARD ─────────────────────────── */}
-      <Route path="/app" element={<RequireAuth><DashboardTemplate /></RequireAuth>}>
+      <Route path="/app" element={<RequireAuth><AppLayout /></RequireAuth>}>
         <Route index element={<Navigate to="dashboard" replace />} />
 
         {/* DASHBOARD */}
