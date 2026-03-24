@@ -34,6 +34,7 @@ export type RsvpBlock =
       subtitle?: string;
       align: "left" | "center" | "right";
       accent: string; // CSS classes like "text-white"
+      fontFamily?: string;
     })
   | (RsvpBlockBase & {
       type: "text";
@@ -41,6 +42,7 @@ export type RsvpBlock =
       width: "full" | "half"; // String values
       align: "left" | "center" | "right";
       muted?: boolean;
+      fontFamily?: string;
     })
   | (RsvpBlockBase & {
       type: "info";
@@ -127,6 +129,8 @@ export interface RsvpDesign {
   submitButtonColor?: string;
   submitButtonTextColor?: string;
   submitButtonLabel?: string;
+  /** Global font family applied to the whole design canvas */
+  globalFontFamily?: string;
   eventGuid?: string;           // Needed by guest page to fetch form fields
   version?: number;             // Backend-managed version number, needed for publish
   shareToken?: string | null;
@@ -235,6 +239,7 @@ export interface ApiTheme {
   submitButtonColor?: string;
   submitButtonTextColor?: string;
   submitButtonLabel?: string;
+  fontFamily?: string;
 }
 
 export interface ApiLayout {

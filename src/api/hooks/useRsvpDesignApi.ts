@@ -80,9 +80,7 @@ export function useSaveRsvpDesign(eventGuid: string) {
       return response.data;
     },
     onSuccess: () => {
-      // Invalidate and refetch the design data
       qc.invalidateQueries({ queryKey: ["rsvpDesign", eventGuid] });
-      qc.refetchQueries({ queryKey: ["rsvpDesign", eventGuid] });
     },
   });
 }
@@ -104,11 +102,24 @@ export function usePublishRsvpDesign(eventGuid: string) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["rsvpDesign", eventGuid] });
-      qc.refetchQueries({ queryKey: ["rsvpDesign", eventGuid] });
     },
   });
 }
 
+
+/**
+ * Generate a share token for a specific design version (used for preview)
+ */
+export function useGenerateShareToken(eventGuid: string) {
+  return useMutation<string, Error, { version: number }>({
+    mutationFn: async ({ version }) => {
+      const response = await client.post(
+        RsvpDesignEndpoints.shareToken(eventGuid, version)
+      );
+      return response.data?.data ?? response.data;
+    },
+  });
+}
 
 /**
  * Helper hook to check if design has been saved

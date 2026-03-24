@@ -39,7 +39,7 @@ export function DesignToolbar({
           {/* Left: breadcrumb + title */}
           <div className="flex items-center gap-3 min-w-0">
             <Link
-              to="/app/rsvps"
+              to="/app/events"
               className="shrink-0 rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-500 hover:border-gray-300 hover:bg-gray-50 transition"
             >
               ← Back

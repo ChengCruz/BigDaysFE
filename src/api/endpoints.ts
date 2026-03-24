@@ -117,6 +117,7 @@ export const RsvpDesignEndpoints = {
   get: (eventGuid: string) => `/RsvpDesign/${eventGuid}/design`,
   save: (eventGuid: string) => `/RsvpDesign/${eventGuid}/design`,
   publish: (eventGuid: string, version: number) => `/RsvpDesign/${eventGuid}/design/${version}/publish`,
+  shareToken: (eventGuid: string, version: number) => `/RsvpDesign/${eventGuid}/design/${version}/share-token`,
 };
 
 export const DashboardEndpoints = {

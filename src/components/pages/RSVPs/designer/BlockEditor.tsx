@@ -2,6 +2,16 @@
 // Right panel: editor for the currently selected RSVP design block.
 // Structure: Content settings → Background gallery → Spotlight image
 import React, { useState } from "react";
+
+const FONT_OPTIONS: { label: string; value: string }[] = [
+  { label: "Georgia",            value: "Georgia, 'Times New Roman', serif" },
+  { label: "Playfair Display",   value: "'Playfair Display', Georgia, serif" },
+  { label: "Cormorant Garamond", value: "'Cormorant Garamond', Georgia, serif" },
+  { label: "Lato",               value: "Lato, system-ui, sans-serif" },
+  { label: "Montserrat",         value: "Montserrat, system-ui, sans-serif" },
+  { label: "System (Modern)",    value: "system-ui, sans-serif" },
+];
+import { ChevronDownIcon } from "@heroicons/react/outline";
 import type { RsvpBlock } from "../../../../types/rsvpDesign";
 import type { FormFieldConfig } from "../../../../api/hooks/useFormFieldsApi";
 
@@ -54,16 +64,14 @@ const SectionHeader = ({
       <span className="text-xs font-semibold uppercase tracking-widest text-gray-600">{title}</span>
       {note && <span className="text-[10px] text-gray-400">{note}</span>}
     </div>
-    <span
-      className={`text-gray-400 text-sm transition-transform duration-200 ${open ? "rotate-0" : "-rotate-90"}`}
-    >
-      ▾
-    </span>
+    <ChevronDownIcon
+      className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${open ? "rotate-0" : "-rotate-90"}`}
+    />
   </button>
 );
 
 const Field = ({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) => (
-  <div className="space-y-1.5">
+  <div className="flex flex-col gap-1.5">
     <label className="text-xs font-medium text-gray-500">{label}</label>
     {children}
     {hint && <p className="text-[10px] text-gray-400">{hint}</p>}
@@ -104,7 +112,7 @@ const ColorField = ({
 );
 
 const inputCls =
-  "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 transition";
+  "w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 transition";
 
 const BLOCK_TYPE_LABEL: Record<string, string> = {
   headline: "Headline",
@@ -205,20 +213,22 @@ export function BlockEditor({
         {/* ── Headline ── */}
         {block.type === "headline" && (
           <div className="space-y-3">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3">
               <Field label="Title">
-                <input
+                <textarea
                   value={block.title}
                   onChange={(e) => onUpdate(block.id, { title: e.target.value })}
-                  className={inputCls}
+                  className={`${inputCls} resize-none`}
+                  rows={2}
                   placeholder="Welcome to our wedding"
                 />
               </Field>
               <Field label="Subtitle (optional)">
-                <input
+                <textarea
                   value={block.subtitle ?? ""}
                   onChange={(e) => onUpdate(block.id, { subtitle: e.target.value })}
-                  className={inputCls}
+                  className={`${inputCls} resize-none`}
+                  rows={2}
                   placeholder="Save the date…"
                 />
               </Field>
@@ -241,6 +251,23 @@ export function BlockEditor({
                   placeholder="text-white"
                 />
               </Field>
+              <Field label="Font">
+                <select
+                  value={block.fontFamily ?? "Georgia, 'Times New Roman', serif"}
+                  onChange={(e) => onUpdate(block.id, { fontFamily: e.target.value } as Partial<RsvpBlock>)}
+                  className={inputCls}
+                >
+                  {FONT_OPTIONS.map((f) => (
+                    <option key={f.value} value={f.value}>{f.label}</option>
+                  ))}
+                </select>
+                <p
+                  className="text-sm mt-1.5 px-1 text-gray-500 truncate"
+                  style={{ fontFamily: block.fontFamily ?? "Georgia, 'Times New Roman', serif" }}
+                >
+                  The quick brown fox jumps
+                </p>
+              </Field>
             </div>
           </div>
         )}
@@ -252,12 +279,12 @@ export function BlockEditor({
               <textarea
                 value={block.body}
                 onChange={(e) => onUpdate(block.id, { body: e.target.value })}
-                className={inputCls}
-                rows={4}
+                className={`${inputCls} resize-y`}
+                rows={5}
                 placeholder="Tell your story…"
               />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <Field label="Width">
                 <select
                   value={block.width}
@@ -289,13 +316,33 @@ export function BlockEditor({
               />
               <span className="text-sm text-gray-600">Use softer / muted text tone</span>
             </label>
+            <Field label="Font">
+              <select
+                value={block.fontFamily ?? ""}
+                onChange={(e) => onUpdate(block.id, { fontFamily: e.target.value || undefined } as Partial<RsvpBlock>)}
+                className={inputCls}
+              >
+                <option value="">Default (inherited)</option>
+                {FONT_OPTIONS.map((f) => (
+                  <option key={f.value} value={f.value}>{f.label}</option>
+                ))}
+              </select>
+              {block.fontFamily && (
+                <p
+                  className="text-sm mt-1.5 px-1 text-gray-500 truncate"
+                  style={{ fontFamily: block.fontFamily }}
+                >
+                  The quick brown fox jumps
+                </p>
+              )}
+            </Field>
           </div>
         )}
 
         {/* ── Info badge ── */}
         {block.type === "info" && (
           <div className="space-y-3">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3">
               <Field label="Label">
                 <input
                   value={block.label}
@@ -344,14 +391,14 @@ export function BlockEditor({
                 ))}
               </select>
               {block.questionId ? (
-                <p className="text-xs text-emerald-600 mt-1">✓ Linked — input type driven by question definition.</p>
+                <p className="text-xs text-emerald-600 mt-1">✓ Linked to question.</p>
               ) : (
                 <p className="text-xs text-amber-600 mt-1">Select a question to activate this field.</p>
               )}
             </Field>
 
             {/* Field details */}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3">
               <Field label="Label override">
                 <input
                   value={block.label}
@@ -437,7 +484,7 @@ export function BlockEditor({
         {/* ── CTA button ── */}
         {block.type === "cta" && (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3">
               <Field label="Button label">
                 <input
                   value={block.label}
@@ -503,7 +550,7 @@ export function BlockEditor({
         {/* ── Attendance ── */}
         {block.type === "attendance" && (
           <div className="space-y-3">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3">
               <Field label="Title">
                 <input
                   value={block.title ?? ""}
@@ -537,7 +584,7 @@ export function BlockEditor({
         {/* ── Guest details ── */}
         {block.type === "guestDetails" && (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3">
               <Field label="Title">
                 <input
                   value={block.title ?? ""}
@@ -624,7 +671,7 @@ export function BlockEditor({
         {/* ── Image gallery ── */}
         {block.type === "image" && (
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <Field label="Caption (optional)">
                 <input
                   value={block.caption ?? ""}
@@ -688,6 +735,40 @@ export function BlockEditor({
             ) : (
               <p className="text-xs text-gray-400">No images uploaded yet.</p>
             )}
+          </div>
+        )}
+
+        {/* ── Map / Venue ── */}
+        {block.type === "map" && (
+          <div className="space-y-3">
+            <Field
+              label="Address or venue name"
+              hint="Enter a full street address or a well-known landmark — e.g. Mandarin Oriental, Kuala Lumpur. The map updates automatically."
+            >
+              <input
+                value={block.address ?? ""}
+                onChange={(e) => onUpdate(block.id, { address: e.target.value } as Partial<RsvpBlock>)}
+                className={inputCls}
+                placeholder="e.g. Dewan Seri Murni, Kuala Lumpur"
+              />
+            </Field>
+            <Field label="Venue label">
+              <input
+                value={block.mapLabel ?? ""}
+                onChange={(e) => onUpdate(block.id, { mapLabel: e.target.value } as Partial<RsvpBlock>)}
+                className={inputCls}
+                placeholder="Venue"
+              />
+            </Field>
+            <label className="flex cursor-pointer items-center gap-2.5">
+              <input
+                type="checkbox"
+                checked={block.showDirections !== false}
+                onChange={(e) => onUpdate(block.id, { showDirections: e.target.checked } as Partial<RsvpBlock>)}
+                className="h-4 w-4 rounded border-gray-300 text-primary"
+              />
+              <span className="text-sm text-gray-600">Show "Get Directions" link</span>
+            </label>
           </div>
         )}
 

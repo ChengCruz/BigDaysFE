@@ -348,6 +348,7 @@ export function mapToBackendPayload(
         submitButtonColor: frontendDesign.submitButtonColor,
         submitButtonTextColor: frontendDesign.submitButtonTextColor,
         submitButtonLabel: frontendDesign.submitButtonLabel,
+        fontFamily: frontendDesign.globalFontFamily ?? undefined,
       },
       layout: {
         width: 1200, // Default layout width
@@ -358,7 +359,18 @@ export function mapToBackendPayload(
         transformBlockToBackend(block, frontendDesign.accentColor)
       ),
       flowPreset: frontendDesign.flowPreset,
-      formFieldConfigs: frontendDesign.formFieldConfigs,
+      formFieldConfigs: frontendDesign.formFieldConfigs?.map((fc) => {
+        const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const id = guidRegex.test(fc.questionId ?? "") ? fc.questionId
+                 : guidRegex.test(fc.id ?? "") ? fc.id
+                 : null;
+        return {
+          id,
+          label: fc.label ?? fc.text,
+          typeKey: fc.typeKey,
+          required: fc.isRequired ?? false,
+        };
+      }),
     },
     isPublished,
     isDraft,
@@ -394,6 +406,7 @@ export function mapToFrontendDesign(
     submitButtonColor: design.theme.submitButtonColor,
     submitButtonTextColor: design.theme.submitButtonTextColor,
     submitButtonLabel: design.theme.submitButtonLabel,
+    globalFontFamily: design.theme.fontFamily ?? undefined,
     eventGuid,           // Preserved so the guest page can fetch form fields
     version,             // Store backend-managed version for publish endpoint
     shareToken: shareToken ?? null,

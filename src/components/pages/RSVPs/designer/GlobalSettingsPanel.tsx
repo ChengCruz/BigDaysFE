@@ -1,6 +1,6 @@
 // designer/GlobalSettingsPanel.tsx
 // Global design settings: background, accent color, overlay, music, flow preset, submit button.
-import React from "react";
+import React, { useEffect } from "react";
 import type { FlowPreset } from "../../../../types/rsvpDesign";
 
 interface GlobalSettings {
@@ -13,6 +13,7 @@ interface GlobalSettings {
   submitButtonColor: string;
   submitButtonTextColor: string;
   submitButtonLabel: string;
+  globalFontFamily?: string;
 }
 
 interface Props extends GlobalSettings {
@@ -20,6 +21,15 @@ interface Props extends GlobalSettings {
   onUploadBackground: (file: File) => void;
   hasBackgroundAsset: boolean;
 }
+
+const FONT_OPTIONS: { value: string; label: string; googleFont?: string }[] = [
+  { value: "",                                  label: "Georgia (default)" },
+  { value: "'Playfair Display', serif",         label: "Playfair Display",    googleFont: "Playfair+Display:ital,wght@0,400;0,600;1,400" },
+  { value: "'Cormorant Garamond', serif",       label: "Cormorant Garamond",  googleFont: "Cormorant+Garamond:ital,wght@0,400;0,600;1,400" },
+  { value: "'Lato', sans-serif",                label: "Lato",                googleFont: "Lato:wght@400;700" },
+  { value: "'Raleway', sans-serif",             label: "Raleway",             googleFont: "Raleway:wght@400;600;700" },
+  { value: "'Dancing Script', cursive",         label: "Dancing Script",      googleFont: "Dancing+Script:wght@400;700" },
+];
 
 const FLOW_PRESETS: { value: FlowPreset; label: string; desc: string; icon: string }[] = [
   { value: "serene",   label: "Serene",   icon: "✦", desc: "Gentle blur + subtle hover lift" },
@@ -70,16 +80,30 @@ export function GlobalSettingsPanel({
   submitButtonColor,
   submitButtonTextColor,
   submitButtonLabel,
+  globalFontFamily = "",
   onChange,
   onUploadBackground,
   hasBackgroundAsset,
 }: Props) {
+  // Dynamically load Google Font when selection changes
+  useEffect(() => {
+    const option = FONT_OPTIONS.find((f) => f.value === globalFontFamily);
+    if (!option?.googleFont) return;
+    const id = `gfont-${option.googleFont}`;
+    if (document.getElementById(id)) return;
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=${option.googleFont}&display=swap`;
+    document.head.appendChild(link);
+  }, [globalFontFamily]);
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       {/* Header */}
       <div className="border-b border-gray-100 bg-gray-50 px-5 py-3.5">
         <h3 className="text-sm font-bold text-gray-800">Global settings</h3>
-        <p className="text-xs text-gray-400 mt-0.5">Background, colors, buttons, and music</p>
+        <p className="text-xs text-gray-400 mt-0.5">Background, colors, and buttons</p>
       </div>
 
       <div className="space-y-5 p-5">
@@ -160,6 +184,30 @@ export function GlobalSettingsPanel({
           <p className="text-xs text-gray-400">Used for highlights and any button without a custom color.</p>
         </div>
 
+        {/* ── Font family ── */}
+        <div className="space-y-2">
+          <SectionTitle>Font family</SectionTitle>
+          <div className="space-y-1.5">
+            {FONT_OPTIONS.map(({ value, label }) => (
+              <button
+                key={value || "__default__"}
+                type="button"
+                onClick={() => onChange({ globalFontFamily: value })}
+                className={`w-full rounded-xl border px-4 py-2.5 text-left transition ${
+                  globalFontFamily === value
+                    ? "border-primary bg-primary/5 text-primary shadow-sm"
+                    : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                <span className="text-sm font-semibold" style={{ fontFamily: value || "Georgia, 'Times New Roman', serif" }}>
+                  {label}
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400">Applies to all text in the design canvas.</p>
+        </div>
+
         {/* ── Submit button ── */}
         <div className="space-y-3">
           <SectionTitle>Submit button</SectionTitle>
@@ -232,7 +280,7 @@ export function GlobalSettingsPanel({
           </div>
         </div>
 
-        {/* ── Ambient music ── */}
+        {/* ── Ambient music — hidden for now, to be implemented later ──
         <div className="space-y-2">
           <SectionTitle>Ambient music</SectionTitle>
           <input
@@ -244,6 +292,7 @@ export function GlobalSettingsPanel({
           />
           <p className="text-xs text-gray-400">Direct link to .mp3/.ogg — guests see a floating play button.</p>
         </div>
+        ── */}
 
       </div>
     </div>
