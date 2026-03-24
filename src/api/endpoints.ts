@@ -101,7 +101,7 @@ export const FormFieldsEndpoints = {
   update: () => `/question/Update`,
   activate: () => `/question/Activate`,
   deactivate: () => `/question/Deactivate`,
-  delete: (eventId: string, id: string) => `/events/${eventId}/rsvp-form-fields/${id}`,
+  delete: () => `/question/Delete`,
 };
 
 export const PublicRsvpEndpoints = {

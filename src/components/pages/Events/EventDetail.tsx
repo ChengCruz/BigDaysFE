@@ -12,6 +12,7 @@ import { FieldBuilderModal } from "../../molecules/FieldBuilderModal";
 import { useRsvpsApi } from "../../../api/hooks/useRsvpsApi";
 import { useAuth } from "../../../api/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
+import { ShareWithGuestsCard } from "../../molecules/ShareWithGuestsCard";
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -100,6 +101,10 @@ const [impOpen, setImpOpen] = useState(false);
          }}
        />
      </section>
+
+      <section className="mt-6">
+        <ShareWithGuestsCard eventId={id!} />
+      </section>
     </div>
   );
 }

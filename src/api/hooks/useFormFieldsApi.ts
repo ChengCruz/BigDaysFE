@@ -36,6 +36,7 @@ export function useFormFields(eventId?: string, options?: { enabled?: boolean })
   return useQuery({
     queryKey: ["formFields", eventId],
     enabled: !!eventId && (options?.enabled ?? true),
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       if (!eventId) return [] as FormFieldConfig[];
 

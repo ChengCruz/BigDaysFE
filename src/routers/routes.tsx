@@ -93,6 +93,7 @@ export default function AppRoutes() {
       {/* ─── STANDALONE PUBLIC (no navbar/footer) ───────── */}
       <Route path="/rsvp/submit/:token" element={<RSVPPublicPage />} />
       <Route path="/rsvp/:slug" element={<RsvpBySlugPage />} />
+      <Route path="/rsvp/share/:token" element={<RsvpSharePreviewPage />} />
 
       {/* ─── PUBLIC ───────────────────────────────────────── */}
       <Route element={<PublicTemplate />}>
@@ -105,8 +106,6 @@ export default function AppRoutes() {
         {/* public landing pages */}
         <Route path="/events" element={<EventPublicPage />} />
         <Route path="/rsvp" element={<RSVPPublicPage />} />
-        {/* Admin read-only preview page */}
-        <Route path="/rsvp/share/:token" element={<RsvpSharePreviewPage />} />
         {/* Guest self-service QR lookup */}
         <Route path="/qr/lookup/:eventId" element={<QrLookupPage />} />
         {/* … other public pages … */}
@@ -129,6 +128,9 @@ export default function AppRoutes() {
           <Route path=":id/edit" element={<EditEventModal />} />
           <Route path=":id/form-fields" element={<FormFieldsPage />} />
         </Route>
+
+        {/* RSVP QUESTIONS (sidebar sub-link, uses current event from context) */}
+        <Route path="form-fields" element={<FormFieldsPage />} />
 
         {/* RSVPs (no :eventId in the URL) */}
         <Route path="rsvps" element={<Outlet />}>
