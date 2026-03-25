@@ -13,6 +13,13 @@ import { useRsvpDesign, useSaveRsvpDesign } from "../../../api/hooks/useRsvpDesi
 import { FullPagePreview } from "./RsvpDesignPage";
 import { useUploadMedia } from "../../../api/hooks/useMediaApi";
 import type { RsvpBlock, RsvpDesign, FlowPreset } from "../../../types/rsvpDesign";
+import {
+  saveImageToCache,
+  getImageFromCache,
+  getCachedImagesByEvent,
+  removeCachedImage,
+  cleanupExpiredImages,
+} from "../../../utils/designImageCache";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { PageLoader } from "../../atoms/PageLoader";
 import { BlockEditor } from "./designer/BlockEditor";
@@ -800,7 +807,9 @@ export default function RsvpDesignV2Page() {
   const [presetsOpen, setPresetsOpen]     = useState(true);
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
-  const objectUrlRefs = useRef<string[]>([]);
+  const [isUploadingForSave, setIsUploadingForSave] = useState(false);
+  // Tracks the cache ID of a pending global background image (blob URL not yet on CDN).
+  const globalBgCacheIdRef = useRef<string | null>(null);
 
   const availableQuestions = useMemo<FormFieldConfig[]>(
     () => serverFormFields.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
@@ -812,11 +821,8 @@ export default function RsvpDesignV2Page() {
     [blocks, selectedId]
   );
 
-  // Revoke object URLs on unmount
-  useEffect(
-    () => () => objectUrlRefs.current.forEach((u) => URL.revokeObjectURL(u)),
-    []
-  );
+  // Sweep stale cache entries on mount (silent background cleanup)
+  useEffect(() => { cleanupExpiredImages(7).catch(() => {}); }, []);
 
   // Sync version from save response
   useEffect(() => {
@@ -828,7 +834,53 @@ export default function RsvpDesignV2Page() {
   useEffect(() => {
     if (isLoadingDesign || isDesignLoaded) return;
     if (savedDesign?.blocks?.length) {
-      setBlocks(sanitizeBlocks(savedDesign.blocks));
+      const loaded = sanitizeBlocks(savedDesign.blocks);
+      setBlocks(loaded);
+
+      // Restore any block images that are still in the local cache
+      // (e.g., a previous session uploaded some but not all images before refresh).
+      if (eventId) {
+        getCachedImagesByEvent(eventId)
+          .then((cached) => {
+            if (!cached.length) return;
+            const cacheMap = new Map(cached.map((c) => [c.id, c]));
+            setBlocks((prev) => {
+              let changed = false;
+              const next = prev.map((b) => {
+                const patchedSectionImage =
+                  b.sectionImage && !b.sectionImage.src && cacheMap.has(b.sectionImage.id)
+                    ? { ...b.sectionImage, src: URL.createObjectURL(cacheMap.get(b.sectionImage.id)!.file) }
+                    : b.sectionImage;
+                const patchedBgImages = b.background?.images.map((img) =>
+                  !img.src && cacheMap.has(img.id)
+                    ? { ...img, src: URL.createObjectURL(cacheMap.get(img.id)!.file) }
+                    : img
+                ) ?? [];
+                const patchedImages =
+                  b.type === "image"
+                    ? b.images.map((img) =>
+                        !img.src && cacheMap.has(img.id)
+                          ? { ...img, src: URL.createObjectURL(cacheMap.get(img.id)!.file) }
+                          : img
+                      )
+                    : undefined;
+                const didChange =
+                  patchedSectionImage !== b.sectionImage ||
+                  patchedBgImages.some((img, i) => img !== b.background?.images[i]) ||
+                  (patchedImages && patchedImages.some((img, i) => img !== (b as any).images?.[i]));
+                if (didChange) changed = true;
+                return {
+                  ...b,
+                  sectionImage: patchedSectionImage,
+                  background: b.background ? { ...b.background, images: patchedBgImages } : b.background,
+                  ...(patchedImages ? { images: patchedImages } : {}),
+                } as RsvpBlock;
+              });
+              return changed ? next : prev;
+            });
+          })
+          .catch(() => {});
+      }
       if (savedDesign.globalBackgroundType)  setGlobalBackgroundType(savedDesign.globalBackgroundType);
       if (savedDesign.globalBackgroundAsset && !isBlob(savedDesign.globalBackgroundAsset)) setGlobalBackgroundAsset(savedDesign.globalBackgroundAsset);
       if (savedDesign.globalBackgroundColor) setGlobalBackgroundColor(savedDesign.globalBackgroundColor);
@@ -895,47 +947,12 @@ export default function RsvpDesignV2Page() {
         : {}),
     })) as RsvpBlock[];
 
-  const toImageAsset = (file: File) => {
-    const url = URL.createObjectURL(file);
-    objectUrlRefs.current.push(url);
-    return { id: uid(), src: url, alt: file.name };
-  };
-
-  // After BE confirms upload, swap the temporary blob URL with the real CDN URL.
-  const replaceBlobSrc = (assetId: string, realUrl: string, blobUrl: string) => {
-    setBlocks((prev) =>
-      prev.map((b) => {
-        const hasSectionImg = b.sectionImage?.id === assetId;
-        const hasBgImg = b.background?.images?.some((img) => img.id === assetId) ?? false;
-        const hasBlockImg = b.type === "image" && b.images.some((img) => img.id === assetId);
-        if (!hasSectionImg && !hasBgImg && !hasBlockImg) return b;
-        return {
-          ...b,
-          ...(hasSectionImg ? { sectionImage: { ...b.sectionImage!, src: realUrl } } : {}),
-          ...(hasBgImg
-            ? { background: { ...b.background!, images: b.background!.images.map((img) => img.id === assetId ? { ...img, src: realUrl } : img) } }
-            : {}),
-          ...(hasBlockImg && b.type === "image"
-            ? { images: b.images.map((img) => img.id === assetId ? { ...img, src: realUrl } : img) }
-            : {}),
-        } as RsvpBlock;
-      })
-    );
-    const idx = objectUrlRefs.current.indexOf(blobUrl);
-    if (idx !== -1) { URL.revokeObjectURL(blobUrl); objectUrlRefs.current.splice(idx, 1); }
-  };
-
-  // Fire-and-forget: upload a file, then replace the blob URL once BE responds.
-  // Silently falls back to blob URL if BE endpoint is not yet available.
-  const uploadAssetAsync = (asset: { id: string; src: string }, file: File) => {
-    if (!eventId) return;
-    uploadMedia({ file, eventGuid: eventId })
-      .then((result) => {
-        if (isValidSrc(result?.url)) {
-          replaceBlobSrc(asset.id, result.url, asset.src);
-        }
-      })
-      .catch(() => { /* keep blob URL as session-only fallback */ });
+  // Creates an image asset entry: saves the file to IndexedDB and returns a blob URL
+  // for immediate preview. The file is uploaded to CDN only when Save Design is clicked.
+  const toImageAsset = async (file: File) => {
+    const id = uid();
+    const blobUrl = await saveImageToCache(id, file, eventId ?? "");
+    return { id, src: blobUrl, alt: file.name };
   };
 
 
@@ -1042,25 +1059,19 @@ export default function RsvpDesignV2Page() {
   };
 
   // ── Image operations ──────────────────────────────────────────────────────
-  const handleBackgroundUpload = (file: File) => {
-    const blobUrl = URL.createObjectURL(file);
-    objectUrlRefs.current.push(blobUrl);
-    setGlobalBackgroundAsset(blobUrl);
-    if (eventId) {
-      uploadMedia({ file, eventGuid: eventId })
-        .then((result) => {
-          if (isValidSrc(result?.url)) {
-            setGlobalBackgroundAsset((current) => (current === blobUrl ? result.url : current));
-            const idx = objectUrlRefs.current.indexOf(blobUrl);
-            if (idx !== -1) { URL.revokeObjectURL(blobUrl); objectUrlRefs.current.splice(idx, 1); }
-          }
-        })
-        .catch(() => {});
+  const handleBackgroundUpload = async (file: File) => {
+    const id = uid();
+    const blobUrl = await saveImageToCache(id, file, eventId ?? "");
+    // Evict any previous pending global background from cache
+    if (globalBgCacheIdRef.current) {
+      removeCachedImage(globalBgCacheIdRef.current).catch(() => {});
     }
+    globalBgCacheIdRef.current = id;
+    setGlobalBackgroundAsset(blobUrl);
   };
 
-  const handleImageUploadBlock = (files: FileList) => {
-    const gallery = Array.from(files).map(toImageAsset);
+  const handleImageUploadBlock = async (files: FileList) => {
+    const gallery = await Promise.all(Array.from(files).map(toImageAsset));
     const block: RsvpBlock = {
       id: uid(), type: "image",
       images: gallery, activeImageId: gallery[0]?.id,
@@ -1069,11 +1080,10 @@ export default function RsvpDesignV2Page() {
     };
     setBlocks((prev) => [...prev, block]);
     setSelectedId(block.id);
-    Array.from(files).forEach((file, i) => uploadAssetAsync(gallery[i], file));
   };
 
-  const addBackgroundImagesToBlock = (blockId: string, files: FileList) => {
-    const gallery = Array.from(files).map(toImageAsset);
+  const addBackgroundImagesToBlock = async (blockId: string, files: FileList) => {
+    const gallery = await Promise.all(Array.from(files).map(toImageAsset));
     setBlocks((prev) =>
       prev.map((b) => {
         if (b.id !== blockId) return b;
@@ -1089,7 +1099,6 @@ export default function RsvpDesignV2Page() {
         } as RsvpBlock;
       })
     );
-    Array.from(files).forEach((file, i) => uploadAssetAsync(gallery[i], file));
   };
 
   const setActiveBackgroundForBlock = (blockId: string, imageId: string) =>
@@ -1127,12 +1136,11 @@ export default function RsvpDesignV2Page() {
       )
     );
 
-  const setSectionImageForBlock = (blockId: string, file: File) => {
-    const asset = toImageAsset(file);
+  const setSectionImageForBlock = async (blockId: string, file: File) => {
+    const asset = await toImageAsset(file);
     setBlocks((prev) =>
       prev.map((b) => (b.id === blockId ? { ...b, sectionImage: asset } : b))
     );
-    uploadAssetAsync(asset, file);
   };
 
   const clearSectionImage = (blockId: string) =>
@@ -1140,19 +1148,18 @@ export default function RsvpDesignV2Page() {
       prev.map((b) => (b.id === blockId ? { ...b, sectionImage: null } : b))
     );
 
-  const replaceImageForBlock = (blockId: string, file: File) => {
-    const asset = toImageAsset(file);
+  const replaceImageForBlock = async (blockId: string, file: File) => {
+    const asset = await toImageAsset(file);
     setBlocks((prev) =>
       prev.map((b) => {
         if (b.id !== blockId || b.type !== "image") return b;
         return { ...b, images: [asset, ...b.images], activeImageId: asset.id };
       })
     );
-    uploadAssetAsync(asset, file);
   };
 
-  const appendImagesToBlock = (blockId: string, files: FileList) => {
-    const newAssets = Array.from(files).map(toImageAsset);
+  const appendImagesToBlock = async (blockId: string, files: FileList) => {
+    const newAssets = await Promise.all(Array.from(files).map(toImageAsset));
     setBlocks((prev) =>
       prev.map((b) => {
         if (b.id !== blockId || b.type !== "image") return b;
@@ -1160,24 +1167,100 @@ export default function RsvpDesignV2Page() {
         return { ...b, images: nextImages, activeImageId: b.activeImageId ?? nextImages[0]?.id };
       })
     );
-    Array.from(files).forEach((file, i) => uploadAssetAsync(newAssets[i], file));
   };
 
   // ── Save / preview ────────────────────────────────────────────────────────
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!eventId) return;
-    const currentDesign: RsvpDesign = {
-      blocks: sanitizeBlocks(blocks), flowPreset,
-      globalBackgroundType, globalBackgroundAsset: isBlob(globalBackgroundAsset) ? "" : globalBackgroundAsset, globalBackgroundColor,
-      globalOverlay, accentColor,
-      globalMusicUrl: globalMusicUrl || undefined,
-      submitButtonColor: submitButtonColor || undefined,
-      submitButtonTextColor: submitButtonTextColor || undefined,
-      submitButtonLabel: submitButtonLabel || undefined,
-      globalFontFamily: globalFontFamily || undefined,
-      formFieldConfigs: availableQuestions,
-    };
-    saveDesign({ design: currentDesign, isPublished: false, isDraft: true });
+    setIsUploadingForSave(true);
+    try {
+      // --- Collect all block images that are still blobs (pending upload) ---
+      const allBlobAssets: { id: string }[] = [];
+      for (const b of blocks) {
+        if (b.sectionImage && isBlob(b.sectionImage.src)) allBlobAssets.push(b.sectionImage);
+        for (const img of b.background?.images ?? []) {
+          if (isBlob(img.src)) allBlobAssets.push(img);
+        }
+        if (b.type === "image") {
+          for (const img of b.images) {
+            if (isBlob(img.src)) allBlobAssets.push(img);
+          }
+        }
+      }
+
+      // --- Upload each cached image; build id→cdnUrl swap map ---
+      const urlSwaps: Record<string, string> = {};
+      await Promise.all(
+        allBlobAssets.map(async ({ id }) => {
+          const cached = await getImageFromCache(id);
+          if (!cached) return;
+          try {
+            const result = await uploadMedia({ file: cached.file, eventGuid: eventId });
+            if (isValidSrc(result?.url)) {
+              urlSwaps[id] = result.url;
+              await removeCachedImage(id);
+            }
+          } catch {
+            // Leave blob URL; sanitizeBlocks will strip it so save still succeeds.
+          }
+        })
+      );
+
+      // --- Apply CDN URL swaps to blocks ---
+      const swappedBlocks: RsvpBlock[] = blocks.map((b) => ({
+        ...b,
+        ...(b.sectionImage && urlSwaps[b.sectionImage.id]
+          ? { sectionImage: { ...b.sectionImage, src: urlSwaps[b.sectionImage.id] } }
+          : {}),
+        background: b.background
+          ? {
+              ...b.background,
+              images: b.background.images.map((img) =>
+                urlSwaps[img.id] ? { ...img, src: urlSwaps[img.id] } : img
+              ),
+            }
+          : b.background,
+        ...(b.type === "image"
+          ? { images: b.images.map((img) => (urlSwaps[img.id] ? { ...img, src: urlSwaps[img.id] } : img)) }
+          : {}),
+      })) as RsvpBlock[];
+
+      // Update React state so UI immediately shows CDN URLs instead of blobs
+      if (Object.keys(urlSwaps).length > 0) setBlocks(swappedBlocks);
+
+      // --- Upload global background if it's still a cached blob ---
+      let resolvedBgAsset = globalBackgroundAsset;
+      if (isBlob(globalBackgroundAsset) && globalBgCacheIdRef.current) {
+        const cached = await getImageFromCache(globalBgCacheIdRef.current);
+        if (cached) {
+          try {
+            const result = await uploadMedia({ file: cached.file, eventGuid: eventId });
+            if (isValidSrc(result?.url)) {
+              resolvedBgAsset = result.url;
+              setGlobalBackgroundAsset(result.url);
+              await removeCachedImage(globalBgCacheIdRef.current);
+              globalBgCacheIdRef.current = null;
+            }
+          } catch {}
+        }
+      }
+
+      // --- Persist design ---
+      const currentDesign: RsvpDesign = {
+        blocks: sanitizeBlocks(swappedBlocks), flowPreset,
+        globalBackgroundType, globalBackgroundAsset: isBlob(resolvedBgAsset) ? "" : resolvedBgAsset, globalBackgroundColor,
+        globalOverlay, accentColor,
+        globalMusicUrl: globalMusicUrl || undefined,
+        submitButtonColor: submitButtonColor || undefined,
+        submitButtonTextColor: submitButtonTextColor || undefined,
+        submitButtonLabel: submitButtonLabel || undefined,
+        globalFontFamily: globalFontFamily || undefined,
+        formFieldConfigs: availableQuestions,
+      };
+      saveDesign({ design: currentDesign, isPublished: false, isDraft: true });
+    } finally {
+      setIsUploadingForSave(false);
+    }
   };
 
   const [showPreview, setShowPreview] = useState(false);
@@ -1271,12 +1354,12 @@ export default function RsvpDesignV2Page() {
             <Spinner /> Loading…
           </span>
         )}
-        {isSaveSuccess && !isSaving && (
+        {isSaveSuccess && !isSaving && !isUploadingForSave && (
           <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-100">
             ✓ Saved
           </span>
         )}
-        {!isSaveSuccess && !isSaving && !isLoadingDesign && (
+        {!isSaveSuccess && !isSaving && !isUploadingForSave && !isLoadingDesign && (
           <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100 font-semibold">
             Draft
           </span>
@@ -1293,10 +1376,10 @@ export default function RsvpDesignV2Page() {
         {/* Save */}
         <button
           onClick={handleSave}
-          disabled={isSaving || isLoadingDesign}
+          disabled={isSaving || isUploadingForSave || isLoadingDesign}
           className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 transition shadow-sm"
         >
-          {isSaving ? <><Spinner />&nbsp;Saving…</> : "Save design"}
+          {isSaving || isUploadingForSave ? <><Spinner />&nbsp;Saving…</> : "Save design"}
         </button>
       </header>
 
