@@ -1,45 +1,43 @@
 // src/components/pages/Events/FormFieldsPage.tsx
 import { PageLoader } from "../../atoms/PageLoader";
-import { ErrorState } from "../../atoms/ErrorState";
 import { useMemo, useState } from "react";
 import {
   useFormFields,
   useCreateFormField,
   useUpdateFormField,
-  useActivateFormField,
-  useDeactivateFormField,
   useDeleteFormField,
   type FormFieldConfig,
+  type QuestionPayload,
 } from "../../../api/hooks/useFormFieldsApi";
 import { Button } from "../../atoms/Button";
 import { FormFieldModal } from "../../molecules/FormFieldModal";
-import { QuestionTemplateModal } from "../../molecules/QuestionTemplateModal";
-import { useParams, useNavigate } from "react-router-dom";
+import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
+import { useParams } from "react-router-dom";
 import { NoEventsState } from "../../molecules/NoEventsState";
-import { useEventContext } from "../../../context/EventContext";
-import { ArrowLeftIcon, PencilAltIcon, TrashIcon, CheckCircleIcon, BanIcon } from "@heroicons/react/solid";
-import { TYPE_LABELS } from "../../molecules/FormFieldModal";
-import type { QuestionTemplate } from "../../../utils/formFieldTemplates";
 
 export default function FormFieldsPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { eventsLoading, event } = useEventContext()!;
-  const eventId = id ?? event?.id ?? "";
+  const eventId = id ?? "";
   const { data: fieldsRaw, isLoading, isError } = useFormFields(eventId);
   const createField = useCreateFormField();
   const updateField = useUpdateFormField();
-  const activateField = useActivateFormField(eventId);
-  const deactivateField = useDeactivateFormField(eventId);
-  const deleteField = useDeleteFormField(eventId);
+  const deleteField = useDeleteFormField();
 
   const [modal, setModal] = useState<{
     open: boolean;
     initial?: FormFieldConfig & { questionId: string };
   }>({ open: false });
-  const [templateModalOpen, setTemplateModalOpen] = useState(false);
-  const [addingTemplates, setAddingTemplates] = useState(false);
+
+  const [editWarning, setEditWarning] = useState<{
+    open: boolean;
+    field?: FormFieldConfig & { questionId: string };
+  }>({ open: false });
+
+  const [deleteWarning, setDeleteWarning] = useState<{
+    open: boolean;
+    field?: FormFieldConfig;
+  }>({ open: false });
 
   // Always work with an array
   const fields = useMemo<FormFieldConfig[]>(
@@ -48,162 +46,128 @@ export default function FormFieldsPage() {
   );
 
   // ─── Early returns AFTER all hooks ─────────────────────────────────────────
-  if (eventsLoading) return <PageLoader message="Loading..." />;
-  if (!eventId) return <NoEventsState title="No Event Selected" message="Create your first event to start customizing your RSVP form questions." />;
+
+  // Show "no events" state if no event ID exists (check BEFORE loading state)
+  if (!eventId) return <NoEventsState title="No Event Selected" message="Create your first event to start customizing your RSVP form fields." />;
+
   if (isLoading) return <PageLoader />;
-  if (isError) return <ErrorState message="Failed to load questions." onRetry={() => window.location.reload()} />;
+  if (isError) return <p>Failed to load form fields.</p>;
 
   return (
     <>
-      {/* ─── Header ───────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 mb-1">
-        <button
-          onClick={() => navigate("/app/events")}
-          className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-        >
-          <ArrowLeftIcon className="w-4 h-4" />
-          Back to Events
-        </button>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-semibold">Custom RSVP Fields</h2>
+        <Button onClick={() => setModal({ open: true })}>+ New Field</Button>
       </div>
 
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-semibold">RSVP Questions</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Customize the questions guests answer when submitting an RSVP.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setTemplateModalOpen(true)}>
-            Add from Template
-          </Button>
-          <Button onClick={() => setModal({ open: true })}>+ New Question</Button>
-        </div>
-      </div>
-
-      {/* ─── List ─────────────────────────────────────────────────────────────── */}
       {fields.length === 0 ? (
         <div className="text-center text-gray-500 py-10 bg-white dark:bg-gray-800 rounded-lg shadow">
-          <p className="font-medium">No questions yet.</p>
-          <p className="mt-1 text-sm">Click <span className="font-semibold">"+ New Question"</span> to add one.</p>
+          <p>No custom fields yet.</p>
+          <p className="mt-2">
+            Click <span className="font-semibold">“+ New Field”</span> to add
+            one.
+          </p>
         </div>
       ) : (
         <ul className="space-y-2">
-          {fields.map((f) => {
-            const typeLabel = f.typeKey ? TYPE_LABELS[f.typeKey] : String(f.type ?? "");
-            return (
-              <li
-                key={f.questionId ?? f.id}
-                className="px-5 py-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm flex justify-between items-center gap-4"
-              >
-                <div className="min-w-0">
-                  <p className="font-medium truncate">{f.label ?? f.text}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
-                      {typeLabel}
-                    </span>
-                    {f.isRequired && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300">
-                        Required
-                      </span>
-                    )}
-                    <span className="text-xs text-gray-400">Order: {f.order ?? 0}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {/* Status pill toggle */}
-                  <button
-                    onClick={() => {
-                      if (!f.questionId) return;
-                      const payload = { eventId, questionId: f.questionId, isActive: !f.isActive };
-                      f.isActive
-                        ? deactivateField.mutate({ ...payload, isActive: false })
-                        : activateField.mutate({ ...payload, isActive: true });
-                    }}
-                    title={f.isActive ? "Click to deactivate" : "Click to activate"}
-                    className={`group inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold border transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 ${
-                      f.isActive
-                        ? "bg-green-50 text-green-700 border-green-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:ring-green-300 dark:bg-green-900/20 dark:text-green-400 dark:border-green-700 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-700"
-                        : "bg-gray-100 text-gray-500 border-gray-200 hover:bg-green-50 hover:text-green-700 hover:border-green-200 focus:ring-gray-300 dark:bg-gray-700/60 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-green-900/20 dark:hover:text-green-400 dark:hover:border-green-700"
-                    }`}
-                  >
-                    {f.isActive ? (
-                      <>
-                        <CheckCircleIcon className="w-3.5 h-3.5 group-hover:hidden" />
-                        <BanIcon className="w-3.5 h-3.5 hidden group-hover:block" />
-                        <span className="group-hover:hidden">Active</span>
-                        <span className="hidden group-hover:inline">Deactivate</span>
-                      </>
-                    ) : (
-                      <>
-                        <BanIcon className="w-3.5 h-3.5 group-hover:hidden" />
-                        <CheckCircleIcon className="w-3.5 h-3.5 hidden group-hover:block" />
-                        <span className="group-hover:hidden">Inactive</span>
-                        <span className="hidden group-hover:inline">Activate</span>
-                      </>
-                    )}
-                  </button>
-
-                  <span className="w-px h-5 bg-gray-200 dark:bg-white/10" />
-
-                  {/* Edit icon button */}
-                  <button
-                    onClick={() =>
-                      setModal({
-                        open: true,
-                        initial: f as FormFieldConfig & { questionId: string },
-                      })
+          {fields.map((f) => (
+            <li
+              key={f.questionId ?? f.id}
+              className="p-4 bg-white dark:bg-gray-800 rounded-lg flex justify-between items-center"
+            >
+              <div>
+                <p className="font-medium">{f.label ?? f.text}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {(typeof f.type === "number" ? f.type : f.typeKey ?? String(f.type))} {f.isRequired && "· required"}
+                </p>
+              </div>
+              <div className="space-x-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    const field = f as FormFieldConfig & { questionId: string };
+                    if (f.hasExistingAnswers) {
+                      setEditWarning({ open: true, field });
+                    } else {
+                      setModal({ open: true, initial: field });
                     }
-                    title="Edit"
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:text-indigo-400 dark:hover:bg-indigo-900/20 transition focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-1"
-                  >
-                    <PencilAltIcon className="w-4 h-4" />
-                  </button>
-
-                  {/* Delete icon button */}
-                  <button
-                    onClick={() => {
-                      if (!f.questionId) return;
-                      deleteField.mutate({ eventId, questionId: f.questionId, isActive: false });
-                    }}
-                    title="Delete"
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/20 transition focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                  </button>
-                </div>
-              </li>
-            );
-          })}
+                  }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    if (f.questionId) {
+                      if (f.hasExistingAnswers) {
+                        setDeleteWarning({ open: true, field: f });
+                      } else {
+                        deleteField.mutate();
+                      }
+                    }
+                  }}
+                >
+                  Delete
+                </Button>
+              </div>
+            </li>
+          ))}
         </ul>
       )}
 
-      {/* ─── Template Picker Modal ──────────────────────────────────────────── */}
-      <QuestionTemplateModal
-        isOpen={templateModalOpen}
-        isLoading={addingTemplates}
-        onClose={() => setTemplateModalOpen(false)}
-        onAdd={async (selected: QuestionTemplate[]) => {
-          if (!eventId) return;
-          setAddingTemplates(true);
-          const maxOrder = fields.reduce((max, f) => Math.max(max, f.order ?? 0), 0);
-          for (let i = 0; i < selected.length; i++) {
-            const tpl = selected[i];
-            await createField.mutateAsync({
-              eventGuid: eventId,
-              text: tpl.text,
-              type: tpl.type,
-              isRequired: tpl.isRequired,
-              options: tpl.options ?? "",
-              order: maxOrder + i + 1,
-            });
-          }
-          setAddingTemplates(false);
-          setTemplateModalOpen(false);
-        }}
-      />
+      {/* Edit warning — shown when a question already has answers */}
+      {editWarning.open && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6 text-amber-600 dark:text-amber-400">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Edit question with existing responses?</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Guests have already answered this question. Editing it will not affect their existing responses, which were saved at the time of submission.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700 flex gap-3">
+              <Button variant="secondary" className="flex-1" onClick={() => setEditWarning({ open: false })}>
+                Cancel
+              </Button>
+              <Button className="flex-1" onClick={() => {
+                const field = editWarning.field!;
+                setEditWarning({ open: false });
+                setModal({ open: true, initial: field });
+              }}>
+                Continue Editing
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* ─── Modal ────────────────────────────────────────────────────────────── */}
+      {/* Delete warning — shown when a question already has answers */}
+      <DeleteConfirmationModal
+        isOpen={deleteWarning.open}
+        isDeleting={deleteField.isPending}
+        title="Delete question with existing responses?"
+        description="Guests have already answered this question. Their responses will be preserved even after deletion."
+        confirmLabel="Delete Anyway"
+        onCancel={() => setDeleteWarning({ open: false })}
+        onConfirm={() => {
+          deleteField.mutate();
+          setDeleteWarning({ open: false });
+        }}
+      >
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          Are you sure you want to delete <span className="font-medium">"{deleteWarning.field?.label ?? deleteWarning.field?.text}"</span>?
+        </p>
+      </DeleteConfirmationModal>
+
       {modal.open && (
         <FormFieldModal
           isOpen={modal.open}
@@ -225,25 +189,24 @@ export default function FormFieldsPage() {
           onSave={(dto) => {
             if (!eventId) return;
 
+            // Build the payload the API expects (QuestionDto shape)
+            const payload: QuestionPayload = {
+              text: dto.text ?? "",
+              type: dto.type,
+              isRequired: dto.isRequired,
+              options: dto.options ?? "",
+              eventGuid: eventId,
+            };
+
             if (modal.initial?.questionId) {
+              // update expects an id; map from questionId
               updateField.mutate({
-                questionId: modal.initial.questionId,
-                eventGuid: eventId,
-                text: dto.text ?? "",
-                type: dto.type,
-                isRequired: dto.isRequired,
-                options: dto.options ?? "",
-                order: dto.order ?? 0,
+                ...payload,
+                questionId: modal.initial.questionId.toString(),
               });
             } else {
-              createField.mutate({
-                eventGuid: eventId,
-                text: dto.text ?? "",
-                type: dto.type,
-                isRequired: dto.isRequired,
-                options: dto.options ?? "",
-                order: dto.order ?? 0,
-              });
+              // create
+              createField.mutate(payload);
             }
 
             setModal({ open: false });

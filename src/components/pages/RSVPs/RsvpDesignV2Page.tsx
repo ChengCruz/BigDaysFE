@@ -754,7 +754,7 @@ export default function RsvpDesignV2Page() {
     eventId ?? ""
   );
   const {
-    mutate: saveDesign,
+    mutateAsync: saveDesignAsync,
     isPending: isSaving,
     isSuccess: isSaveSuccess,
     data: saveResponse,
@@ -1189,20 +1189,24 @@ export default function RsvpDesignV2Page() {
       }
 
       // --- Upload each cached image; build id→cdnUrl swap map ---
+      // Cache entries are NOT removed here — removal happens only after saveDesign confirms success.
       const urlSwaps: Record<string, string> = {};
+      const uploadedCacheIds: string[] = [];
       await Promise.all(
         allBlobAssets.map(async ({ id }) => {
           const cached = await getImageFromCache(id);
           if (!cached) return;
+          let result;
           try {
-            const result = await uploadMedia({ file: cached.file, eventGuid: eventId });
-            if (isValidSrc(result?.url)) {
-              urlSwaps[id] = result.url;
-              await removeCachedImage(id);
-            }
-          } catch {
-            // Leave blob URL; sanitizeBlocks will strip it so save still succeeds.
+            result = await uploadMedia({ file: cached.file, eventGuid: eventId });
+          } catch (err) {
+            throw new Error(`Image upload failed: ${err instanceof Error ? err.message : "unknown error"}`);
           }
+          if (!isValidSrc(result?.url)) {
+            throw new Error("Image upload returned an invalid URL.");
+          }
+          urlSwaps[id] = result.url;
+          uploadedCacheIds.push(id);
         })
       );
 
@@ -1230,22 +1234,26 @@ export default function RsvpDesignV2Page() {
 
       // --- Upload global background if it's still a cached blob ---
       let resolvedBgAsset = globalBackgroundAsset;
+      let uploadedBgCacheId: string | null = null;
       if (isBlob(globalBackgroundAsset) && globalBgCacheIdRef.current) {
         const cached = await getImageFromCache(globalBgCacheIdRef.current);
         if (cached) {
+          let result;
           try {
-            const result = await uploadMedia({ file: cached.file, eventGuid: eventId });
-            if (isValidSrc(result?.url)) {
-              resolvedBgAsset = result.url;
-              setGlobalBackgroundAsset(result.url);
-              await removeCachedImage(globalBgCacheIdRef.current);
-              globalBgCacheIdRef.current = null;
-            }
-          } catch {}
+            result = await uploadMedia({ file: cached.file, eventGuid: eventId });
+          } catch (err) {
+            throw new Error(`Background image upload failed: ${err instanceof Error ? err.message : "unknown error"}`);
+          }
+          if (!isValidSrc(result?.url)) {
+            throw new Error("Background image upload returned an invalid URL.");
+          }
+          resolvedBgAsset = result.url;
+          setGlobalBackgroundAsset(result.url);
+          uploadedBgCacheId = globalBgCacheIdRef.current;
         }
       }
 
-      // --- Persist design ---
+      // --- Persist design (awaited so cache cleanup only runs on confirmed success) ---
       const currentDesign: RsvpDesign = {
         blocks: sanitizeBlocks(swappedBlocks), flowPreset,
         globalBackgroundType, globalBackgroundAsset: isBlob(resolvedBgAsset) ? "" : resolvedBgAsset, globalBackgroundColor,
@@ -1257,7 +1265,16 @@ export default function RsvpDesignV2Page() {
         globalFontFamily: globalFontFamily || undefined,
         formFieldConfigs: availableQuestions,
       };
-      saveDesign({ design: currentDesign, isPublished: false, isDraft: true });
+      await saveDesignAsync({ design: currentDesign, isPublished: false, isDraft: true });
+
+      // --- Cleanup cache only after save is confirmed ---
+      await Promise.all(uploadedCacheIds.map((id) => removeCachedImage(id).catch(() => {})));
+      if (uploadedBgCacheId) {
+        await removeCachedImage(uploadedBgCacheId).catch(() => {});
+        globalBgCacheIdRef.current = null;
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save design. Please try again.");
     } finally {
       setIsUploadingForSave(false);
     }
