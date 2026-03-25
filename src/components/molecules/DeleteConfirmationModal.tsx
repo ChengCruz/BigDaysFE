@@ -9,6 +9,7 @@ interface DeleteConfirmationModalProps {
   onCancel: () => void;
   title: string;
   description?: string;
+  confirmLabel?: string;
   children: React.ReactNode;
 }
 
@@ -19,6 +20,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
   onCancel,
   title,
   description = "This action cannot be undone.",
+  confirmLabel = "Delete",
   children,
 }) => {
   if (!isOpen) return null;
@@ -82,7 +84,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
                 Deleting...
               </div>
             ) : (
-              "Delete"
+              confirmLabel
             )}
           </Button>
         </div>
