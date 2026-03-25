@@ -32,3 +32,13 @@ export function useUploadMedia() {
     },
   });
 }
+
+/** Deletes a media file from CDN by filename. Wired to DELETE /api/media/{fileName}.
+ * TODO: implement the corresponding endpoint on BE. */
+export function useDeleteMedia() {
+  return useMutation<void, Error, { fileName: string }>({
+    mutationFn: async ({ fileName }) => {
+      await client.delete(MediaEndpoints.delete(fileName));
+    },
+  });
+}

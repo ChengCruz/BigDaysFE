@@ -137,6 +137,8 @@ export const QrEndpoints = {
 
 export const MediaEndpoints = {
   upload: "/Media/Upload",
+  // TODO: implement DELETE /api/media/{fileName} on BE to remove CDN files when replaced
+  delete: (fileName: string) => `/Media/${fileName}`,
 };
 
 export const CheckInEndpoints = {

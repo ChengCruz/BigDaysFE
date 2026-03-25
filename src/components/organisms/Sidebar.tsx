@@ -1,5 +1,6 @@
 // src/components/organisms/Sidebar.tsx
 import React from "react";
+import pkg from "../../../package.json";
 import { NavLink } from "react-router-dom";
 import XIcon from "@heroicons/react/outline/XIcon";
 import ChevronLeftIcon from "@heroicons/react/outline/ChevronLeftIcon";
@@ -215,7 +216,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </nav>
           </div>
 
-          {/* Footer: user profile + logout */}
+          {/* Footer: user profile + logout + version */}
           <div className="border-t border-primary/10 dark:border-white/10 p-3">
             {!collapsed ? (
               <div className="flex items-center gap-3 px-2 py-2">
@@ -242,6 +243,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               >
                 <LogoutIcon className="h-5 w-5" />
               </button>
+            )}
+            {!collapsed && (
+              <p className="text-center text-[10px] text-text/25 dark:text-white/20 mt-1 tabular-nums select-none">
+                v{pkg.version}
+              </p>
             )}
           </div>
         </div>
