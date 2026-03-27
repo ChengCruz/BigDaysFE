@@ -100,8 +100,15 @@ export function useUpdateFormField(eventId?: string) {
 export function useDeleteFormField(eventId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () =>
-      client.post(FormFieldsEndpoints.deactivate()).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["formFields", eventId] }),
+    mutationFn: (payload: { questionId: string; eventId: string }) =>
+      client
+        .post(FormFieldsEndpoints.deactivate(), {
+          questionId: payload.questionId,
+          eventId: payload.eventId,
+          isActive: false,
+        })
+        .then((r) => r.data),
+    onSuccess: (_d, vars) =>
+      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? vars.eventId] }),
   });
 }

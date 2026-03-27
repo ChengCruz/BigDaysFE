@@ -12,17 +12,16 @@ import {
 import { Button } from "../../atoms/Button";
 import { FormFieldModal } from "../../molecules/FormFieldModal";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
-import { useParams } from "react-router-dom";
 import { NoEventsState } from "../../molecules/NoEventsState";
+import { useEventContext } from "../../../context/EventContext";
 
 export default function FormFieldsPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
-  const { id } = useParams<{ id: string }>();
-  const eventId = id ?? "";
+  const { eventId } = useEventContext();
   const { data: fieldsRaw, isLoading, isError } = useFormFields(eventId);
-  const createField = useCreateFormField();
-  const updateField = useUpdateFormField();
-  const deleteField = useDeleteFormField();
+  const createField = useCreateFormField(eventId);
+  const updateField = useUpdateFormField(eventId);
+  const deleteField = useDeleteFormField(eventId);
 
   const [modal, setModal] = useState<{
     open: boolean;
@@ -102,7 +101,7 @@ export default function FormFieldsPage() {
                       if (f.hasExistingAnswers) {
                         setDeleteWarning({ open: true, field: f });
                       } else {
-                        deleteField.mutate();
+                        deleteField.mutate({ questionId: f.questionId!, eventId: eventId! });
                       }
                     }
                   }}
@@ -159,7 +158,7 @@ export default function FormFieldsPage() {
         confirmLabel="Delete Anyway"
         onCancel={() => setDeleteWarning({ open: false })}
         onConfirm={() => {
-          deleteField.mutate();
+          deleteField.mutate({ questionId: deleteWarning.field!.questionId!, eventId: eventId! });
           setDeleteWarning({ open: false });
         }}
       >
