@@ -1,7 +1,7 @@
 // src/api/hooks/useAuthApi.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
-import { AuthEndpoints } from "../endpoints";
+import { AuthEndpoints, CrewEndpoints } from "../endpoints";
 import { tokenStore, sessionHint } from "../../utils/tokenStore";
 
 export interface LoginPayload {
@@ -34,6 +34,12 @@ export interface AuthResponse {
 
 export interface LogoutResponse {
   message: string;
+}
+
+export interface CrewLoginPayload {
+  crewCode: string;
+  pin: string;
+  eventId: string;
 }
 
 export function useAuthApi() {
@@ -78,4 +84,17 @@ export function useAuthApi() {
   });
 
   return { login, register, logout, forgotPassword, resetPassword };
+}
+
+export function useCrewLogin() {
+  const qc = useQueryClient();
+  return useMutation<AuthResponse, Error, CrewLoginPayload>({
+    mutationFn: (data: CrewLoginPayload) =>
+      client.post<AuthResponse>(CrewEndpoints.login, data).then(r => r.data),
+    onSuccess: (data) => {
+      tokenStore.set(data.accessToken);
+      sessionHint.set();
+      qc.invalidateQueries({ queryKey: ["me"] });
+    },
+  });
 }

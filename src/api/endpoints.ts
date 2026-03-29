@@ -148,3 +148,11 @@ export const CheckInEndpoints = {
 export const PublicQrEndpoints = {
   lookup: (eventId: string) => `/qr/lookup/${eventId}`,
 };
+
+export const CrewEndpoints = {
+  byEvent: (eventGuid: string) => `/Crew/ByEvent/${eventGuid}`,
+  create: "/Crew/Create",
+  update: "/Crew/Update",
+  delete: (crewGuid: string) => `/Crew/Delete/${crewGuid}`,
+  login: "/Crew/Login",
+};

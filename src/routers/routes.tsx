@@ -83,6 +83,7 @@ import FloorPlanPage from "../components/pages/Tables/FloorPlanPage";
 import CheckInPage from "../components/pages/CheckIn/CheckInPage";
 import QrLookupPage from "../components/pages/Public/QrLookup/QrLookupPage";
 import RequireAuth from "../components/RequireAuth";
+import CrewPage from "../components/pages/Crew/CrewPage";
 // …and other Public pages…
 
 export default function AppRoutes() {
@@ -181,6 +182,9 @@ export default function AppRoutes() {
           />
           <Route path=":id/edit" element={<EditUserModal />} />
         </Route>
+
+        {/* CREW */}
+        <Route path="crew" element={<CrewPage />} />
 
         {/* CHECK-IN */}
         <Route path="checkin" element={<CheckInPage />} />
