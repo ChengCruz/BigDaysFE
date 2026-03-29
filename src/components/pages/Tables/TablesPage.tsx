@@ -4,6 +4,7 @@ import { ErrorState } from "../../atoms/ErrorState";
 import {
   useTablesApi,
   useDeleteTable,
+  useBulkDeleteTables,
 } from "../../../api/hooks/useTablesApi";
 import { 
   useGuestsApi,
@@ -20,16 +21,20 @@ import { TableFormModal } from "../../molecules/TableFormModal";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { useState, useMemo } from "react";
 import { useEventContext } from "../../../context/EventContext";
+import { useAuth } from "../../../api/hooks/useAuth";
 import toast from "react-hot-toast";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { ChevronDownIcon, CollectionIcon, UserGroupIcon, UserIcon, ChartBarIcon } from "@heroicons/react/outline";
 
 export default function TablesPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
+  const { userRole } = useAuth();
+  const isReadOnly = userRole === 6;
   const { eventId, eventsLoading } = useEventContext()!;
   const { data: tables = [], isLoading: tablesLoading, isError: tablesError } = useTablesApi(eventId!);
   const { data: guests = [], isLoading: guestsLoading, isError: guestsError } = useGuestsApi(eventId!);
   const deleteTable = useDeleteTable(eventId);
+  const bulkDeleteTables = useBulkDeleteTables(eventId);
   const assignGuest = useAssignGuestToTable(eventId || "");
   const unassignGuest = useUnassignGuestFromTable(eventId || "");
 
@@ -41,6 +46,9 @@ export default function TablesPage() {
   const [showCreateTable, setShowCreateTable] = useState(false);
   const [editingTable, setEditingTable] = useState<{ id: string; name: string; capacity: number } | null>(null);
   const [deletingTable, setDeletingTable] = useState<{ id: string; name: string } | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedTableIds, setSelectedTableIds] = useState<Set<string>>(new Set());
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
   // Calculate statistics (must be before early returns - React rules of hooks)
   const stats = useMemo(() => {
@@ -191,6 +199,32 @@ export default function TablesPage() {
     }
   };
 
+  const toggleSelectMode = () => {
+    setSelectMode(prev => !prev);
+    setSelectedTableIds(new Set());
+  };
+
+  const toggleTableSelection = (tableId: string) => {
+    setSelectedTableIds(prev => {
+      const next = new Set(prev);
+      if (next.has(tableId)) next.delete(tableId);
+      else next.add(tableId);
+      return next;
+    });
+  };
+
+  const confirmBulkDelete = () => {
+    bulkDeleteTables.mutate({ tableIds: Array.from(selectedTableIds) }, {
+      onSuccess: () => {
+        setShowBulkDeleteConfirm(false);
+        setSelectMode(false);
+        setSelectedTableIds(new Set());
+        toast.success(`${selectedTableIds.size} tables deleted.`);
+      },
+      onError: () => toast.error("Failed to delete tables"),
+    });
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Page Title & Actions */}
@@ -199,41 +233,59 @@ export default function TablesPage() {
           <h2 className="text-2xl font-semibold text-primary">Table Arrangement</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Organize seating and arrange guests by table</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" disabled>
-            Auto-Assign
-            <span className="ml-1.5 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">Soon</span>
-          </Button>
-          <Dropdown
-            trigger={
-              <Button className="flex items-center gap-1.5">
-                + New Table <ChevronDownIcon className="w-4 h-4" />
+        {!isReadOnly && (
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" disabled>
+              Auto-Assign
+              <span className="ml-1.5 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">Soon</span>
+            </Button>
+            {selectMode ? (
+              <>
+                {selectedTableIds.size > 0 && (
+                  <Button variant="primary" onClick={() => setShowBulkDeleteConfirm(true)}>
+                    Delete selected ({selectedTableIds.size})
+                  </Button>
+                )}
+                <Button variant="secondary" onClick={toggleSelectMode}>
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <Button variant="secondary" onClick={toggleSelectMode}>
+                Select
               </Button>
-            }
-          >
-            <DropdownItem onClick={() => setShowCreateTable(true)}>
-              <div>
-                <div className="font-medium">Create Single Table</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  Create one table at a time
+            )}
+            <Dropdown
+              trigger={
+                <Button className="flex items-center gap-1.5">
+                  + New Table <ChevronDownIcon className="w-4 h-4" />
+                </Button>
+              }
+            >
+              <DropdownItem onClick={() => setShowCreateTable(true)}>
+                <div>
+                  <div className="font-medium">Create Single Table</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    Create one table at a time
+                  </div>
                 </div>
-              </div>
-            </DropdownItem>
-            <DropdownItem onClick={() => setShowQuickSetup(true)}>
-              <div>
-                <div className="font-medium">
-                  Bulk Create{" "}
-                  <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                    Recommended
-                  </span>
+              </DropdownItem>
+              <DropdownItem onClick={() => setShowQuickSetup(true)}>
+                <div>
+                  <div className="font-medium">
+                    Bulk Create{" "}
+                    <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                      Recommended
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    Create by category or custom prefix
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  Create by category or custom prefix
-                </div>
-              </div>
-            </DropdownItem>
-          </Dropdown>
-        </div>
+              </DropdownItem>
+            </Dropdown>
+          </div>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -321,16 +373,27 @@ export default function TablesPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pb-6">
               {filteredTables.map(table => (
-                <TableCard
-                  key={table.id}
-                  table={table}
-                  onDrop={handleDrop}
-                  onEdit={handleEditTable}
-                  onDelete={handleDeleteTable}
-                  onUnassignGuest={handleUnassignGuest}
-                  isDropTarget={!!draggedGuestId}
-                  draggedGuest={draggedGuest}
-                />
+                <div key={table.id} className="relative">
+                  {selectMode && (
+                    <div className="absolute top-2 left-2 z-10">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 accent-primary cursor-pointer"
+                        checked={selectedTableIds.has(table.id)}
+                        onChange={() => toggleTableSelection(table.id)}
+                      />
+                    </div>
+                  )}
+                  <TableCard
+                    table={table}
+                    onDrop={(selectMode || isReadOnly) ? undefined : handleDrop}
+                    onEdit={(selectMode || isReadOnly) ? undefined : handleEditTable}
+                    onDelete={(selectMode || isReadOnly) ? undefined : handleDeleteTable}
+                    onUnassignGuest={(selectMode || isReadOnly) ? undefined : handleUnassignGuest}
+                    isDropTarget={!selectMode && !isReadOnly && !!draggedGuestId}
+                    draggedGuest={(selectMode || isReadOnly) ? null : draggedGuest}
+                  />
+                </div>
               ))}
             </div>
           )}
@@ -377,6 +440,16 @@ export default function TablesPage() {
           </div>
         )}
       </DeleteConfirmationModal>
+
+      {/* Bulk Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showBulkDeleteConfirm}
+        isDeleting={bulkDeleteTables.isPending}
+        onConfirm={confirmBulkDelete}
+        onCancel={() => setShowBulkDeleteConfirm(false)}
+        title="Delete Selected Tables"
+        description={`Are you sure you want to delete ${selectedTableIds.size} table${selectedTableIds.size > 1 ? "s" : ""}? Guests assigned to these tables will be unassigned. This action cannot be undone.`}
+      />
     </div>
   );
 }

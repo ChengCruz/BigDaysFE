@@ -131,6 +131,15 @@ export function useDeleteTable(eventId?: string) {
   });
 }
 
+export function useBulkDeleteTables(eventId?: string) {
+  const qc = useQueryClient();
+  return useMutation<void, Error, { tableIds: string[] }>({
+    mutationFn: ({ tableIds }) =>
+      client.post(TablesEndpoints.bulkDelete, { tableIds }).then(r => r.data),
+    onSuccess: () => invalidate(qc, undefined, eventId),
+  });
+}
+
 export function useReassignGuest(tableId: string, eventId: string) {
   const qc = useQueryClient();
   return useMutation<

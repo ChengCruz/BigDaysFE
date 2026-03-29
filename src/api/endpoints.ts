@@ -43,6 +43,7 @@ export const TablesEndpoints = {
   bulkCreate: "/TableArrangement/BulkCreate",
   update: "/TableArrangement/Update",
   delete: (tableId: string) => `/TableArrangement/Delete/${tableId}`,
+  bulkDelete: "/TableArrangement/BulkDelete",
   updateLayout: (id: string) => `/tables/${id}/layout`,
   tableGuests: (id: string) => `/tables/${id}/guests`,
   reassignGuest: (tableId: string, guestId: string) =>
