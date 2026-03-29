@@ -177,7 +177,7 @@ export function PhonePreview({
             return (
               <div
                 key={block.id}
-                className={`relative overflow-hidden py-3 transition duration-300 ${
+                className={`relative overflow-hidden ${block.type === "image" ? "py-0 -mt-3" : "py-3"} transition duration-300 ${
                   flowPreset === "stacked" ? "scroll-snap-start" : ""
                 } ${flowPreset === "serene" && i < blocks.length - 1 ? "border-b border-white/[0.06]" : ""}`}
                 style={{
@@ -254,7 +254,7 @@ export function FullPagePreview({
           return (
             <section
               key={block.id}
-              className={`group relative overflow-hidden py-10 px-2 transition duration-500 ${
+              className={`group relative overflow-hidden ${block.type === "image" ? "p-0" : "py-10 px-2"} transition duration-500 ${
                 flowPreset === "stacked" ? "scroll-snap-start" : ""
               } ${lift} ${flowPreset === "serene" && i < blocks.length - 1 ? "border-b border-white/[0.05]" : ""}`}
               style={{

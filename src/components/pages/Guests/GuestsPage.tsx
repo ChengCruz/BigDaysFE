@@ -3,6 +3,7 @@ import { PageLoader } from "../../atoms/PageLoader";
 import { ErrorState } from "../../atoms/ErrorState";
 import { useState, useMemo } from "react";
 import { UserGroupIcon, UserIcon, CheckCircleIcon, StarIcon } from "@heroicons/react/solid";
+import { useAuth } from "../../../api/hooks/useAuth";
 import {
   useGuestsApi,
   useAssignGuestToTable,
@@ -25,6 +26,8 @@ import { Modal } from "../../molecules/Modal";
 
 export default function GuestsPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
+  const { userRole } = useAuth();
+  const isReadOnly = userRole === 6;
   const { eventId, eventsLoading } = useEventContext()!;
   const { data: guests = [], isLoading: guestsLoading, isError: guestsError } = useGuestsApi(eventId!);
   const { data: tables = [], isLoading: tablesLoading } = useTablesApi(eventId!);
@@ -270,30 +273,32 @@ export default function GuestsPage() {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Button
-                    variant="secondary"
-                    onClick={() => setModal({ open: true, guest })}
-                  >
-                    Edit
-                  </Button>
-                  {guest.tableId ? (
-                    <button
-                      onClick={() => handleUnassignTable(guest)}
-                      className="px-3 py-1.5 text-sm font-medium rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+                {/* Action Buttons — hidden for Staff (read-only) */}
+                {!isReadOnly && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setModal({ open: true, guest })}
                     >
-                      Unassign
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setAssignModal({ open: true, guest })}
-                      className="px-3 py-1.5 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
-                    >
-                      Assign Table
-                    </button>
-                  )}
-                </div>
+                      Edit
+                    </Button>
+                    {guest.tableId ? (
+                      <button
+                        onClick={() => handleUnassignTable(guest)}
+                        className="px-3 py-1.5 text-sm font-medium rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+                      >
+                        Unassign
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setAssignModal({ open: true, guest })}
+                        className="px-3 py-1.5 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
+                      >
+                        Assign Table
+                      </button>
+                    )}
+                  </div>
+                )}
               </li>
             );
           })}
