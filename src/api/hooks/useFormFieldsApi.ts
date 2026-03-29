@@ -14,6 +14,7 @@ export interface FormFieldConfig {
   // API DTO fields
   text?: string; // question text
   isRequired?: boolean;
+  isActive?: boolean;
   // numeric enum type used by API (0..7)
   type?: number;
   options?: string | string[];
@@ -60,6 +61,7 @@ export function useFormFields(eventId?: string, options?: { enabled?: boolean })
           ? r.options
           : undefined,
         order: r.order ?? 0,
+        isActive: r.isActive ?? true,
         hasExistingAnswers: r.hasExistingAnswers ?? false,
       } as FormFieldConfig));
     },
@@ -96,8 +98,8 @@ export function useUpdateFormField(eventId?: string) {
   });
 }
 
-/** DELETE question */
-export function useDeleteFormField(eventId?: string) {
+/** DEACTIVATE question — hides from RSVP form but preserves data */
+export function useDeactivateFormField(eventId?: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: { questionId: string; eventId: string }) =>
@@ -106,6 +108,38 @@ export function useDeleteFormField(eventId?: string) {
           questionId: payload.questionId,
           eventId: payload.eventId,
           isActive: false,
+        })
+        .then((r) => r.data),
+    onSuccess: (_d, vars) =>
+      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? vars.eventId] }),
+  });
+}
+
+/** ACTIVATE question — re-shows a previously deactivated question on the RSVP form */
+export function useActivateFormField(eventId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { questionId: string; eventId: string }) =>
+      client
+        .post(FormFieldsEndpoints.activate(), {
+          questionId: payload.questionId,
+          eventId: payload.eventId,
+        })
+        .then((r) => r.data),
+    onSuccess: (_d, vars) =>
+      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? vars.eventId] }),
+  });
+}
+
+/** DELETE question — permanently marks as deleted, cannot be referenced back */
+export function useDeleteFormField(eventId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { questionId: string; eventId: string }) =>
+      client
+        .post(FormFieldsEndpoints.delete(), {
+          questionId: payload.questionId,
+          eventId: payload.eventId,
         })
         .then((r) => r.data),
     onSuccess: (_d, vars) =>

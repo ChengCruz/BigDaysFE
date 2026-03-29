@@ -8,4 +8,5 @@ export interface ApiEvent {
   noOfTable?: number;
   eventDescription?: string;
   isDeleted?: boolean;
+  slug?: string;
 }

@@ -124,6 +124,11 @@ export default function EventsPage() {
                     {activeEvent.location || "Add a venue"}
                   </span>
                 </p>
+                {activeEvent.slug && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
+                    slug: <span className="text-primary/70">{activeEvent.slug}</span>
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -221,6 +226,11 @@ export default function EventsPage() {
                       <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
                       <span>{isArchived ? "Archived plan" : ""}</span>
                     </div>
+                    {ev.slug && (
+                      <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
+                        slug: <span className="text-primary/70">{ev.slug}</span>
+                      </p>
+                    )}
                   </div>
 
                   {/* Card footer */}

@@ -5,6 +5,8 @@ import {
   useFormFields,
   useCreateFormField,
   useUpdateFormField,
+  useActivateFormField,
+  useDeactivateFormField,
   useDeleteFormField,
   type FormFieldConfig,
   type QuestionPayload,
@@ -21,6 +23,8 @@ export default function FormFieldsPage() {
   const { data: fieldsRaw, isLoading, isError } = useFormFields(eventId);
   const createField = useCreateFormField(eventId);
   const updateField = useUpdateFormField(eventId);
+  const activateField = useActivateFormField(eventId);
+  const deactivateField = useDeactivateFormField(eventId);
   const deleteField = useDeleteFormField(eventId);
 
   const [modal, setModal] = useState<{
@@ -31,6 +35,16 @@ export default function FormFieldsPage() {
   const [editWarning, setEditWarning] = useState<{
     open: boolean;
     field?: FormFieldConfig & { questionId: string };
+  }>({ open: false });
+
+  const [activateWarning, setActivateWarning] = useState<{
+    open: boolean;
+    field?: FormFieldConfig;
+  }>({ open: false });
+
+  const [deactivateWarning, setDeactivateWarning] = useState<{
+    open: boolean;
+    field?: FormFieldConfig;
   }>({ open: false });
 
   const [deleteWarning, setDeleteWarning] = useState<{
@@ -94,15 +108,30 @@ export default function FormFieldsPage() {
                 >
                   Edit
                 </Button>
+                {f.isActive === false ? (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      if (f.questionId) setActivateWarning({ open: true, field: f });
+                    }}
+                  >
+                    Activate
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      if (f.questionId) setDeactivateWarning({ open: true, field: f });
+                    }}
+                  >
+                    Deactivate
+                  </Button>
+                )}
                 <Button
                   variant="primary"
                   onClick={() => {
                     if (f.questionId) {
-                      if (f.hasExistingAnswers) {
-                        setDeleteWarning({ open: true, field: f });
-                      } else {
-                        deleteField.mutate({ questionId: f.questionId!, eventId: eventId! });
-                      }
+                      setDeleteWarning({ open: true, field: f });
                     }
                   }}
                 >
@@ -149,13 +178,49 @@ export default function FormFieldsPage() {
         </div>
       )}
 
-      {/* Delete warning — shown when a question already has answers */}
+      {/* Activate confirmation */}
+      <DeleteConfirmationModal
+        isOpen={activateWarning.open}
+        isDeleting={activateField.isPending}
+        title="Reactivate question?"
+        description="This question will be shown again on your RSVP form."
+        confirmLabel="Activate"
+        onCancel={() => setActivateWarning({ open: false })}
+        onConfirm={() => {
+          activateField.mutate({ questionId: activateWarning.field!.questionId!, eventId: eventId! });
+          setActivateWarning({ open: false });
+        }}
+      >
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          Are you sure you want to reactivate <span className="font-medium">"{activateWarning.field?.label ?? activateWarning.field?.text}"</span>?
+        </p>
+      </DeleteConfirmationModal>
+
+      {/* Deactivate confirmation */}
+      <DeleteConfirmationModal
+        isOpen={deactivateWarning.open}
+        isDeleting={deactivateField.isPending}
+        title="Deactivate question?"
+        description="This question will be hidden from your RSVP form. Guest responses are preserved and the question can be reactivated."
+        confirmLabel="Deactivate"
+        onCancel={() => setDeactivateWarning({ open: false })}
+        onConfirm={() => {
+          deactivateField.mutate({ questionId: deactivateWarning.field!.questionId!, eventId: eventId! });
+          setDeactivateWarning({ open: false });
+        }}
+      >
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          Are you sure you want to deactivate <span className="font-medium">"{deactivateWarning.field?.label ?? deactivateWarning.field?.text}"</span>?
+        </p>
+      </DeleteConfirmationModal>
+
+      {/* Delete confirmation — permanent, cannot be referenced back */}
       <DeleteConfirmationModal
         isOpen={deleteWarning.open}
         isDeleting={deleteField.isPending}
-        title="Delete question with existing responses?"
-        description="Guests have already answered this question. Their responses will be preserved even after deletion."
-        confirmLabel="Delete Anyway"
+        title="Permanently delete question?"
+        description="This question and all its data will be permanently deleted. This action cannot be undone."
+        confirmLabel="Delete Permanently"
         onCancel={() => setDeleteWarning({ open: false })}
         onConfirm={() => {
           deleteField.mutate({ questionId: deleteWarning.field!.questionId!, eventId: eventId! });
@@ -163,7 +228,7 @@ export default function FormFieldsPage() {
         }}
       >
         <p className="text-sm text-gray-700 dark:text-gray-300">
-          Are you sure you want to delete <span className="font-medium">"{deleteWarning.field?.label ?? deleteWarning.field?.text}"</span>?
+          Are you sure you want to permanently delete <span className="font-medium">"{deleteWarning.field?.label ?? deleteWarning.field?.text}"</span>?
         </p>
       </DeleteConfirmationModal>
 

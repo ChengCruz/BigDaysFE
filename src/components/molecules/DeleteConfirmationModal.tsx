@@ -10,7 +10,7 @@ interface DeleteConfirmationModalProps {
   title: string;
   description?: string;
   confirmLabel?: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
@@ -59,9 +59,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
         </div>
 
         {/* Content */}
-        <div className="p-6">
-          {children}
-        </div>
+        {children && <div className="p-6">{children}</div>}
 
         {/* Footer */}
         <div className="p-6 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700 flex gap-3">

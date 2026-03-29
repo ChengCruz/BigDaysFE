@@ -64,9 +64,20 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const { event, openSelector, mustChooseEvent } = useEventContext();
+  const { event, eventId, openSelector, mustChooseEvent } = useEventContext();
   const { user, userRole, logout } = useAuth();
   const displayRole = userRole != null ? getRoleLabel(userRole) : null;
+
+  const links = BASE_LINKS.map(l =>
+    l.label === "RSVP Questions" && eventId
+      ? { ...l, to: `/app/events/${eventId}/form-fields` }
+      : l
+  );
+
+  const isStaff = userRole === 6;
+  const visibleLinks = isStaff
+    ? links.filter(l => STAFF_ALLOWED_PATHS.some(path => l.to.startsWith(path)))
+    : links;
 
   const [collapsed, setCollapsed] = React.useState(false);
 
