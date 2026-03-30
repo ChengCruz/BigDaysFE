@@ -1,0 +1,165 @@
+// src/components/pages/Crew/CrewPage.tsx
+import { useState } from "react";
+import { PageLoader } from "../../atoms/PageLoader";
+import { Button } from "../../atoms/Button";
+import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
+import { NoEventsState } from "../../molecules/NoEventsState";
+import { useEventContext } from "../../../context/EventContext";
+import { useCrewListApi, useDeleteCrew, type CrewMember } from "../../../api/hooks/useCrewApi";
+import { CrewFormModal } from "./CrewFormModal";
+import { UserGroupIcon } from "@heroicons/react/solid";
+import toast from "react-hot-toast";
+
+function formatDate(dateStr?: string) {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "—";
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
+export default function CrewPage() {
+  const { eventId, event, eventsLoading } = useEventContext()!;
+  const { data: crew = [], isLoading, isError } = useCrewListApi(eventId);
+  const deleteCrew = useDeleteCrew();
+
+  const [modal, setModal] = useState<{ open: boolean; crew?: CrewMember }>({ open: false });
+  const [deleteModal, setDeleteModal] = useState<{ open: boolean; crew: CrewMember | null }>({
+    open: false,
+    crew: null,
+  });
+
+  if (eventsLoading) return <PageLoader message="Loading..." />;
+  if (!eventId) return <NoEventsState title="No Events for Crew Management" message="Create your first event to start adding crew members." />;
+  if (isLoading) return <PageLoader message="Loading crew..." />;
+  if (isError) return <div className="text-red-500 p-4">Failed to load crew members.</div>;
+
+  const handleDelete = async () => {
+    if (!deleteModal.crew) return;
+    try {
+      await deleteCrew.mutateAsync(deleteModal.crew.crewGuid);
+      toast.success(`${deleteModal.crew.name} removed from crew.`);
+      setDeleteModal({ open: false, crew: null });
+    } catch {
+      toast.error("Failed to remove crew member.");
+    }
+  };
+
+  return (
+    <>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold text-primary">Crew</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Manage event-day staff for{" "}
+            <span className="font-medium text-text dark:text-white">{event?.title}</span>
+          </p>
+        </div>
+        <Button variant="primary" onClick={() => setModal({ open: true })}>
+          + Add Crew
+        </Button>
+      </div>
+
+      {/* Info banner */}
+      <div className="mb-6 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-sm text-blue-700 dark:text-blue-300">
+        Crew members log in at the <span className="font-medium">/login</span> page using their Crew ID and PIN.
+        They will have access to Check-in, Guests (read-only), and Tables (read-only).
+      </div>
+
+      {/* Empty state */}
+      {crew.length === 0 && (
+        <div className="text-center py-16">
+          <UserGroupIcon className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+          <p className="text-gray-500 dark:text-gray-400 mb-4">No crew members yet.</p>
+          <Button variant="primary" onClick={() => setModal({ open: true })}>
+            Add your first crew member
+          </Button>
+        </div>
+      )}
+
+      {/* Crew table */}
+      {crew.length > 0 && (
+        <div className="overflow-x-auto rounded-xl border border-primary/10 dark:border-white/10">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-primary/5 dark:bg-white/5 border-b border-primary/10 dark:border-white/10">
+                <th className="text-left px-4 py-3 font-semibold text-text/70 dark:text-white/60">Name</th>
+                <th className="text-left px-4 py-3 font-semibold text-text/70 dark:text-white/60">Crew ID</th>
+                <th className="text-left px-4 py-3 font-semibold text-text/70 dark:text-white/60">Status</th>
+                <th className="text-left px-4 py-3 font-semibold text-text/70 dark:text-white/60">Created</th>
+                <th className="px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-primary/5 dark:divide-white/5">
+              {crew.map((member) => (
+                <tr
+                  key={member.crewGuid}
+                  className="hover:bg-primary/5 dark:hover:bg-white/5 transition-colors"
+                >
+                  <td className="px-4 py-3 font-medium">{member.name}</td>
+                  <td className="px-4 py-3 font-mono text-text/70 dark:text-white/60">{member.crewCode}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        member.isActive
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : "bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-white/40"
+                      }`}
+                    >
+                      {member.isActive ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-text/60 dark:text-white/40">{formatDate(member.createdDate)}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="secondary"
+                        onClick={() => setModal({ open: true, crew: member })}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={() => setDeleteModal({ open: true, crew: member })}
+                        className="text-red-500 hover:text-red-600 border-red-200 dark:border-red-800"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Create / Edit modal */}
+      <CrewFormModal
+        isOpen={modal.open}
+        onClose={() => setModal({ open: false })}
+        initialData={modal.crew}
+        eventId={eventId}
+      />
+
+      {/* Delete confirmation */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.open}
+        isDeleting={deleteCrew.isPending}
+        title="Remove Crew Member"
+        description="This crew member will no longer be able to log in."
+        confirmLabel="Remove"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteModal({ open: false, crew: null })}
+      >
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          Remove <strong>{deleteModal.crew?.name}</strong> (ID:{" "}
+          <span className="font-mono">{deleteModal.crew?.crewCode}</span>) from the crew?
+        </p>
+      </DeleteConfirmationModal>
+    </>
+  );
+}

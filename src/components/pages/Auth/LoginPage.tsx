@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../../api/hooks/useAuth";
-import { useAuthApi } from "../../../api/hooks/useAuthApi";
+import { useAuthApi, useCrewLogin } from "../../../api/hooks/useAuthApi";
 import { FormField } from "../../molecules/FormField";
 import { PasswordInput } from "../../molecules/PasswordInput";
 import { Button } from "../../atoms/Button";
@@ -12,17 +12,26 @@ import { isDevOrStaging } from "../../../utils/env";
 import toast from "react-hot-toast";
 
 type ForgotStep = "request" | "reset";
+type LoginMode = "admin" | "staff";
 
 export default function LoginPage() {
   const { login, loading } = useAuth();
   const { forgotPassword, resetPassword } = useAuthApi();
+  const crewLogin = useCrewLogin();
   const nav = useNavigate();
   const location = useLocation();
   const from = (location.state as any)?.from?.pathname || "/app";
 
+  const [loginMode, setLoginMode] = useState<LoginMode>("admin");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  // Staff login state
+  const [crewCode, setCrewCode] = useState("");
+  const [crewPin, setCrewPin] = useState("");
+  const [crewEventId, setCrewEventId] = useState("");
 
   // Forgot password modal state
   const [forgotOpen, setForgotOpen] = useState(false);
@@ -41,6 +50,25 @@ export default function LoginPage() {
       nav(from, { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.message || "Login failed");
+    }
+  };
+
+  const handleStaffSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!crewCode.trim() || !crewPin) {
+      setError("Crew ID and PIN are required.");
+      return;
+    }
+    if (!crewEventId.trim()) {
+      setError("Event ID is required.");
+      return;
+    }
+    try {
+      await crewLogin.mutateAsync({ crewCode: crewCode.trim(), pin: crewPin, eventId: crewEventId.trim() });
+      nav("/app/checkin", { replace: true });
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Invalid Crew ID, PIN, or Event ID.");
     }
   };
 
@@ -103,49 +131,114 @@ export default function LoginPage() {
 
   return (
     <>
-      <form
-        onSubmit={handleSubmit}
-        className="max-w-md mx-auto p-6 bg-background text-text space-y-6"
-      >
+      <div className="max-w-md mx-auto p-6 bg-background text-text space-y-6">
         <h2 className="text-2xl font-semibold text-center">Sign In</h2>
-        <FormField
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <div className="space-y-1">
-          <FormField
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={handleOpenForgot}
-              className="text-xs text-primary hover:underline"
-            >
-              Forgot password?
-            </button>
-          </div>
-        </div>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        <Button type="submit" variant="primary" disabled={loading}>
-          {loading ? "Signing in…" : "Sign In"}
-        </Button>
 
-        <div className="text-center text-sm">
-          <span className="text-muted">Don't have an account? </span>
-          <Link
-            to="/register"
-            className="text-primary hover:underline font-medium"
+        {/* Mode toggle */}
+        <div className="flex rounded-xl bg-gray-100 dark:bg-white/10 p-1 gap-1">
+          <button
+            type="button"
+            onClick={() => { setLoginMode("admin"); setError(null); }}
+            className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+              loginMode === "admin"
+                ? "bg-white dark:bg-slate-800 shadow text-text"
+                : "text-text/50 dark:text-white/40 hover:text-text dark:hover:text-white"
+            }`}
           >
-            Create Account
-          </Link>
+            Admin
+          </button>
+          <button
+            type="button"
+            onClick={() => { setLoginMode("staff"); setError(null); }}
+            className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+              loginMode === "staff"
+                ? "bg-white dark:bg-slate-800 shadow text-text"
+                : "text-text/50 dark:text-white/40 hover:text-text dark:hover:text-white"
+            }`}
+          >
+            Staff
+          </button>
         </div>
-      </form>
+
+        {loginMode === "admin" ? (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <FormField
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <div className="space-y-1">
+              <FormField
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleOpenForgot}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            </div>
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+            <Button type="submit" variant="primary" disabled={loading}>
+              {loading ? "Signing in…" : "Sign In"}
+            </Button>
+
+            <div className="text-center text-sm">
+              <span className="text-muted">Don't have an account? </span>
+              <Link
+                to="/register"
+                className="text-primary hover:underline font-medium"
+              >
+                Create Account
+              </Link>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={handleStaffSubmit} className="space-y-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Enter the Crew ID and PIN provided by your event admin.
+            </p>
+            <FormField
+              label="Event ID"
+              type="text"
+              value={crewEventId}
+              onChange={(e) => setCrewEventId(e.target.value)}
+              placeholder="Event ID from your admin"
+              required
+            />
+            <FormField
+              label="Crew ID"
+              type="text"
+              value={crewCode}
+              onChange={(e) => setCrewCode(e.target.value)}
+              placeholder="e.g. CR-001"
+              required
+            />
+            <FormField
+              label="PIN"
+              type="password"
+              value={crewPin}
+              onChange={(e) => {
+                const v = e.target.value.replace(/\D/g, "").slice(0, 6);
+                setCrewPin(v);
+              }}
+              placeholder="4–6 digit PIN"
+              required
+            />
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+            <Button type="submit" variant="primary" disabled={crewLogin.isPending}>
+              {crewLogin.isPending ? "Signing in…" : "Sign In as Staff"}
+            </Button>
+          </form>
+        )}
+      </div>
 
       {/* Forgot Password Modal */}
       <Modal

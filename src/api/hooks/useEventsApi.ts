@@ -15,6 +15,7 @@ export interface Event {
   noOfTable?: number;
   description?: string;
   location?: string;
+  slug?: string;
   raw?: ApiEvent;
 }
 
@@ -27,6 +28,7 @@ function toEvent(e: ApiEvent): Event {
     noOfTable: e.noOfTable,
     description: e.eventDescription,
     location: e.eventLocation,
+    slug: e.slug,
     raw: e,
   };
 }

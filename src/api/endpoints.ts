@@ -43,6 +43,7 @@ export const TablesEndpoints = {
   bulkCreate: "/TableArrangement/BulkCreate",
   update: "/TableArrangement/Update",
   delete: (tableId: string) => `/TableArrangement/Delete/${tableId}`,
+  bulkDelete: "/TableArrangement/BulkDelete",
   updateLayout: (id: string) => `/tables/${id}/layout`,
   tableGuests: (id: string) => `/tables/${id}/guests`,
   reassignGuest: (tableId: string, guestId: string) =>
@@ -137,6 +138,8 @@ export const QrEndpoints = {
 
 export const MediaEndpoints = {
   upload: "/Media/Upload",
+  // TODO: implement DELETE /api/media/{fileName} on BE to remove CDN files when replaced
+  delete: (fileName: string) => `/Media/${fileName}`,
 };
 
 export const CheckInEndpoints = {
@@ -145,4 +148,12 @@ export const CheckInEndpoints = {
 
 export const PublicQrEndpoints = {
   lookup: (eventId: string) => `/qr/lookup/${eventId}`,
+};
+
+export const CrewEndpoints = {
+  byEvent: (eventGuid: string) => `/Crew/ByEvent/${eventGuid}`,
+  create: "/Crew/Create",
+  update: "/Crew/Update",
+  delete: (crewGuid: string) => `/Crew/Delete/${crewGuid}`,
+  login: "/Crew/Login",
 };

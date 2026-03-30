@@ -1,5 +1,6 @@
 // src/components/organisms/Sidebar.tsx
 import React from "react";
+import pkg from "../../../package.json";
 import { NavLink } from "react-router-dom";
 import XIcon from "@heroicons/react/outline/XIcon";
 import ChevronLeftIcon from "@heroicons/react/outline/ChevronLeftIcon";
@@ -35,9 +36,10 @@ interface SidebarLink {
   end?: boolean;
   sub?: boolean;
   external?: boolean;
+  soon?: boolean;
 }
 
-const links: SidebarLink[] = [
+const BASE_LINKS: SidebarLink[] = [
   { to: "/app/dashboard", label: "Dashboard", Icon: HomeIcon },
   { to: "/app/events", label: "Events", Icon: CalendarIcon, end: true },
   { to: "/app/rsvps/designer", label: "Design RSVP Card", Icon: PhotographIcon, sub: true },
@@ -50,7 +52,11 @@ const links: SidebarLink[] = [
   { to: "/app/wallet", label: "Wallet", Icon: CurrencyDollarIcon },
   { to: "/app/checkin", label: "Check-in", Icon: QrcodeIcon },
   { to: "/app/users", label: "Users", Icon: UserIcon },
+  { to: "/app/crew", label: "Crew", Icon: UserGroupIcon, soon: true },
 ];
+
+// Pages accessible to Staff (role 6) only
+const STAFF_ALLOWED_PATHS = ["/app/checkin", "/app/guests", "/app/tables"];
 
 interface SidebarProps {
   isOpen: boolean;
@@ -58,9 +64,20 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const { event, openSelector, mustChooseEvent } = useEventContext();
+  const { event, eventId, openSelector, mustChooseEvent } = useEventContext();
   const { user, userRole, logout } = useAuth();
   const displayRole = userRole != null ? getRoleLabel(userRole) : null;
+
+  const links = BASE_LINKS.map(l =>
+    l.label === "RSVP Questions" && eventId
+      ? { ...l, to: `/app/events/${eventId}/form-fields` }
+      : l
+  );
+
+  const isStaff = userRole === 6;
+  const visibleLinks = isStaff
+    ? links.filter(l => STAFF_ALLOWED_PATHS.some(path => l.to.startsWith(path)))
+    : links;
 
   const [collapsed, setCollapsed] = React.useState(false);
 
@@ -130,8 +147,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           {/* Event card + Nav links — scrollable middle */}
           <div className={`flex-1 overflow-y-auto py-3 space-y-3 ${collapsed ? "md:px-2" : "px-3"}`}>
-            {/* Event selector card */}
-            <div className={collapsed ? "px-1" : "px-1"}>
+            {/* Event selector card — hidden for Staff */}
+            {!isStaff && <div className={collapsed ? "px-1" : "px-1"}>
               <button
                 onClick={openSelector}
                 className={`w-full rounded-xl p-3 text-left transition
@@ -168,12 +185,31 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   Select an event to get started.
                 </p>
               )}
-            </div>
+            </div>}
 
             {/* Navigation links */}
             <nav className="space-y-0.5">
-              {links.map(({ to, label, Icon, end, sub, external }) =>
-                external ? (
+              {visibleLinks.map(({ to, label, Icon, end, sub, external, soon }) =>
+                soon ? (
+                  <div
+                    key={to}
+                    title={label}
+                    className={`flex items-center gap-3 ${
+                      collapsed ? "justify-center px-2" : sub ? "pl-8 pr-3" : "px-3"
+                    } ${sub ? "py-2" : "py-2.5"} rounded-lg ${sub ? "text-xs" : "text-sm"}
+                     text-text/30 dark:text-white/25 cursor-not-allowed select-none`}
+                  >
+                    <Icon className={`${sub ? "h-4 w-4" : "h-5 w-5"} flex-shrink-0`} />
+                    {!collapsed && (
+                      <>
+                        <span>{label}</span>
+                        <span className="ml-auto text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 px-1.5 py-0.5 rounded-full">
+                          Soon
+                        </span>
+                      </>
+                    )}
+                  </div>
+                ) : external ? (
                   <a
                     key={to}
                     href={to}
@@ -215,7 +251,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </nav>
           </div>
 
-          {/* Footer: user profile + logout */}
+          {/* Footer: user profile + logout + version */}
           <div className="border-t border-primary/10 dark:border-white/10 p-3">
             {!collapsed ? (
               <div className="flex items-center gap-3 px-2 py-2">
@@ -242,6 +278,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               >
                 <LogoutIcon className="h-5 w-5" />
               </button>
+            )}
+            {!collapsed && (
+              <p className="text-center text-[10px] text-text/25 dark:text-white/20 mt-1 tabular-nums select-none">
+                v{pkg.version}
+              </p>
             )}
           </div>
         </div>

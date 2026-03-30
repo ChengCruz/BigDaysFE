@@ -181,6 +181,18 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
           required
           error={fieldErrors.noOfTable}
         />
+        {!isEdit && noOfTable > 0 && (
+          <p className="text-xs text-gray-500 -mt-2">
+            {noOfTable} table{noOfTable > 1 ? "s" : ""} will be auto-created (e.g. "Table 1", "Table 2"…).
+            You can rename or add more tables later.
+          </p>
+        )}
+        {isEdit && (
+          <p className="text-xs text-amber-600 -mt-2">
+            ⚠ Changing this number won't add or remove tables automatically.
+            To adjust your tables, go to the Table Arrangement section.
+          </p>
+        )}
         <FormField
           label="Description"
           value={description}

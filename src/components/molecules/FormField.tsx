@@ -50,6 +50,7 @@ export interface FormFieldProps {
   rows?: number;
 
   autoComplete?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
 
   /** Optional helper or error text */
   hint?: string;
@@ -73,6 +74,7 @@ export function FormField({
   disabled,
   autoFocus,
   autoComplete,
+  inputMode,
   min,
   max,
   step,
@@ -179,6 +181,7 @@ export function FormField({
           required={required}
           autoFocus={autoFocus}
           autoComplete={autoComplete}
+          inputMode={inputMode}
           min={min}
           max={max}
           step={step}

@@ -11,7 +11,7 @@ import type { Event } from "../../../api/hooks/useEventsApi";
 import { useFormFields, type FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
 import { useRsvpDesign, useSaveRsvpDesign } from "../../../api/hooks/useRsvpDesignApi";
 import { FullPagePreview } from "./RsvpDesignPage";
-import { useUploadMedia } from "../../../api/hooks/useMediaApi";
+import { useUploadMedia, useDeleteMedia } from "../../../api/hooks/useMediaApi";
 import type { RsvpBlock, RsvpDesign, FlowPreset } from "../../../types/rsvpDesign";
 import {
   saveImageToCache,
@@ -760,6 +760,7 @@ export default function RsvpDesignV2Page() {
     data: saveResponse,
   } = useSaveRsvpDesign(eventId ?? "");
   const { mutateAsync: uploadMedia } = useUploadMedia();
+  const { mutateAsync: deleteMedia } = useDeleteMedia();
 
   // ── Design state (identical to V1 / RsvpDesignPage) ─────────────────────
   const [isDesignLoaded, setIsDesignLoaded] = useState(false);
@@ -1062,6 +1063,11 @@ export default function RsvpDesignV2Page() {
   const handleBackgroundUpload = async (file: File) => {
     const id = uid();
     const blobUrl = await saveImageToCache(id, file, eventId ?? "");
+    // If the current background is a saved CDN URL, delete the old file from CDN
+    if (globalBackgroundAsset?.startsWith("https://")) {
+      const fileName = globalBackgroundAsset.split("/").pop();
+      if (fileName) deleteMedia({ fileName }).catch(() => {});
+    }
     // Evict any previous pending global background from cache
     if (globalBgCacheIdRef.current) {
       removeCachedImage(globalBgCacheIdRef.current).catch(() => {});
@@ -1137,7 +1143,18 @@ export default function RsvpDesignV2Page() {
     );
 
   const setSectionImageForBlock = async (blockId: string, file: File) => {
+    // Capture old section image before updating state for cleanup
+    const oldSectionImage = blocks.find((b) => b.id === blockId)?.sectionImage;
     const asset = await toImageAsset(file);
+    // Clean up old CDN file if this slot was already saved
+    if (oldSectionImage) {
+      if (oldSectionImage.src?.startsWith("https://")) {
+        const fileName = oldSectionImage.src.split("/").pop();
+        if (fileName) deleteMedia({ fileName }).catch(() => {});
+      }
+      // Clean up old IndexedDB entry for this slot (no-op if already cleared after last save)
+      removeCachedImage(oldSectionImage.id).catch(() => {});
+    }
     setBlocks((prev) =>
       prev.map((b) => (b.id === blockId ? { ...b, sectionImage: asset } : b))
     );
