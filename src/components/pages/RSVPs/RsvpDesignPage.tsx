@@ -22,26 +22,57 @@ export type { FlowPreset, RsvpBlock } from "../../../types/rsvpDesign";
 // ─────────────────────────────────────────────────────────────────────────────
 const uid = () => Math.random().toString(36).slice(2, 9);
 
-function renderBlockPreview(block: RsvpBlock, accentColor: string): React.ReactNode {
+function renderBlockPreview(block: RsvpBlock, accentColor: string, mode: "thumb" | "full" = "thumb"): React.ReactNode {
   switch (block.type) {
     case "headline":
       return (
         <div className={`text-${block.align}`}>
-          <p className="text-xs uppercase tracking-[0.2em] text-white/70">Welcome</p>
-          <h2 className={`mt-0.5 text-2xl font-extrabold text-white drop-shadow ${block.accent}`}>{block.title}</h2>
-          {block.subtitle && <p className="mt-1 text-xs text-white/75">{block.subtitle}</p>}
+          <p className={`uppercase tracking-[0.2em] text-white/70 ${mode === "full" ? "text-xs" : "text-xs"}`}>Welcome</p>
+          <h2 className={`mt-0.5 font-extrabold text-white drop-shadow ${block.accent} ${mode === "full" ? "text-4xl" : "text-2xl"}`}>{block.title}</h2>
+          {block.subtitle && <p className={`mt-1 text-white/75 ${mode === "full" ? "text-base" : "text-xs"}`}>{block.subtitle}</p>}
         </div>
       );
     case "text":
-      return <p className={`text-sm leading-relaxed ${block.muted ? "text-white/75" : "text-white"}`}>{block.body}</p>;
+      return (
+        <p
+          className={`leading-relaxed ${block.muted ? "text-white/70" : "text-white"} ${
+            mode === "full"
+              ? `text-base ${block.width === "half" ? "md:max-w-[50%]" : "w-full"}`
+              : "text-sm"
+          }`}
+        >
+          {block.body}
+        </p>
+      );
     case "info":
       return (
-        <div className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs ${block.accent}`}>
+        <div className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 ${block.accent} ${mode === "full" ? "text-sm gap-3 px-5 py-2.5" : "text-xs"}`}>
           <span className="font-semibold uppercase tracking-wide">{block.label}</span>
           <span className="text-white/80">{block.content}</span>
         </div>
       );
-    case "formField":
+    case "formField": {
+      if (mode === "full") {
+        const cardBg = (block as { fieldCardColor?: string }).fieldCardColor ?? "#ffffff";
+        const cardText = (block as { fieldCardTextColor?: string }).fieldCardTextColor ?? "#111827";
+        return (
+          <div className={block.width === "half" ? "md:max-w-[50%]" : "w-full"}>
+            <div className="rounded-xl p-4 shadow-sm" style={{ backgroundColor: cardBg, color: cardText }}>
+              <label className="mb-1 block text-sm font-medium" style={{ color: cardText }}>
+                {block.label}
+                {block.required && <span className="ml-1 text-rose-500">*</span>}
+              </label>
+              <input
+                type="text"
+                placeholder={block.placeholder || "Guest response here"}
+                disabled
+                className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-400 cursor-not-allowed"
+              />
+              {block.hint && <p className="mt-1 text-xs text-gray-400">{block.hint}</p>}
+            </div>
+          </div>
+        );
+      }
       return (
         <div className={block.width === "half" ? "md:max-w-[50%]" : "w-full"}>
           <label className="mb-1 block text-xs font-semibold text-white">
@@ -54,23 +85,47 @@ function renderBlockPreview(block: RsvpBlock, accentColor: string): React.ReactN
           {block.hint && <p className="mt-1 text-[10px] text-white/60">{block.hint}</p>}
         </div>
       );
-    case "cta":
+    }
+    case "cta": {
+      const btnStyle = { background: (block as { ctaColor?: string }).ctaColor ?? accentColor, color: (block as { ctaTextColor?: string }).ctaTextColor ?? "#0f172a" };
+      const btnCls = `rounded-full font-semibold shadow ${mode === "full" ? "px-8 py-3 text-sm transition hover:opacity-90" : "px-5 py-2 text-xs"}`;
       return (
         <div
           className={`flex ${
             block.align === "center" ? "justify-center" : block.align === "right" ? "justify-end" : "justify-start"
           }`}
         >
-          <button
-            className="rounded-full px-5 py-2 text-xs font-semibold shadow"
-            style={{ background: accentColor, color: "#0f172a" }}
-          >
-            {block.label}
-          </button>
+          {mode === "full" && (block as { href?: string }).href && (block as { href?: string }).href !== "#" ? (
+            <a
+              href={(block as { href?: string }).href}
+              target="_blank"
+              rel="noreferrer"
+              className={btnCls}
+              style={btnStyle}
+            >
+              {block.label}
+            </a>
+          ) : (
+            <button type="button" className={btnCls} style={btnStyle}>
+              {block.label}
+            </button>
+          )}
         </div>
       );
+    }
     case "image": {
       const active = block.images.find((img) => img.id === block.activeImageId) ?? block.images[0];
+      if (mode === "full") {
+        const h = block.height === "tall" ? "h-80" : block.height === "short" ? "h-48" : "h-64";
+        return (
+          <div className={`overflow-hidden rounded-2xl ${h}`}>
+            {active ? (
+              <img src={active.src} alt={active.alt ?? ""} className="h-full w-full object-cover" loading="lazy" />
+            ) : null}
+            {block.caption && <p className="bg-black/40 px-4 py-2 text-xs text-white/80">{block.caption}</p>}
+          </div>
+        );
+      }
       const h = block.height === "tall" ? "h-56" : block.height === "short" ? "h-32" : "h-44";
       return (
         <div className={`overflow-hidden rounded-xl border border-white/15 bg-white/5 ${h}`}>
@@ -86,6 +141,7 @@ function renderBlockPreview(block: RsvpBlock, accentColor: string): React.ReactN
       );
     }
     case "attendance":
+      if (mode === "full") return null;
       return (
         <div className="space-y-1.5">
           <p className="text-xs font-semibold text-white">{block.title || "Will you be attending?"}</p>
@@ -99,6 +155,41 @@ function renderBlockPreview(block: RsvpBlock, accentColor: string): React.ReactN
       );
     case "guestDetails": {
       const fields = block.showFields ?? { name: true, phone: true, pax: true };
+      if (mode === "full") {
+        const cardBg = block.cardColor ?? "#ffffff";
+        const cardText = block.cardTextColor ?? "#111827";
+        const fieldDefs = [
+          { key: "name" as const, label: "Your name", placeholder: "Full name" },
+          { key: "phone" as const, label: "Phone number", placeholder: "+60 12-345 6789" },
+          { key: "pax" as const, label: "Number of guests", placeholder: "1" },
+        ];
+        const visibleFields = fieldDefs.filter(({ key }) => fields[key] !== false);
+        return (
+          <div className="w-full space-y-4">
+            <div>
+              <p className="text-sm font-semibold text-white">{block.title || "Your details"}</p>
+              {block.subtitle && <p className="mt-0.5 text-xs text-white/60">{block.subtitle}</p>}
+            </div>
+            <div className="rounded-xl p-4 shadow-sm space-y-4" style={{ backgroundColor: cardBg, color: cardText }}>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {visibleFields.map(({ key, label, placeholder }) => (
+                  <div key={key} className="flex flex-col gap-1">
+                    <label className="text-sm font-medium" style={{ color: cardText }}>
+                      {label} <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type={key === "pax" ? "number" : "text"}
+                      placeholder={placeholder}
+                      disabled
+                      className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-400 cursor-not-allowed"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      }
       const visible = Object.entries(fields).filter(([, v]) => v !== false).map(([k]) => k);
       return (
         <div className="space-y-1.5">
@@ -238,25 +329,26 @@ export function FullPagePreview({
       </div>
 
       <div
-        className={`relative mx-auto flex max-w-2xl flex-col gap-0 px-4 py-16 ${
+        className={`relative mx-auto flex max-w-3xl flex-col gap-6 px-4 py-12 ${
           flowPreset === "stacked" ? "scroll-snap-y scroll-smooth" : ""
         }`}
       >
-        {blocks.map((block, i) => {
+        {blocks.map((block) => {
           const bgImages = block.background?.images ?? [];
           const activeBg =
             bgImages.find((img) => img.id === block.background?.activeImageId) ??
             bgImages[0] ??
             block.sectionImage;
           const overlayStr = block.background?.overlay ?? 0.35;
-          const lift = flowPreset === "serene" ? "hover:-translate-y-1" : "hover:-translate-y-2";
+          const content = renderBlockPreview(block, accentColor, "full");
+          if (content === null) return null;
 
           return (
             <section
               key={block.id}
-              className={`group relative overflow-hidden ${block.type === "image" ? "p-0" : "py-10 px-2"} transition duration-500 ${
+              className={`relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl ring-1 ring-white/5 backdrop-blur-sm transition duration-500 hover:-translate-y-1 ${
                 flowPreset === "stacked" ? "scroll-snap-start" : ""
-              } ${lift} ${flowPreset === "serene" && i < blocks.length - 1 ? "border-b border-white/[0.05]" : ""}`}
+              }`}
               style={{
                 backgroundImage: activeBg
                   ? `linear-gradient(rgba(15,23,42,${overlayStr}),rgba(15,23,42,${overlayStr})),url(${activeBg.src})`
@@ -266,7 +358,7 @@ export function FullPagePreview({
                 backgroundAttachment: flowPreset === "parallax" ? "fixed" : "scroll",
               }}
             >
-              <div className="space-y-4 text-white">{renderBlockPreview(block, accentColor)}</div>
+              <div className="space-y-4 text-white">{content}</div>
             </section>
           );
         })}
