@@ -25,6 +25,7 @@ export const EventsEndpoints = {
   importRsvps: (eventId: string) => `/events/${eventId}/rsvps/import`,
   exportRsvps: (eventId: string) => `/events/${eventId}/rsvps/export`,
   eventRsvpInternal: (eventGuid: string) => `/event/eventRsvpInternal/${eventGuid}`,
+  updateSlug: `/event/UpdateSlug`,
 };
 
 export const RsvpsEndpoints = {
