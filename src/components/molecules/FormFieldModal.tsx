@@ -68,16 +68,18 @@ export function FormFieldModal({
   }, [initial?.type]);
 
   const [text, setText] = useState(initial?.text ?? "");
+  const [textError, setTextError] = useState("");
   const [required, setRequired] = useState<boolean>(initial?.isRequired ?? false);
   const [typeKey, setTypeKey] = useState<TypeKey>(initialTypeKey);
   const [options, setOptions] = useState<string>(initial?.options ?? "");
-  const [order, setOrder] = useState<number>(Number.isFinite(initial?.order) ? (initial!.order as number) : 0);
+  const [order, setOrder] = useState<number>(Number.isFinite(initial?.order) ? (initial!.order as number) : 1);
 
   useEffect(() => {
     if (!isOpen) return;
     setText(initial?.text ?? "");
+    setTextError("");
     setRequired(initial?.isRequired ?? false);
-    setOrder(Number.isFinite(initial?.order) ? (initial!.order as number) : 0);
+    setOrder(Number.isFinite(initial?.order) ? (initial!.order as number) : 1);
 
     // type
     const pair = Object.entries(TYPE_MAP).find(([ , v]) => v === (initial?.type ?? TYPE_MAP.text));
@@ -87,6 +89,10 @@ export function FormFieldModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!text.trim()) {
+      setTextError("Question text is required");
+      return;
+    }
     const dto: QuestionDto = {
       id: initial?.id,
       text,
@@ -113,8 +119,9 @@ export function FormFieldModal({
         <FormField
           label="Question Text"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => { setText(e.target.value); setTextError(""); }}
           placeholder="e.g. Do you have any dietary requirements?"
+          error={textError}
         />
 
         <div>
@@ -156,7 +163,7 @@ export function FormFieldModal({
           type="number"
           value={String(order)}
           onChange={(e) => setOrder(Number(e.target.value))}
-          placeholder="0"
+          placeholder="1"
         />
 
         <div className="flex justify-end space-x-2">
