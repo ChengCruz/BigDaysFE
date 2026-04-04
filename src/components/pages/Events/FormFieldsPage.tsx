@@ -12,7 +12,7 @@ import {
   type QuestionPayload,
 } from "../../../api/hooks/useFormFieldsApi";
 import { Button } from "../../atoms/Button";
-import { FormFieldModal } from "../../molecules/FormFieldModal";
+import { FormFieldModal, TYPE_LABELS } from "../../molecules/FormFieldModal";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { useEventContext } from "../../../context/EventContext";
@@ -91,7 +91,7 @@ export default function FormFieldsPage() {
               <div>
                 <p className="font-medium">{f.label ?? f.text}</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {(typeof f.type === "number" ? f.type : f.typeKey ?? String(f.type))} {f.isRequired && "· required"}
+                  Type: {TYPE_LABELS[f.typeKey as keyof typeof TYPE_LABELS] ?? f.typeKey ?? String(f.type)} · Order: {f.order ?? "—"}{f.isRequired && " · Required"}
                 </p>
               </div>
               <div className="space-x-2">
@@ -111,6 +111,7 @@ export default function FormFieldsPage() {
                 {f.isActive === false ? (
                   <Button
                     variant="secondary"
+                    className="!text-green-700 !border-green-500 hover:!bg-green-50 dark:!text-green-400 dark:!border-green-600 dark:hover:!bg-green-900/20"
                     onClick={() => {
                       if (f.questionId) setActivateWarning({ open: true, field: f });
                     }}
@@ -120,6 +121,7 @@ export default function FormFieldsPage() {
                 ) : (
                   <Button
                     variant="secondary"
+                    className="!text-amber-700 !border-amber-400 hover:!bg-amber-50 dark:!text-amber-400 dark:!border-amber-500 dark:hover:!bg-amber-900/20"
                     onClick={() => {
                       if (f.questionId) setDeactivateWarning({ open: true, field: f });
                     }}
@@ -259,6 +261,7 @@ export default function FormFieldsPage() {
               type: dto.type,
               isRequired: dto.isRequired,
               options: dto.options ?? "",
+              order: dto.order,
               eventGuid: eventId,
             };
 
