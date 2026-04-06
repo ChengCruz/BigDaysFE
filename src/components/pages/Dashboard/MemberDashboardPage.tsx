@@ -44,7 +44,7 @@ const randomMsg = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)]
 // Helper function to format relative time
 function formatRelativeTime(timestamp: string): string {
   const now = new Date();
-  const activityDate = new Date(timestamp);
+  const activityDate = new Date(timestamp.endsWith('Z') ? timestamp : timestamp + 'Z');
   const diffMs = now.getTime() - activityDate.getTime();
   const diffMins = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
