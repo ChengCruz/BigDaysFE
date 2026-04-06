@@ -166,6 +166,21 @@ export function useDeactivateEvent() {
   });
 }
 
+/** Update event slug */
+export function useUpdateEventSlug() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { eventGuid: string; slug: string }) => {
+      const res = await client.put(EventsEndpoints.updateSlug, data);
+      return res.data;
+    },
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: ["events"] });
+      qc.invalidateQueries({ queryKey: ["event", variables.eventGuid] });
+    },
+  });
+}
+
 /** Fetch internal RSVP template (event + questions, no design) for a given event GUID. */
 export function useEventRsvpInternal(eventId?: string) {
   return useQuery<FormFieldConfig[]>({

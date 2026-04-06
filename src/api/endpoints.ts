@@ -25,6 +25,7 @@ export const EventsEndpoints = {
   importRsvps: (eventId: string) => `/events/${eventId}/rsvps/import`,
   exportRsvps: (eventId: string) => `/events/${eventId}/rsvps/export`,
   eventRsvpInternal: (eventGuid: string) => `/event/eventRsvpInternal/${eventGuid}`,
+  updateSlug: `/event/UpdateSlug`,
 };
 
 export const RsvpsEndpoints = {
@@ -103,6 +104,11 @@ export const FormFieldsEndpoints = {
   activate: () => `/question/Activate`,
   deactivate: () => `/question/Deactivate`,
   delete: () => `/question/Delete`,
+};
+
+export const AnswerEndpoints = {
+  byRsvp: (rsvpGuid: string) => `/answer/GetAnswersByRsvp/${rsvpGuid}`,
+  update: () => `/answer/Update`,
 };
 
 export const PublicRsvpEndpoints = {

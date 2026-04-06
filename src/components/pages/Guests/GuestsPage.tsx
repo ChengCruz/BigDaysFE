@@ -63,6 +63,17 @@ export default function GuestsPage() {
     return map;
   }, [tables]);
 
+  // Compute assigned pax count per table from guests list
+  const tableOccupancy = useMemo(() => {
+    const map = new Map<string, number>();
+    guests.forEach(g => {
+      if (g.tableId) {
+        map.set(g.tableId, (map.get(g.tableId) ?? 0) + (g.pax || g.noOfPax || 1));
+      }
+    });
+    return map;
+  }, [guests]);
+
   // Filter guests
   const filteredGuests = useMemo(() => {
     return guests.filter((g) => {
@@ -85,12 +96,24 @@ export default function GuestsPage() {
 
   // Handle assign table
   const handleAssignTable = (guest: Guest, tableId: string) => {
+    const table = tables.find(t => t.id === tableId);
+    const currentOccupancy = tableOccupancy.get(tableId) ?? 0;
+    const guestPax = guest.pax || guest.noOfPax || 1;
+    const willExceed = table && (currentOccupancy + guestPax) > table.capacity;
+
     assignGuestToTable.mutate({
       guestId: guest.guestId ?? guest.id,
       tableId: tableId,
     }, {
       onSuccess: () => {
-        toast.success(`${guest.guestName || guest.name} assigned to table successfully`);
+        if (willExceed && table) {
+          toast(`⚠️ ${table.name} is over capacity (${currentOccupancy + guestPax}/${table.capacity}). Guest assigned anyway.`, {
+            duration: 4000,
+            style: { background: "#fef3c7", color: "#92400e" },
+          });
+        } else {
+          toast.success(`${guest.guestName || guest.name} assigned to table successfully`);
+        }
         setAssignModal({ open: false });
       },
       onError: () => {
@@ -218,7 +241,7 @@ export default function GuestsPage() {
                   {/* Phone Number */}
                   {guest.phoneNo && (
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Phone: {guest.phoneNo}
+                      Phone: {guest.phoneNo.startsWith("+") ? guest.phoneNo : "+" + guest.phoneNo}
                     </p>
                   )}
 
@@ -227,11 +250,7 @@ export default function GuestsPage() {
                     <UserGroupIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                     <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                       {guest.pax || guest.noOfPax || 1} {((guest.pax || guest.noOfPax || 1) === 1) ? 'person' : 'people'}
-                      {(guest.pax || guest.noOfPax || 1) > 1 && (
-                        <span className="ml-2 text-xs font-bold text-primary">
-                          (+{(guest.pax || guest.noOfPax || 1) - 1})
-                        </span>
-                      )}
+                      {(guest.pax || guest.noOfPax || 1) > 1 }
                     </p>
                   </div>
 
@@ -341,20 +360,37 @@ export default function GuestsPage() {
               No tables available. Please create tables first.
             </p>
           ) : (
-            tables.map((table) => (
-              <button
-                key={table.id}
-                onClick={() => handleAssignTable(assignModal.guest!, table.id)}
-                className="w-full text-left p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-primary dark:hover:border-primary hover:bg-primary/5 transition-colors"
-              >
-                <p className="font-semibold text-gray-900 dark:text-white">
-                  {table.name}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Capacity: {table.capacity}
-                </p>
-              </button>
-            ))
+            tables.map((table) => {
+              const occupied = tableOccupancy.get(table.id) ?? 0;
+              const isFull = occupied >= table.capacity;
+              const isOver = occupied > table.capacity;
+              return (
+                <button
+                  key={table.id}
+                  onClick={() => handleAssignTable(assignModal.guest!, table.id)}
+                  className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
+                    isOver
+                      ? "border-red-400 dark:border-red-600 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      : isFull
+                      ? "border-orange-300 dark:border-orange-600 hover:border-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                      : "border-gray-200 dark:border-gray-700 hover:border-primary dark:hover:border-primary hover:bg-primary/5"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-gray-900 dark:text-white">{table.name}</p>
+                    {isOver && (
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400">Over capacity</span>
+                    )}
+                    {isFull && !isOver && (
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400">Full</span>
+                    )}
+                  </div>
+                  <p className={`text-sm mt-0.5 ${isOver ? "text-red-600 dark:text-red-400 font-medium" : "text-gray-600 dark:text-gray-400"}`}>
+                    {occupied} / {table.capacity} seats filled
+                  </p>
+                </button>
+              );
+            })
           )}
         </div>
         <div className="mt-4 flex justify-end">

@@ -60,6 +60,17 @@ export const TableFormModal: React.FC<Props> = ({
       onClose();
     } catch (err: any) {
       console.error(err);
+      if (err?.response?.status === 401) {
+        try {
+          if (isEdit && initial) {
+            await updateTableInfo.mutateAsync(payload);
+          } else {
+            await createTable.mutateAsync(payload);
+          }
+          onClose();
+          return;
+        } catch { /* fall through to show error */ }
+      }
       setError(err.message ?? "Something went wrong.");
     }
   };

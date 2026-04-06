@@ -69,7 +69,7 @@ export const GuestCard: React.FC<GuestCardProps> = ({
 
       {guest.phoneNo && (
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-          {guest.phoneNo}
+          {guest.phoneNo.startsWith("+") ? guest.phoneNo : "+" + guest.phoneNo}
         </p>
       )}
 

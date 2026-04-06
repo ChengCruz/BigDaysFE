@@ -4,13 +4,14 @@ import {
   useDeactivateEvent,
   useEventsApi,
   useActivateEvent,
+  useUpdateEventSlug,
 } from "../../../api/hooks/useEventsApi";
 import { EventFormModal } from "../../molecules/EventFormModal";
 import { Button } from "../../atoms/Button";
 import { Outlet, useNavigate, useSearchParams } from "react-router-dom";
 import { useEventContext } from "../../../context/EventContext";
-import { CheckCircleIcon } from "@heroicons/react/solid";
-import { CalendarIcon, LocationMarkerIcon, ArchiveIcon } from "@heroicons/react/outline";
+import { CheckCircleIcon, CheckIcon } from "@heroicons/react/solid";
+import { CalendarIcon, LocationMarkerIcon, ArchiveIcon, PencilIcon, XIcon } from "@heroicons/react/outline";
 import { StatsCard } from "../../atoms/StatsCard";
 import { formatEventDate, formatEventTime } from "../../../utils/eventUtils";
 
@@ -27,6 +28,9 @@ export default function EventsPage() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"upcoming" | "recent" | "name">("upcoming");
   const [searchParams, setSearchParams] = useSearchParams();
+  const updateSlug = useUpdateEventSlug();
+  const [editingSlugId, setEditingSlugId] = useState<string | null>(null);
+  const [slugInput, setSlugInput] = useState("");
 
   useEffect(() => {
     const wantsNew = searchParams.get("new") === "1";
@@ -124,11 +128,56 @@ export default function EventsPage() {
                     {activeEvent.location || "Add a venue"}
                   </span>
                 </p>
-                {activeEvent.slug && (
-                  <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
-                    slug: <span className="text-primary/70">{activeEvent.slug}</span>
-                  </p>
-                )}
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">slug:</span>
+                  {editingSlugId === activeEvent.id ? (
+                    <>
+                      <input
+                        className="text-xs font-mono border border-primary/30 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary/30 w-40"
+                        value={slugInput}
+                        onChange={(e) => setSlugInput(e.target.value)}
+                        autoFocus
+                      />
+                      <button
+                        className="p-0.5 rounded text-green-600 hover:bg-green-50"
+                        disabled={updateSlug.isPending}
+                        onClick={async () => {
+                          await updateSlug.mutateAsync({ eventGuid: activeEvent.id, slug: slugInput });
+                          setEditingSlugId(null);
+                        }}
+                      >
+                        <CheckIcon className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        className="p-0.5 rounded text-gray-400 hover:bg-gray-100"
+                        onClick={() => setEditingSlugId(null)}
+                      >
+                        <XIcon className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {activeEvent.slug ? (
+                        <a
+                          href={`/rsvp/${activeEvent.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-mono text-primary/70 hover:text-primary hover:underline"
+                        >
+                          {activeEvent.slug}
+                        </a>
+                      ) : (
+                        <span className="text-xs font-mono text-gray-300 dark:text-gray-600">not set</span>
+                      )}
+                      <button
+                        className="p-0.5 rounded text-gray-300 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10"
+                        onClick={() => { setEditingSlugId(activeEvent.id); setSlugInput(activeEvent.slug ?? ""); }}
+                      >
+                        <PencilIcon className="w-3 h-3" />
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -226,11 +275,56 @@ export default function EventsPage() {
                       <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
                       <span>{isArchived ? "Archived plan" : ""}</span>
                     </div>
-                    {ev.slug && (
-                      <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
-                        slug: <span className="text-primary/70">{ev.slug}</span>
-                      </p>
-                    )}
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">slug:</span>
+                      {editingSlugId === ev.id ? (
+                        <>
+                          <input
+                            className="text-xs font-mono border border-primary/30 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary/30 w-36"
+                            value={slugInput}
+                            onChange={(e) => setSlugInput(e.target.value)}
+                            autoFocus
+                          />
+                          <button
+                            className="p-0.5 rounded text-green-600 hover:bg-green-50"
+                            disabled={updateSlug.isPending}
+                            onClick={async () => {
+                              await updateSlug.mutateAsync({ eventGuid: ev.id, slug: slugInput });
+                              setEditingSlugId(null);
+                            }}
+                          >
+                            <CheckIcon className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            className="p-0.5 rounded text-gray-400 hover:bg-gray-100"
+                            onClick={() => setEditingSlugId(null)}
+                          >
+                            <XIcon className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          {ev.slug ? (
+                            <a
+                              href={`/rsvp/${ev.slug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-mono text-primary/70 hover:text-primary hover:underline"
+                            >
+                              {ev.slug}
+                            </a>
+                          ) : (
+                            <span className="text-xs font-mono text-gray-300 dark:text-gray-600">not set</span>
+                          )}
+                          <button
+                            className="p-0.5 rounded text-gray-300 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10"
+                            onClick={() => { setEditingSlugId(ev.id); setSlugInput(ev.slug ?? ""); }}
+                          >
+                            <PencilIcon className="w-3 h-3" />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   {/* Card footer */}

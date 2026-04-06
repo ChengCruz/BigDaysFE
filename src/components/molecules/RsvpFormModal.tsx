@@ -1,6 +1,7 @@
 // src/components/molecules/RsvpFormModal.tsx
 import React, { useState, useEffect } from "react";
 import { type Rsvp, type CreateRsvpInput } from "../../api/hooks/useRsvpsApi";
+import { type AnswerItem } from "../../api/hooks/useAnswersApi"; // kept for initialAnswers prop type
 import { useAuth } from "../../api/hooks/useAuth";
 import { useEventRsvpInternal } from "../../api/hooks/useEventsApi";
 import { Modal } from "./Modal";
@@ -47,6 +48,7 @@ interface Props {
   onClose: () => void;
   eventId: string;
   initial?: Rsvp;
+  initialAnswers?: AnswerItem[];
   onSave: (data: CreateRsvpInput, id?: string) => void;
 }
 
@@ -55,6 +57,7 @@ export const RsvpFormModal: React.FC<Props> = ({
   onClose,
   eventId,
   initial,
+  initialAnswers,
   onSave,
 }) => {
   const { user } = useAuth();
@@ -70,6 +73,7 @@ export const RsvpFormModal: React.FC<Props> = ({
   const [guestNameError, setGuestNameError] = useState("");
   const [phoneNoError, setPhoneNoError] = useState("");
   const [noOfPaxError, setNoOfPaxError] = useState("");
+  const [extrasErrors, setExtrasErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (isOpen && !initialized) {
@@ -89,10 +93,26 @@ export const RsvpFormModal: React.FC<Props> = ({
       setGuestNameError("");
       setPhoneNoError("");
       setNoOfPaxError("");
+      setExtrasErrors({});
       setInitialized(true);
     }
     if (!isOpen) setInitialized(false);
   }, [isOpen, initial?.rsvpId, formFields, initialized]);
+
+  // Overlay existing answers onto extras whenever initialAnswers arrives
+  useEffect(() => {
+    if (!isOpen || !initialAnswers?.length || !(formFields as any[]).length) return;
+    setExtras((prev) => {
+      const updated = { ...prev };
+      (formFields as any[]).forEach((f: any) => {
+        const name = f.name ?? f.id ?? f.questionId;
+        if (!name) return;
+        const answer = initialAnswers.find((a) => a.questionId === (f.questionId ?? f.id));
+        if (answer) updated[name] = answer.text;
+      });
+      return updated;
+    });
+  }, [isOpen, initialAnswers, formFields]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,16 +145,33 @@ export const RsvpFormModal: React.FC<Props> = ({
       setNoOfPaxError("");
     }
 
+    const newExtrasErrors: Record<string, string> = {};
+    (formFields as any[]).forEach((f: any) => {
+      if (f.isRequired ?? f.required) {
+        const key = f.name ?? f.id ?? f.questionId;
+        if (!extras[key]?.trim()) {
+          newExtrasErrors[key] = "This field is required";
+          hasError = true;
+        }
+      }
+    });
+    setExtrasErrors(newExtrasErrors);
+
     if (hasError) return;
 
     const actor = user?.id ?? user?.name ?? "System";
-    const payload: CreateRsvpInput = {
+    const answers = (formFields as any[]).map((f: any) => ({
+      questionId: String(f.questionId ?? f.id ?? ""),
+      text: extras[f.name ?? f.id ?? f.questionId] ?? "",
+    }));
+
+    const payload: any = {
       eventId,
       guestName: guestName.trim(),
       noOfPax: Number(noOfPax),
       remarks: remarks.trim(),
-      phoneNo: `${countryCode}${phoneNumber.trim()}`,
-      ...extras,
+      phoneNo: `${countryCode.replace(/^\+/, "")}${phoneNumber.trim()}`,
+      ...(answers.length > 0 ? { answers } : {}),
     };
 
     if (initial) {
@@ -150,7 +187,7 @@ export const RsvpFormModal: React.FC<Props> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={initial ? "Edit RSVP" : "New RSVP"}>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
 
         {/* Guest Name */}
         <FormField
@@ -168,7 +205,7 @@ export const RsvpFormModal: React.FC<Props> = ({
           </label>
           <div className="flex gap-2 items-stretch">
             <select
-              className="border rounded p-2 bg-background disabled:opacity-60 disabled:cursor-not-allowed"
+              className="border rounded p-2 bg-background"
               value={countryCode}
               onChange={(e) => setCountryCode(e.target.value)}
             >
@@ -178,10 +215,10 @@ export const RsvpFormModal: React.FC<Props> = ({
             </select>
             <input
               type="tel"
-              className={`flex-1 border rounded p-2 disabled:opacity-60 disabled:cursor-not-allowed ${phoneNoError ? "border-red-500" : ""}`}
+              className={`flex-1 border rounded p-2 ${phoneNoError ? "border-red-500" : ""}`}
               placeholder="e.g. 123456789"
               value={phoneNumber}
-              onChange={(e) => { setPhoneNumber(e.target.value); setPhoneNoError(""); }}
+              onChange={(e) => { setPhoneNumber(e.target.value.replace(/^\+/, "")); setPhoneNoError(""); }}
             />
           </div>
           {phoneNoError && <p className="text-xs text-red-600">{phoneNoError}</p>}
@@ -200,17 +237,24 @@ export const RsvpFormModal: React.FC<Props> = ({
         />
 
         {/* Dynamic Extra Fields */}
-        {formFields.map((f: any) => (
-          <FormField
-            key={f.id}
-            label={f.label}
-            type={f.typeKey ?? f.type}
-            required={f.isRequired ?? f.required}
-            options={f.options}
-            value={extras[f.name] ?? ""}
-            onChange={(e) => setExtras((prev) => ({ ...prev, [f.name]: e.target.value }))}
-          />
-        ))}
+        {formFields.map((f: any) => {
+          const key = f.name ?? f.id ?? f.questionId;
+          return (
+            <FormField
+              key={f.id}
+              label={f.label}
+              type={f.typeKey ?? f.type}
+              required={f.isRequired ?? f.required}
+              options={f.options}
+              value={extras[f.name] ?? ""}
+              error={extrasErrors[key]}
+              onChange={(e) => {
+                setExtras((prev) => ({ ...prev, [f.name]: e.target.value }));
+                setExtrasErrors((prev) => ({ ...prev, [key]: "" }));
+              }}
+            />
+          );
+        })}
 
         {/* Remarks */}
         <FormField

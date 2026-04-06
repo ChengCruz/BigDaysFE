@@ -44,6 +44,17 @@ export const SeatingFormModal: React.FC<Props> = ({
       onClose();
     } catch (err: any) {
       console.error(err);
+      if (err?.response?.status === 401) {
+        try {
+          if (isEdit && initial) {
+            await updateSeat.mutateAsync(data);
+          } else {
+            await createSeat.mutateAsync(data);
+          }
+          onClose();
+          return;
+        } catch { /* fall through to show error */ }
+      }
       setError(err.response?.data?.message || "Something went wrong.");
     }
   };
