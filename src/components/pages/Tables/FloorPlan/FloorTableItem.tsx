@@ -204,6 +204,7 @@ export const FloorTableItem: React.FC<Props> = ({
 
   const capacity = table.capacity || 8;
   const assigned = assignedGuests.length;
+  const isOverCapacity = assigned > capacity;
   const shape = (item.meta?.shape as string) || "round";
   const bgColor = getTableColor(item.id);
 
@@ -298,19 +299,25 @@ export const FloorTableItem: React.FC<Props> = ({
           alignItems: "center",
           justifyContent: "center",
           position: "relative",
-          outline: selected ? "3px solid #4f46e5" : "none",
+          outline: isOverCapacity
+            ? "2px solid #ef4444"
+            : selected
+            ? "3px solid #4f46e5"
+            : "none",
           outlineOffset: selected ? 4 : undefined,
-          boxShadow: selected
+          boxShadow: isOverCapacity
+            ? "0 4px 12px rgba(239, 68, 68, 0.35)"
+            : selected
             ? "0 12px 30px rgba(79, 70, 229, 0.3)"
             : "0 4px 12px rgba(0, 0, 0, 0.08)",
           transition: "box-shadow 0.2s, outline 0.15s",
         }}
       >
         <span style={{ color: "white", fontSize: 14, lineHeight: 1 }}>
-          {assigned >= capacity ? "\u2705" : "\ud83e\ude91"}
+          {isOverCapacity ? "⚠️" : assigned >= capacity ? "✅" : "🪑"}
         </span>
         <span style={{ color: "white", fontSize: 10, fontWeight: 700, marginTop: 2, letterSpacing: 0.3 }}>{table.name}</span>
-        <span style={{ color: "rgba(255,255,255,0.75)", fontSize: 9, fontWeight: 500 }}>
+        <span style={{ color: isOverCapacity ? "#fca5a5" : "rgba(255,255,255,0.75)", fontSize: 9, fontWeight: 500 }}>
           {assigned}/{capacity}
         </span>
       </div>

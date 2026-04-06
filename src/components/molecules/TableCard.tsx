@@ -38,10 +38,11 @@ export const TableCard: React.FC<TableCardProps> = ({
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // Calculate if this table can accept the dragged guest
   const availableSeats = table.capacity - table.assignedCount;
-  const canAcceptDrop = draggedGuest 
-    ? draggedGuest.paxCount <= availableSeats 
+  const isOverCapacity = table.assignedCount > table.capacity;
+  // Only block drop if table is strictly full with no room at all during drag hint
+  const canAcceptDrop = draggedGuest
+    ? draggedGuest.paxCount <= availableSeats
     : availableSeats > 0;
 
   // Color scheme based on category
@@ -76,9 +77,9 @@ export const TableCard: React.FC<TableCardProps> = ({
   const colors = categoryColors[table.category || "friends"];
   const progress = (table.assignedCount / table.capacity) * 100;
   const isFull = table.assignedCount >= table.capacity;
+  const isOver = table.assignedCount > table.capacity;
 
   const handleDragOver = (e: React.DragEvent) => {
-    if (!canAcceptDrop) return; // Don't allow drops if insufficient capacity
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     setIsDragOver(true);
@@ -91,8 +92,6 @@ export const TableCard: React.FC<TableCardProps> = ({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    if (!canAcceptDrop) return; // Block drop if insufficient capacity
-    
     const guestId = e.dataTransfer.getData("guestId");
     if (guestId && onDrop) {
       onDrop(guestId, table.id);
@@ -135,14 +134,17 @@ export const TableCard: React.FC<TableCardProps> = ({
             <span className="font-medium text-gray-700 dark:text-gray-300">
               Seats
             </span>
-            <span className="font-semibold text-gray-900 dark:text-white">
+            <span className={`font-semibold ${isOver ? "text-red-600 dark:text-red-400" : "text-gray-900 dark:text-white"}`}>
               {table.assignedCount} / {table.capacity}
+              {isOver && <span className="ml-1.5 text-xs font-bold">Over capacity</span>}
             </span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
             <div
               className={`h-full transition-all duration-300 ${
-                isFull
+                isOver
+                  ? "bg-red-500"
+                  : isFull
                   ? "bg-green-500"
                   : progress > 80
                   ? "bg-amber-500"

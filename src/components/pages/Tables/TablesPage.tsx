@@ -149,12 +149,10 @@ export default function TablesPage() {
     const availableSeats = table.capacity - table.assignedCount;
     
     if (guestPaxCount > availableSeats) {
-      // Show error - table would be overfilled
-      toast.error(
-        `Cannot assign guest. This guest requires ${guestPaxCount} seat(s), but only ${availableSeats} seat(s) available in ${table.name}.`,
-        { duration: 4000 }
-      );
-      return;
+      toast(`⚠️ ${table.name} is over capacity (${table.assignedCount + guestPaxCount}/${table.capacity}). Guest assigned anyway.`, {
+        duration: 4000,
+        style: { background: "#fef3c7", color: "#92400e" },
+      });
     }
 
     // Call the assign API

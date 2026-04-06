@@ -10,6 +10,7 @@ import {
   useUnassignGuestFromTable,
 } from "../../../api/hooks/useTablesApi";
 import { Button } from "../../atoms/Button";
+import toast from "react-hot-toast";
 
 export function TableAssignments() {
   const { tableId } = useParams<{ tableId: string }>();
@@ -44,12 +45,23 @@ export function TableAssignments() {
               >
                 <span>{g.guestName || g.name}</span>
                 <Button
-                  onClick={() =>
-                    assignGuest.mutate({
-                      guestId: g.id,
-                      tableId: tableId!,
-                    })
-                  }
+                  onClick={() => {
+                    const guestPax = (g as any).pax || (g as any).noOfPax || 1;
+                    const newCount = assigned.reduce((s: number, ag: any) => s + ((ag.pax || ag.noOfPax || 1)), 0) + guestPax;
+                    assignGuest.mutate(
+                      { guestId: g.id, tableId: tableId! },
+                      {
+                        onSuccess: () => {
+                          if (newCount > (table?.capacity ?? 0)) {
+                            toast(`⚠️ ${table?.name} is over capacity (${newCount}/${table?.capacity}). Guest assigned anyway.`, {
+                              duration: 4000,
+                              style: { background: "#fef3c7", color: "#92400e" },
+                            });
+                          }
+                        },
+                      }
+                    );
+                  }}
                 >
                   Assign →
                 </Button>
