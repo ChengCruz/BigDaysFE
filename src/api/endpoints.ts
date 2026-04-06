@@ -106,6 +106,11 @@ export const FormFieldsEndpoints = {
   delete: () => `/question/Delete`,
 };
 
+export const AnswerEndpoints = {
+  byRsvp: (rsvpGuid: string) => `/answer/GetAnswersByRsvp/${rsvpGuid}`,
+  update: () => `/answer/Update`,
+};
+
 export const PublicRsvpEndpoints = {
   submit: () => `/rsvp/Create`,
   designByToken: (token: string) => `/RsvpDesign/share/${token}`,

@@ -3,7 +3,7 @@ import { PageLoader } from "../../atoms/PageLoader";
 import { ErrorState } from "../../atoms/ErrorState";
 import React, { useState } from "react";
 import { saveAs } from "file-saver";
-import { ViewGridIcon, ViewListIcon, ClipboardListIcon, UserGroupIcon } from "@heroicons/react/outline";
+import { ViewGridIcon, /* ViewListIcon, */ ClipboardListIcon, UserGroupIcon } from "@heroicons/react/outline";
 import {
   useRsvpsApi,
   useCreateRsvp,
@@ -11,6 +11,7 @@ import {
   useDeleteRsvp,
   type Rsvp,
 } from "../../../api/hooks/useRsvpsApi";
+import type { AnswerItem } from "../../../api/hooks/useAnswersApi";
 import { useEventRsvpInternal } from "../../../api/hooks/useEventsApi";
 import { RsvpFormModal } from "../../molecules/RsvpFormModal";
 import { ImportRsvpsModal } from "../../molecules/ImportRsvpsModal";
@@ -37,9 +38,10 @@ export default function RsvpsPage() {
 
   const [modal, setModal] = useState<{ open: boolean; rsvp?: Rsvp }>({ open: false });
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; rsvp: Rsvp | null }>({ open: false, rsvp: null });
+
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   if (eventsLoading) return <PageLoader message="Loading..." />;
   if (!eventId) return <NoEventsState title="No Events to Manage RSVPs" message="Create your first event to start managing guest responses and invitations." />;
@@ -83,6 +85,15 @@ export default function RsvpsPage() {
     saveAs(new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })]), "rsvps.xlsx");
   };
 
+  const renderAnswers = (answers: AnswerItem[]) =>
+    answers
+      .filter((a) => a.text)
+      .map((a) => {
+        const field = formFields.find((f) => f.questionId === a.questionId);
+        return field ? { label: field.label, text: a.text } : null;
+      })
+      .filter(Boolean) as { label: string; text: string }[];
+
   return (
     <>
       {/* ─── HEADER + ACTIONS ─────────────────────────────────────────── */}
@@ -119,13 +130,14 @@ export default function RsvpsPage() {
           className="md:ml-auto w-full md:w-64 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
         <div className="flex gap-1.5">
-          <button
-            onClick={() => setViewMode("list")}
-            className={`p-2 rounded-xl transition-colors ${viewMode === "list" ? "bg-primary text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"}`}
+          {/* List view temporarily hidden — re-enable when Q&A layout is ready */}
+          {/* <button
+            disabled
+            className="p-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed"
             aria-label="List view"
           >
             <ViewListIcon className="h-5 w-5" />
-          </button>
+          </button> */}
           <button
             onClick={() => setViewMode("grid")}
             className={`p-2 rounded-xl transition-colors ${viewMode === "grid" ? "bg-primary text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"}`}
@@ -166,11 +178,32 @@ export default function RsvpsPage() {
                 )}
               </div>
               {r.phoneNo && (
-                <p className="text-xs text-gray-500 dark:text-gray-400">{r.phoneNo}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{r.phoneNo.startsWith("+") ? r.phoneNo : "+" + r.phoneNo}</p>
               )}
               {r.remarks && (
                 <p className="text-xs text-gray-400 dark:text-gray-500 line-clamp-2">{r.remarks}</p>
               )}
+              {(() => {
+                const qa = renderAnswers(r.answers ?? []);
+                if (qa.length === 0) return null;
+                const visible = qa.slice(0, 3);
+                const extra = qa.length - visible.length;
+                return (
+                  <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                      {visible.map((item) => (
+                        <React.Fragment key={item.label}>
+                          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">{item.label}</span>
+                          <span className="text-xs text-gray-700 dark:text-gray-300 truncate">{item.text}</span>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                    {extra > 0 && (
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">+{extra} more</p>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="mt-auto flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                 <Button variant="secondary" onClick={() => setModal({ open: true, rsvp: r })}>Edit</Button>
                 <Button variant="secondary" onClick={() => handleDelete(r)}>Delete</Button>
@@ -186,7 +219,7 @@ export default function RsvpsPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
               <tr>
-                <th className="text-left px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide text-xs">Guest</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide text-xs">RSVP</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide text-xs">Phone</th>
                 <th className="text-center px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide text-xs">Pax</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide text-xs">Remarks</th>
@@ -196,8 +229,15 @@ export default function RsvpsPage() {
             <tbody className="divide-y divide-gray-50 dark:divide-gray-700/60 bg-white dark:bg-gray-900">
               {filtered.map((r) => (
                 <tr key={r.id} className="hover:bg-gray-50/70 dark:hover:bg-gray-800/60 transition-colors">
-                  <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-100">{r.guestName}</td>
-                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{r.phoneNo || "—"}</td>
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-gray-800 dark:text-gray-100">{r.guestName}</p>
+                    {renderAnswers(r.answers ?? []).map((item) => (
+                      <p key={item.label} className="text-xs text-gray-400 dark:text-gray-500 truncate max-w-[180px]">
+                        {item.label}: {item.text}
+                      </p>
+                    ))}
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{r.phoneNo ? (r.phoneNo.startsWith("+") ? r.phoneNo : "+" + r.phoneNo) : "—"}</td>
                   <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{r.noOfPax ?? "—"}</td>
                   <td className="px-4 py-3 text-gray-500 dark:text-gray-400 max-w-[220px] truncate">{r.remarks || "—"}</td>
                   <td className="px-4 py-3">
@@ -217,6 +257,7 @@ export default function RsvpsPage() {
         isOpen={modal.open}
         onClose={() => setModal({ open: false })}
         initial={modal.rsvp}
+        initialAnswers={modal.rsvp?.answers ?? []}
         eventId={eventId!}
         onSave={async (data, id) => {
           try {
@@ -246,7 +287,7 @@ export default function RsvpsPage() {
           <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
             <p className="font-medium text-gray-800 dark:text-gray-100 mb-1">{deleteModal.rsvp.guestName}</p>
             {deleteModal.rsvp.phoneNo && (
-              <p className="text-xs text-gray-500 dark:text-gray-400">Phone: {deleteModal.rsvp.phoneNo}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Phone: {deleteModal.rsvp.phoneNo.startsWith("+") ? deleteModal.rsvp.phoneNo : "+" + deleteModal.rsvp.phoneNo}</p>
             )}
             {deleteModal.rsvp.noOfPax != null && (
               <p className="text-xs text-gray-500 dark:text-gray-400">Pax: {deleteModal.rsvp.noOfPax}</p>

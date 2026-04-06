@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { RsvpsEndpoints } from "../endpoints";
+import type { AnswerItem } from "./useAnswersApi";
 
 export interface Rsvp {
   // normalize API shape to what components expect
@@ -17,6 +18,7 @@ export interface Rsvp {
   remarks?: string;
   phoneNo?: string;
   tableId?: string; // used by table assignment features
+  answers?: AnswerItem[];
 }
 
 // Input shape when creating a new RSVP
@@ -59,6 +61,13 @@ export function useRsvpsApi(eventId: string) {
         remarks: r.remarks ?? "",
         phoneNo: r.phoneNo ?? "",
         tableId: r.tableId ?? r.table_id ?? undefined,
+        answers: Array.isArray(r.answers)
+          ? r.answers.map((a: any) => ({
+              answerId: String(a.answerId ?? ""),
+              questionId: String(a.questionId ?? ""),
+              text: a.text ?? "",
+            }))
+          : [],
       } as Rsvp));
     },
     enabled: Boolean(eventId),
