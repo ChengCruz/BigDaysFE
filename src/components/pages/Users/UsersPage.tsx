@@ -91,6 +91,21 @@ export default function UsersPage() {
       setConfirmPassword("");
       setPwdSuccess(true);
     } catch (err: any) {
+      if (err?.response?.status === 401) {
+        try {
+          await updatePassword.mutateAsync({
+            id: currentUser!.id,
+            email: currentUser!.email,
+            oldPassword,
+            newPassword,
+          });
+          setOldPassword("");
+          setNewPassword("");
+          setConfirmPassword("");
+          setPwdSuccess(true);
+          return;
+        } catch { /* fall through to show error */ }
+      }
       setPwdError(err.response?.data?.message || "Failed to update password.");
     }
   };

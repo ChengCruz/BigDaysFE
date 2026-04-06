@@ -70,6 +70,18 @@ export const CustomBulkModal: React.FC<Props> = ({ isOpen, onClose }) => {
       onClose();
     } catch (err: any) {
       console.error("Failed to create tables:", err);
+      if (err?.response?.status === 401) {
+        try {
+          await bulkCreateTables.mutateAsync({
+            eventGuid: eventId!,
+            tableName: prefix,
+            quantity: qty,
+            maxSeats: cap,
+          });
+          onClose();
+          return;
+        } catch { /* fall through to show error */ }
+      }
       setError(err.message ?? "Failed to create tables. Please try again.");
     } finally {
       setIsCreating(false);

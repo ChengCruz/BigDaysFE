@@ -136,7 +136,8 @@ export const QuickSetupModal: React.FC<Props> = ({ isOpen, onClose }) => {
       onClose();
     } catch (err: any) {
       console.error("Failed to create tables:", err);
-      setError(err.message ?? "Failed to create tables. Please try again.");
+      const status = err?.response?.status;
+      setError(status === 401 ? "Session expired, please try again." : (err.message ?? "Failed to create tables. Please try again."));
     } finally {
       setIsCreating(false);
     }

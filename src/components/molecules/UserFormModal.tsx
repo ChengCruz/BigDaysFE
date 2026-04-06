@@ -83,6 +83,18 @@ export const UserFormModal: React.FC<Props> = ({ isOpen, onClose, initial }) => 
       }
       setProfileSuccess(true);
     } catch (err: any) {
+      if (err?.response?.status === 401) {
+        try {
+          if (isEdit && initial) {
+            await updateUser.mutateAsync({ fullName: name, email, role });
+          } else {
+            await createUser.mutateAsync({ fullName: name, email });
+            onClose();
+          }
+          setProfileSuccess(true);
+          return;
+        } catch { /* fall through to show error */ }
+      }
       setProfileError(err.response?.data?.message || "Something went wrong.");
     }
   };
@@ -114,6 +126,21 @@ export const UserFormModal: React.FC<Props> = ({ isOpen, onClose, initial }) => 
       setConfirmPassword("");
       setPwdSuccess(true);
     } catch (err: any) {
+      if (err?.response?.status === 401) {
+        try {
+          await updatePassword.mutateAsync({
+            id: initial!.id!,
+            email,
+            oldPassword,
+            newPassword,
+          });
+          setOldPassword("");
+          setNewPassword("");
+          setConfirmPassword("");
+          setPwdSuccess(true);
+          return;
+        } catch { /* fall through to show error */ }
+      }
       setPwdError(err.response?.data?.message || "Failed to update password.");
     }
   };

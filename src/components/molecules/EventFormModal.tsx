@@ -107,6 +107,36 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
       onClose();
     } catch (err: any) {
       console.error(err);
+      if (err?.response?.status === 401) {
+        try {
+          if (isEdit && initial) {
+            const updated = await updateEvt.mutateAsync({
+              eventGuid: initial.id,
+              name: title,
+              date,
+              time,
+              description,
+              location,
+              userGuid: userGuid ?? "",
+              noOfTable,
+            });
+            onSuccess?.(updated);
+          } else {
+            const created = await createEvt.mutateAsync({
+              name: title,
+              date,
+              time,
+              description,
+              location,
+              userGuid: userGuid ?? "",
+              noOfTable: noOfTable.toString(),
+            });
+            onSuccess?.(created);
+          }
+          onClose();
+          return;
+        } catch { /* fall through to show error */ }
+      }
       setError(err.response?.data?.message || "Something went wrong.");
     }
   };
