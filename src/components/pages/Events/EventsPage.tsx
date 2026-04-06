@@ -10,8 +10,8 @@ import { EventFormModal } from "../../molecules/EventFormModal";
 import { Button } from "../../atoms/Button";
 import { Outlet, useNavigate, useSearchParams } from "react-router-dom";
 import { useEventContext } from "../../../context/EventContext";
-import { CheckCircleIcon } from "@heroicons/react/solid";
-import { CalendarIcon, LocationMarkerIcon, ArchiveIcon, PencilIcon, CheckIcon, XIcon } from "@heroicons/react/outline";
+import { CheckCircleIcon, CheckIcon } from "@heroicons/react/solid";
+import { CalendarIcon, LocationMarkerIcon, ArchiveIcon, PencilIcon, XIcon } from "@heroicons/react/outline";
 import { StatsCard } from "../../atoms/StatsCard";
 import { formatEventDate, formatEventTime } from "../../../utils/eventUtils";
 
