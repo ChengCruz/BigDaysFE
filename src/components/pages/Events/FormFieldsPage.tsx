@@ -16,6 +16,8 @@ import { FormFieldModal, TYPE_LABELS } from "../../molecules/FormFieldModal";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { useEventContext } from "../../../context/EventContext";
+import { QuestionTemplateModal } from "../../molecules/QuestionTemplateModal";
+import type { QuestionTemplate } from "../../../utils/formFieldTemplates";
 
 export default function FormFieldsPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
@@ -31,6 +33,9 @@ export default function FormFieldsPage() {
     open: boolean;
     initial?: FormFieldConfig & { questionId: string };
   }>({ open: false });
+
+  const [templateModal, setTemplateModal] = useState(false);
+  const [isAddingTemplates, setIsAddingTemplates] = useState(false);
 
   const [editWarning, setEditWarning] = useState<{
     open: boolean;
@@ -58,6 +63,23 @@ export default function FormFieldsPage() {
     [fieldsRaw]
   );
 
+  async function handleAddTemplates(selected: QuestionTemplate[]) {
+    if (!eventId) return;
+    setIsAddingTemplates(true);
+    for (const tpl of selected) {
+      await createField.mutateAsync({
+        text: tpl.text,
+        type: tpl.type,
+        isRequired: tpl.isRequired,
+        options: tpl.options ?? "",
+        order: tpl.order,
+        eventGuid: eventId,
+      });
+    }
+    setIsAddingTemplates(false);
+    setTemplateModal(false);
+  }
+
   // ─── Early returns AFTER all hooks ─────────────────────────────────────────
 
   // Show "no events" state if no event ID exists (check BEFORE loading state)
@@ -70,7 +92,10 @@ export default function FormFieldsPage() {
     <>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-semibold">Custom RSVP Fields</h2>
-        <Button onClick={() => setModal({ open: true })}>+ New Field</Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setTemplateModal(true)}>+ Add from Template</Button>
+          <Button onClick={() => setModal({ open: true })}>+ New Field</Button>
+        </div>
       </div>
 
       {fields.length === 0 ? (
@@ -233,6 +258,13 @@ export default function FormFieldsPage() {
           Are you sure you want to permanently delete <span className="font-medium">"{deleteWarning.field?.label ?? deleteWarning.field?.text}"</span>?
         </p>
       </DeleteConfirmationModal>
+
+      <QuestionTemplateModal
+        isOpen={templateModal}
+        onClose={() => setTemplateModal(false)}
+        onAdd={handleAddTemplates}
+        isLoading={isAddingTemplates}
+      />
 
       {modal.open && (
         <FormFieldModal
