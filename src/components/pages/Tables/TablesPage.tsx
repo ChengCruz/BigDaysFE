@@ -6,10 +6,11 @@ import {
   useDeleteTable,
   useBulkDeleteTables,
 } from "../../../api/hooks/useTablesApi";
-import { 
+import {
   useGuestsApi,
   useAssignGuestToTable,
   useUnassignGuestFromTable,
+  useAutoAssignGuests,
 } from "../../../api/hooks/useGuestsApi";
 import { Button } from "../../atoms/Button";
 import { Dropdown, DropdownItem } from "../../atoms/Dropdown";
@@ -37,6 +38,7 @@ export default function TablesPage() {
   const bulkDeleteTables = useBulkDeleteTables(eventId);
   const assignGuest = useAssignGuestToTable(eventId || "");
   const unassignGuest = useUnassignGuestFromTable(eventId || "");
+  const autoAssign = useAutoAssignGuests(eventId || "");
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "hasEmpty" | "full">("all");
@@ -49,6 +51,7 @@ export default function TablesPage() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedTableIds, setSelectedTableIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [statsExpanded, setStatsExpanded] = useState(true);
 
   // Calculate statistics (must be before early returns - React rules of hooks)
   const stats = useMemo(() => {
@@ -233,9 +236,32 @@ export default function TablesPage() {
         </div>
         {!isReadOnly && (
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" disabled>
-              Auto-Assign
-              <span className="ml-1.5 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">Soon</span>
+            <Button
+              variant="secondary"
+              disabled={autoAssign.isPending}
+              onClick={() => {
+                autoAssign.mutate(undefined, {
+                  onSuccess: (res) => {
+                    const d = res?.data;
+                    if (d) {
+                      toast.success(`Auto-assign complete. Assigned: ${d.assignedCount}, Skipped: ${d.skippedCount}.`);
+                    } else {
+                      toast.success("Auto-assign complete.");
+                    }
+                  },
+                  onError: () => toast.error("Auto-assign failed."),
+                });
+              }}
+            >
+              {autoAssign.isPending ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                  Assigning...
+                </span>
+              ) : "Auto-Assign"}
             </Button>
             {selectMode ? (
               <>
@@ -286,12 +312,30 @@ export default function TablesPage() {
         )}
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <StatsCard label="Total Tables" value={stats.totalTables} variant="primary" size="sm" icon={<CollectionIcon className="w-4 h-4" />} />
-        <StatsCard label="Seated Guests" value={stats.seatedGuests} variant="success" size="sm" icon={<UserGroupIcon className="w-4 h-4" />} />
-        <StatsCard label="Unassigned" value={stats.unassigned} variant="warning" size="sm" icon={<UserIcon className="w-4 h-4" />} />
-        <StatsCard label="Total Capacity" value={stats.totalCapacity} variant="secondary" size="sm" icon={<ChartBarIcon className="w-4 h-4" />} />
+      {/* Stats Cards + Tip — collapsible */}
+      <div className="mb-4">
+        <button
+          className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 mb-2 transition-colors select-none"
+          onClick={() => setStatsExpanded(p => !p)}
+        >
+          <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform ${statsExpanded ? "" : "-rotate-90"}`} />
+          {statsExpanded ? "Hide overview" : "Show overview"}
+        </button>
+        {statsExpanded && (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
+              <StatsCard label="Total Tables" value={stats.totalTables} variant="primary" size="sm" icon={<CollectionIcon className="w-4 h-4" />} />
+              <StatsCard label="Seated Guests" value={stats.seatedGuests} variant="success" size="sm" icon={<UserGroupIcon className="w-4 h-4" />} />
+              <StatsCard label="Unassigned" value={stats.unassigned} variant="warning" size="sm" icon={<UserIcon className="w-4 h-4" />} />
+              <StatsCard label="Total Capacity" value={stats.totalCapacity} variant="secondary" size="sm" icon={<ChartBarIcon className="w-4 h-4" />} />
+            </div>
+            <div className="p-3 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-100 dark:border-indigo-800">
+              <p className="text-sm text-indigo-700 dark:text-indigo-300">
+                <strong>Tip:</strong> Drag guests from the unassigned panel and drop them onto tables
+              </p>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Filter Bar */}
@@ -311,13 +355,6 @@ export default function TablesPage() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-      </div>
-
-      {/* Drag & Drop Hint */}
-      <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-100 dark:border-indigo-800">
-        <p className="text-sm text-indigo-700 dark:text-indigo-300">
-          <strong>Tip:</strong> Drag guests from the unassigned panel and drop them onto tables
-        </p>
       </div>
 
       {/* Main Two-Column Layout */}
