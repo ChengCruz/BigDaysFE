@@ -58,6 +58,7 @@ export const GuestEndpoints = {
   update: "/Guest/Update",
   assignTable: (guestId: string, tableId: string) => `/Guest/${guestId}/AssignTable/${tableId}`,
   unassignTable: (guestId: string) => `/Guest/${guestId}/UnassignTable`,
+  autoAssign: (eventGuid: string) => `/Guest/AutoAssign/${eventGuid}`,
 };
 
 export const SeatingEndpoints = {

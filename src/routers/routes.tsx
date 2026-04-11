@@ -80,6 +80,8 @@ import { TableLayoutPlanner } from "../components/pages/Tables/TableLayoutPlanne
 import { TablePrintView } from "../components/pages/Tables/TablePrintView";
 import { TableSummary } from "../components/pages/Tables/TableSummary";
 import FloorPlanPage from "../components/pages/Tables/FloorPlanPage";
+import TablesPageV2 from "../components/pages/Tables/TablesPageV2";
+import TablesRedesignPage from "../components/pages/Tables/TablesRedesignPage";
 import CheckInPage from "../components/pages/CheckIn/CheckInPage";
 import QrLookupPage from "../components/pages/Public/QrLookup/QrLookupPage";
 import RequireAuth from "../components/RequireAuth";
@@ -149,6 +151,8 @@ export default function AppRoutes() {
 <Route path="tables" element={<Outlet/>}>
   <Route index element={<TablesPage />} />
   <Route path="floorplan" element={<FloorPlanPage />} />
+  <Route path="v2" element={<TablesPageV2 />} />
+  <Route path="redesign" element={<TablesRedesignPage />} />
 
   <Route path="new" element={
     <TableFormModal isOpen onClose={() => navigate(-1)} />

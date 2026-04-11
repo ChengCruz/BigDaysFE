@@ -49,10 +49,11 @@ const BASE_LINKS: SidebarLink[] = [
   { to: "/app/guests", label: "Guests", Icon: UserGroupIcon, sub: true },
   { to: "/app/tables", label: "Tables", Icon: TableIcon, end: true },
   { to: "/app/tables/floorplan", label: "Floor Plan", Icon: ViewGridIcon, sub: true },
+  { to: "/app/tables/v2", label: "Tables V2", Icon: ViewGridIcon, sub: true },
   { to: "/app/wallet", label: "Wallet", Icon: CurrencyDollarIcon },
-  { to: "/app/checkin", label: "Check-in", Icon: QrcodeIcon, soon: true },
+  { to: "/app/checkin", label: "Check-in", Icon: QrcodeIcon },
   { to: "/app/users", label: "Users", Icon: UserIcon },
-  { to: "/app/crew", label: "Crew", Icon: UserGroupIcon, soon: true },
+  { to: "/app/crew", label: "Crew", Icon: UserGroupIcon },
 ];
 
 // Pages accessible to Staff (role 6) only

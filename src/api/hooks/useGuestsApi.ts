@@ -142,3 +142,15 @@ export function useUnassignGuestFromTable(eventId: string) {
     },
   });
 }
+
+export function useAutoAssignGuests(eventId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      client.post(GuestEndpoints.autoAssign(eventId)).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["guests", eventId] });
+      qc.invalidateQueries({ queryKey: ["tables", eventId] });
+    },
+  });
+}
