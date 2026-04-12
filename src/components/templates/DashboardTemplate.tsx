@@ -1,12 +1,13 @@
 // src/components/templates/DashboardTemplate.tsx
-import React from "react";
-import { Outlet } from "react-router-dom";
+import React, { useContext } from "react";
+import { Navigate, Outlet } from "react-router-dom";
 import { Navbar } from "../organisms/Navbar";
 import { Sidebar } from "../organisms/Sidebar";
 import { EventSelectorModal } from "../molecules/EventSelectorModal";
-import { useEventContext } from "../../context/EventContext";
+import { EventProvider, useEventContext } from "../../context/EventContext";
+import { AuthContext } from "../../context/AuthProvider";
 
-export default function DashboardTemplate() {
+function DashboardContent() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const { isSelectorOpen, mustChooseEvent } = useEventContext();
 
@@ -21,5 +22,30 @@ export default function DashboardTemplate() {
       </div>
       {(mustChooseEvent || isSelectorOpen) && <EventSelectorModal />}
     </div>
+  );
+}
+
+export default function DashboardTemplate() {
+  const { user, loading } = useContext(AuthContext);
+
+  // Wait for auth session restore before rendering anything
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background dark:bg-slate-950">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  // Not authenticated after loading → redirect to login
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Authenticated → mount EventProvider (which needs the access token) then render dashboard
+  return (
+    <EventProvider>
+      <DashboardContent />
+    </EventProvider>
   );
 }
