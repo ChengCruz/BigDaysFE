@@ -23,26 +23,35 @@ export function useUserByGuidApi(guid: string) {
 export function useCreateUser() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { fullName: string; email: string }) =>
+    mutationFn: async (data: { fullName: string; email: string; password?: string; role?: number }) =>
       (await client.post(UsersEndpoints.create, data)).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
   });
 }
 
-export function useUpdateUser(userGuid: string) {
+export function useUpdateUser() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { fullName: string; email: string; role?: number }) =>
-      (await client.put(UsersEndpoints.update(userGuid), data)).data,
+    mutationFn: async (data: { id: string; fullName: string; email: string; role?: number }) =>
+      (await client.post(UsersEndpoints.update, data)).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
   });
 }
 
-export function useDeleteUser() {
+export function useDeactivateUser() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (userGuid: string) =>
-      (await client.delete(UsersEndpoints.delete(userGuid))).data,
+    mutationFn: async (userId: number) =>
+      (await client.put(UsersEndpoints.deactivate(userId))).data,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
+  });
+}
+
+export function useActivateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: number) =>
+      (await client.put(UsersEndpoints.activate(userId))).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
   });
 }

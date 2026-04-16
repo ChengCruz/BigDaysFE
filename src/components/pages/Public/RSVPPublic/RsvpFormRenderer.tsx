@@ -1,11 +1,11 @@
 // src/components/pages/Public/RSVPPublic/RsvpFormRenderer.tsx
 // Renders the admin-designed RSVP layout with live form inputs for guests.
+// Visual style matches the V3 designer canvas (renderSectionContent).
 // All blocks (including attendance, guestDetails) render inline in designed order.
 // Auto-inserts default attendance/guestDetails blocks for backward compatibility.
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { RsvpDesign, RsvpBlock } from "../../../../types/rsvpDesign";
 import type { FormFieldConfig } from "../../../../api/hooks/useFormFieldsApi";
-import { FormField } from "../../../molecules/FormField";
 import type { RsvpSubmitPayload } from "../../../../api/hooks/usePublicRsvpApi";
 import { Spinner } from "../../../atoms/Spinner";
 
@@ -17,6 +17,74 @@ interface Props {
   eventId: string;
   onSubmit: (payload: RsvpSubmitPayload) => Promise<void>;
   isSubmitting: boolean;
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function isLightColor(hex: string): boolean {
+  const c = hex.replace("#", "");
+  if (c.length !== 6) return false;
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55;
+}
+
+function getColorScheme(isLight: boolean) {
+  return {
+    heading:    isLight ? "#1e293b" : "#ffffff",
+    body:       isLight ? "#475569" : "rgba(255,255,255,0.75)",
+    muted:      isLight ? "#94a3b8" : "rgba(255,255,255,0.45)",
+    faint:      isLight ? "#cbd5e1" : "rgba(255,255,255,0.28)",
+    pillBg:     isLight ? "rgba(0,0,0,0.06)"  : "rgba(255,255,255,0.08)",
+    pillBorder: isLight ? "rgba(0,0,0,0.10)"  : "rgba(255,255,255,0.15)",
+    inputBg:    isLight ? "rgba(0,0,0,0.04)"  : "rgba(255,255,255,0.06)",
+    inputBdr:   isLight ? "rgba(0,0,0,0.12)"  : "rgba(255,255,255,0.12)",
+  };
+}
+
+// ── Countdown component ─────────────────────────────────────────────────────
+
+function CountdownDisplay({
+  targetDate, label, accentColor, headingColor, bodyColor,
+}: {
+  targetDate?: string; label?: string; accentColor: string; headingColor: string; bodyColor: string;
+}) {
+  const calcDiff = (iso?: string) => {
+    if (!iso) return null;
+    const diff = new Date(iso).getTime() - Date.now();
+    if (diff <= 0) return null;
+    return { days: Math.floor(diff / 86_400_000), hrs: Math.floor((diff % 86_400_000) / 3_600_000), min: Math.floor((diff % 3_600_000) / 60_000), sec: Math.floor((diff % 60_000) / 1_000) };
+  };
+  const [diff, setDiff] = useState(() => calcDiff(targetDate));
+  useEffect(() => { const t = setInterval(() => setDiff(calcDiff(targetDate)), 1_000); return () => clearInterval(t); }, [targetDate]);
+
+  const units = diff ? [{ v: diff.days, u: "Days" }, { v: diff.hrs, u: "Hrs" }, { v: diff.min, u: "Min" }, { v: diff.sec, u: "Sec" }] : null;
+
+  return (
+    <div className="px-4 py-10 text-center">
+      <p className="text-[10px] uppercase tracking-[0.28em] mb-6 font-semibold" style={{ color: accentColor }}>
+        {label || "Counting down to your big day"}
+      </p>
+      {units ? (
+        <div className="flex items-end justify-center gap-1.5 w-full">
+          {units.map(({ v, u }, i) => (
+            <React.Fragment key={u}>
+              <div className="text-center flex-1 min-w-0">
+                <div className="font-bold leading-none" style={{ fontFamily: "Georgia, serif", color: headingColor, fontSize: "2rem" }}>
+                  {String(v).padStart(2, "0")}
+                </div>
+                <div className="text-[9px] uppercase tracking-widest mt-1.5 font-semibold" style={{ color: bodyColor, opacity: 0.55 }}>{u}</div>
+              </div>
+              {i < 3 && <div className="text-xl pb-3 font-light shrink-0" style={{ color: headingColor, opacity: 0.25 }}>:</div>}
+            </React.Fragment>
+          ))}
+        </div>
+      ) : (
+        <p className="text-lg font-semibold" style={{ color: headingColor }}>The big day is here!</p>
+      )}
+    </div>
+  );
 }
 
 
@@ -36,7 +104,24 @@ export default function RsvpFormRenderer({
     globalOverlay,
     accentColor,
     globalMusicUrl,
+    layoutStyle,
+    contentWidth = "full",
   } = design;
+
+  // V3 designs save layoutStyle:"flush"; default to flush when unset
+  const isFlush = layoutStyle !== "cards";
+
+  // Content width mapping
+  const widthClass: Record<string, string> = {
+    compact:  "max-w-sm",   // 384px
+    standard: "max-w-lg",   // 512px
+    wide:     "max-w-2xl",  // 672px
+    full:     "",            // no limit
+  };
+  const maxWidthCls = widthClass[contentWidth] ?? "";
+
+  // Adaptive color scheme — matches V3 designer canvas
+  const globalIsLight = globalBackgroundType === "color" && isLightColor(globalBackgroundColor);
 
   // ── Auto-insert defaults for backward compat ──────────────────────────
   const blocks = useMemo(() => {
@@ -59,16 +144,27 @@ export default function RsvpFormRenderer({
         type: "guestDetails",
         title: "Your details",
         subtitle: "Tell us about yourself",
-        showFields: { name: true, phone: true, pax: true },
+        showFields: { name: true, phone: true, pax: true, remarks: true },
       });
     }
     return result;
   }, [rawBlocks]);
 
+  // ── Required formFieldConfigs not covered by a formField block ──────────
+  const missingRequiredFields = useMemo(() => {
+    const coveredIds = new Set(
+      blocks.filter((b) => b.type === "formField" && b.questionId).map((b) => (b as any).questionId as string)
+    );
+    return formFields.filter(
+      (fc) => fc.isRequired && !coveredIds.has(fc.questionId ?? fc.id ?? "")
+    );
+  }, [blocks, formFields]);
+
   // ── Core fields ──────────────────────────────────────────────────────────
   const [guestName, setGuestName] = useState("");
   const [noOfPax, setNoOfPax] = useState<number>(1);
   const [phoneNo, setPhoneNo] = useState("");
+  const [remarks, setRemarks] = useState("");
 
   // ── Custom field answers: keyed by questionId, supports string[] for multi-select ─
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
@@ -120,7 +216,7 @@ export default function RsvpFormRenderer({
     // Find guestDetails block to check which fields are visible
     const guestBlock = blocks.find((b) => b.type === "guestDetails");
     const showFields = (guestBlock?.type === "guestDetails" ? guestBlock.showFields : undefined) ?? {
-      name: true, phone: true, pax: true,
+      name: true, phone: true, pax: true, remarks: true,
     };
 
     if (showFields.name !== false && !guestName.trim()) errs.guestName = "Name is required";
@@ -141,6 +237,16 @@ export default function RsvpFormRenderer({
       }
     });
 
+    // Validate required fields not in design blocks
+    missingRequiredFields.forEach((fc) => {
+      const id = fc.questionId ?? fc.id ?? "";
+      const val = answers[id];
+      const isEmpty = Array.isArray(val) ? val.length === 0 : !(val ?? "").trim();
+      if (isEmpty) {
+        errs[id] = `${fc.label || fc.text || "This field"} is required`;
+      }
+    });
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -154,9 +260,13 @@ export default function RsvpFormRenderer({
       guestName: guestName.trim(),
       noOfPax,
       phoneNo: phoneNo.trim(),
+      remarks: remarks.trim(),
       answers,
     });
   };
+
+  // ── Shared input style (matches V3 designer) ─────────────────────────
+  const inputCls = "w-full rounded-xl px-4 py-3 text-[13px] bg-transparent outline-none placeholder:opacity-40";
 
   // ── Render a single design block ──────────────────────────────────────
   const renderBlock = (block: RsvpBlock): React.ReactNode => {
@@ -167,7 +277,7 @@ export default function RsvpFormRenderer({
       block.sectionImage;
     const overlayStrength = block.background?.overlay ?? 0.35;
 
-    const sectionStyle: React.CSSProperties = activeBg
+    const sectionStyle: React.CSSProperties = activeBg?.src
       ? {
           backgroundImage: `linear-gradient(rgba(15,23,42,${overlayStrength}),rgba(15,23,42,${overlayStrength})),url(${activeBg.src})`,
           backgroundSize: "cover",
@@ -176,96 +286,110 @@ export default function RsvpFormRenderer({
         }
       : {};
 
+    // Adaptive colors: if block has a background image, force dark scheme
+    const isLight = activeBg?.src ? false : globalIsLight;
+    const clr = getColorScheme(isLight);
+
     let inner: React.ReactNode = null;
 
     if (block.type === "headline") {
       inner = (
-        <div className={`text-${block.align}`}>
-          <p className="text-xs uppercase tracking-[0.2em] text-white/60">Welcome</p>
-          <h2 className={`mt-1 text-4xl font-extrabold text-white drop-shadow ${block.accent}`}>
-            {block.title}
+        <div className={`px-8 py-14 text-${block.align ?? "center"}`} style={{ fontFamily: block.fontFamily || "Georgia, 'Times New Roman', serif" }}>
+          <p className="text-[10px] uppercase tracking-[0.28em] mb-4 font-semibold" style={{ color: accentColor }}>Welcome</p>
+          <h2 className="text-[2.2rem] font-normal leading-[1.15] mb-2" style={{ color: clr.heading, letterSpacing: "-0.01em" }}>
+            {block.title || "Your Headline"}
           </h2>
           {block.subtitle && (
-            <p className="mt-2 text-base text-white/80">{block.subtitle}</p>
+            <p className="text-[13px] leading-relaxed mt-3 max-w-[85%] mx-auto" style={{ color: clr.body }}>{block.subtitle}</p>
           )}
+          <div className="w-12 h-px mx-auto mt-7" style={{ background: `linear-gradient(90deg, transparent, ${accentColor}88, transparent)` }} />
         </div>
       );
     } else if (block.type === "text") {
       inner = (
-        <p
-          className={`leading-relaxed text-base ${block.muted ? "text-white/70" : "text-white"} ${
-            block.width === "half" ? "md:max-w-[50%]" : "w-full"
-          }`}
-        >
-          {block.body}
-        </p>
+        <div className={`px-8 py-6 text-${block.align ?? "left"}`} style={{ fontFamily: block.fontFamily || undefined }}>
+          <p className="text-[13px] leading-[1.7]" style={{ color: block.muted ? clr.muted : clr.body }}>
+            {block.body}
+          </p>
+        </div>
       );
     } else if (block.type === "info") {
       inner = (
-        <div className={`inline-flex items-center gap-3 rounded-full px-5 py-2.5 text-sm ${block.accent}`}>
-          <span className="font-semibold uppercase tracking-wide">{block.label}</span>
-          <span className="opacity-80">{block.content}</span>
+        <div className="px-8 py-5 flex justify-center">
+          <div className="inline-flex items-center gap-3 rounded-full px-5 py-2.5 backdrop-blur-sm" style={{ background: clr.pillBg, border: `1px solid ${clr.pillBorder}` }}>
+            <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: clr.body }}>{block.label || "Highlight"}</span>
+            <span className="w-px h-3 shrink-0" style={{ background: clr.pillBorder }} />
+            <span className="text-[11px]" style={{ color: clr.muted }}>{block.content || "Value"}</span>
+          </div>
         </div>
       );
     } else if (block.type === "attendance") {
       // Attendance (status) is not supported by the API — skip rendering
       return null;
     } else if (block.type === "guestDetails") {
-      const show = block.showFields ?? { name: true, phone: true, pax: true };
+      const show = block.showFields ?? { name: true, phone: true, pax: true, remarks: true };
       inner = (
-        <div className={`space-y-4 ${block.width === "half" ? "md:max-w-[50%]" : "w-full"}`}>
-          <div>
-            <p className="text-sm font-semibold text-white">{block.title || "Your details"}</p>
-            {block.subtitle && (
-              <p className="mt-0.5 text-xs text-white/60">{block.subtitle}</p>
-            )}
-          </div>
-          <div
-            className="rounded-xl p-4 shadow-sm space-y-4"
-            style={{
-              backgroundColor: block.cardColor ?? "#ffffff",
-              color: block.cardTextColor ?? "#111827",
-            }}
-          >
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {show.name !== false && (
-                <FormField
-                  label="Your name"
+        <div className="px-8 py-8">
+          <p className="text-[13px] font-semibold mb-1" style={{ color: clr.heading }}>{block.title || "Guest Information"}</p>
+          {block.subtitle && <p className="text-xs mb-4" style={{ color: clr.muted }}>{block.subtitle}</p>}
+          {!block.subtitle && <div className="mb-4" />}
+          <div className="space-y-2">
+            {show.name !== false && (
+              <div>
+                <input
                   type="text"
-                  required
                   value={guestName}
                   onChange={(e) => { setGuestName(e.target.value); clearError("guestName"); }}
                   placeholder="Full name"
-                  error={errors.guestName}
+                  className={inputCls}
+                  style={{ background: clr.inputBg, border: `1px solid ${errors.guestName ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
                 />
-              )}
-              {show.phone !== false && (
-                <FormField
-                  label="Phone number"
+                {errors.guestName && <p className="text-[11px] mt-1 text-rose-400">{errors.guestName}</p>}
+              </div>
+            )}
+            {show.phone !== false && (
+              <div>
+                <input
                   type="text"
-                  required
                   value={phoneNo}
                   onChange={(e) => { setPhoneNo(e.target.value); clearError("phoneNo"); }}
-                  placeholder="+60 12-345 6789"
-                  error={errors.phoneNo}
+                  placeholder="Phone number"
+                  className={inputCls}
+                  style={{ background: clr.inputBg, border: `1px solid ${errors.phoneNo ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
                 />
-              )}
-              {show.pax !== false && (
-                <FormField
-                  label="Number of guests"
+                {errors.phoneNo && <p className="text-[11px] mt-1 text-rose-400">{errors.phoneNo}</p>}
+              </div>
+            )}
+            {show.pax !== false && (
+              <div>
+                <input
                   type="number"
-                  required
-                  value={String(noOfPax)}
+                  min={1}
+                  value={noOfPax}
                   onChange={(e) => {
                     const val = parseInt(e.target.value, 10);
                     setNoOfPax(isNaN(val) ? 1 : Math.max(1, val));
                     clearError("noOfPax");
                   }}
-                  placeholder="1"
-                  error={errors.noOfPax}
+                  placeholder="Number of guests"
+                  className={inputCls}
+                  style={{ background: clr.inputBg, border: `1px solid ${errors.noOfPax ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
                 />
-              )}
-            </div>
+                {errors.noOfPax && <p className="text-[11px] mt-1 text-rose-400">{errors.noOfPax}</p>}
+              </div>
+            )}
+            {show.remarks !== false && (
+              <div>
+                <input
+                  type="text"
+                  value={remarks}
+                  onChange={(e) => { setRemarks(e.target.value); clearError("remarks"); }}
+                  placeholder="Remarks"
+                  className={inputCls}
+                  style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.heading }}
+                />
+              </div>
+            )}
           </div>
         </div>
       );
@@ -273,7 +397,6 @@ export default function RsvpFormRenderer({
       if (!block.questionId) return null;
       const cfg = formFields.find((f) => (f.questionId ?? f.id) === block.questionId);
 
-      // Resolve options and type from config (if available) or block itself
       const rawOpts = cfg?.options ?? undefined;
       const opts = Array.isArray(rawOpts)
         ? rawOpts
@@ -293,78 +416,86 @@ export default function RsvpFormRenderer({
         : [];
 
       inner = (
-        <div className={block.width === "half" ? "md:max-w-[50%]" : "w-full"}>
-          <div
-            className="rounded-xl p-4 shadow-sm"
-            style={{
-              backgroundColor: block.fieldCardColor ?? "#ffffff",
-              color: block.fieldCardTextColor ?? "#111827",
-            }}
-          >
-            {isCheckboxGroup ? (
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-700">
-                  {fieldLabel}
-                  {fieldRequired && (
-                    <span className="ml-1 text-rose-500">*</span>
-                  )}
-                </p>
-                {opts!.map((opt) => (
-                  <label key={opt} className="flex cursor-pointer items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={checkedValues.includes(opt)}
-                      onChange={() => toggleCheckboxAnswer(block.questionId!, opt)}
-                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                    />
-                    <span className="text-sm text-gray-700">{opt}</span>
-                  </label>
-                ))}
-                {errors[block.questionId] && (
-                  <p className="text-xs text-rose-500">{errors[block.questionId]}</p>
-                )}
-              </div>
-            ) : (
-              <FormField
-                label={fieldLabel}
-                type={fieldType}
-                options={opts}
-                required={fieldRequired}
-                placeholder={block.placeholder}
-                hint={block.hint}
+        <div className="px-8 py-5">
+          <label className="block text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: clr.muted }}>
+            {fieldLabel}{fieldRequired && <span className="ml-1 text-rose-400">*</span>}
+          </label>
+          {isCheckboxGroup ? (
+            <div className="space-y-2">
+              {opts!.map((opt) => (
+                <label key={opt} className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={checkedValues.includes(opt)}
+                    onChange={() => toggleCheckboxAnswer(block.questionId!, opt)}
+                    className="h-4 w-4 rounded"
+                    style={{ accentColor }}
+                  />
+                  <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
+                </label>
+              ))}
+              {errors[block.questionId] && (
+                <p className="text-[11px] text-rose-400">{errors[block.questionId]}</p>
+              )}
+            </div>
+          ) : fieldType === "select" || fieldType === "dropdown" ? (
+            <div>
+              <select
                 value={(currentAnswer as string) ?? ""}
                 onChange={(e) => setAnswer(block.questionId!, e.target.value)}
-                error={errors[block.questionId]}
+                className={inputCls}
+                style={{ background: clr.inputBg, border: `1px solid ${errors[block.questionId!] ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
+              >
+                <option value="">{block.placeholder || "Select..."}</option>
+                {opts?.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+              {errors[block.questionId] && <p className="text-[11px] mt-1 text-rose-400">{errors[block.questionId]}</p>}
+            </div>
+          ) : (
+            <div>
+              <input
+                type={fieldType === "number" ? "number" : "text"}
+                value={(currentAnswer as string) ?? ""}
+                onChange={(e) => setAnswer(block.questionId!, e.target.value)}
+                placeholder={block.placeholder || "Guest response here..."}
+                className={inputCls}
+                style={{ background: clr.inputBg, border: `1px solid ${errors[block.questionId!] ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
               />
-            )}
-          </div>
+              {block.hint && <p className="text-[10px] mt-1.5" style={{ color: clr.faint }}>{block.hint}</p>}
+              {errors[block.questionId] && <p className="text-[11px] mt-1 text-rose-400">{errors[block.questionId]}</p>}
+            </div>
+          )}
         </div>
       );
     } else if (block.type === "cta") {
-      const btnStyle = {
-        background: block.ctaColor ?? accentColor,
-        color: block.ctaTextColor ?? "#0f172a",
-      };
-      const btnCls =
-        "inline-block rounded-full px-8 py-3 text-sm font-semibold shadow-lg transition hover:opacity-90";
       inner = (
-        <div
-          className={`flex ${
-            block.align === "center" ? "justify-center" : block.align === "right" ? "justify-end" : "justify-start"
-          }`}
-        >
+        <div className={`px-8 py-8 flex ${block.align === "center" ? "justify-center" : block.align === "right" ? "justify-end" : "justify-start"}`}>
           {block.href && block.href !== "#" ? (
             <a
               href={block.href}
               target="_blank"
               rel="noreferrer"
-              className={btnCls}
-              style={btnStyle}
+              className="rounded-full px-10 py-3.5 text-sm font-semibold transition-shadow hover:opacity-90"
+              style={{
+                background: block.ctaColor ?? accentColor,
+                color: block.ctaTextColor ?? "#fff",
+                boxShadow: `0 4px 14px ${block.ctaColor ?? accentColor}44`,
+              }}
             >
               {block.label}
             </a>
           ) : (
-            <button type="button" className={btnCls} style={btnStyle}>
+            <button
+              type="button"
+              className="rounded-full px-10 py-3.5 text-sm font-semibold transition-shadow hover:opacity-90"
+              style={{
+                background: block.ctaColor ?? accentColor,
+                color: block.ctaTextColor ?? "#fff",
+                boxShadow: `0 4px 14px ${block.ctaColor ?? accentColor}44`,
+              }}
+            >
               {block.label}
             </button>
           )}
@@ -372,26 +503,91 @@ export default function RsvpFormRenderer({
       );
     } else if (block.type === "image") {
       const active = block.images.find((img) => img.id === block.activeImageId) ?? block.images[0];
-      const heightClass =
-        block.height === "tall" ? "h-80" : block.height === "short" ? "h-48" : "h-64";
+      const ratio = block.height === "tall" ? "4 / 3" : block.height === "short" ? "16 / 5" : "16 / 7";
       inner = (
-        <div className={`overflow-hidden rounded-2xl ${heightClass}`}>
-          {active ? (
-            <img
-              src={active.src}
-              alt={active.alt ?? ""}
-              className="h-full w-full object-cover"
-              loading="lazy"
-            />
+        <div style={{ aspectRatio: ratio }} className="overflow-hidden">
+          {active?.src ? (
+            <img src={active.src} alt={active.alt ?? ""} className="w-full h-full object-cover" loading="lazy" />
           ) : null}
-          {block.caption && (
-            <p className="bg-black/40 px-4 py-2 text-xs text-white/80">{block.caption}</p>
+        </div>
+      );
+    } else if (block.type === "eventDetails") {
+      const showDate = block.showDate ?? true;
+      const showTime = block.showTime ?? true;
+      const showLocation = block.showLocation ?? true;
+
+      const cards = [
+        showDate     && { icon: "\uD83D\uDCC5", label: "Date",  value: "Date TBC" },
+        showTime     && { icon: "\u23F0", label: "Time",  value: "Time TBC" },
+        showLocation && { icon: "\uD83D\uDCCD", label: "Venue", value: "Venue TBC" },
+      ].filter(Boolean) as { icon: string; label: string; value: string }[];
+
+      inner = (
+        <div className="px-6 py-10 text-center">
+          {block.title && <p className="text-[13px] font-semibold mb-5" style={{ color: clr.body }}>{block.title}</p>}
+          <div className="flex gap-2.5 justify-center flex-wrap">
+            {cards.map(({ icon, label, value }) => (
+              <div key={label} className="flex-1 min-w-[85px] max-w-[150px] rounded-2xl px-3 py-4" style={{ background: clr.pillBg, border: `1px solid ${clr.pillBorder}` }}>
+                <div className="text-xl mb-1.5">{icon}</div>
+                <div className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{ color: accentColor }}>{label}</div>
+                <div className="text-[11px] font-semibold leading-snug" style={{ color: clr.heading }}>{value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    } else if (block.type === "countdown") {
+      const targetDate = block.targetDate;
+      inner = <CountdownDisplay targetDate={targetDate} label={block.label} accentColor={accentColor} headingColor={clr.heading} bodyColor={clr.body} />;
+    } else if (block.type === "map") {
+      const address = block.address ?? "";
+      const mapLabel = block.mapLabel ?? "Venue";
+      const showDirections = block.showDirections ?? true;
+      const hasAddress = !!address;
+      const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(address)}&output=embed&hl=en`;
+      inner = (
+        <div className="relative overflow-hidden" style={{ aspectRatio: "16 / 7" }}>
+          {hasAddress ? (
+            <iframe title="Venue map" src={embedUrl} className="absolute inset-0 w-full h-full border-0" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2" style={{ background: isLight ? "#e8ebe0" : "#1a2035" }}>
+              <span className="text-3xl opacity-30">{"\uD83D\uDCCD"}</span>
+              <p className="text-xs text-center px-6" style={{ color: clr.muted }}>No address provided</p>
+            </div>
+          )}
+          {hasAddress && (
+            <div className="absolute bottom-3 left-0 right-0 flex flex-col items-center gap-1.5">
+              <div className="rounded-xl px-4 py-2 text-center shadow-lg" style={{ background: isLight ? "rgba(255,255,255,0.92)" : "rgba(15,23,42,0.85)", border: `1px solid ${clr.pillBorder}` }}>
+                <p className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: accentColor }}>{mapLabel}</p>
+                <p className="text-xs font-semibold" style={{ color: clr.heading }}>{address}</p>
+              </div>
+              {showDirections && (
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[10px] font-semibold underline"
+                  style={{ color: accentColor }}
+                >
+                  Get Directions
+                </a>
+              )}
+            </div>
           )}
         </div>
       );
     }
 
     if (!inner) return null;
+
+    if (isFlush) {
+      return (
+        <section key={block.id} className="relative overflow-hidden" style={sectionStyle}>
+          {inner}
+          <div className="h-px" style={{ background: "rgba(255,255,255,0.04)" }} />
+        </section>
+      );
+    }
 
     return (
       <section
@@ -408,7 +604,7 @@ export default function RsvpFormRenderer({
 
   // ── Layout ────────────────────────────────────────────────────────────
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-white" style={{ fontFamily: design.globalFontFamily || undefined }}>
       {/* Global background */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
         {globalBackgroundType === "color" && (
@@ -461,15 +657,79 @@ export default function RsvpFormRenderer({
       {/* Form */}
       <form onSubmit={handleSubmit} noValidate>
         <div
-          className={`relative mx-auto flex max-w-3xl flex-col gap-6 px-4 py-12 ${
-            flowPreset === "stacked" ? "scroll-snap-y scroll-smooth" : ""
-          }`}
+          className={`relative mx-auto flex flex-col ${
+            isFlush ? maxWidthCls : "max-w-3xl gap-6 px-4 py-12"
+          } ${flowPreset === "stacked" ? "scroll-snap-y scroll-smooth" : ""}`}
         >
           {/* ── All blocks rendered inline in designed order ── */}
           {blocks.map((block) => renderBlock(block))}
 
+          {/* ── Required fields not in design (auto-rendered) ── */}
+          {missingRequiredFields.length > 0 && (
+            <section className={isFlush ? "" : "rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl ring-1 ring-white/5 backdrop-blur-sm"}>
+              <div className={`${isFlush ? "px-8 py-6" : ""} space-y-4`}>
+                {missingRequiredFields.map((fc) => {
+                  const id = fc.questionId ?? fc.id ?? "";
+                  const fieldType = fc.typeKey ?? "text";
+                  const fieldLabel = fc.label || fc.text || "Required field";
+                  const rawOpts = fc.options;
+                  const opts = Array.isArray(rawOpts)
+                    ? rawOpts
+                    : typeof rawOpts === "string"
+                    ? rawOpts.split(",").map((s) => s.trim())
+                    : undefined;
+                  const isCheckboxGroup = fieldType === "checkbox" && opts && opts.length > 1;
+                  const currentAnswer = answers[id];
+                  const checkedValues: string[] = Array.isArray(currentAnswer)
+                    ? currentAnswer
+                    : currentAnswer
+                    ? [currentAnswer as string]
+                    : [];
+                  const clr = getColorScheme(globalIsLight);
+
+                  return (
+                    <div key={id} className="w-full">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: clr.muted }}>
+                        {fieldLabel}<span className="ml-1 text-rose-400">*</span>
+                      </label>
+                      {isCheckboxGroup ? (
+                        <div className="space-y-2">
+                          {opts!.map((opt) => (
+                            <label key={opt} className="flex cursor-pointer items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={checkedValues.includes(opt)}
+                                onChange={() => toggleCheckboxAnswer(id, opt)}
+                                className="h-4 w-4 rounded"
+                                style={{ accentColor }}
+                              />
+                              <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
+                            </label>
+                          ))}
+                          {errors[id] && <p className="text-[11px] text-rose-400">{errors[id]}</p>}
+                        </div>
+                      ) : (
+                        <div>
+                          <input
+                            type={fieldType === "number" ? "number" : "text"}
+                            value={(currentAnswer as string) ?? ""}
+                            onChange={(e) => setAnswer(id, e.target.value)}
+                            placeholder={fieldLabel}
+                            className={inputCls}
+                            style={{ background: clr.inputBg, border: `1px solid ${errors[id] ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
+                          />
+                          {errors[id] && <p className="text-[11px] mt-1 text-rose-400">{errors[id]}</p>}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
           {/* ── Submit button ── */}
-          <div className="flex justify-center pb-8">
+          <div className={`flex justify-center ${isFlush ? "py-8" : "pb-8"}`}>
             <button
               type="submit"
               disabled={isSubmitting}
@@ -477,6 +737,7 @@ export default function RsvpFormRenderer({
               style={{
                 background: design.submitButtonColor ?? accentColor,
                 color: design.submitButtonTextColor ?? "#0f172a",
+                boxShadow: `0 4px 14px ${design.submitButtonColor ?? accentColor}44`,
               }}
             >
               {isSubmitting && <Spinner />}

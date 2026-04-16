@@ -1,7 +1,7 @@
 // src/components/pages/Users/UsersPage.tsx
 import { PageLoader } from "../../atoms/PageLoader";
 import { useState } from "react";
-import { useUserByGuidApi, useUsersListApi, useDeleteUser, useUpdatePassword } from "../../../api/hooks/useUsersApi";
+import { useUserByGuidApi, useUsersListApi, useDeactivateUser, useUpdatePassword } from "../../../api/hooks/useUsersApi";
 import { UserFormModal } from "../../molecules/UserFormModal";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { Button } from "../../atoms/Button";
@@ -27,7 +27,7 @@ export default function UsersPage() {
   const { data: currentUser, isLoading: loadingCurrentUser, isError: errorCurrentUser } = useUserByGuidApi(userGuid || "");
   const { data: allUsers, isLoading: loadingAllUsers, refetch: fetchAllUsers } = useUsersListApi();
 
-  const deleteUser = useDeleteUser();
+  const deactivateUser = useDeactivateUser();
   const updatePassword = useUpdatePassword();
 
   const [showAllUsers, setShowAllUsers] = useState(false);
@@ -54,7 +54,7 @@ export default function UsersPage() {
 
   const [deleteModal, setDeleteModal] = useState<{
     open: boolean;
-    user: { userGuid: string; fullName: string; email: string } | null;
+    user: { userGuid: string; fullName: string; email: string; id?: number } | null;
   }>({ open: false, user: null });
 
   const isAdmin = userRole === 1 || userRole === 2;
@@ -113,7 +113,7 @@ export default function UsersPage() {
   if (loadingCurrentUser) return <PageLoader message="Loading user profile..." />;
   if (errorCurrentUser) return <p className="text-red-500">Failed to load user profile.</p>;
 
-  const handleDelete = (user: { userGuid: string; fullName: string; email: string }) => {
+  const handleDelete = (user: { userGuid: string; fullName: string; email: string; id?: number }) => {
     setDeleteModal({ open: true, user });
   };
 
@@ -122,12 +122,12 @@ export default function UsersPage() {
   };
 
   const handleConfirmDelete = async () => {
-    if (!deleteModal.user) return;
+    if (!deleteModal.user?.id) return;
     try {
-      await deleteUser.mutateAsync(deleteModal.user.userGuid);
+      await deactivateUser.mutateAsync(deleteModal.user.id);
       setDeleteModal({ open: false, user: null });
     } catch (error) {
-      console.error("Failed to delete user:", error);
+      console.error("Failed to deactivate user:", error);
     }
   };
 
@@ -313,9 +313,9 @@ export default function UsersPage() {
                     </Button>
                     <Button
                       variant="secondary"
-                      onClick={() => handleDelete({ userGuid: u.userGuid, fullName: u.fullName, email: u.email })}
+                      onClick={() => handleDelete({ userGuid: u.userGuid, fullName: u.fullName, email: u.email, id: u.id })}
                     >
-                      Delete
+                      Deactivate
                     </Button>
                   </div>
                 )}
@@ -332,11 +332,11 @@ export default function UsersPage() {
 
       <DeleteConfirmationModal
         isOpen={deleteModal.open}
-        isDeleting={deleteUser.isPending}
+        isDeleting={deactivateUser.isPending}
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
-        title="Delete User?"
-        description="Are you sure you want to delete this user? This action cannot be undone."
+        title="Deactivate User?"
+        description="Are you sure you want to deactivate this user? They will no longer be able to log in."
       >
         {deleteModal.user && (
           <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700">

@@ -44,6 +44,7 @@ const BASE_LINKS: SidebarLink[] = [
   { to: "/app/events", label: "Events", Icon: CalendarIcon, end: true },
   { to: "/app/rsvps/designer", label: "Design RSVP Card", Icon: PhotographIcon, sub: true },
   { to: "/app/rsvps/designer-v2", label: "Design V2 ↗", Icon: PhotographIcon, sub: true, external: true },
+  { to: "/app/rsvps/designer-v3", label: "Design V3 ↗", Icon: PhotographIcon, sub: true, external: true },
   { to: "/app/form-fields", label: "RSVP Questions", Icon: QuestionMarkCircleIcon, sub: true },
   { to: "/app/rsvps", label: "RSVPs", Icon: ClipboardListIcon, end: true },
   { to: "/app/guests", label: "Guests", Icon: UserGroupIcon, sub: true },

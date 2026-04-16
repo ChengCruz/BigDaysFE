@@ -52,7 +52,7 @@ export const UserFormModal: React.FC<Props> = ({ isOpen, onClose, initial }) => 
   const [pwdSuccess, setPwdSuccess] = useState(false);
 
   const createUser = useCreateUser();
-  const updateUser = useUpdateUser(initial?.userGuid || "");
+  const updateUser = useUpdateUser();
   const updatePassword = useUpdatePassword();
 
   useEffect(() => {
@@ -76,7 +76,7 @@ export const UserFormModal: React.FC<Props> = ({ isOpen, onClose, initial }) => 
     setProfileSuccess(false);
     try {
       if (isEdit && initial) {
-        await updateUser.mutateAsync({ fullName: name, email, role });
+        await updateUser.mutateAsync({ id: initial!.userGuid, fullName: name, email, role });
       } else {
         await createUser.mutateAsync({ fullName: name, email });
         onClose();
@@ -86,7 +86,7 @@ export const UserFormModal: React.FC<Props> = ({ isOpen, onClose, initial }) => 
       if (err?.response?.status === 401) {
         try {
           if (isEdit && initial) {
-            await updateUser.mutateAsync({ fullName: name, email, role });
+            await updateUser.mutateAsync({ id: initial!.userGuid, fullName: name, email, role });
           } else {
             await createUser.mutateAsync({ fullName: name, email });
             onClose();

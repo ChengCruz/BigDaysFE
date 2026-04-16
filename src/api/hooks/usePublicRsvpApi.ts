@@ -95,6 +95,8 @@ export interface RsvpSubmitPayload {
   noOfPax: number;
   /** Phone number */
   phoneNo?: string;
+  /** Guest remarks / dietary notes */
+  remarks?: string;
   /** Custom form field answers keyed by questionId */
   answers: Record<string, string | string[]>;
 }
@@ -120,6 +122,7 @@ export function useSubmitPublicRsvp() {
           guestName: payload.guestName,
           noOfPax: payload.noOfPax,
           phoneNo: payload.phoneNo ?? "",
+          remarks: payload.remarks ?? "",
           createdBy: payload.guestName,
           answers,
         })

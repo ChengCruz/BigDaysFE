@@ -329,6 +329,17 @@ export default function MemberDashboardPage() {
               </div>
               <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Design RSVP</span>
             </button>
+            <a
+              href="/app/rsvps/designer-v3"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/20 border border-rose-100 dark:border-rose-800 hover:border-rose-200 dark:hover:border-rose-700 hover:shadow-md transition group"
+            >
+              <div className="h-10 w-10 rounded-xl bg-rose-100 dark:bg-rose-900/50 group-hover:bg-rose-200 dark:group-hover:bg-rose-800 grid place-items-center transition">
+                <ClipboardCheckIcon className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+              </div>
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Design V3</span>
+            </a>
             <button
               disabled
               className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border border-purple-100 dark:border-purple-800 opacity-60 cursor-not-allowed"
