@@ -91,6 +91,7 @@ export type RsvpBlock =
         name?: boolean;
         phone?: boolean;
         pax?: boolean;
+        remarks?: boolean;
       };
       cardColor?: string;      // background color of the input card (default #ffffff)
       cardTextColor?: string;  // text color inside the input card (default #111827)
@@ -131,6 +132,12 @@ export interface RsvpDesign {
   submitButtonLabel?: string;
   /** Global font family applied to the whole design canvas */
   globalFontFamily?: string;
+  /** Layout style: "cards" (V1/V2 default) renders blocks in rounded cards with gaps.
+   *  "flush" (V3) renders blocks as full-width sections edge-to-edge. */
+  layoutStyle?: "cards" | "flush";
+  /** Content width of the guest page: controls max-width of the form container.
+   *  "compact" ≈ phone (24rem), "standard" (32rem), "wide" (42rem), "full" (no limit). */
+  contentWidth?: "compact" | "standard" | "wide" | "full";
   eventGuid?: string;           // Needed by guest page to fetch form fields
   version?: number;             // Backend-managed version number, needed for publish
   shareToken?: string | null;
@@ -240,6 +247,10 @@ export interface ApiTheme {
   submitButtonTextColor?: string;
   submitButtonLabel?: string;
   fontFamily?: string;
+  /** Layout style stored inside theme so the backend persists it */
+  layoutStyle?: string;
+  /** Content width preset stored inside theme so the backend persists it */
+  contentWidth?: string;
 }
 
 export interface ApiLayout {
@@ -255,6 +266,10 @@ export interface ApiDesign {
   previewModes: string[];
   blocks: ApiBlock[];
   flowPreset: string;
+  /** Layout style: "cards" (default) or "flush" (V3 edge-to-edge) */
+  layoutStyle?: string;
+  /** Content width preset for the guest page */
+  contentWidth?: string;
   /** Embedded form field configs so guest page needs no auth */
   formFieldConfigs?: import("../api/hooks/useFormFieldsApi").FormFieldConfig[];
 }

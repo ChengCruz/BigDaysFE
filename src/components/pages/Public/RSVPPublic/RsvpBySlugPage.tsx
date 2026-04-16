@@ -78,8 +78,12 @@ export default function RsvpBySlugPage() {
           await submitMutation.mutateAsync(payload);
           setSubmittedName(payload.guestName);
           setSubmitted(true);
-        } catch {
-          toast.error("Failed to submit your RSVP. Please try again.");
+        } catch (err: any) {
+          const msg =
+            err?.response?.data?.message ||
+            err?.message ||
+            "Failed to submit your RSVP. Please try again.";
+          toast.error(msg);
         }
       }}
       isSubmitting={submitMutation.isPending}

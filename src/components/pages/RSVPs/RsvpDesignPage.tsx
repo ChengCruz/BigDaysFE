@@ -154,7 +154,7 @@ function renderBlockPreview(block: RsvpBlock, accentColor: string, mode: "thumb"
         </div>
       );
     case "guestDetails": {
-      const fields = block.showFields ?? { name: true, phone: true, pax: true };
+      const fields = block.showFields ?? { name: true, phone: true, pax: true, remarks: true };
       if (mode === "full") {
         const cardBg = block.cardColor ?? "#ffffff";
         const cardText = block.cardTextColor ?? "#111827";
@@ -162,6 +162,7 @@ function renderBlockPreview(block: RsvpBlock, accentColor: string, mode: "thumb"
           { key: "name" as const, label: "Your name", placeholder: "Full name" },
           { key: "phone" as const, label: "Phone number", placeholder: "+60 12-345 6789" },
           { key: "pax" as const, label: "Number of guests", placeholder: "1" },
+          { key: "remarks" as const, label: "Remarks", placeholder: "Dietary requirements, allergies, etc." },
         ];
         const visibleFields = fieldDefs.filter(({ key }) => fields[key] !== false);
         return (
@@ -417,7 +418,7 @@ export default function RsvpDesignPage() {
       type: "guestDetails",
       title: "Your details",
       subtitle: "Tell us about yourself",
-      showFields: { name: true, phone: true, pax: true },
+      showFields: { name: true, phone: true, pax: true, remarks: true },
       background: { images: [], overlay: 0.4 },
     },
   ]);
@@ -560,7 +561,7 @@ export default function RsvpDesignPage() {
       text:         { id, type: "text",         body: "Tell your guests what to expect.", width: "full", align: "left", muted: false, background: { images: [], overlay: 0.4 } },
       info:         { id, type: "info",         label: "Highlight", content: "Dress code, parking, or venue info", accent: "bg-white/20 text-white border border-white/30", background: { images: [], overlay: 0.4 } },
       attendance:   { id, type: "attendance",   title: "Will you be attending?", subtitle: "Please let us know", background: { images: [], overlay: 0.4 } },
-      guestDetails: { id, type: "guestDetails", title: "Your details", subtitle: "Tell us about yourself", showFields: { name: true, phone: true, pax: true }, background: { images: [], overlay: 0.4 } },
+      guestDetails: { id, type: "guestDetails", title: "Your details", subtitle: "Tell us about yourself", showFields: { name: true, phone: true, pax: true, remarks: true }, background: { images: [], overlay: 0.4 } },
       formField:    { id, type: "formField",    label: "Custom field", placeholder: "Placeholder", required: false, width: "full", background: { images: [], overlay: 0.4 } },
       cta:          { id, type: "cta",          label: "Open RSVP", href: "#", align: "center", background: { images: [], overlay: 0.4 } },
       image:        { id, type: "image",        images: [], activeImageId: undefined, caption: "Add captions", height: "medium", background: { images: [], overlay: 0.4 } },

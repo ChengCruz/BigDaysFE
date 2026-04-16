@@ -3,6 +3,8 @@
 import React, { useEffect } from "react";
 import type { FlowPreset } from "../../../../types/rsvpDesign";
 
+type ContentWidth = "compact" | "standard" | "wide" | "full";
+
 interface GlobalSettings {
   globalBackgroundType: "color" | "image" | "video";
   globalBackgroundColor: string;
@@ -14,6 +16,7 @@ interface GlobalSettings {
   submitButtonTextColor: string;
   submitButtonLabel: string;
   globalFontFamily?: string;
+  contentWidth?: ContentWidth;
 }
 
 interface Props extends GlobalSettings {
@@ -29,6 +32,13 @@ const FONT_OPTIONS: { value: string; label: string; googleFont?: string }[] = [
   { value: "'Lato', sans-serif",                label: "Lato",                googleFont: "Lato:wght@400;700" },
   { value: "'Raleway', sans-serif",             label: "Raleway",             googleFont: "Raleway:wght@400;600;700" },
   { value: "'Dancing Script', cursive",         label: "Dancing Script",      googleFont: "Dancing+Script:wght@400;700" },
+];
+
+const WIDTH_PRESETS: { value: ContentWidth; label: string; desc: string; icon: string }[] = [
+  { value: "compact",  icon: "📱", label: "Compact",  desc: "Phone-like narrow layout" },
+  { value: "standard", icon: "📋", label: "Standard", desc: "Default balanced width" },
+  { value: "wide",     icon: "🖥",  label: "Wide",     desc: "Wider content area" },
+  { value: "full",     icon: "↔",  label: "Full",     desc: "Edge-to-edge, no side margins" },
 ];
 
 const FLOW_PRESETS: { value: FlowPreset; label: string; desc: string; icon: string }[] = [
@@ -81,6 +91,7 @@ export function GlobalSettingsPanel({
   submitButtonTextColor,
   submitButtonLabel,
   globalFontFamily = "",
+  contentWidth = "full",
   onChange,
   onUploadBackground,
   hasBackgroundAsset,
@@ -278,6 +289,32 @@ export function GlobalSettingsPanel({
               </button>
             ))}
           </div>
+        </div>
+
+        {/* ── Content width ── */}
+        <div className="space-y-2">
+          <SectionTitle>Guest page width</SectionTitle>
+          <div className="space-y-1.5">
+            {WIDTH_PRESETS.map(({ value, label, desc, icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => onChange({ contentWidth: value })}
+                className={`w-full rounded-xl border px-4 py-2.5 text-left transition ${
+                  contentWidth === value
+                    ? "border-primary bg-primary/5 text-primary shadow-sm"
+                    : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">{icon}</span>
+                  <span className="text-sm font-semibold">{label}</span>
+                </div>
+                <p className="mt-0.5 text-xs opacity-60">{desc}</p>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400">Controls how wide the RSVP page appears to guests.</p>
         </div>
 
         {/* ── Ambient music — hidden for now, to be implemented later ──

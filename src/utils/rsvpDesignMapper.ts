@@ -275,6 +275,7 @@ function transformBlockToFrontend(block: ApiBlock): RsvpBlock {
           name: true,
           phone: true,
           pax: true,
+          remarks: true,
         },
         cardColor: block.cardColor,
         cardTextColor: block.cardTextColor,
@@ -349,6 +350,8 @@ export function mapToBackendPayload(
         submitButtonTextColor: frontendDesign.submitButtonTextColor,
         submitButtonLabel: frontendDesign.submitButtonLabel,
         fontFamily: frontendDesign.globalFontFamily ?? undefined,
+        layoutStyle: frontendDesign.layoutStyle ?? undefined,
+        contentWidth: frontendDesign.contentWidth ?? undefined,
       },
       layout: {
         width: 1200, // Default layout width
@@ -366,9 +369,14 @@ export function mapToBackendPayload(
                  : undefined;
         return {
           id,
+          questionId: id,
           label: fc.label ?? fc.text,
+          text: fc.text ?? fc.label,
           typeKey: fc.typeKey,
-          required: fc.isRequired ?? false,
+          type: fc.type,
+          isRequired: fc.isRequired ?? false,
+          options: fc.options,
+          order: fc.order,
         };
       }),
     },
@@ -385,7 +393,10 @@ export function mapToFrontendDesign(
   backendPayload: ApiRsvpDesignPayload | ApiRsvpDesign
 ): Partial<RsvpDesign> {
   const { design } = backendPayload;
-  
+
+  // DEBUG: log raw API response to trace contentWidth round-trip
+  console.log('[mapToFrontendDesign] theme:', JSON.stringify(design.theme), 'designRoot contentWidth:', design.contentWidth, 'designRoot layoutStyle:', design.layoutStyle);
+
   // Extract version and shareToken if present (from API response)
   const version = 'version' in backendPayload ? backendPayload.version : undefined;
   const shareToken = 'shareToken' in backendPayload ? backendPayload.shareToken : undefined;
@@ -407,6 +418,8 @@ export function mapToFrontendDesign(
     submitButtonTextColor: design.theme.submitButtonTextColor,
     submitButtonLabel: design.theme.submitButtonLabel,
     globalFontFamily: design.theme.fontFamily ?? undefined,
+    layoutStyle: (design.theme.layoutStyle as "cards" | "flush") ?? (design.layoutStyle as "cards" | "flush") ?? undefined,
+    contentWidth: (design.theme.contentWidth as "compact" | "standard" | "wide" | "full") ?? (design.contentWidth as "compact" | "standard" | "wide" | "full") ?? undefined,
     eventGuid,           // Preserved so the guest page can fetch form fields
     version,             // Store backend-managed version for publish endpoint
     shareToken: shareToken ?? null,
@@ -470,7 +483,7 @@ export function createDefaultDesign(eventTitle?: string): Partial<RsvpDesign> {
         type: "guestDetails",
         title: "Your details",
         subtitle: "Tell us about yourself",
-        showFields: { name: true, phone: true, pax: true },
+        showFields: { name: true, phone: true, pax: true, remarks: true },
         background: { images: [], overlay: 0.4 },
       },
     ],

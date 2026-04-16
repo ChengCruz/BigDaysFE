@@ -776,7 +776,7 @@ export default function RsvpDesignV2Page() {
       id: uid(), type: "guestDetails",
       title: "Your details",
       subtitle: "Tell us about yourself",
-      showFields: { name: true, phone: true, pax: true },
+      showFields: { name: true, phone: true, pax: true, remarks: true },
       background: { images: [], overlay: 0.4 },
     },
     {
@@ -965,7 +965,7 @@ export default function RsvpDesignV2Page() {
       text:         { id, type: "text",         body: "Tell your guests what to expect.", width: "full", align: "left", muted: false, background: { images: [], overlay: 0.4 } },
       info:         { id, type: "info",         label: "Highlight", content: "Dress code, parking, or venue info", accent: "bg-white/20 text-white border border-white/30", background: { images: [], overlay: 0.4 } },
       attendance:   { id, type: "attendance",   title: "Will you be attending?", subtitle: "Please let us know", background: { images: [], overlay: 0.4 } },
-      guestDetails: { id, type: "guestDetails", title: "Guest Information", subtitle: "", showFields: { name: true, phone: true, pax: true }, background: { images: [], overlay: 0.4 } },
+      guestDetails: { id, type: "guestDetails", title: "Guest Information", subtitle: "", showFields: { name: true, phone: true, pax: true, remarks: true }, background: { images: [], overlay: 0.4 } },
       formField:    { id, type: "formField",    label: "Custom field", placeholder: "Placeholder", required: false, width: "full", background: { images: [], overlay: 0.4 } },
       cta:          { id, type: "cta",          label: "Submit RSVP", href: "#", align: "center", background: { images: [], overlay: 0.4 } },
       image:        { id, type: "image",        images: [], activeImageId: undefined, caption: "Add a caption", height: "medium", background: { images: [], overlay: 0.4 } },
@@ -995,7 +995,7 @@ export default function RsvpDesignV2Page() {
     }));
     setBlocks((prev) => [
       ...prev,
-      { id: g, type: "guestDetails", title: "Guest Information",      subtitle: "", showFields: { name: true, phone: true, pax: true }, background: { images: [], overlay: 0.4 } },
+      { id: g, type: "guestDetails", title: "Guest Information",      subtitle: "", showFields: { name: true, phone: true, pax: true, remarks: true }, background: { images: [], overlay: 0.4 } },
       { id: r, type: "formField",    label: "Remarks", placeholder: "Any notes or special requests…", required: false, width: "full", background: { images: [], overlay: 0.4 } },
       ...questionBlocks,
       { id: c, type: "cta",          label: "Submit RSVP",            href: "#", align: "center",          background: { images: [], overlay: 0.4 } },

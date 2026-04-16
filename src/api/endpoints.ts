@@ -17,13 +17,13 @@ export const EventsEndpoints = {
   byId: (id: string) => `/event/${id}`,
   create: "/event/Create",
   update: `/event/Update`,
-  updateTableQuantity: `/event/UpdateTableQuantity`,
+  updateTableQuantity: `/event/UpdateTableQuantity`, // TODO: not in backend docs — verify with backend team
   activateEvent: (id: string) => `/event/Activate/${id}`,
   deactivateEvent: (id: string) => `/event/Deactivate/${id}`,
-  previewEvent: `/event/Preview`,
-  delete: (id: string) => `/events/${id}`,
-  importRsvps: (eventId: string) => `/events/${eventId}/rsvps/import`,
-  exportRsvps: (eventId: string) => `/events/${eventId}/rsvps/export`,
+  previewEvent: `/event/Preview`, // TODO: no backend endpoint yet
+  delete: (id: string) => `/events/${id}`, // TODO: no backend endpoint — use Deactivate instead
+  importRsvps: (eventId: string) => `/events/${eventId}/rsvps/import`, // TODO: no backend endpoint yet
+  exportRsvps: (eventId: string) => `/events/${eventId}/rsvps/export`, // TODO: no backend endpoint yet
   eventRsvpInternal: (eventGuid: string) => `/event/eventRsvpInternal/${eventGuid}`,
   updateSlug: `/event/UpdateSlug`,
 };
@@ -45,10 +45,10 @@ export const TablesEndpoints = {
   update: "/TableArrangement/Update",
   delete: (tableId: string) => `/TableArrangement/Delete/${tableId}`,
   bulkDelete: "/TableArrangement/BulkDelete",
-  updateLayout: (id: string) => `/tables/${id}/layout`,
-  tableGuests: (id: string) => `/tables/${id}/guests`,
+  updateLayout: (id: string) => `/tables/${id}/layout`, // TODO: no backend endpoint (DragDropUpdate returns 500)
+  tableGuests: (tableId: string) => `/Guest/ByTable/${tableId}`, // Fixed: was wrong path
   reassignGuest: (tableId: string, guestId: string) =>
-    `/tables/${tableId}/guests/${guestId}/reassign`,
+    `/tables/${tableId}/guests/${guestId}/reassign`, // TODO: no backend endpoint — use Guest AssignTable + UnassignTable
 };
 
 export const GuestEndpoints = {
@@ -61,6 +61,7 @@ export const GuestEndpoints = {
   autoAssign: (eventGuid: string) => `/Guest/AutoAssign/${eventGuid}`,
 };
 
+// TODO: No backend Seating API exists — these are stubs. Seating feature pages will 404.
 export const SeatingEndpoints = {
   all: "/seating",
   byId: (id: string) => `/seating/${id}`,
@@ -72,15 +73,17 @@ export const SeatingEndpoints = {
 export const UsersEndpoints = {
   all: "/User/GetUsersList",
   byGuid: (guid: string) => `/User/guid/${guid}`,
-  create: "/users",
-  update: (id: string) => `/users/${id}`,
-  delete: (id: string) => `/users/${id}`,
+  create: "/User/Create",
+  update: "/User/Update",
+  activate: (id: number) => `/User/Activate/${id}`,
+  deactivate: (id: number) => `/User/Deactivate/${id}`,
   updatePassword: "/User/UpdatePassword",
+  updateRole: (id: number) => `/User/UpdateRole?id=${id}`,
 };
 
 export const WalletEndpoints = {
   getByEvent: (eventGuid: string) => `/Wallet/GetWalletByEvent/${eventGuid}`,
-  getByGuid: (walletGuid: string, eventId: string) => `/Wallet/${walletGuid}?eventId=${eventId}`,
+  getByGuid: (walletGuid: string, eventGuid: string) => `/Wallet/${walletGuid}?eventGuid=${eventGuid}`,
   create: "/Wallet/Create",
   update: "/Wallet/Update",
   delete: "/Wallet/Delete",
@@ -123,7 +126,10 @@ export const PublicEventEndpoints = {
 
 export const RsvpDesignEndpoints = {
   get: (eventGuid: string) => `/RsvpDesign/${eventGuid}/design`,
+  /** POST — creates a new version (auto-incremented) */
   save: (eventGuid: string) => `/RsvpDesign/${eventGuid}/design`,
+  /** PUT — updates an existing version in place */
+  update: (eventGuid: string, version: number) => `/RsvpDesign/${eventGuid}/design/${version}`,
   publish: (eventGuid: string, version: number) => `/RsvpDesign/${eventGuid}/design/${version}/publish`,
   shareToken: (eventGuid: string, version: number) => `/RsvpDesign/${eventGuid}/design/${version}/share-token`,
 };

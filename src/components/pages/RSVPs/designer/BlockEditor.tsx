@@ -638,7 +638,7 @@ export function BlockEditor({
                   color: block.cardTextColor ?? "#111827",
                 }}
               >
-                Name · Phone number · Number of guests — card preview
+                Name · Phone number · Pax · Remarks — card preview
               </div>
             </div>
 
@@ -649,6 +649,7 @@ export function BlockEditor({
                 { key: "name", label: "Name" },
                 { key: "phone", label: "Phone number" },
                 { key: "pax", label: "Number of guests" },
+                { key: "remarks", label: "Remarks" },
               ] as const).map(({ key, label }) => (
                 <label key={key} className="flex cursor-pointer items-center gap-2.5">
                   <input
