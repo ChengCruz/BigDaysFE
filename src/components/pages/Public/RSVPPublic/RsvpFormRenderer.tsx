@@ -438,7 +438,7 @@ export default function RsvpFormRenderer({
                 <p className="text-[11px] text-rose-400">{errors[block.questionId]}</p>
               )}
             </div>
-          ) : fieldType === "select" || fieldType === "dropdown" ? (
+          ) : fieldType === "select" ? (
             <div>
               <select
                 value={(currentAnswer as string) ?? ""}
