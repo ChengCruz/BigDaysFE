@@ -106,7 +106,7 @@ export type RsvpBlock =
     })
   | (RsvpBlockBase & {
       type: "countdown";
-      label?: string;          // e.g. "Counting down to your big day"
+      label?: string;          // e.g. "Counting down to our big day"
       targetDate?: string;     // ISO date override; falls back to event.date
     })
   | (RsvpBlockBase & {
