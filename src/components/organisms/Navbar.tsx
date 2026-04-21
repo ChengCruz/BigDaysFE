@@ -1,10 +1,9 @@
 // src/components/organisms/Navbar.tsx
 import { useTheme } from "../../context/ThemeContext";
-import { useEventContext } from "../../context/EventContext";
 import MenuIcon from "@heroicons/react/outline/MenuIcon";
 import MoonIcon from "@heroicons/react/outline/MoonIcon";
 import SunIcon from "@heroicons/react/outline/SunIcon";
-import { formatEventDate } from "../../utils/eventUtils";
+import { EventSwitcher } from "../molecules/EventSwitcher";
 
 export function Navbar({
   onMenuToggle,
@@ -12,42 +11,21 @@ export function Navbar({
   onMenuToggle?: () => void;
 }) {
   const { theme, toggle } = useTheme();
-  const { event } = useEventContext();
 
   return (
-    <header className="sticky top-0 z-40 flex items-center gap-4 px-6 py-3 bg-background/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-primary/10 dark:border-white/10">
-      {/* Left: hamburger (mobile) + event context breadcrumb */}
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-40 flex items-center gap-4 px-4 md:px-6 py-3 bg-background/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-primary/10 dark:border-white/10">
+      {/* Left: hamburger (mobile) + event switcher */}
+      <div className="flex items-center gap-3 min-w-0">
         {onMenuToggle && (
           <button
-            className="md:hidden p-2 rounded-lg text-text/70 hover:bg-primary/5 dark:text-white/70 dark:hover:bg-white/10 transition"
+            className="md:hidden p-2 rounded-lg text-text/70 hover:bg-primary/5 dark:text-white/70 dark:hover:bg-white/10 transition flex-shrink-0"
             onClick={onMenuToggle}
             aria-label="Toggle sidebar"
           >
             <MenuIcon className="h-5 w-5" />
           </button>
         )}
-        {event && (
-          <div className="hidden md:flex items-center gap-2 text-sm">
-            <span className="text-text/50 dark:text-white/50">{event.title}</span>
-            {event.date && (
-              <>
-                <span className="text-text/20 dark:text-white/20">/</span>
-                <span className="text-text/40 dark:text-white/40">{formatEventDate(event.date)}</span>
-              </>
-            )}
-            {event.time && (() => {
-              const [h, m] = event.time.split(":").map(Number);
-              if (isNaN(h)) return null;
-              const period = h >= 12 ? "PM" : "AM";
-              return (
-                <span className="text-text/40 dark:text-white/40">
-                  · {h % 12 || 12}:{String(m).padStart(2, "0")} {period}
-                </span>
-              );
-            })()}
-          </div>
-        )}
+        <EventSwitcher />
       </div>
 
       {/* Spacer */}
@@ -57,7 +35,7 @@ export function Navbar({
       <button
         onClick={toggle}
         aria-label="Toggle dark mode"
-        className="p-2 rounded-lg text-text/50 hover:text-text hover:bg-primary/5 dark:text-white/50 dark:hover:text-white dark:hover:bg-white/10 transition"
+        className="p-2 rounded-lg text-text/50 hover:text-text hover:bg-primary/5 dark:text-white/50 dark:hover:text-white dark:hover:bg-white/10 transition flex-shrink-0"
       >
         {theme === "light" ? (
           <MoonIcon className="h-5 w-5" />

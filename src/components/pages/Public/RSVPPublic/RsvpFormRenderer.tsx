@@ -658,7 +658,7 @@ export default function RsvpFormRenderer({
       <form onSubmit={handleSubmit} noValidate>
         <div
           className={`relative mx-auto flex flex-col ${
-            isFlush ? maxWidthCls : "max-w-3xl gap-6 px-4 py-12"
+            isFlush ? maxWidthCls : `${maxWidthCls || "max-w-3xl"} gap-6 px-4 py-12`
           } ${flowPreset === "stacked" ? "scroll-snap-y scroll-smooth" : ""}`}
         >
           {/* ── All blocks rendered inline in designed order ── */}

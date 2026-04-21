@@ -1,25 +1,22 @@
 import React, { useState, useMemo } from "react";
-import type { Guest } from "../../../api/hooks/useGuestsApi";
+import type { Guest } from "../../../../api/hooks/useGuestsApi";
 
 interface Props {
   guests: Guest[];
   tables: { id: string; name: string }[];
+  onGuestDragStart?: (guestId: string, pax: number) => void;
+  onGuestDragEnd?: () => void;
 }
 
-export const FloorGuestPanel: React.FC<Props> = ({ guests, tables }) => {
+export const FloorGuestPanelV3: React.FC<Props> = ({ guests, tables, onGuestDragStart, onGuestDragEnd }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [assignedCollapsed, setAssignedCollapsed] = useState(false);
 
-  const unassigned = useMemo(
-    () => guests.filter((g) => !g.tableId),
-    [guests]
-  );
-  const assignedGuests = useMemo(
-    () => guests.filter((g) => !!g.tableId),
-    [guests]
-  );
+  const unassigned = useMemo(() => guests.filter((g) => !g.tableId), [guests]);
+  const assignedGuests = useMemo(() => guests.filter((g) => !!g.tableId), [guests]);
 
-  const filtered = useMemo(() => {
+  const filteredUnassigned = useMemo(() => {
     if (!searchTerm) return unassigned;
     const term = searchTerm.toLowerCase();
     return unassigned.filter(
@@ -29,11 +26,23 @@ export const FloorGuestPanel: React.FC<Props> = ({ guests, tables }) => {
     );
   }, [unassigned, searchTerm]);
 
+  const filteredAssigned = useMemo(() => {
+    if (!searchTerm) return assignedGuests;
+    const term = searchTerm.toLowerCase();
+    return assignedGuests.filter(
+      (g) =>
+        g.name.toLowerCase().includes(term) ||
+        g.phoneNo?.toLowerCase().includes(term)
+    );
+  }, [assignedGuests, searchTerm]);
+
   const tableNameMap = useMemo(() => new Map(tables.map(t => [t.id, t.name])), [tables]);
+
+  const totalUnassignedPax = unassigned.reduce((s, g) => s + (g.pax ?? 1), 0);
+  const totalAssignedPax = assignedGuests.reduce((s, g) => s + (g.pax ?? 1), 0);
 
   return (
     <div className="w-80 flex-shrink-0 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col overflow-hidden">
-      {/* Header */}
       <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4 text-primary">
@@ -42,16 +51,15 @@ export const FloorGuestPanel: React.FC<Props> = ({ guests, tables }) => {
           <h3 className="text-sm font-semibold text-slate-800 dark:text-white">Guests</h3>
         </div>
         <div className="flex gap-1">
-          <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
-            {assignedGuests.length} seated
+          <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" title="Seated pax">
+            {totalAssignedPax} seated
           </span>
-          <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
-            {unassigned.length} pending
+          <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" title="Unassigned pax">
+            {totalUnassignedPax} pending
           </span>
         </div>
       </div>
 
-      {/* Search */}
       <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
         <div className="relative">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400">
@@ -59,7 +67,7 @@ export const FloorGuestPanel: React.FC<Props> = ({ guests, tables }) => {
           </svg>
           <input
             type="text"
-            placeholder="Search guests..."
+            placeholder="Search all guests..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full border border-gray-200 dark:border-gray-600 rounded-lg pl-8 pr-3 py-1.5 text-xs bg-gray-50 dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
@@ -67,21 +75,19 @@ export const FloorGuestPanel: React.FC<Props> = ({ guests, tables }) => {
         </div>
       </div>
 
-      {/* Guest list */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ scrollbarWidth: "thin" }}>
-        {/* Unassigned section */}
         <p className="text-[10px] uppercase tracking-wider text-yellow-600 dark:text-yellow-400 font-semibold flex items-center gap-1 mb-2">
-          ⚠️ Unassigned ({unassigned.length})
+          ⚠️ Unassigned ({filteredUnassigned.length})
         </p>
 
-        {filtered.length === 0 ? (
-          <div className="text-center py-6">
-            <p className="text-sm text-slate-400">
-              {searchTerm ? "No matches found" : "All guests are assigned!"}
+        {filteredUnassigned.length === 0 ? (
+          <div className="text-center py-4">
+            <p className="text-xs text-slate-400">
+              {searchTerm ? "No unassigned matches" : "All guests are assigned!"}
             </p>
           </div>
         ) : (
-          filtered.map((guest) => (
+          filteredUnassigned.map((guest) => (
             <div
               key={guest.id}
               draggable
@@ -89,8 +95,12 @@ export const FloorGuestPanel: React.FC<Props> = ({ guests, tables }) => {
                 e.dataTransfer.effectAllowed = "move";
                 e.dataTransfer.setData("guestId", guest.id);
                 setDraggingId(guest.id);
+                onGuestDragStart?.(guest.id, guest.pax ?? 1);
               }}
-              onDragEnd={() => setDraggingId(null)}
+              onDragEnd={() => {
+                setDraggingId(null);
+                onGuestDragEnd?.();
+              }}
               className={`p-3 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-slate-800 cursor-grab hover:border-primary hover:bg-indigo-50 dark:hover:bg-primary/10 transition-all ${
                 draggingId === guest.id ? "opacity-50" : ""
               }`}
@@ -113,31 +123,39 @@ export const FloorGuestPanel: React.FC<Props> = ({ guests, tables }) => {
           ))
         )}
 
-        {/* Assigned section */}
         {assignedGuests.length > 0 && (
           <>
-            <p className="text-[10px] uppercase tracking-wider text-green-600 dark:text-green-400 font-semibold flex items-center gap-1 mt-4 mb-2">
-              ✅ Assigned ({assignedGuests.length})
-            </p>
-            {assignedGuests.slice(0, 5).map((guest) => (
-              <div key={guest.id} className="p-3 rounded-lg border border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-sm text-slate-800 dark:text-white">{guest.name}</p>
-                    <p className="text-[10px] text-green-600 dark:text-green-400">
-                      {tableNameMap.get(guest.tableId ?? "") ?? "Table"} • Seat {guest.seatIndex ?? "?"}
-                    </p>
+            <button
+              type="button"
+              className="w-full flex items-center justify-between text-[10px] uppercase tracking-wider text-green-600 dark:text-green-400 font-semibold mt-4 mb-2 hover:opacity-80"
+              onClick={() => setAssignedCollapsed((c) => !c)}
+            >
+              <span className="flex items-center gap-1">
+                ✅ Assigned ({filteredAssigned.length})
+              </span>
+              <span className="text-[11px] normal-case">{assignedCollapsed ? "Show" : "Hide"}</span>
+            </button>
+            {!assignedCollapsed && (
+              filteredAssigned.length === 0 ? (
+                <p className="text-center text-xs text-gray-400 py-2">No assigned matches</p>
+              ) : (
+                filteredAssigned.map((guest) => (
+                  <div key={guest.id} className="p-2.5 rounded-lg border border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/20">
+                    <div className="flex items-center justify-between">
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm text-slate-800 dark:text-white truncate">{guest.name}</p>
+                        <p className="text-[10px] text-green-600 dark:text-green-400 truncate">
+                          {tableNameMap.get(guest.tableId ?? "") ?? "Table"}
+                          {guest.seatIndex !== undefined && guest.seatIndex !== null ? ` • Seat ${guest.seatIndex}` : ""}
+                        </p>
+                      </div>
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 flex-shrink-0">
+                        {guest.pax ?? 1} pax
+                      </span>
+                    </div>
                   </div>
-                  <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                    {guest.pax ?? 1} pax
-                  </span>
-                </div>
-              </div>
-            ))}
-            {assignedGuests.length > 5 && (
-              <p className="text-center text-xs text-gray-400 py-2">
-                + {assignedGuests.length - 5} more assigned...
-              </p>
+                ))
+              )
             )}
           </>
         )}

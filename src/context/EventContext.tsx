@@ -8,11 +8,8 @@ interface EventContextValue {
   event?: Event;
   events?: Event[];
   eventsLoading: boolean;
-  isSelectorOpen: boolean;
   mustChooseEvent: boolean;
   setEventId: (id: string) => void;
-  openSelector: () => void;
-  closeSelector: () => void;
 }
 
 const EventContext = createContext<EventContextValue>({
@@ -20,11 +17,8 @@ const EventContext = createContext<EventContextValue>({
   event: undefined,
   events: [],
   eventsLoading: false,
-  isSelectorOpen: false,
   mustChooseEvent: false,
   setEventId: () => {},
-  openSelector: () => {},
-  closeSelector: () => {},
 });
 
 export function EventProvider({ children }: { children: ReactNode }) {
@@ -36,7 +30,6 @@ export function EventProvider({ children }: { children: ReactNode }) {
   const [eventId, _setEventId] = useState<string | undefined>(
     () => localStorage.getItem("eventId") || undefined
   );
-  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 
   // Clear stale eventId if events loaded and it doesn't match any known event
   useEffect(() => {
@@ -71,18 +64,13 @@ export function EventProvider({ children }: { children: ReactNode }) {
   // Use the auto-selected id immediately (before the effect persists it)
   const effectiveEventId = eventId ?? autoSelectedId;
 
-  // Only require a manual choice when auth + events are fully loaded and nothing is resolvable
+  // True only when the user is fully loaded but still has no selectable event
+  // (i.e. they have zero events and need to create one).
   const mustChooseEvent = !authLoading && isAuthenticated && !eventsLoading && !effectiveEventId;
 
   const setEventId = (id: string) => {
     localStorage.setItem("eventId", id);
     _setEventId(id);
-    setIsSelectorOpen(false);
-  };
-  const openSelector = () => setIsSelectorOpen(true);
-  const closeSelector = () => {
-    if (mustChooseEvent) return;
-    setIsSelectorOpen(false);
   };
 
   const event = events?.find((e: Event) => e.id === effectiveEventId);
@@ -94,11 +82,8 @@ export function EventProvider({ children }: { children: ReactNode }) {
         event,
         events,
         eventsLoading,
-        isSelectorOpen,
         mustChooseEvent,
         setEventId,
-        openSelector,
-        closeSelector,
       }}
     >
       {children}
