@@ -2,7 +2,7 @@
 import { PageLoader } from "../../atoms/PageLoader";
 import { ErrorState } from "../../atoms/ErrorState";
 import { useState, useMemo } from "react";
-import { UserGroupIcon, UserIcon, CheckCircleIcon, StarIcon } from "@heroicons/react/solid";
+import { UserGroupIcon, UserIcon, CheckCircleIcon } from "@heroicons/react/solid";
 import { useAuth } from "../../../api/hooks/useAuth";
 import {
   useGuestsApi,
@@ -11,6 +11,7 @@ import {
   type Guest,
 } from "../../../api/hooks/useGuestsApi";
 import { useTablesApi } from "../../../api/hooks/useTablesApi";
+import { useQrListApi, useGenerateQrApi, useRevokeQrApi } from "../../../api/hooks/useQrApi";
 import { Button } from "../../atoms/Button";
 import { StatsCard } from "../../atoms/StatsCard";
 import { useEventContext } from "../../../context/EventContext";
@@ -19,10 +20,9 @@ import { GuestFormModal } from "./GuestFormModal";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { Modal } from "../../molecules/Modal";
-// TODO: QR features are deferred from this page for now.
-// Future plan: show a simple read-only status badge per guest card
-// e.g. "QR Ready" | "Awaiting QR" | "Checked In" | "QR Revoked"
-// Full actions (Generate All, View QR, Revoke) to be decided on separately.
+import QrStatusBadge from "../../molecules/QrStatusBadge";
+import QrImageModal from "../../molecules/QrImageModal";
+import type { QrToken, QrStatus } from "../../../types/qr";
 
 export default function GuestsPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
@@ -33,9 +33,13 @@ export default function GuestsPage() {
   const { data: tables = [], isLoading: tablesLoading } = useTablesApi(eventId!);
   const assignGuestToTable = useAssignGuestToTable(eventId!);
   const unassignGuestFromTable = useUnassignGuestFromTable(eventId!);
+  const { data: qrTokens = [] } = useQrListApi(eventId!);
+  const generateQr = useGenerateQrApi();
+  const revokeQr = useRevokeQrApi();
 
   const [bannerDismissed, setBannerDismissed] = useState(() => sessionStorage.getItem("guestBannerDismissed") === "1");
   const [guestTypeFilter, setGuestTypeFilter] = useState<string>("All");
+  const [assignFilter, setAssignFilter] = useState<"all" | "assigned" | "unassigned">("all");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [modal, setModal] = useState<{ open: boolean; guest?: Guest }>({
     open: false,
@@ -44,14 +48,15 @@ export default function GuestsPage() {
     open: false,
   });
   const [unassignConfirm, setUnassignConfirm] = useState<Guest | null>(null);
+  const [qrModal, setQrModal] = useState<{ open: boolean; guest?: Guest; token?: string }>({ open: false });
+  const [revokeConfirm, setRevokeConfirm] = useState<{ guest: Guest; token: string } | null>(null);
   // Calculate statistics
   const stats = useMemo(() => {
     const total = guests.length;
     const assigned = guests.filter(g => g.tableId).length;
     const unassigned = guests.filter(g => !g.tableId).length;
-    const vips = guests.filter(g => g.guestType === "VIP").length;
 
-    return { total, assigned, unassigned, vips };
+    return { total, assigned, unassigned };
   }, [guests]);
 
   // Create table lookup map
@@ -74,14 +79,32 @@ export default function GuestsPage() {
     return map;
   }, [guests]);
 
+  // QR token lookup map keyed by guestId
+  const qrMap = useMemo(() => {
+    const map = new Map<string, QrToken>();
+    qrTokens.forEach(t => map.set(t.guestId, t));
+    return map;
+  }, [qrTokens]);
+
+  function getQrStatus(token: QrToken | undefined): QrStatus {
+    if (!token) return "None";
+    if (token.checkedInAt) return "CheckedIn";
+    if (token.isRevoked) return "Revoked";
+    return "Generated";
+  }
+
   // Filter guests
   const filteredGuests = useMemo(() => {
     return guests.filter((g) => {
       const okType = guestTypeFilter === "All" || g.guestType === guestTypeFilter;
+      const okAssign =
+        assignFilter === "all" ||
+        (assignFilter === "assigned" && !!g.tableId) ||
+        (assignFilter === "unassigned" && !g.tableId);
       const okSearch = (g.guestName ?? g.name ?? "").toLowerCase().includes(searchTerm.toLowerCase());
-      return okType && okSearch;
+      return okType && okAssign && okSearch;
     });
-  }, [guests, guestTypeFilter, searchTerm]);
+  }, [guests, guestTypeFilter, assignFilter, searchTerm]);
 
   // ─── Early returns after hooks ─────────────────────────────────────────
 
@@ -90,6 +113,30 @@ export default function GuestsPage() {
 
   if (guestsLoading || tablesLoading) return <PageLoader message="Loading guests..." />;
   if (guestsError) return <ErrorState message="Failed to load guests." onRetry={() => window.location.reload()} />;
+
+  const handleGenerateQr = () => {
+    generateQr.mutate(eventId!, {
+      onSuccess: (result) => {
+        toast.success(`Generated ${result.generated} QR code${result.generated !== 1 ? "s" : ""}. ${result.skipped} skipped.`);
+      },
+      onError: () => {
+        toast.error("Failed to generate QR codes");
+      },
+    });
+  };
+
+  const confirmRevoke = () => {
+    if (!revokeConfirm) return;
+    revokeQr.mutate({ token: revokeConfirm.token, eventId: eventId! }, {
+      onSuccess: () => {
+        toast.success(`QR code revoked for ${revokeConfirm.guest.guestName || revokeConfirm.guest.name}`);
+        setRevokeConfirm(null);
+      },
+      onError: () => {
+        toast.error("Failed to revoke QR code");
+      },
+    });
+  };
 
   // Note: Guest deletion is not available in this module.
   // Guests can only be deleted through the RSVP module, as they are managed as part of RSVP records.
@@ -143,33 +190,45 @@ export default function GuestsPage() {
   return (
     <>
       {/* Header + Controls */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-3">
         <div>
           <h2 className="text-2xl font-semibold text-primary">Guests</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage and organize your guest list</p>
         </div>
-        {!bannerDismissed && (
-          <div className="flex items-start gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-sm text-blue-700 dark:text-blue-300">
-            <span className="flex-1">
-              <span className="font-medium">Note:</span> Guests are automatically created when RSVP submissions include attendees (pax &gt; 0). Guest deletion is only available through the RSVP module.
-            </span>
-            <button
-              onClick={() => { setBannerDismissed(true); sessionStorage.setItem("guestBannerDismissed", "1"); }}
-              className="flex-shrink-0 text-blue-400 hover:text-blue-600 dark:hover:text-blue-200 transition text-base leading-none mt-0.5"
-              aria-label="Dismiss"
+        <div className="flex gap-2">
+          {!isReadOnly && (
+            <Button
+              variant="secondary"
+              onClick={handleGenerateQr}
+              disabled={generateQr.isPending}
             >
-              ✕
-            </button>
-          </div>
-        )}
+              {generateQr.isPending ? "Generating..." : "Generate QR"}
+            </Button>
+          )}
+        </div>
       </div>
 
+      {/* Note Banner */}
+      {!bannerDismissed && (
+        <div className="flex items-start gap-3 px-4 py-3 mb-5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-sm text-blue-700 dark:text-blue-300">
+          <span className="flex-1">
+            <span className="font-medium">Note:</span> Guests are automatically created when RSVP submissions include attendees (pax &gt; 0). Guest deletion is only available through the RSVP module.
+          </span>
+          <button
+            onClick={() => { setBannerDismissed(true); sessionStorage.setItem("guestBannerDismissed", "1"); }}
+            className="flex-shrink-0 text-blue-400 hover:text-blue-600 dark:hover:text-blue-200 transition text-base leading-none mt-0.5"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-3 gap-3 mb-6">
         <StatsCard label="Total Guests" value={stats.total} variant="primary" size="sm" icon={<UserGroupIcon className="w-4 h-4" />} />
         <StatsCard label="Assigned" value={stats.assigned} variant="success" size="sm" icon={<CheckCircleIcon className="w-4 h-4" />} />
         <StatsCard label="Unassigned" value={stats.unassigned} variant="warning" size="sm" icon={<UserIcon className="w-4 h-4" />} />
-        <StatsCard label="VIPs" value={stats.vips} variant="accent" size="sm" icon={<StarIcon className="w-4 h-4" />} />
       </div>
 
       {/* Filters */}
@@ -177,13 +236,23 @@ export default function GuestsPage() {
         <select
           value={guestTypeFilter}
           onChange={(e) => setGuestTypeFilter(e.target.value)}
-          className="w-full md:w-1/4 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className="w-full md:w-1/5 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           {["All", "Family", "VIP", "Friend", "Other"].map((t) => (
             <option key={t} value={t}>
               {t}
             </option>
           ))}
+        </select>
+
+        <select
+          value={assignFilter}
+          onChange={(e) => setAssignFilter(e.target.value as "all" | "assigned" | "unassigned")}
+          className="w-full md:w-1/5 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/20"
+        >
+          <option value="all">All Seating</option>
+          <option value="assigned">Assigned</option>
+          <option value="unassigned">Unassigned</option>
         </select>
 
         <input
@@ -200,7 +269,7 @@ export default function GuestsPage() {
         <div className="text-center py-12">
           <UserGroupIcon className="h-12 w-12 mx-auto text-gray-400 mb-3" />
           <p className="text-gray-600 dark:text-gray-400">
-            {searchTerm || guestTypeFilter !== "All"
+            {searchTerm || guestTypeFilter !== "All" || assignFilter !== "all"
               ? "No guests match your filters"
               : "No guests yet. Create your first guest!"}
           </p>
@@ -271,10 +340,15 @@ export default function GuestsPage() {
                     </span>
                   </div>
 
+                  {/* QR Status Badge */}
+                  <div>
+                    <QrStatusBadge status={getQrStatus(qrMap.get(guest.guestId ?? guest.id))} />
+                  </div>
+
                   {/* Table Assignment Display */}
                   <div className={`mt-3 p-3 rounded-lg ${
-                    isAssigned 
-                      ? "bg-green-100 dark:bg-green-900/30" 
+                    isAssigned
+                      ? "bg-green-100 dark:bg-green-900/30"
                       : "bg-orange-100 dark:bg-orange-900/30"
                   }`}>
                     <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
@@ -316,6 +390,30 @@ export default function GuestsPage() {
                         Assign Table
                       </button>
                     )}
+                    {(() => {
+                      const qrToken = qrMap.get(guest.guestId ?? guest.id);
+                      const qrStatus = getQrStatus(qrToken);
+                      return (
+                        <>
+                          {(qrStatus === "Generated" || qrStatus === "CheckedIn") && (
+                            <button
+                              onClick={() => setQrModal({ open: true, guest, token: qrToken!.token })}
+                              className="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:opacity-90 transition-opacity"
+                            >
+                              View QR
+                            </button>
+                          )}
+                          {qrStatus === "Generated" && (
+                            <button
+                              onClick={() => setRevokeConfirm({ guest, token: qrToken!.token })}
+                              className="px-3 py-1.5 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                            >
+                              Revoke
+                            </button>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
               </li>
@@ -323,6 +421,28 @@ export default function GuestsPage() {
           })}
         </ul>
       )}
+
+      {/* QR Image Modal */}
+      <QrImageModal
+        isOpen={qrModal.open}
+        guestName={qrModal.guest?.guestName ?? qrModal.guest?.name ?? ""}
+        token={qrModal.token ?? ""}
+        onClose={() => setQrModal({ open: false })}
+      />
+
+      {/* Revoke QR Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={!!revokeConfirm}
+        isDeleting={revokeQr.isPending}
+        title="Revoke QR Code"
+        description="This will invalidate the guest's QR code. They will no longer be able to check in with it."
+        onConfirm={confirmRevoke}
+        onCancel={() => setRevokeConfirm(null)}
+      >
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          Revoke QR code for <strong>{revokeConfirm?.guest.guestName || revokeConfirm?.guest.name}</strong>?
+        </p>
+      </DeleteConfirmationModal>
 
       {/* Unassign Confirmation Modal */}
       <DeleteConfirmationModal
