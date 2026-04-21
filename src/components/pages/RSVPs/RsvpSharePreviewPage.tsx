@@ -18,6 +18,7 @@ type PreviewData = {
   backgroundType: "color" | "image" | "video";
   overlay: number;
   accentColor: string;
+  contentWidth?: "compact" | "standard" | "wide" | "full";
 };
 
 export default function RsvpSharePreviewPage() {
@@ -48,6 +49,7 @@ export default function RsvpSharePreviewPage() {
           backgroundType: (mapped.globalBackgroundType ?? "color") as "color" | "image" | "video",
           overlay: mapped.globalOverlay ?? 0.3,
           accentColor: mapped.accentColor ?? "#f97316",
+          contentWidth: mapped.contentWidth,
         });
       })
       .catch(() => setError(true))
@@ -89,6 +91,7 @@ export default function RsvpSharePreviewPage() {
       overlay={preview.overlay}
       accentColor={preview.accentColor}
       flowPreset={preview.flowPreset}
+      contentWidth={preview.contentWidth}
     />
   );
 }

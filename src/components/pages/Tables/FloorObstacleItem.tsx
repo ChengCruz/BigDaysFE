@@ -20,10 +20,17 @@ export const FloorObstacleItem: React.FC<Props> = ({ item, zoom, selected, onSel
       e.stopPropagation();
       onSelect(item.id);
       dragging.current = true;
-      offset.current = {
-        x: (e.clientX - (e.currentTarget as HTMLElement).getBoundingClientRect().left) / zoom,
-        y: (e.clientY - (e.currentTarget as HTMLElement).getBoundingClientRect().top) / zoom,
-      };
+      // Compute grab-offset in world coords against the item's stored x/y, not the
+      // DOM bbox — getBoundingClientRect() returns the rotated axis-aligned bbox
+      // and would jump on drag-start for rotated items.
+      const canvas = document.getElementById("floor-canvas-content");
+      const canvasRect = canvas?.getBoundingClientRect();
+      if (canvasRect) {
+        offset.current = {
+          x: (e.clientX - canvasRect.left) / zoom - item.x,
+          y: (e.clientY - canvasRect.top) / zoom - item.y,
+        };
+      }
 
       const onMouseMove = (ev: MouseEvent) => {
         if (!dragging.current) return;
@@ -42,13 +49,14 @@ export const FloorObstacleItem: React.FC<Props> = ({ item, zoom, selected, onSel
       window.addEventListener("mousemove", onMouseMove);
       window.addEventListener("mouseup", onMouseUp);
     },
-    [item.id, zoom, onSelect, onMove]
+    [item.id, item.x, item.y, zoom, onSelect, onMove]
   );
 
   const isStage = item.type === "stage";
   const isDanceFloor = item.type === "danceFloor";
   const isPillar = item.type === "pillar";
 
+  const rotation = item.rotation ?? 0;
   let style: React.CSSProperties = {
     position: "absolute",
     left: item.x,
@@ -63,6 +71,8 @@ export const FloorObstacleItem: React.FC<Props> = ({ item, zoom, selected, onSel
     fontSize: 10,
     zIndex: selected ? 50 : 5,
     transition: "box-shadow 0.2s",
+    transform: rotation ? `rotate(${rotation}deg)` : undefined,
+    transformOrigin: "center center",
   };
 
   if (isStage) {

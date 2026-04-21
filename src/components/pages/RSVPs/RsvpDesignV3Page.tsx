@@ -733,6 +733,7 @@ export default function RsvpDesignV3Page() {
       if (savedDesign.submitButtonTextColor) patch.submitButtonTextColor = savedDesign.submitButtonTextColor;
       if (savedDesign.submitButtonLabel)  patch.submitButtonLabel = savedDesign.submitButtonLabel;
       if (savedDesign.globalFontFamily)   patch.globalFontFamily = savedDesign.globalFontFamily;
+      if (savedDesign.contentWidth)       patch.contentWidth = savedDesign.contentWidth;
       if (savedDesign.version !== undefined) patch.version = savedDesign.version;
       dispatch({ type: "LOAD_DESIGN", payload: patch });
 
@@ -1535,7 +1536,7 @@ export default function RsvpDesignV3Page() {
             <div className="fixed inset-0 pointer-events-none" style={{ background: `rgba(15,23,42,${globalOverlay})` }} />
           )}
           {/* Blocks — no wrapper padding, no gaps, flush sections like canvas */}
-          <div className="relative z-10">
+          <div className={`relative z-10 mx-auto ${contentWidth === "compact" ? "max-w-sm" : contentWidth === "standard" ? "max-w-lg" : contentWidth === "wide" ? "max-w-2xl" : ""}`}>
             {blocks.map((block) => {
               const sectionImg = block.background?.images?.find((img) => img.id === block.background?.activeImageId) ?? block.background?.images?.[0] ?? block.sectionImage;
               const blockOverlay = block.background?.overlay ?? 0.4;

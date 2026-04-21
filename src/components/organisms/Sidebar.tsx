@@ -7,7 +7,6 @@ import ChevronLeftIcon from "@heroicons/react/outline/ChevronLeftIcon";
 import ChevronRightIcon from "@heroicons/react/outline/ChevronRightIcon";
 import LogoutIcon from "@heroicons/react/outline/LogoutIcon";
 import UserCircleIcon from "@heroicons/react/outline/UserCircleIcon";
-import SwitchHorizontalIcon from "@heroicons/react/outline/SwitchHorizontalIcon";
 
 import {
   CalendarIcon,
@@ -15,7 +14,6 @@ import {
   UserIcon,
   TableIcon,
   CurrencyDollarIcon,
-  SparklesIcon,
   UserGroupIcon,
   HomeIcon,
   ViewGridIcon,
@@ -27,7 +25,6 @@ import {
 import { useEventContext } from "../../context/EventContext";
 import { useAuth } from "../../api/hooks/useAuth";
 import { getRoleLabel } from "../../utils/jwtUtils";
-import { formatEventDate, formatEventTime } from "../../utils/eventUtils";
 
 interface SidebarLink {
   to: string;
@@ -66,7 +63,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const { event, eventId, openSelector, mustChooseEvent } = useEventContext();
+  const { eventId } = useEventContext();
   const { user, userRole, logout } = useAuth();
   const displayRole = userRole != null ? getRoleLabel(userRole) : null;
 
@@ -147,48 +144,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           </div>
 
-          {/* Event card + Nav links — scrollable middle */}
-          <div className={`flex-1 overflow-y-auto py-3 space-y-3 ${collapsed ? "md:px-2" : "px-3"}`}>
-            {/* Event selector card — hidden for Staff */}
-            {!isStaff && <div className={collapsed ? "px-1" : "px-1"}>
-              <button
-                onClick={openSelector}
-                className={`w-full rounded-xl p-3 text-left transition
-                  bg-primary/5 hover:bg-primary/10 border border-primary/10
-                  dark:bg-white/5 dark:hover:bg-white/10 dark:border-white/10
-                  ${collapsed ? "px-2 py-3 flex justify-center" : ""}
-                `}
-              >
-                <div className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}>
-                  <SparklesIcon className={`h-5 w-5 flex-shrink-0 ${mustChooseEvent ? "text-amber-500" : "text-primary"}`} />
-                  {!collapsed && (
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-[11px] uppercase tracking-wide font-medium ${mustChooseEvent ? "text-amber-600 dark:text-amber-400" : "text-text/50 dark:text-white/50"}`}>
-                        {mustChooseEvent ? "Select an event" : "Current event"}
-                      </p>
-                      <p className="text-sm font-semibold truncate">
-                        {event?.title ?? "No event selected"}
-                      </p>
-                      {event?.date && (
-                        <p className="text-[11px] text-text/40 dark:text-white/30 truncate">
-                          {formatEventDate(event.date)}
-                          {event.time && ` · ${formatEventTime(event.date, event.time)}`}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  {!collapsed && (
-                    <SwitchHorizontalIcon className="h-4 w-4 text-text/30 dark:text-white/30 flex-shrink-0" />
-                  )}
-                </div>
-              </button>
-              {mustChooseEvent && !collapsed && (
-                <p className="mt-2 text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg px-3 py-2">
-                  Select an event to get started.
-                </p>
-              )}
-            </div>}
-
+          {/* Nav links — scrollable middle */}
+          <div className={`flex-1 overflow-y-auto py-3 ${collapsed ? "md:px-2" : "px-3"}`}>
             {/* Navigation links */}
             <nav className="space-y-0.5">
               {visibleLinks.map(({ to, label, Icon, end, sub, external, soon }) =>

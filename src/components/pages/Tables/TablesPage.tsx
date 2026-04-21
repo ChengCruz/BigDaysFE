@@ -43,7 +43,7 @@ export default function TablesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "hasEmpty" | "full">("all");
   const [draggedGuestId, setDraggedGuestId] = useState<string | null>(null);
-  const [draggedGuest, setDraggedGuest] = useState<{ id: string; paxCount: number } | null>(null);
+  const [draggedGuest, setDraggedGuest] = useState<{ id: string; paxCount: number; sourceTableId: string | null } | null>(null);
   const [showQuickSetup, setShowQuickSetup] = useState(false);
   const [showCreateTable, setShowCreateTable] = useState(false);
   const [editingTable, setEditingTable] = useState<{ id: string; name: string; capacity: number } | null>(null);
@@ -125,13 +125,14 @@ export default function TablesPage() {
   if (tablesError || guestsError) return <ErrorState message="Failed to load data." onRetry={() => window.location.reload()} />;
 
   // Drag and drop handlers
-  const handleDragStart = (guestId: string) => {
+  const handleDragStart = (guestId: string, sourceTableId: string | null = null) => {
     const guest = guests.find(g => g.id === guestId);
     if (guest) {
       setDraggedGuestId(guestId);
       setDraggedGuest({
         id: guestId,
         paxCount: guest.pax || guest.noOfPax || 1,
+        sourceTableId: sourceTableId ?? guest.tableId ?? null,
       });
     }
   };
@@ -147,10 +148,13 @@ export default function TablesPage() {
     const table = tablesWithGuests.find(t => t.id === tableId);
     if (!guest || !table) return;
 
+    // No-op if guest is already on this table
+    if (guest.tableId === tableId) return;
+
     // Validate: Check if adding this guest would exceed table capacity
     const guestPaxCount = guest.pax || guest.noOfPax || 1;
     const availableSeats = table.capacity - table.assignedCount;
-    
+
     if (guestPaxCount > availableSeats) {
       toast(`⚠️ ${table.name} is over capacity (${table.assignedCount + guestPaxCount}/${table.capacity}). Guest assigned anyway.`, {
         duration: 4000,
@@ -158,7 +162,7 @@ export default function TablesPage() {
       });
     }
 
-    // Call the assign API
+    // Call the assign API (reassigns if the guest was already on another table)
     assignGuest.mutate({ guestId, tableId }, {
       onError: () => toast.error("Failed to assign guest to table"),
     });
@@ -425,6 +429,8 @@ export default function TablesPage() {
                     onEdit={(selectMode || isReadOnly) ? undefined : handleEditTable}
                     onDelete={(selectMode || isReadOnly) ? undefined : handleDeleteTable}
                     onUnassignGuest={(selectMode || isReadOnly) ? undefined : handleUnassignGuest}
+                    onGuestDragStart={(selectMode || isReadOnly) ? undefined : handleDragStart}
+                    onGuestDragEnd={(selectMode || isReadOnly) ? undefined : handleDragEnd}
                     isDropTarget={!selectMode && !isReadOnly && !!draggedGuestId}
                     draggedGuest={(selectMode || isReadOnly) ? null : draggedGuest}
                   />

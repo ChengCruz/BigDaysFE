@@ -24,8 +24,10 @@ export interface TableCardProps {
   onEdit?: (tableId: string) => void;
   onDelete?: (tableId: string) => void;
   onUnassignGuest?: (guestId: string) => void;
+  onGuestDragStart?: (guestId: string, sourceTableId: string) => void;
+  onGuestDragEnd?: () => void;
   isDropTarget?: boolean;
-  draggedGuest?: { id: string; paxCount: number } | null;
+  draggedGuest?: { id: string; paxCount: number; sourceTableId?: string | null } | null;
 }
 
 export const TableCard: React.FC<TableCardProps> = ({
@@ -34,11 +36,19 @@ export const TableCard: React.FC<TableCardProps> = ({
   onEdit,
   onDelete,
   onUnassignGuest,
+  onGuestDragStart,
+  onGuestDragEnd,
   draggedGuest,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const availableSeats = table.capacity - table.assignedCount;
+  const isSourceTable = !!draggedGuest && draggedGuest.sourceTableId === table.id;
+  // When the dragged guest originates from this table, exclude their pax from the
+  // current assigned count so the capacity hint reflects the post-move state.
+  const effectiveAssignedCount = isSourceTable
+    ? table.assignedCount - (draggedGuest?.paxCount || 0)
+    : table.assignedCount;
+  const availableSeats = table.capacity - effectiveAssignedCount;
   const isOverCapacity = table.assignedCount > table.capacity;
   // Only block drop if table is strictly full with no room at all during drag hint
   const canAcceptDrop = draggedGuest
@@ -162,36 +172,62 @@ export const TableCard: React.FC<TableCardProps> = ({
               No guests assigned yet
             </p>
           ) : (
-            table.guests.map((guest) => (
-              <div
-                key={guest.id}
-                className="flex items-center gap-2 p-2 rounded bg-gray-50 dark:bg-gray-800 group hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                {/* Initial avatar */}
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                  {guest.guestName.charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                    {guest.guestName}
-                  </p>
-                  {guest.paxCount && guest.paxCount > 1 && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      +{guest.paxCount - 1} guests
+            table.guests.map((guest) => {
+              const isGuestDraggable = !!onGuestDragStart;
+              const isBeingDragged = draggedGuest?.id === guest.id;
+              return (
+                <div
+                  key={guest.id}
+                  draggable={isGuestDraggable}
+                  onDragStart={
+                    isGuestDraggable
+                      ? (e) => {
+                          e.stopPropagation();
+                          e.dataTransfer.effectAllowed = "move";
+                          e.dataTransfer.setData("guestId", guest.id);
+                          onGuestDragStart?.(guest.id, table.id);
+                        }
+                      : undefined
+                  }
+                  onDragEnd={
+                    isGuestDraggable
+                      ? () => onGuestDragEnd?.()
+                      : undefined
+                  }
+                  title={isGuestDraggable ? "Drag to reassign to another table" : undefined}
+                  className={`
+                    flex items-center gap-2 p-2 rounded bg-gray-50 dark:bg-gray-800 group
+                    hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
+                    ${isGuestDraggable ? "cursor-grab active:cursor-grabbing select-none" : ""}
+                    ${isBeingDragged ? "opacity-50" : ""}
+                  `}
+                >
+                  {/* Initial avatar */}
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                    {guest.guestName.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {guest.guestName}
                     </p>
+                    {guest.paxCount && guest.paxCount > 1 && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        +{guest.paxCount - 1} guests
+                      </p>
+                    )}
+                  </div>
+                  {onUnassignGuest && (
+                    <button
+                      onClick={() => onUnassignGuest(guest.id)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
+                      title="Unassign guest"
+                    >
+                      <XIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </button>
                   )}
                 </div>
-                {onUnassignGuest && (
-                  <button
-                    onClick={() => onUnassignGuest(guest.id)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
-                    title="Unassign guest"
-                  >
-                    <XIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
-                  </button>
-                )}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -215,7 +251,7 @@ export const TableCard: React.FC<TableCardProps> = ({
       </div>
 
       {/* Drop indicator overlay */}
-      {isDragOver && canAcceptDrop && (
+      {isDragOver && canAcceptDrop && !isSourceTable && (
         <div className="absolute inset-0 bg-primary/10 border-4 border-dashed border-primary rounded-xl flex items-center justify-center pointer-events-none">
           <div className="bg-white dark:bg-accent px-4 py-2 rounded-lg shadow-lg">
             <p className="text-primary font-semibold">Drop guest here</p>
@@ -224,7 +260,7 @@ export const TableCard: React.FC<TableCardProps> = ({
       )}
       
       {/* Insufficient capacity indicator */}
-      {draggedGuest && !canAcceptDrop && (
+      {draggedGuest && !canAcceptDrop && !isSourceTable && (
         <div className="absolute inset-0 bg-red-500/10 border-2 border-red-500 rounded-xl flex items-center justify-center pointer-events-none">
           <div className="bg-white dark:bg-accent px-4 py-2 rounded-lg shadow-lg border-2 border-red-500">
             <p className="text-red-600 font-semibold text-sm">

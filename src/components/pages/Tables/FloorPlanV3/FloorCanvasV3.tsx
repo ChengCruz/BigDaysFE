@@ -1,9 +1,9 @@
 import React, { useRef, useCallback, useState, useEffect } from "react";
-import type { FloorItem } from "./useFloorPlanState";
-import type { TableBase } from "../../../api/hooks/useTablesApi";
-import type { Guest } from "../../../api/hooks/useGuestsApi";
-import { FloorTableItem } from "./FloorTableItem";
-import { FloorObstacleItem } from "./FloorObstacleItem";
+import type { FloorItem } from "../useFloorPlanState";
+import type { TableBase } from "../../../../api/hooks/useTablesApi";
+import type { Guest } from "../../../../api/hooks/useGuestsApi";
+import { FloorTableItemV3 } from "./FloorTableItemV3";
+import { FloorObstacleItem } from "../FloorObstacleItem";
 
 interface Props {
   floorItems: FloorItem[];
@@ -16,6 +16,7 @@ interface Props {
   snapEnabled: boolean;
   snapSize: number;
   toolMode: string;
+  draggedGuest: { id: string; pax: number } | null;
   onZoomChange: (z: number) => void;
   onPanChange: (x: number, y: number) => void;
   onSelect: (id: string | null) => void;
@@ -28,7 +29,7 @@ interface Props {
   onResizeItem: (id: string, w: number, h: number) => void;
 }
 
-export const FloorCanvas: React.FC<Props> = ({
+export const FloorCanvasV3: React.FC<Props> = ({
   floorItems,
   tables,
   guests,
@@ -39,6 +40,7 @@ export const FloorCanvas: React.FC<Props> = ({
   snapEnabled,
   snapSize,
   toolMode,
+  draggedGuest,
   onZoomChange,
   onPanChange,
   onSelect,
@@ -55,20 +57,17 @@ export const FloorCanvas: React.FC<Props> = ({
   const panStart = useRef({ x: 0, y: 0, px: 0, py: 0 });
   const [showHint, setShowHint] = useState(true);
 
-  // Focus canvas when an item is selected so keyboard shortcuts (Delete) work
   useEffect(() => {
     if (selectedId && containerRef.current) {
       containerRef.current.focus();
     }
   }, [selectedId]);
 
-  // Auto-dismiss hint after 8 seconds
   useEffect(() => {
     const t = setTimeout(() => setShowHint(false), 8000);
     return () => clearTimeout(t);
   }, []);
 
-  // Wheel zoom — use native listener to prevent default (React onWheel is passive)
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -81,14 +80,11 @@ export const FloorCanvas: React.FC<Props> = ({
     return () => el.removeEventListener("wheel", handler);
   }, [zoom, onZoomChange]);
 
-  // Pan via mousedown on canvas background, or place tool item
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      // Only act on canvas background, not on items
       const target = e.target as HTMLElement;
       if (target.closest("[data-floor-item]")) return;
 
-      // If a table tool is active, place it at click position
       if (toolMode !== "select") {
         const rect = containerRef.current?.getBoundingClientRect();
         if (rect) {
@@ -122,7 +118,6 @@ export const FloorCanvas: React.FC<Props> = ({
     isPanning.current = false;
   }, []);
 
-  // Keyboard
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Delete" || e.key === "Backspace") {
@@ -137,15 +132,13 @@ export const FloorCanvas: React.FC<Props> = ({
 
   const tableMap = new Map(tables.map((t) => [t.id, t]));
 
-  // Minimap
   const minimapW = 180;
   const minimapH = 120;
   const canvasW = 2000;
   const canvasH = 1400;
   const mmScale = minimapW / canvasW;
-  const mmHeaderH = 18; // height of the "Overview" header
+  const mmHeaderH = 18;
 
-  /** Drag from minimap to pan the main canvas */
   const handleMinimapMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -155,10 +148,8 @@ export const FloorCanvas: React.FC<Props> = ({
       const updatePan = (clientX: number, clientY: number) => {
         const mx = clientX - mmRect.left;
         const my = clientY - mmRect.top - mmHeaderH;
-        // Convert minimap coords → canvas coords
         const canvasX = mx / mmScale;
         const canvasY = my / mmScale;
-        // Center the viewport on that canvas point
         const cw = containerRef.current?.clientWidth ?? 800;
         const ch = containerRef.current?.clientHeight ?? 500;
         const newPanX = -(canvasX * zoom) + cw / 2;
@@ -199,7 +190,6 @@ export const FloorCanvas: React.FC<Props> = ({
       onMouseLeave={handleMouseUp}
       onKeyDown={handleKeyDown}
     >
-      {/* Transformed canvas content layer */}
       <div
         id="floor-canvas-content"
         style={{
@@ -218,7 +208,7 @@ export const FloorCanvas: React.FC<Props> = ({
             const assigned = guests.filter((g) => g.tableId === item.id);
             return (
               <div key={item.id} data-floor-item>
-                <FloorTableItem
+                <FloorTableItemV3
                   item={item}
                   table={table}
                   assignedGuests={assigned}
@@ -226,6 +216,7 @@ export const FloorCanvas: React.FC<Props> = ({
                   selected={selectedId === item.id}
                   snapEnabled={snapEnabled}
                   snapSize={snapSize}
+                  draggedGuest={draggedGuest}
                   onSelect={onSelect}
                   onMove={onMoveItem}
                   onDoubleClick={onDoubleClickTable}
@@ -251,11 +242,10 @@ export const FloorCanvas: React.FC<Props> = ({
         })}
       </div>
 
-      {/* Hint box */}
       {showHint && (
         <div className="fp-no-print absolute top-3 left-3 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-gray-200/80 dark:border-gray-700/80 rounded-lg px-3 py-2.5 shadow-lg max-w-[240px] z-20 animate-fade-in">
           <div className="flex items-start justify-between gap-2 mb-1.5">
-            <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Quick Tips</p>
+            <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Quick Tips (V3)</p>
             <button
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition -mt-0.5"
               onClick={() => setShowHint(false)}
@@ -268,15 +258,14 @@ export const FloorCanvas: React.FC<Props> = ({
           <ul className="text-[10px] text-gray-500 dark:text-gray-400 space-y-0.5 leading-relaxed">
             <li>Drag tables to reposition</li>
             <li>Double-click table to edit</li>
-            <li>Click seats to assign/unassign guests</li>
-            <li>Drag corner handle to resize</li>
-            <li>Select + <kbd className="px-1 py-px bg-gray-100 dark:bg-slate-700 rounded text-[9px] font-mono">Del</kbd> to remove obstacles</li>
+            <li>Click an occupied seat → menu (Unassign has Undo)</li>
+            <li>Drag a guest onto a table — green ring = valid, red = full</li>
+            <li>Hover a table to see its guest list</li>
             <li>Scroll to zoom, drag minimap to navigate</li>
           </ul>
         </div>
       )}
 
-      {/* Minimap — click/drag to navigate */}
       <div
         className="fp-no-print absolute bottom-3 right-3 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-gray-200/80 dark:border-gray-700/80 rounded-lg overflow-hidden shadow-md z-20"
         style={{ width: minimapW, height: minimapH + mmHeaderH, cursor: "pointer" }}
@@ -305,7 +294,6 @@ export const FloorCanvas: React.FC<Props> = ({
               />
             );
           })}
-          {/* Viewport indicator */}
           <div
             style={{
               position: "absolute",
