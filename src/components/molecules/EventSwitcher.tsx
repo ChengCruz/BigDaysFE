@@ -5,10 +5,21 @@ import {
   CalendarIcon,
   ChevronDownIcon,
   LocationMarkerIcon,
-  PlusIcon,
-  SearchIcon,
   SwitchHorizontalIcon,
 } from "@heroicons/react/outline";
+
+// Inline SVGs used in place of heroicons PlusIcon / SearchIcon — the deploy
+// CI's heroicons resolution rejected those specific exports, so we avoid them.
+const PlusIconSvg = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+  </svg>
+);
+const SearchIconSvg = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
+  </svg>
+);
 import { CheckCircleIcon } from "@heroicons/react/solid";
 import { useEventContext } from "../../context/EventContext";
 import { formatEventDate, formatEventTime } from "../../utils/eventUtils";
@@ -161,7 +172,7 @@ export function EventSwitcher() {
         >
           <div className="px-3 pt-3 pb-2 border-b border-gray-100 dark:border-white/10">
             <div className="relative">
-              <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <SearchIconSvg className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 ref={searchRef}
                 type="search"
@@ -247,7 +258,7 @@ export function EventSwitcher() {
               onClick={handleCreateNew}
               className="w-full text-left rounded-lg px-3 py-2 text-sm text-primary font-medium hover:bg-primary/5 dark:hover:bg-white/5 transition flex items-center gap-2"
             >
-              <PlusIcon className="h-4 w-4" />
+              <PlusIconSvg className="h-4 w-4" />
               Create new event
             </button>
             <button
