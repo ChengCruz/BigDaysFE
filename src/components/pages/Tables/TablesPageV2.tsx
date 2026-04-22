@@ -90,7 +90,7 @@ export default function TablesPageV2() {
 
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <a
-            href="/app/tables/redesign"
+            href="/app/tables/fullscreen"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-semibold text-sm shadow hover:bg-primary/90 transition-colors"

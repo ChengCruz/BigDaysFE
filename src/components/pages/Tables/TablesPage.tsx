@@ -343,7 +343,7 @@ export default function TablesPage() {
 
               {/* Full-screen mode CTA */}
               <a
-                href="/app/tables/redesign"
+                href="/app/tables/fullscreen"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-accent hover:border-primary/40 dark:hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group no-underline"
