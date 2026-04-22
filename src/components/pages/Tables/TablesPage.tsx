@@ -25,7 +25,7 @@ import { useEventContext } from "../../../context/EventContext";
 import { useAuth } from "../../../api/hooks/useAuth";
 import toast from "react-hot-toast";
 import { NoEventsState } from "../../molecules/NoEventsState";
-import { ChevronDownIcon, CollectionIcon, UserGroupIcon, UserIcon, ChartBarIcon, ArrowsExpandIcon } from "@heroicons/react/outline";
+import { ChevronDownIcon, CollectionIcon, UserGroupIcon, UserIcon, ChartBarIcon, ArrowsExpandIcon } from "@heroicons/react/solid";
 
 export default function TablesPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────

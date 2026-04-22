@@ -13,7 +13,7 @@ import {
   UserIcon,
   ChartBarIcon,
 } from "@heroicons/react/solid";
-import { ChevronDownIcon } from "@heroicons/react/outline";
+import { ChevronDownIcon } from "@heroicons/react/solid";
 
 export default function TablesPageV2() {
   const { eventId, eventsLoading } = useEventContext()!;

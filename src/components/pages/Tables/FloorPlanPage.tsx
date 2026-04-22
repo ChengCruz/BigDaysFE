@@ -21,7 +21,7 @@ import { TableFormModal } from "../../molecules/TableFormModal";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { PageLoader } from "../../atoms/PageLoader";
-import { CollectionIcon, UserGroupIcon, UserIcon } from "@heroicons/react/outline";
+import { CollectionIcon, UserGroupIcon, UserIcon } from "@heroicons/react/solid";
 
 let idCounter = 0;
 function uid() {

@@ -25,7 +25,7 @@ import {
 import { useEventContext } from "../../../context/EventContext";
 import { useAuth } from "../../../api/hooks/useAuth";
 import toast from "react-hot-toast";
-import { ChevronDownIcon, XIcon, MenuIcon } from "@heroicons/react/outline";
+import { ChevronDownIcon, XIcon, MenuIcon } from "@heroicons/react/solid";
 
 // ── Colour helpers ────────────────────────────────────────────────────────────
 function barFill(a: number, c: number) {

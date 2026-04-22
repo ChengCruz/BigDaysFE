@@ -1,7 +1,7 @@
 // src/components/organisms/PublicNavbar.tsx
 import  { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { MenuIcon, XIcon } from "@heroicons/react/outline";
+import { MenuIcon, XIcon } from "@heroicons/react/solid";
 
 const links = [
   { to: "/",       label: "HOME"    },

@@ -1,7 +1,7 @@
 // src/components/molecules/TableCard.tsx
 import React, { useState } from "react";
 import { Button } from "../atoms/Button";
-import { XIcon } from "@heroicons/react/outline";
+import { XIcon } from "@heroicons/react/solid";
 
 const categoryDisplayNames: Record<string, string> = {
   vip: "VIP",
