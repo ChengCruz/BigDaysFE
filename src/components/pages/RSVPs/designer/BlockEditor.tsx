@@ -11,7 +11,7 @@ const FONT_OPTIONS: { label: string; value: string }[] = [
   { label: "Montserrat",         value: "Montserrat, system-ui, sans-serif" },
   { label: "System (Modern)",    value: "system-ui, sans-serif" },
 ];
-import { ChevronDownIcon } from "@heroicons/react/outline";
+import { ChevronDownIcon } from "@heroicons/react/solid";
 import type { RsvpBlock } from "../../../../types/rsvpDesign";
 import type { FormFieldConfig } from "../../../../api/hooks/useFormFieldsApi";
 

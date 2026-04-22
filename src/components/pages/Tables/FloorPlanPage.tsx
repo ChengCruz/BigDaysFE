@@ -21,7 +21,7 @@ import { TableFormModal } from "../../molecules/TableFormModal";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { PageLoader } from "../../atoms/PageLoader";
-import { CollectionIcon, UserGroupIcon, UserIcon } from "@heroicons/react/outline";
+import { CollectionIcon, UserGroupIcon, UserIcon } from "@heroicons/react/solid";
 
 let idCounter = 0;
 function uid() {
@@ -101,13 +101,15 @@ export default function FloorPlanPage() {
   const pendingPlacement = React.useRef<{ x: number; y: number; shape: string } | null>(null);
   const pendingShape = React.useRef<string | null>(null);
 
+  // Sync API tables into floor items — wait for floor plan to settle first so the
+  // hook's init (setFloorItems(apiFloorItems)) doesn't overwrite what we just synced.
   useEffect(() => {
-    if (tables.length > 0) {
+    if (!floorPlanLoading && tables.length > 0) {
       const shape = pendingShape.current || "round";
       syncTables(tables.map((t) => ({ id: t.id, capacity: t.capacity || 8 })), shape);
       pendingShape.current = null;
     }
-  }, [tables, syncTables]);
+  }, [tables, syncTables, floorPlanLoading]);
 
   const handlePanChange = useCallback((x: number, y: number) => {
     setPanX(x);

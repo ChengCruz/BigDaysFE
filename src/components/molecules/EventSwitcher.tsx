@@ -6,7 +6,7 @@ import {
   ChevronDownIcon,
   LocationMarkerIcon,
   SwitchHorizontalIcon,
-} from "@heroicons/react/outline";
+} from "@heroicons/react/solid";
 
 // Inline SVGs used in place of heroicons PlusIcon / SearchIcon — the deploy
 // CI's heroicons resolution rejected those specific exports, so we avoid them.

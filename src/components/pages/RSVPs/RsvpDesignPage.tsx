@@ -579,7 +579,7 @@ export default function RsvpDesignPage() {
       cta:          { id, type: "cta",          label: "Open RSVP", href: "#", align: "center", background: { images: [], overlay: 0.4 } },
       image:        { id, type: "image",        images: [], activeImageId: undefined, caption: "Add captions", height: "medium", background: { images: [], overlay: 0.4 } },
       eventDetails: { id, type: "eventDetails", title: "Event Details", showDate: true, showTime: true, showLocation: true, background: { images: [], overlay: 0.4 } },
-      countdown:    { id, type: "countdown",    label: "Counting down to your big day", background: { images: [], overlay: 0.4 } },
+      countdown:    { id, type: "countdown",    label: "Counting down to our big day", background: { images: [], overlay: 0.4 } },
       map:          { id, type: "map",          mapLabel: "Venue", showDirections: true, background: { images: [], overlay: 0.4 } },
     };
     setBlocks((prev) => [...prev, defaults[type]]);
