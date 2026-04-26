@@ -64,9 +64,30 @@ export default function CrewPage() {
       </div>
 
       {/* Info banner */}
-      <div className="mb-6 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-sm text-blue-700 dark:text-blue-300">
-        Crew members log in at the <span className="font-medium">/login</span> page using their Crew ID and PIN.
-        They will have access to Check-in, Guests (read-only), and Tables (read-only).
+      <div className="mb-6 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-sm text-blue-700 dark:text-blue-300 space-y-1">
+        <p>
+          Crew members sign in via the <span className="font-medium">Staff</span> tab on the
+          login page. They'll need their <span className="font-medium">Crew ID</span>,
+          <span className="font-medium"> PIN</span>, and the <span className="font-medium">Event ID</span> below.
+        </p>
+        <p className="flex flex-wrap items-center gap-2">
+          <span className="text-blue-700/80 dark:text-blue-300/80">Event ID:</span>
+          <code className="font-mono text-xs bg-white/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded px-1.5 py-0.5 break-all">
+            {eventId}
+          </code>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard?.writeText(eventId).then(
+                () => toast.success("Event ID copied"),
+                () => toast.error("Could not copy")
+              );
+            }}
+            className="text-xs text-primary hover:underline"
+          >
+            Copy
+          </button>
+        </p>
       </div>
 
       {/* Empty state */}

@@ -57,21 +57,47 @@ export function useFloorPlanState(
   }, []);
 
   const autoArrange = useCallback(
-    (tableIds: string[], columns = 3) => {
+    (tableIds: string[], columns?: number) => {
       setFloorItems((prev) => {
         const nonTables = prev.filter((i) => i.type !== "table");
         const tables = prev.filter((i) => i.type === "table");
         const toArrange = tables.filter((t) => tableIds.includes(t.id));
+        if (toArrange.length === 0) return prev;
+
+        const canvasW = 2000;
+        const canvasH = 1400;
         const maxW = Math.max(...toArrange.map((t) => t.width), 100);
         const maxH = Math.max(...toArrange.map((t) => t.height), 100);
         const spacingX = maxW + 80;
         const spacingY = maxH + 80;
-        const offsetX = 60;
-        const offsetY = 60;
+
+        // Adaptive column count based on canvas aspect ratio and table count
+        const cols =
+          columns ??
+          Math.max(
+            1,
+            Math.min(
+              toArrange.length,
+              Math.round(Math.sqrt(toArrange.length * (canvasW / canvasH)))
+            )
+          );
+        const rows = Math.ceil(toArrange.length / cols);
+
+        // Push grid below any stage/dance floor sitting at the top of the canvas
+        const topObstacle = nonTables
+          .filter((i) => (i.type === "stage" || i.type === "danceFloor") && i.y < 220)
+          .sort((a, b) => b.y + b.height - (a.y + a.height))[0];
+        const baseOffsetY = topObstacle ? topObstacle.y + topObstacle.height + 60 : 60;
+
+        const totalW = cols * spacingX - 80;
+        const totalH = rows * spacingY - 80;
+        const offsetX = Math.max(60, Math.round((canvasW - totalW) / 2));
+        const offsetY = Math.max(baseOffsetY, Math.round((canvasH - totalH - baseOffsetY) / 2) + 40);
+
         const arranged = toArrange.map((t, idx) => ({
           ...t,
-          x: offsetX + (idx % columns) * spacingX,
-          y: offsetY + Math.floor(idx / columns) * spacingY,
+          x: offsetX + (idx % cols) * spacingX,
+          y: offsetY + Math.floor(idx / cols) * spacingY,
         }));
         const kept = tables.filter((t) => !tableIds.includes(t.id));
         return [...nonTables, ...arranged, ...kept];
@@ -158,6 +184,41 @@ export function useFloorPlanState(
     [tableDimensions]
   );
 
+  /**
+   * Set every table to the same shape, and optionally the same size.
+   * - sizeMode "byCapacity" — each table keeps its own capacity-based dimensions
+   * - sizeMode "uniform" — all tables get the dimensions of the largest-capacity table
+   * Returns the number of tables affected.
+   */
+  const standardizeTables = useCallback(
+    (shape: string, sizeMode: "byCapacity" | "uniform") => {
+      let affected = 0;
+      setFloorItems((prev) => {
+        const tables = prev.filter((i) => i.type === "table");
+        if (tables.length === 0) return prev;
+
+        let uniformDims: { width: number; height: number } | null = null;
+        if (sizeMode === "uniform") {
+          const maxCap = tables.reduce((m, t) => {
+            const cap = (t.meta?.capacity as number) ?? 8;
+            return Math.max(m, cap);
+          }, 0);
+          uniformDims = tableDimensions(maxCap || 8, shape);
+        }
+
+        affected = tables.length;
+        return prev.map((item) => {
+          if (item.type !== "table") return item;
+          const capacity = (item.meta?.capacity as number) ?? 8;
+          const dims = uniformDims ?? tableDimensions(capacity, shape);
+          return { ...item, ...dims, meta: { ...item.meta, shape } };
+        });
+      });
+      return affected;
+    },
+    [tableDimensions]
+  );
+
   return {
     floorItems,
     setFloorItems,
@@ -167,5 +228,6 @@ export function useFloorPlanState(
     autoArrange,
     syncTables,
     changeTableShape,
+    standardizeTables,
   };
 }

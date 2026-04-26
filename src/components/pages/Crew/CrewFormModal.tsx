@@ -91,29 +91,6 @@ export function CrewFormModal({ isOpen, onClose, initialData, eventId }: CrewFor
       }
       onClose();
     } catch (err: any) {
-      if (err?.response?.status === 401) {
-        try {
-          if (isEdit) {
-            await updateCrew.mutateAsync({
-              crewGuid: initialData!.crewGuid,
-              name: name.trim(),
-              isActive,
-              ...(pin ? { pin } : {}),
-            });
-            toast.success(`${name} updated.`);
-          } else {
-            await createCrew.mutateAsync({
-              name: name.trim(),
-              ...(crewCode.trim() ? { crewCode: crewCode.trim() } : {}),
-              pin,
-              eventId,
-            });
-            toast.success(`${name} added to crew.`);
-          }
-          onClose();
-          return;
-        } catch { /* fall through to show error */ }
-      }
       setError(err.response?.data?.message || "Something went wrong. Please try again.");
     }
   };

@@ -1,6 +1,6 @@
 // src/routers/AppRoutes.tsx
 import React from "react";
-import { Routes, Route, Navigate, Outlet, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, Outlet, useNavigate, useLocation } from "react-router-dom";
 
 import LandingPage from "../components/pages/Landing/LandingPage";
 import LoginPage from "../components/pages/Auth/LoginPage";
@@ -9,13 +9,18 @@ import ResetPasswordPage from "../components/pages/Auth/ResetPasswordPage";
 import PublicTemplate from "../components/templates/PublicTemplate";
 import { Navbar } from "../components/organisms/Navbar";
 import { Sidebar } from "../components/organisms/Sidebar";
-import { EventSelectorModal } from "../components/molecules/EventSelectorModal";
+import { NoEventsState } from "../components/molecules/NoEventsState";
 import { useEventContext } from "../context/EventContext";
 
 function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
-  const { isSelectorOpen, mustChooseEvent, events = [] } = useEventContext();
-  const showSelector = isSelectorOpen || (mustChooseEvent && events.length > 0);
+  const { mustChooseEvent } = useEventContext();
+  const location = useLocation();
+
+  // When the user has zero events, show an inline onboarding state on every
+  // route except /app/events (where they can actually create one).
+  const onEventsRoute = location.pathname.startsWith("/app/events");
+  const showEmptyState = mustChooseEvent && !onEventsRoute;
 
   return (
     <div className="flex h-screen bg-background dark:bg-slate-950 text-text">
@@ -23,10 +28,9 @@ function AppLayout() {
       <div className="flex flex-col flex-1 min-w-0">
         <Navbar onMenuToggle={() => setSidebarOpen(o => !o)} />
         <main className="flex-1 p-6 overflow-auto">
-          <Outlet />
+          {showEmptyState ? <NoEventsState /> : <Outlet />}
         </main>
       </div>
-      {showSelector && <EventSelectorModal />}
     </div>
   );
 }
