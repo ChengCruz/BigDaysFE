@@ -43,7 +43,12 @@
       "Bash(npm run *)",
       "Bash(echo \"exit=$?\")",
       "Bash(git commit *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(git rebase *)",
+      "Bash(git merge *)",
+      "Bash(git checkout *)"
     ]
   }
 }
