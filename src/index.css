@@ -12,6 +12,24 @@
   --color-background: oklch(0.98 0.02 96);   /* Clean ivory for pages */
   --color-text:       oklch(0.22 0.03 260);  /* Deep slate for readability */
   --color-button:     oklch(0.58 0.20 270);  /* Vibrant accent for buttons */
+
+  /* ── Landing / public palette ── */
+  --color-ivory:          #F5EFE6;
+  --color-cream:          #FAF6EF;
+  --color-bone:           #EDE4D3;
+  --color-terracotta:     #B4543A;
+  --color-terracotta-deep:#8C3A25;
+  --color-burgundy:       #5C1F1B;
+  --color-olive:          #6B7A4B;
+  --color-charcoal:       #2A221E;
+  --color-muted-warm:     #7A6B5D;
+  --color-gold:           #A9895A;
+
+  /* ── Landing fonts ── */
+  --font-display: 'Fraunces', 'Cormorant Garamond', serif;
+  --font-serif:   'Cormorant Garamond', Georgia, serif;
+  --font-label:   'JetBrains Mono', 'Courier New', monospace;
+  --font-playfair:'Fraunces', 'Cormorant Garamond', serif;
 }
 
 /* 3. Dark-mode overrides, shifted to navy + teal */
@@ -51,6 +69,64 @@
 }
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
+}
+
+/* ── Landing page components ── */
+@layer components {
+  .eyebrow {
+    font-family: var(--font-label);
+    font-size: 0.7rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--color-terracotta);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 2rem;
+    height: 1px;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+  .landing-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 2rem;
+    font-family: var(--font-label);
+    font-size: 0.75rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--color-charcoal);
+    background: var(--color-charcoal);
+    color: var(--color-cream);
+    transition: all 0.3s ease;
+    text-decoration: none;
+  }
+  .landing-btn:hover {
+    background: var(--color-terracotta);
+    border-color: var(--color-terracotta);
+    transform: translateY(-2px);
+  }
+  .landing-btn-outline {
+    background: transparent;
+    color: var(--color-charcoal);
+  }
+  .landing-btn-outline:hover {
+    background: var(--color-charcoal);
+    color: var(--color-cream);
+  }
+}
+
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee-scroll 40s linear infinite;
 }
 
 /* 6. Floor plan print — show canvas only */

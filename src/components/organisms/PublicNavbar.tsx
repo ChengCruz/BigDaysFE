@@ -1,78 +1,158 @@
-// src/components/organisms/PublicNavbar.tsx
-import  { useState } from "react";
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { MenuIcon, XIcon } from "@heroicons/react/solid";
 
-const links = [
-  { to: "/",       label: "HOME"    },
-  { to: "/contact", label: "CONTACT"  },
-  { to: "/story",  label: "STORY"   },
-  { to: "/events", label: "EVENTS"  },
-  { to: "/people", label: "PEOPLE"  },
-  { to: "/gallery",label: "GALLERY" },
-  { to: "/rsvp",   label: "RSVP"    },
-  { to: "/blog",   label: "BLOG"    },
-  { to: "/login",  label: "LOGIN"   },
+const navLinks = [
+  { to: "/",        label: "HOME",    end: true },
+  { to: "/story",   label: "STORY",   end: false },
+  { to: "/events",  label: "EVENTS",  end: false },
+  { to: "/people",  label: "PEOPLE",  end: false },
+  { to: "/gallery", label: "GALLERY", end: false },
+  { to: "/rsvp",    label: "RSVP",    end: false },
+  { to: "/blog",    label: "BLOG",    end: false },
+  { to: "/contact", label: "CONTACT", end: false },
 ];
+
+const navLinkStyle: React.CSSProperties = {
+  fontFamily: 'var(--font-label)',
+  fontSize: '0.7rem',
+  letterSpacing: '0.2em',
+  textTransform: 'uppercase' as const,
+  position: 'relative',
+  padding: '0.25rem 0',
+  transition: 'color 0.3s ease',
+};
 
 export function PublicNavbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="bg-background text-text shadow-sm">
-      <div className="max-w-7xl mx-auto flex items-center justify-between py-4 px-6">
-        <div className="text-2xl font-playfair italic text-primary">C &amp; C</div>
+    <header
+      className="sticky top-0 z-50"
+      style={{
+        background: 'rgba(250, 246, 239, 0.88)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(42, 34, 30, 0.08)',
+        padding: '1.25rem 2.5rem',
+      }}
+    >
+      <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
-        {/* desktop links */}
-        <nav className="hidden md:flex space-x-6 font-medium">
-          {links.map(({ to, label }) => (
+        {/* Brand */}
+        <NavLink
+          to="/"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 300,
+            fontSize: '1.5rem',
+            letterSpacing: '0.15em',
+            color: '#2A221E',
+            fontStyle: 'italic',
+            textDecoration: 'none',
+          }}
+        >
+          My<span style={{ color: '#B4543A' }}>·</span>Big<span style={{ color: '#B4543A' }}>·</span>Day
+        </NavLink>
+
+        {/* Desktop nav */}
+        <nav className="hidden md:flex items-center" style={{ gap: '2.5rem' }}>
+          {navLinks.map(({ to, label, end }) => (
             <NavLink
               key={to}
               to={to}
-              className={({ isActive }) =>
-                isActive ? "text-secondary underline" : "hover:text-secondary"
-              }
+              end={end}
+              style={({ isActive }) => ({
+                ...navLinkStyle,
+                color: isActive ? '#B4543A' : '#2A221E',
+                textDecoration: 'none',
+              })}
             >
               {label}
             </NavLink>
           ))}
+
+          {/* Login button */}
+          <NavLink
+            to="/login"
+            style={({ isActive }) => ({
+              fontFamily: 'var(--font-label)',
+              fontSize: '0.7rem',
+              letterSpacing: '0.25em',
+              textTransform: 'uppercase' as const,
+              padding: '0.65rem 1.5rem',
+              border: `1px solid ${isActive ? '#B4543A' : '#2A221E'}`,
+              background: isActive ? '#B4543A' : 'transparent',
+              color: isActive ? '#FAF6EF' : '#2A221E',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              textDecoration: 'none',
+              display: 'inline-block',
+            })}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.background = '#2A221E';
+              (e.currentTarget as HTMLElement).style.color = '#FAF6EF';
+            }}
+            onMouseLeave={e => {
+              const isActive = (e.currentTarget as HTMLElement).getAttribute('aria-current') === 'page';
+              (e.currentTarget as HTMLElement).style.background = isActive ? '#B4543A' : 'transparent';
+              (e.currentTarget as HTMLElement).style.color = isActive ? '#FAF6EF' : '#2A221E';
+            }}
+          >
+            LOGIN
+          </NavLink>
         </nav>
 
-        {/* mobile hamburger */}
+        {/* Mobile toggle */}
         <button
-          className="md:hidden p-2 rounded hover:bg-secondary/10"
+          className="md:hidden"
+          style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#2A221E', padding: '0.25rem' }}
           aria-label="Toggle menu"
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => setOpen(o => !o)}
         >
-          {open ? (
-            <XIcon className="h-6 w-6 text-text" />
-          ) : (
-            <MenuIcon className="h-6 w-6 text-text" />
-          )}
+          {open ? '✕' : '☰'}
         </button>
       </div>
 
-      {/* mobile menu panel */}
+      {/* Mobile drawer */}
       {open && (
-        <nav className="md:hidden bg-background border-t border-gray-200">
-          <ul className="space-y-1 py-4 px-6 font-medium">
-            {links.map(({ to, label }) => (
-              <li key={to}>
-                <NavLink
-                  to={to}
-                  className={({ isActive }) =>
-                    isActive
-                      ? "block py-2 text-secondary underline"
-                      : "block py-2 hover:text-secondary"
-                  }
-                  onClick={() => setOpen(false)}
-                >
-                  {label}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            height: '100vh',
+            width: '80%',
+            maxWidth: '320px',
+            background: '#FAF6EF',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            gap: '2rem',
+            padding: '2.5rem',
+            boxShadow: '-10px 0 40px rgba(0,0,0,0.1)',
+            zIndex: 99,
+          }}
+        >
+          {[...navLinks, { to: '/login', label: 'LOGIN', end: false }].map(({ to, label, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              style={({ isActive }) => ({
+                fontFamily: 'var(--font-label)',
+                fontSize: '0.8rem',
+                letterSpacing: '0.25em',
+                textTransform: 'uppercase' as const,
+                color: isActive ? '#B4543A' : '#2A221E',
+                textDecoration: 'none',
+                transition: 'color 0.3s ease',
+              })}
+              onClick={() => setOpen(false)}
+            >
+              {label}
+            </NavLink>
+          ))}
+        </div>
       )}
     </header>
   );

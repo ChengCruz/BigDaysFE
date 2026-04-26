@@ -6,6 +6,12 @@ import LandingPage from "../components/pages/Landing/LandingPage";
 import LoginPage from "../components/pages/Auth/LoginPage";
 import RegisterPage from "../components/pages/Auth/RegisterPage";
 import ResetPasswordPage from "../components/pages/Auth/ResetPasswordPage";
+import ContactPage from "../components/pages/Auth/ContactPage";
+import StoryPage from "../components/pages/Public/Story/StoryPage";
+import GalleryPage from "../components/pages/Public/Gallery/GalleryPage";
+import PeoplePage from "../components/pages/Public/People/PeoplePage";
+import BlogPage from "../components/pages/Public/Blog/BlogPage";
+
 import PublicTemplate from "../components/templates/PublicTemplate";
 import { Navbar } from "../components/organisms/Navbar";
 import { Sidebar } from "../components/organisms/Sidebar";
@@ -112,11 +118,15 @@ export default function AppRoutes() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* public landing pages */}
-        <Route path="/events" element={<EventPublicPage />} />
-        <Route path="/rsvp" element={<RSVPPublicPage />} />
+        <Route path="/events"  element={<EventPublicPage />} />
+        <Route path="/rsvp"    element={<RSVPPublicPage />} />
+        <Route path="/story"   element={<StoryPage />} />
+        <Route path="/gallery" element={<GalleryPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/people"  element={<PeoplePage />} />
+        <Route path="/blog"    element={<BlogPage />} />
         {/* Guest self-service QR lookup */}
         <Route path="/qr/lookup/:eventId" element={<QrLookupPage />} />
-        {/* … other public pages … */}
       </Route>
 
       {/* ─── PROTECTED / DASHBOARD ─────────────────────────── */}
@@ -158,7 +168,7 @@ export default function AppRoutes() {
   <Route index element={<TablesPage />} />
   <Route path="floorplan" element={<FloorPlanPage />} />
   <Route path="v2" element={<TablesPageV2 />} />
-  <Route path="redesign" element={<TablesRedesignPage />} />
+  <Route path="fullscreen" element={<TablesRedesignPage />} />
 
   <Route path="new" element={
     <TableFormModal isOpen onClose={() => navigate(-1)} />
