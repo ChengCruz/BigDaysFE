@@ -106,6 +106,8 @@ interface DesignState {
   submitButtonLabel: string;
   globalFontFamily: string;
   contentWidth: "compact" | "standard" | "wide" | "full";
+  blockMarginX: number;
+  blockMarginY: number;
   version: number | undefined;
   isDesignLoaded: boolean;
 }
@@ -129,6 +131,8 @@ const initialState: DesignState = {
   submitButtonLabel: "",
   globalFontFamily: "",
   contentWidth: "full",
+  blockMarginX: 0,
+  blockMarginY: 0,
   version: undefined,
   isDesignLoaded: false,
 };
@@ -542,19 +546,6 @@ function V3CanvasBlock({
   const isLight = sectionImg ? false : globalIsLight;
 
   return (
-    <>
-      {/* Drop zone above this block */}
-      <div
-        className={`h-1 mx-4 rounded-full transition-all duration-150 ${dropHighlight ? "bg-primary/60 h-1.5 my-0.5" : ""}`}
-        onDragOver={(e) => { e.preventDefault(); setDropHighlight(true); }}
-        onDragLeave={() => setDropHighlight(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDropHighlight(false);
-          const sourceId = e.dataTransfer.getData("text/plain");
-          if (sourceId && sourceId !== block.id) onDropAbove(sourceId);
-        }}
-      />
       <div
         className="relative group cursor-pointer"
         style={sectionImg?.src ? { backgroundImage: `linear-gradient(rgba(15,23,42,${overlay}),rgba(15,23,42,${overlay})), url(${sectionImg.src})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}
@@ -562,6 +553,19 @@ function V3CanvasBlock({
         draggable
         onDragStart={(e) => e.dataTransfer.setData("text/plain", block.id)}
       >
+        {/* Drop zone — absolute so it adds no layout height (keeps canvas spacing identical to preview/public) */}
+        <div
+          className={`absolute left-4 right-4 rounded-full transition-all duration-150 z-20 ${dropHighlight ? "bg-primary/60 h-1.5" : "h-2"}`}
+          style={{ top: -4 }}
+          onDragOver={(e) => { e.preventDefault(); setDropHighlight(true); }}
+          onDragLeave={() => setDropHighlight(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDropHighlight(false);
+            const sourceId = e.dataTransfer.getData("text/plain");
+            if (sourceId && sourceId !== block.id) onDropAbove(sourceId);
+          }}
+        />
         {/* Selection border */}
         {isSelected && <div className="absolute inset-0 border-2 border-primary pointer-events-none z-10 rounded-sm" />}
         {!isSelected && <div className="absolute inset-0 border-2 border-dashed border-transparent group-hover:border-primary/30 pointer-events-none z-10 transition-colors" />}
@@ -593,7 +597,6 @@ function V3CanvasBlock({
         <div>{renderSectionContent(block, accentColor, isLight, event)}</div>
         <div className="h-px" style={{ background: "rgba(255,255,255,0.04)" }} />
       </div>
-    </>
   );
 }
 
@@ -665,7 +668,7 @@ export default function RsvpDesignV3Page() {
 
   // ── Consolidated state ────────────────────────────────────────────────────
   const [state, dispatch] = useReducer(designReducer, initialState);
-  const { blocks, selectedId, globalBackgroundType, globalBackgroundAsset, globalBackgroundColor, globalOverlay, accentColor, flowPreset, globalMusicUrl, submitButtonColor, submitButtonTextColor, submitButtonLabel, globalFontFamily, contentWidth, version, isDesignLoaded } = state;
+  const { blocks, selectedId, globalBackgroundType, globalBackgroundAsset, globalBackgroundColor, globalOverlay, accentColor, flowPreset, globalMusicUrl, submitButtonColor, submitButtonTextColor, submitButtonLabel, globalFontFamily, contentWidth, blockMarginX, blockMarginY, version, isDesignLoaded } = state;
 
   const { pushSnapshot, undo, redo, canUndo, canRedo } = useUndoRedo(state, dispatch);
 
@@ -716,6 +719,14 @@ export default function RsvpDesignV3Page() {
       dispatch({ type: "SET_VERSION", payload: saveResponse.data.version });
   }, [saveResponse]);
 
+  // Keep the header's published badge in sync with the server's latest version
+  // after every refetch (save → cache invalidate → refetch) and on first load.
+  useEffect(() => {
+    if (typeof savedDesign?.isPublished === "boolean") {
+      setIsPublished(savedDesign.isPublished);
+    }
+  }, [savedDesign?.isPublished, savedDesign?.version]);
+
   // ── Load saved design ─────────────────────────────────────────────────────
   useEffect(() => {
     if (isLoadingDesign || isDesignLoaded) return;
@@ -733,12 +744,21 @@ export default function RsvpDesignV3Page() {
       if (savedDesign.submitButtonTextColor) patch.submitButtonTextColor = savedDesign.submitButtonTextColor;
       if (savedDesign.submitButtonLabel)  patch.submitButtonLabel = savedDesign.submitButtonLabel;
       if (savedDesign.globalFontFamily)   patch.globalFontFamily = savedDesign.globalFontFamily;
+      if (savedDesign.contentWidth)       patch.contentWidth = savedDesign.contentWidth;
+      if (savedDesign.blockMarginX !== undefined) patch.blockMarginX = savedDesign.blockMarginX;
+      if (savedDesign.blockMarginY !== undefined) patch.blockMarginY = savedDesign.blockMarginY;
       if (savedDesign.version !== undefined) patch.version = savedDesign.version;
       dispatch({ type: "LOAD_DESIGN", payload: patch });
 
-      // Restore share link if previously generated
+      // Restore share link. Prefer the slug URL (public, reflects latest design)
+      // over /rsvp/submit/:token which depends on a backend share-token endpoint
+      // that is currently unreliable — see .claude/todo/rsvp-v3-preview-public-sync.md.
       if (savedDesign.shareToken) {
         setShareToken(savedDesign.shareToken);
+      }
+      if (event?.slug) {
+        setPublicLink(`${window.location.origin}/rsvp/${event.slug}`);
+      } else if (savedDesign.shareToken) {
         setPublicLink(`${window.location.origin}/rsvp/submit/${savedDesign.shareToken}?event=${eventId}`);
       }
 
@@ -771,7 +791,7 @@ export default function RsvpDesignV3Page() {
     } else {
       dispatch({ type: "LOAD_DESIGN", payload: {} });
     }
-  }, [isLoadingDesign, savedDesign, isDesignLoaded, event?.title]);
+  }, [isLoadingDesign, savedDesign, isDesignLoaded, event?.title, event?.slug, eventId]);
 
   // ── Google Fonts ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -1037,6 +1057,8 @@ export default function RsvpDesignV3Page() {
         globalFontFamily: globalFontFamily || undefined,
         layoutStyle: "flush" as const,
         contentWidth: contentWidth || "full",
+        blockMarginX,
+        blockMarginY,
         formFieldConfigs: availableQuestions,
         shareToken,
         publicLink,
@@ -1053,7 +1075,18 @@ export default function RsvpDesignV3Page() {
   };
 
   // ── Guest link generation ───────────────────────────────────────────────────
+  // Prefer the slug URL (/rsvp/:slug) which is a public endpoint that always
+  // reflects the latest saved design. Fall back to a share-token URL only when
+  // the event has no slug. See .claude/todo/rsvp-v3-preview-public-sync.md.
   const generateGuestLink = async () => {
+    if (event?.slug) {
+      const link = `${window.location.origin}/rsvp/${event.slug}`;
+      setPublicLink(link);
+      setLinkCopied(false);
+      setShowSharePanel(true);
+      return;
+    }
+
     const ver = saveResponse?.data?.version ?? version;
     if (!ver && ver !== 0) {
       toast.error("Save your design first before generating a guest link.");
@@ -1103,19 +1136,22 @@ export default function RsvpDesignV3Page() {
   const frameBg: React.CSSProperties = globalBackgroundType === "color" ? { background: globalBackgroundColor } : { background: "linear-gradient(to bottom, #0f172a, #020617)" };
   const globalIsLight = globalBackgroundType === "color" && isLightColor(globalBackgroundColor);
 
-  // Content-width-aware canvas sizing
+  // Device-frame sizing (canvas mode = what device we're previewing on).
+  // contentWidth is applied as an inner mx-auto max-w-* — mirroring preview/public exactly.
   const contentWidthPx: Record<string, number> = { compact: 384, standard: 512, wide: 672 };
   const cwPx = contentWidthPx[contentWidth];
+  const contentMaxClass =
+    contentWidth === "compact"  ? "max-w-sm"  :
+    contentWidth === "standard" ? "max-w-lg"  :
+    contentWidth === "wide"     ? "max-w-2xl" : "";
   const canvasWidth = canvasMode === "mobile" ? 375
     : canvasMode === "tablet" ? 768
-    : cwPx ?? undefined;
+    : undefined;
   const canvasClass = canvasMode === "mobile"
     ? "w-[375px] rounded-[28px] shadow-[0_0_0_8px_#1a1a2e,0_24px_64px_rgba(0,0,0,0.45)]"
     : canvasMode === "tablet"
     ? "w-[768px] rounded-[20px] shadow-[0_0_0_6px_#1a1a2e,0_24px_64px_rgba(0,0,0,0.35)]"
-    : cwPx
-    ? `rounded-[20px] shadow-[0_0_0_6px_#1a1a2e,0_24px_64px_rgba(0,0,0,0.35)]`
-    : "w-full max-w-2xl rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.22)]";
+    : "w-full rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.22)]";
 
   const chevronSvg = (open: boolean) => (
     <svg aria-hidden width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -1176,16 +1212,26 @@ export default function RsvpDesignV3Page() {
 
         <div className="w-px h-6 bg-gray-200 shrink-0" />
 
-        {/* Status badge */}
+        {/* Status badge — reflects server-owned publish flag, not just same-session Publish.
+            "Published vN" means the current version is live on the share-token endpoint (when implemented).
+            "Draft vN" means only the slug URL (/rsvp/:slug) will show the latest edits. */}
         {isLoadingDesign && <span className="flex items-center gap-1.5 text-xs text-gray-400"><Spinner /> Loading...</span>}
         {!isLoadingDesign && isPublished && !isSaving && !isUploadingForSave && (
-          <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">Published</span>
+          <span
+            title="This version is published. Share-token and slug links both serve this design."
+            className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+            Published{version !== undefined ? ` v${version}` : ""}
+          </span>
         )}
-        {!isLoadingDesign && !isPublished && isSaveSuccess && !isSaving && !isUploadingForSave && (
-          <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-100">Saved</span>
+        {!isLoadingDesign && !isPublished && (isSaveSuccess || version !== undefined) && !isSaving && !isUploadingForSave && (
+          <span
+            title="Draft saved. Only the slug link (/rsvp/:slug) shows these edits — click Save & Publish to make the share-token preview live."
+            className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+            Draft{version !== undefined ? ` v${version}` : ""} · slug-only
+          </span>
         )}
-        {!isLoadingDesign && !isSaveSuccess && !isSaving && !isUploadingForSave && (
-          <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100 font-semibold">Draft</span>
+        {!isLoadingDesign && !isSaveSuccess && version === undefined && !isSaving && !isUploadingForSave && (
+          <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200 font-semibold">Unsaved</span>
         )}
 
         {/* Preview */}
@@ -1373,13 +1419,14 @@ export default function RsvpDesignV3Page() {
                 {selectedBlock && <span className="text-primary font-semibold"> · editing <em className="not-italic">{BLOCK_LABEL[selectedBlock.type]}</em></span>}
               </p>
               <p className="text-[10px] text-gray-400 uppercase tracking-widest">
-                {canvasMode === "mobile" ? "📱 375 px" : canvasMode === "tablet" ? "📟 768 px" : cwPx ? `🖥 ${cwPx} px` : "🖥 Desktop"}
+                {canvasMode === "mobile" ? "📱 375 px" : canvasMode === "tablet" ? "📟 768 px" : "🖥 Desktop"}
+                {cwPx ? ` · content ${cwPx}px` : contentWidth === "full" ? " · content full" : ""}
               </p>
             </div>
 
-            {/* Device frame */}
+            {/* Device frame — size = viewport. contentWidth applied on inner wrapper so canvas matches preview/public exactly. */}
             <div className={`relative transition-all duration-300 overflow-hidden ${canvasClass}`}
-              style={{ ...frameBg, minHeight: 700, fontFamily: globalFontFamily || "Georgia, 'Times New Roman', serif", ...(canvasMode === "desktop" && cwPx ? { width: cwPx } : {}) }}
+              style={{ ...frameBg, minHeight: 700, fontFamily: globalFontFamily || "Georgia, 'Times New Roman', serif" }}
               onClick={(e) => { if (e.currentTarget === e.target) dispatch({ type: "SELECT", payload: null }); }}>
 
               {/* Global background image/video layer */}
@@ -1393,8 +1440,15 @@ export default function RsvpDesignV3Page() {
                 <div className="absolute inset-0 pointer-events-none" style={{ background: `rgba(15,23,42,${globalOverlay})` }} />
               )}
 
-              {/* Blocks */}
-              <div className="relative z-10">
+              {/* Blocks — mx-auto + max-w matches preview/public. Device frame = viewport, inner wrapper = content column */}
+              <div
+                className={`relative z-10 mx-auto flex flex-col ${contentMaxClass}`}
+                style={{
+                  paddingLeft: blockMarginX,
+                  paddingRight: blockMarginX,
+                  rowGap: blockMarginY,
+                }}
+              >
                 {blocks.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-28 gap-4" style={{ color: globalIsLight ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.2)" }}>
                     <span className="text-5xl">✦</span>
@@ -1494,6 +1548,7 @@ export default function RsvpDesignV3Page() {
                 globalMusicUrl={globalMusicUrl} submitButtonColor={submitButtonColor}
                 submitButtonTextColor={submitButtonTextColor} submitButtonLabel={submitButtonLabel}
                 globalFontFamily={globalFontFamily} contentWidth={contentWidth}
+                blockMarginX={blockMarginX} blockMarginY={blockMarginY}
                 hasBackgroundAsset={!!globalBackgroundAsset}
                 onChange={(patch) => dispatch({ type: "SET_GLOBAL", payload: patch as Partial<DesignState> })}
                 onUploadBackground={handleBackgroundUpload}
@@ -1512,7 +1567,17 @@ export default function RsvpDesignV3Page() {
         <span>RSVP Designer V3</span>
         <span className="w-px h-3 bg-gray-200" />
         <span className="text-[10px]">Zoom {zoom}%</span>
-        <span className="ml-auto">{isSaving || isUploadingForSave ? "Saving..." : isPublishing ? "Publishing..." : isPublished ? "Published" : isSaveSuccess ? "All changes saved" : "Unsaved changes"}</span>
+        <span className="ml-auto">
+          {isSaving || isUploadingForSave
+            ? "Saving..."
+            : isPublishing
+              ? "Publishing..."
+              : isPublished
+                ? `Published${version !== undefined ? ` v${version}` : ""}`
+                : version !== undefined || isSaveSuccess
+                  ? `Draft${version !== undefined ? ` v${version}` : ""} · slug link only`
+                  : "Unsaved changes"}
+        </span>
       </footer>
 
       {/* ═══ PREVIEW OVERLAY ═══ */}
@@ -1534,8 +1599,15 @@ export default function RsvpDesignV3Page() {
           {(globalBackgroundType === "image" || globalBackgroundType === "video") && (
             <div className="fixed inset-0 pointer-events-none" style={{ background: `rgba(15,23,42,${globalOverlay})` }} />
           )}
-          {/* Blocks — no wrapper padding, no gaps, flush sections like canvas */}
-          <div className="relative z-10">
+          {/* Blocks — same width + margins as canvas and public RsvpFormRenderer */}
+          <div
+            className={`relative z-10 mx-auto flex flex-col ${contentWidth === "compact" ? "max-w-sm" : contentWidth === "standard" ? "max-w-lg" : contentWidth === "wide" ? "max-w-2xl" : ""}`}
+            style={{
+              paddingLeft: blockMarginX,
+              paddingRight: blockMarginX,
+              rowGap: blockMarginY,
+            }}
+          >
             {blocks.map((block) => {
               const sectionImg = block.background?.images?.find((img) => img.id === block.background?.activeImageId) ?? block.background?.images?.[0] ?? block.sectionImage;
               const blockOverlay = block.background?.overlay ?? 0.4;

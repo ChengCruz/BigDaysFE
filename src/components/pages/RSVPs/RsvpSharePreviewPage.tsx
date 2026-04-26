@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import { FullPagePreview, type FlowPreset, type RsvpBlock } from "./RsvpDesignPage";
 import { Button } from "../../atoms/Button";
 import { Spinner } from "../../atoms/Spinner";
 import client from "../../../api/client";
-import { PublicRsvpEndpoints } from "../../../api/endpoints";
+import {
+  PublicEventEndpoints,
+  PublicRsvpEndpoints,
+  RsvpDesignEndpoints,
+} from "../../../api/endpoints";
 import type { ApiRsvpDesign } from "../../../types/rsvpDesign";
 import { mapToFrontendDesign } from "../../../utils/rsvpDesignMapper";
 
@@ -18,41 +22,102 @@ type PreviewData = {
   backgroundType: "color" | "image" | "video";
   overlay: number;
   accentColor: string;
+  contentWidth?: "compact" | "standard" | "wide" | "full";
 };
+
+function toPreview(apiDesign: ApiRsvpDesign): PreviewData | null {
+  if (!apiDesign?.design) return null;
+  const mapped = mapToFrontendDesign(apiDesign);
+  return {
+    blocks: (mapped.blocks ?? []) as RsvpBlock[],
+    flowPreset: (mapped.flowPreset ?? "serene") as FlowPreset,
+    backgroundColor: mapped.globalBackgroundColor ?? "#0f172a",
+    backgroundAsset: mapped.globalBackgroundAsset ?? "",
+    backgroundType: (mapped.globalBackgroundType ?? "color") as "color" | "image" | "video",
+    overlay: mapped.globalOverlay ?? 0.3,
+    accentColor: mapped.accentColor ?? "#f97316",
+    contentWidth: mapped.contentWidth,
+  };
+}
 
 export default function RsvpSharePreviewPage() {
   const { token } = useParams<{ token: string }>();
+  const [searchParams] = useSearchParams();
+  const slugParam = searchParams.get("slug") ?? undefined;
+  const eventGuidParam = searchParams.get("event") ?? undefined;
+
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    client
-      .get(PublicRsvpEndpoints.designByToken(token))
-      .then((res) => {
-        const apiDesign: ApiRsvpDesign = res.data?.data ?? res.data;
-        if (!apiDesign?.design) {
-          setError(true);
-          return;
+    let cancelled = false;
+
+    // Fallback chain for the preview page:
+    //   1. Token endpoint (intended public path — currently unreliable; see
+    //      .claude/todo/rsvp-v3-preview-public-sync.md).
+    //   2. ?slug=  → public slug endpoint (works for everyone).
+    //   3. ?event= → admin design endpoint (only works for logged-in admins).
+    async function load() {
+      setLoading(true);
+      setError(false);
+
+      if (token) {
+        try {
+          const res = await client.get(PublicRsvpEndpoints.designByToken(token));
+          const apiDesign = (res.data?.data ?? res.data) as ApiRsvpDesign;
+          const p = toPreview(apiDesign);
+          if (p && !cancelled) {
+            setPreview(p);
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // fall through
         }
-        const mapped = mapToFrontendDesign(apiDesign);
-        setPreview({
-          blocks: (mapped.blocks ?? []) as RsvpBlock[],
-          flowPreset: (mapped.flowPreset ?? "serene") as FlowPreset,
-          backgroundColor: mapped.globalBackgroundColor ?? "#0f172a",
-          backgroundAsset: mapped.globalBackgroundAsset ?? "",
-          backgroundType: (mapped.globalBackgroundType ?? "color") as "color" | "image" | "video",
-          overlay: mapped.globalOverlay ?? 0.3,
-          accentColor: mapped.accentColor ?? "#f97316",
-        });
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, [token]);
+      }
+
+      if (slugParam) {
+        try {
+          const res = await client.get(PublicEventEndpoints.bySlug(slugParam));
+          const data = res.data?.data ?? res.data;
+          const p = toPreview(data?.rsvpDesign as ApiRsvpDesign);
+          if (p && !cancelled) {
+            setPreview(p);
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // fall through
+        }
+      }
+
+      if (eventGuidParam) {
+        try {
+          const res = await client.get(RsvpDesignEndpoints.get(eventGuidParam));
+          const apiDesign = (res.data?.data ?? res.data) as ApiRsvpDesign;
+          const p = toPreview(apiDesign);
+          if (p && !cancelled) {
+            setPreview(p);
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // fall through
+        }
+      }
+
+      if (!cancelled) {
+        setError(true);
+        setLoading(false);
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, slugParam, eventGuidParam]);
 
   if (loading) {
     return (
@@ -89,6 +154,7 @@ export default function RsvpSharePreviewPage() {
       overlay={preview.overlay}
       accentColor={preview.accentColor}
       flowPreset={preview.flowPreset}
+      contentWidth={preview.contentWidth}
     />
   );
 }

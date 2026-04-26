@@ -352,10 +352,21 @@ export function mapToBackendPayload(
         fontFamily: frontendDesign.globalFontFamily ?? undefined,
         layoutStyle: frontendDesign.layoutStyle ?? undefined,
         contentWidth: frontendDesign.contentWidth ?? undefined,
+        blockMarginX: frontendDesign.blockMarginX ?? undefined,
+        blockMarginY: frontendDesign.blockMarginY ?? undefined,
       },
       layout: {
-        width: 1200, // Default layout width
-        maxHeight: 0, // 0 = no max height (responsive)
+        // Encode contentWidth as layout.width so the backend preserves it
+        // (backend theme DTO doesn't persist contentWidth/layoutStyle/fontFamily)
+        // 384 = compact, 512 = standard, 672 = wide, 0 = full
+        width: ({ compact: 384, standard: 512, wide: 672, full: 0 } as Record<string, number>)[frontendDesign.contentWidth ?? "full"] ?? 0,
+        // Encode layoutStyle (1s digit) + blockMarginX (100s) + blockMarginY (10000s) so
+        // values survive even if the backend strips unknown theme fields.
+        // E.g. layout=flush, marginX=12, marginY=24 → 1 + 12*100 + 24*10000 = 241201
+        maxHeight:
+          (frontendDesign.layoutStyle === "flush" ? 1 : 0) +
+          Math.min(99, Math.max(0, frontendDesign.blockMarginX ?? 0)) * 100 +
+          Math.min(99, Math.max(0, frontendDesign.blockMarginY ?? 0)) * 10000,
       },
       previewModes: ["mobile", "desktop"],
       blocks: frontendDesign.blocks.map((block) =>
@@ -394,14 +405,31 @@ export function mapToFrontendDesign(
 ): Partial<RsvpDesign> {
   const { design } = backendPayload;
 
-  // DEBUG: log raw API response to trace contentWidth round-trip
-  console.log('[mapToFrontendDesign] theme:', JSON.stringify(design.theme), 'designRoot contentWidth:', design.contentWidth, 'designRoot layoutStyle:', design.layoutStyle);
-
   // Extract version and shareToken if present (from API response)
   const version = 'version' in backendPayload ? backendPayload.version : undefined;
   const shareToken = 'shareToken' in backendPayload ? backendPayload.shareToken : undefined;
+  const isPublished = 'isPublished' in backendPayload ? backendPayload.isPublished : undefined;
 
   const eventGuid = 'eventGuid' in backendPayload ? (backendPayload as ApiRsvpDesign).eventGuid : undefined;
+
+  // Decode contentWidth from layout.width fallback (backend theme DTO doesn't persist it)
+  // 384 = compact, 512 = standard, 672 = wide, 0/undefined = full
+  const layoutWidth = design.layout?.width;
+  const contentWidthFromLayout: "compact" | "standard" | "wide" | "full" | undefined =
+    layoutWidth === 384 ? "compact" :
+    layoutWidth === 512 ? "standard" :
+    layoutWidth === 672 ? "wide" :
+    (layoutWidth === 0 || !layoutWidth) ? "full" : undefined;
+
+  // Decode packed layout.maxHeight:
+  //   1s digit = layoutStyle (0=cards, 1=flush)
+  //   100s (2 digits) = blockMarginX (0-99 px)
+  //   10000s (2 digits) = blockMarginY (0-99 px)
+  const packedMaxHeight = design.layout?.maxHeight ?? 0;
+  const layoutStyleFromLayout: "cards" | "flush" | undefined =
+    (packedMaxHeight % 10) === 1 ? "flush" : undefined;
+  const blockMarginXFromLayout = Math.floor(packedMaxHeight / 100) % 100;
+  const blockMarginYFromLayout = Math.floor(packedMaxHeight / 10000) % 100;
 
   return {
     blocks: design.blocks.map(transformBlockToFrontend),
@@ -418,10 +446,13 @@ export function mapToFrontendDesign(
     submitButtonTextColor: design.theme.submitButtonTextColor,
     submitButtonLabel: design.theme.submitButtonLabel,
     globalFontFamily: design.theme.fontFamily ?? undefined,
-    layoutStyle: (design.theme.layoutStyle as "cards" | "flush") ?? (design.layoutStyle as "cards" | "flush") ?? undefined,
-    contentWidth: (design.theme.contentWidth as "compact" | "standard" | "wide" | "full") ?? (design.contentWidth as "compact" | "standard" | "wide" | "full") ?? undefined,
+    layoutStyle: (design.theme.layoutStyle as "cards" | "flush") ?? (design.layoutStyle as "cards" | "flush") ?? layoutStyleFromLayout ?? undefined,
+    contentWidth: (design.theme.contentWidth as "compact" | "standard" | "wide" | "full") ?? (design.contentWidth as "compact" | "standard" | "wide" | "full") ?? contentWidthFromLayout ?? undefined,
+    blockMarginX: design.theme.blockMarginX ?? (blockMarginXFromLayout || undefined),
+    blockMarginY: design.theme.blockMarginY ?? (blockMarginYFromLayout || undefined),
     eventGuid,           // Preserved so the guest page can fetch form fields
     version,             // Store backend-managed version for publish endpoint
+    isPublished,         // Surface server publish state for UI badge
     shareToken: shareToken ?? null,
     publicLink: null,    // Public link is generated client-side
     formFieldConfigs: design.formFieldConfigs,

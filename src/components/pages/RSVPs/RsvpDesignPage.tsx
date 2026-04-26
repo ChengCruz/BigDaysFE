@@ -307,6 +307,7 @@ export function FullPagePreview({
   overlay,
   accentColor,
   flowPreset = "serene",
+  contentWidth = "full",
 }: {
   blocks: RsvpBlock[];
   backgroundColor: string;
@@ -315,7 +316,16 @@ export function FullPagePreview({
   overlay: number;
   accentColor: string;
   flowPreset?: FlowPreset;
+  contentWidth?: "compact" | "standard" | "wide" | "full";
 }) {
+  const widthClass: Record<string, string> = {
+    compact:  "max-w-sm",
+    standard: "max-w-lg",
+    wide:     "max-w-2xl",
+    full:     "max-w-3xl",
+  };
+  const maxWidthCls = widthClass[contentWidth] ?? "max-w-3xl";
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
       <div className="absolute inset-0" aria-hidden>
@@ -330,7 +340,7 @@ export function FullPagePreview({
       </div>
 
       <div
-        className={`relative mx-auto flex max-w-3xl flex-col gap-6 px-4 py-12 ${
+        className={`relative mx-auto flex ${maxWidthCls} flex-col gap-6 px-4 py-12 ${
           flowPreset === "stacked" ? "scroll-snap-y scroll-smooth" : ""
         }`}
       >
@@ -433,6 +443,7 @@ export default function RsvpDesignPage() {
   const [submitButtonColor, setSubmitButtonColor] = useState("");
   const [submitButtonTextColor, setSubmitButtonTextColor] = useState("");
   const [submitButtonLabel, setSubmitButtonLabel] = useState("");
+  const [contentWidth, setContentWidth] = useState<"compact" | "standard" | "wide" | "full">("full");
   const [showPreview, setShowPreview] = useState(false);
   const [previewMode, setPreviewMode] = useState<"mobile" | "desktop">("mobile");
   const [publicLink, setPublicLink] = useState<string | null>(null);
@@ -474,6 +485,7 @@ export default function RsvpDesignPage() {
     if (savedDesign.submitButtonColor) setSubmitButtonColor(savedDesign.submitButtonColor);
     if (savedDesign.submitButtonTextColor) setSubmitButtonTextColor(savedDesign.submitButtonTextColor);
     if (savedDesign.submitButtonLabel) setSubmitButtonLabel(savedDesign.submitButtonLabel);
+    if (savedDesign.contentWidth) setContentWidth(savedDesign.contentWidth);
     if (savedDesign.version !== undefined) setVersion(savedDesign.version);
     if (savedDesign.shareToken) {
       setShareToken(savedDesign.shareToken);
@@ -486,7 +498,7 @@ export default function RsvpDesignPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (shareToken) persistShareSnapshot(shareToken);
-  }, [shareToken, blocks, globalBackgroundAsset, globalBackgroundColor, globalBackgroundType, globalOverlay, accentColor, flowPreset, globalMusicUrl, submitButtonColor, submitButtonTextColor, submitButtonLabel]);
+  }, [shareToken, blocks, globalBackgroundAsset, globalBackgroundColor, globalBackgroundType, globalOverlay, accentColor, flowPreset, globalMusicUrl, submitButtonColor, submitButtonTextColor, submitButtonLabel, contentWidth]);
 
   // ── Helpers ────────────────────────────────────────────────────────────
   const toImageAsset = (file: File) => {
@@ -547,6 +559,7 @@ export default function RsvpDesignPage() {
           submitButtonColor: submitButtonColor || undefined,
           submitButtonTextColor: submitButtonTextColor || undefined,
           submitButtonLabel: submitButtonLabel || undefined,
+          contentWidth: contentWidth || undefined,
         },
         formFieldConfigs: availableQuestions,
       })
@@ -769,6 +782,7 @@ export default function RsvpDesignPage() {
       submitButtonColor: submitButtonColor || undefined,
       submitButtonTextColor: submitButtonTextColor || undefined,
       submitButtonLabel: submitButtonLabel || undefined,
+      contentWidth,
       shareToken,
       publicLink,
       formFieldConfigs: availableQuestions,
@@ -852,6 +866,7 @@ export default function RsvpDesignPage() {
             submitButtonColor={submitButtonColor}
             submitButtonTextColor={submitButtonTextColor}
             submitButtonLabel={submitButtonLabel}
+            contentWidth={contentWidth}
             hasBackgroundAsset={!!globalBackgroundAsset}
             onChange={(patch) => {
               if (patch.globalBackgroundType !== undefined) setGlobalBackgroundType(patch.globalBackgroundType);
@@ -863,6 +878,7 @@ export default function RsvpDesignPage() {
               if (patch.submitButtonColor !== undefined) setSubmitButtonColor(patch.submitButtonColor);
               if (patch.submitButtonTextColor !== undefined) setSubmitButtonTextColor(patch.submitButtonTextColor);
               if (patch.submitButtonLabel !== undefined) setSubmitButtonLabel(patch.submitButtonLabel);
+              if (patch.contentWidth !== undefined) setContentWidth(patch.contentWidth);
             }}
             onUploadBackground={handleBackgroundUpload}
           />

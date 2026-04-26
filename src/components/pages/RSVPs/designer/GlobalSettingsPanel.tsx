@@ -17,6 +17,8 @@ interface GlobalSettings {
   submitButtonLabel: string;
   globalFontFamily?: string;
   contentWidth?: ContentWidth;
+  blockMarginX?: number;
+  blockMarginY?: number;
 }
 
 interface Props extends GlobalSettings {
@@ -92,6 +94,8 @@ export function GlobalSettingsPanel({
   submitButtonLabel,
   globalFontFamily = "",
   contentWidth = "full",
+  blockMarginX = 0,
+  blockMarginY = 0,
   onChange,
   onUploadBackground,
   hasBackgroundAsset,
@@ -315,6 +319,53 @@ export function GlobalSettingsPanel({
             ))}
           </div>
           <p className="text-xs text-gray-400">Controls how wide the RSVP page appears to guests.</p>
+        </div>
+
+        {/* ── Block spacing ── */}
+        <div className="space-y-3">
+          <SectionTitle>Block spacing</SectionTitle>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-gray-500">Horizontal margin</label>
+              <span className="text-xs tabular-nums text-gray-400">{blockMarginX}px</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={48}
+              step={2}
+              value={blockMarginX}
+              onChange={(e) => onChange({ blockMarginX: parseInt(e.target.value, 10) })}
+              className="w-full accent-primary"
+            />
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-gray-500">Vertical margin</label>
+              <span className="text-xs tabular-nums text-gray-400">{blockMarginY}px</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={48}
+              step={2}
+              value={blockMarginY}
+              onChange={(e) => onChange({ blockMarginY: parseInt(e.target.value, 10) })}
+              className="w-full accent-primary"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onChange({ blockMarginX: 0, blockMarginY: 0 })}
+              className="text-[10px] text-gray-400 underline hover:text-gray-600"
+            >
+              reset to flush (0 / 0)
+            </button>
+          </div>
+          <p className="text-xs text-gray-400">
+            Adds optional horizontal inset and vertical gap between blocks. 0 = edge-to-edge (default). Applied identically in the canvas, preview, and public guest page.
+          </p>
         </div>
 
         {/* ── Ambient music — hidden for now, to be implemented later ──

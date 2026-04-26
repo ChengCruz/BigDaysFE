@@ -138,8 +138,15 @@ export interface RsvpDesign {
   /** Content width of the guest page: controls max-width of the form container.
    *  "compact" ≈ phone (24rem), "standard" (32rem), "wide" (42rem), "full" (no limit). */
   contentWidth?: "compact" | "standard" | "wide" | "full";
+  /** Horizontal inset (px) applied to the content column in canvas/preview/public.
+   *  0 = edge-to-edge (default). Useful for giving blocks breathing room against the page background. */
+  blockMarginX?: number;
+  /** Vertical gap (px) between consecutive blocks in canvas/preview/public.
+   *  0 = flush / no gap (default). */
+  blockMarginY?: number;
   eventGuid?: string;           // Needed by guest page to fetch form fields
   version?: number;             // Backend-managed version number, needed for publish
+  isPublished?: boolean;        // Server-owned published flag (surfaced for UI badge)
   shareToken?: string | null;
   publicLink?: string | null;
   /** Embedded form field definitions so the public page is self-contained (no auth needed) */
@@ -251,6 +258,10 @@ export interface ApiTheme {
   layoutStyle?: string;
   /** Content width preset stored inside theme so the backend persists it */
   contentWidth?: string;
+  /** Horizontal inset (px) for the content column */
+  blockMarginX?: number;
+  /** Vertical gap (px) between consecutive blocks */
+  blockMarginY?: number;
 }
 
 export interface ApiLayout {
