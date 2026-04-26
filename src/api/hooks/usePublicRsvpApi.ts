@@ -8,14 +8,18 @@ import { mapToFrontendDesign } from "../../utils/rsvpDesignMapper";
 import { TYPE_KEY_MAP } from "../../utils/eventUtils";
 
 /**
- * Fetch RSVP design by share token (no auth required).
- * Tries the backend public endpoint first, then the admin design endpoint
- * using eventGuid (only needs apiKey+author headers, no JWT — so external
- * users can load the design cross-device when the link includes ?event={eventGuid}).
+ * Fetch RSVP design by share token.
+ * Tries the backend public token endpoint first, then falls back to the admin
+ * design endpoint using eventGuid.
  *
- * Note: localStorage snapshot is intentionally NOT used here as a fallback —
- * it is only valid in the same browser that designed the RSVP (admin's device).
- * The preview page (RsvpSharePreviewPage) reads localStorage directly for that use case.
+ * Auth reality (verified 2026-04-18):
+ *   - GET /RsvpDesign/share/{token}        — intended public, currently 404s
+ *     (endpoint not documented in backend-context; see .claude/todo/rsvp-v3-preview-public-sync.md).
+ *   - GET /RsvpDesign/{eventGuid}/design   — requires JWT (returns 401 without it).
+ *     The fallback therefore only works when the caller is a logged-in admin in
+ *     the same browser; real guests fall through to null and see "Invalid link".
+ *   - Public guests should use the slug URL (/rsvp/:slug → useEventBySlug), which
+ *     hits /event/eventRsvp/slug/{slug} and works with only apiKey+author headers.
  */
 export function usePublicRsvpDesign(
   token: string | undefined,
@@ -43,9 +47,10 @@ export function usePublicRsvpDesign(
         }
       }
 
-      // 2. Load design via eventGuid from the admin endpoint
-      // GET /RsvpDesign/{eventGuid}/design only requires apiKey+author headers (no JWT),
-      // so it works for unauthenticated guests when the share link includes ?event=.
+      // 2. Admin-only fallback via eventGuid.
+      // NOTE: GET /RsvpDesign/{eventGuid}/design requires JWT (401 without it) —
+      // this path only succeeds when a logged-in admin is previewing in the same
+      // browser. For real public guests, prefer the slug URL instead.
       if (eventGuid) {
         try {
           const designRes = await client.get(RsvpDesignEndpoints.get(eventGuid));

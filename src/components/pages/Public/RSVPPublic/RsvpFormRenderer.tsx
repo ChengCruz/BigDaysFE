@@ -106,6 +106,8 @@ export default function RsvpFormRenderer({
     globalMusicUrl,
     layoutStyle,
     contentWidth = "full",
+    blockMarginX = 0,
+    blockMarginY = 0,
   } = design;
 
   // V3 designs save layoutStyle:"flush"; default to flush when unset
@@ -604,7 +606,7 @@ export default function RsvpFormRenderer({
 
   // ── Layout ────────────────────────────────────────────────────────────
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-white" style={{ fontFamily: design.globalFontFamily || undefined }}>
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-white" style={{ fontFamily: design.globalFontFamily || "Georgia, 'Times New Roman', serif" }}>
       {/* Global background */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
         {globalBackgroundType === "color" && (
@@ -660,6 +662,11 @@ export default function RsvpFormRenderer({
           className={`relative mx-auto flex flex-col ${
             isFlush ? maxWidthCls : `${maxWidthCls || "max-w-3xl"} gap-6 px-4 py-12`
           } ${flowPreset === "stacked" ? "scroll-snap-y scroll-smooth" : ""}`}
+          style={
+            isFlush
+              ? { paddingLeft: blockMarginX, paddingRight: blockMarginX, rowGap: blockMarginY }
+              : undefined
+          }
         >
           {/* ── All blocks rendered inline in designed order ── */}
           {blocks.map((block) => renderBlock(block))}
