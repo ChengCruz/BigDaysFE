@@ -283,6 +283,10 @@ export default function TablesPage() {
                 Select
               </Button>
             )}
+            <Button disabled variant="secondary">
+              Export
+              <span className="ml-1.5 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">Soon</span>
+            </Button>
             <Dropdown
               trigger={
                 <Button className="flex items-center gap-1.5">
