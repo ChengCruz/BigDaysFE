@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     client
       .post<AuthResponse>(AuthEndpoints.refreshToken)
       .then(({ data }) => {
-        tokenStore.set(data.accessToken);
+        tokenStore.set(data.data?.accessToken ?? data.accessToken);
         setTokenVersion(v => v + 1);
       })
       .catch(() => {

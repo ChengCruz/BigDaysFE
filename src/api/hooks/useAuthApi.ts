@@ -47,7 +47,7 @@ export function useAuthApi() {
 
   const login = useMutation<AuthResponse, Error, LoginPayload>({
     mutationFn: (data: LoginPayload) =>
-      client.post<AuthResponse>(AuthEndpoints.login, data).then(r => r.data),
+      client.post<{ data: AuthResponse }>(AuthEndpoints.login, data).then(r => r.data.data),
     onSuccess: (data) => {
       tokenStore.set(data.accessToken);
       sessionHint.set();
@@ -90,7 +90,7 @@ export function useCrewLogin() {
   const qc = useQueryClient();
   return useMutation<AuthResponse, Error, CrewLoginPayload>({
     mutationFn: (data: CrewLoginPayload) =>
-      client.post<AuthResponse>(CrewEndpoints.login, data).then(r => r.data),
+      client.post<{ data: AuthResponse }>(CrewEndpoints.login, data).then(r => r.data.data),
     onSuccess: (data) => {
       tokenStore.set(data.accessToken);
       sessionHint.set();

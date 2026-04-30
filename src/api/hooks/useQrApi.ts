@@ -40,11 +40,28 @@ export function useRevokeQrApi() {
   });
 }
 
-export function useCheckInScanApi() {
+export function useCheckInScanApi(eventId: string) {
+  const qc = useQueryClient();
   return useMutation<CheckInResult, Error, string>({
     mutationFn: async (token: string) => {
       const res = await client.post(CheckInEndpoints.scan, { token });
       return res.data?.data ?? res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["qr", eventId] });
+    },
+  });
+}
+
+export function useUndoCheckInApi() {
+  const qc = useQueryClient();
+  return useMutation<CheckInResult, Error, { token: string; eventId: string }>({
+    mutationFn: async ({ token }) => {
+      const res = await client.post(CheckInEndpoints.undo, { token });
+      return res.data?.data ?? res.data;
+    },
+    onSuccess: (_data, { eventId }) => {
+      qc.invalidateQueries({ queryKey: ["qr", eventId] });
     },
   });
 }

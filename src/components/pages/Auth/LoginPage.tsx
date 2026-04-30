@@ -10,6 +10,7 @@ import { Modal } from "../../molecules/Modal";
 import { validatePassword } from "../../../utils/passwordValidation";
 import { isDevOrStaging } from "../../../utils/env";
 import toast from "react-hot-toast";
+import { EyeIcon, EyeOffIcon } from "@heroicons/react/solid";
 
 type ForgotStep = "request" | "reset";
 type LoginMode = "admin" | "staff";
@@ -53,6 +54,9 @@ export default function LoginPage() {
   const [crewCode, setCrewCode] = useState("");
   const [crewPin, setCrewPin] = useState("");
   const [crewEventId, setCrewEventId] = useState("");
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showCrewPin, setShowCrewPin] = useState(false);
 
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotStep, setForgotStep] = useState<ForgotStep>("request");
@@ -334,16 +338,26 @@ export default function LoginPage() {
                 </div>
                 <div>
                   <label style={labelStyle}>Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••••••••"
-                    style={inputStyle}
-                    onFocus={e => (e.target.style.borderBottomColor = '#B4543A')}
-                    onBlur={e => (e.target.style.borderBottomColor = '#EDE4D3')}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="••••••••••••"
+                      style={{ ...inputStyle, paddingRight: '2.5rem' }}
+                      onFocus={e => (e.target.style.borderBottomColor = '#B4543A')}
+                      onBlur={e => (e.target.style.borderBottomColor = '#EDE4D3')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(v => !v)}
+                      style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', color: '#7A6B5D' }}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOffIcon style={{ width: '1.1rem', height: '1.1rem' }} /> : <EyeIcon style={{ width: '1.1rem', height: '1.1rem' }} />}
+                    </button>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -421,16 +435,26 @@ export default function LoginPage() {
                 </div>
                 <div>
                   <label style={labelStyle}>PIN</label>
-                  <input
-                    type="password"
-                    required
-                    value={crewPin}
-                    onChange={e => { const v = e.target.value.replace(/\D/g, "").slice(0, 6); setCrewPin(v); }}
-                    placeholder="4–6 digit PIN"
-                    style={inputStyle}
-                    onFocus={e => (e.target.style.borderBottomColor = '#B4543A')}
-                    onBlur={e => (e.target.style.borderBottomColor = '#EDE4D3')}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showCrewPin ? "text" : "password"}
+                      required
+                      value={crewPin}
+                      onChange={e => { const v = e.target.value.replace(/\D/g, "").slice(0, 6); setCrewPin(v); }}
+                      placeholder="4–6 digit PIN"
+                      style={{ ...inputStyle, paddingRight: '2.5rem' }}
+                      onFocus={e => (e.target.style.borderBottomColor = '#B4543A')}
+                      onBlur={e => (e.target.style.borderBottomColor = '#EDE4D3')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCrewPin(v => !v)}
+                      style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', color: '#7A6B5D' }}
+                      aria-label={showCrewPin ? "Hide PIN" : "Show PIN"}
+                    >
+                      {showCrewPin ? <EyeOffIcon style={{ width: '1.1rem', height: '1.1rem' }} /> : <EyeIcon style={{ width: '1.1rem', height: '1.1rem' }} />}
+                    </button>
+                  </div>
                 </div>
                 {error && <p style={{ color: '#B4543A', fontSize: '0.9rem' }}>{error}</p>}
                 <button
