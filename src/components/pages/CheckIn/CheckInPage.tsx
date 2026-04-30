@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useCheckInScanApi, useQrListApi } from "../../../api/hooks/useQrApi";
+import { Component, useEffect, useMemo, useRef, useState, type ReactNode, type ErrorInfo } from "react";
+import { useCheckInScanApi, useQrListApi, useUndoCheckInApi } from "../../../api/hooks/useQrApi";
 import { useGuestsApi } from "../../../api/hooks/useGuestsApi";
 import type { CheckInErrorCode, CheckInResult } from "../../../types/qr";
 import { Button } from "../../atoms/Button";
@@ -20,6 +20,7 @@ interface RecentScan {
   guestName: string;
   noOfPax: number;
   at: number;
+  token?: string; // only set for QR scans; absent for manual check-ins
 }
 
 const errorMessages: Record<CheckInErrorCode | "UNKNOWN", string> = {
@@ -87,6 +88,44 @@ function formatTime(ts: number) {
   return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
+class CameraErrorBoundary extends Component<
+  { children: ReactNode; onReset: () => void },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("Camera error:", error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-400 dark:border-red-600 p-6 text-center">
+          <p className="text-4xl mb-2">📷</p>
+          <p className="text-lg font-semibold text-red-800 dark:text-red-300 mb-4">
+            Camera encountered an error
+          </p>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              this.setState({ hasError: false });
+              this.props.onReset();
+            }}
+          >
+            Restart Camera
+          </Button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function CheckInPage() {
   const { eventId, eventsLoading } = useEventContext();
   const scannerRef = useRef<{ stop: () => Promise<void> } | null>(null);
@@ -96,13 +135,19 @@ export default function CheckInPage() {
   const [cameraActive, setCameraActive] = useState(false);
   const [manualModalOpen, setManualModalOpen] = useState(false);
   const [recentScans, setRecentScans] = useState<RecentScan[]>([]);
-  const checkIn = useCheckInScanApi();
+  const checkIn = useCheckInScanApi(eventId ?? "");
+  const undoCheckIn = useUndoCheckInApi();
   const { data: qrTokens = [] } = useQrListApi(eventId ?? "");
   const { data: guests = [] } = useGuestsApi(eventId ?? "");
 
   // Prevent scanning while a request is in flight
   const isProcessing = useRef(false);
   const resetTimer = useRef<number | null>(null);
+
+  const checkInRef = useRef(checkIn.mutateAsync.bind(checkIn));
+  useEffect(() => {
+    checkInRef.current = checkIn.mutateAsync.bind(checkIn);
+  });
 
   useEffect(() => {
     if (!cameraActive || !eventId) return;
@@ -111,7 +156,14 @@ export default function CheckInPage() {
     let scanner: { stop: () => Promise<void> } | null = null;
 
     import("html5-qrcode").then(({ Html5Qrcode }) => {
-      const instance = new Html5Qrcode(scannerDivId);
+      let instance: InstanceType<typeof Html5Qrcode>;
+      try {
+        instance = new Html5Qrcode(scannerDivId);
+      } catch {
+        setCameraError("Could not initialize camera scanner. Please try again.");
+        setCameraActive(false);
+        return;
+      }
       scanner = instance;
       scannerRef.current = instance;
 
@@ -125,11 +177,11 @@ export default function CheckInPage() {
             setScanState({ status: "loading" });
 
             try {
-              const result = await checkIn.mutateAsync(decodedText);
+              const result = await checkInRef.current(decodedText);
               const at = Date.now();
               setScanState({ status: "success", result, at });
               setRecentScans((prev) => [
-                { id: `${at}-${decodedText}`, guestName: result.guestName, noOfPax: result.noOfPax, at },
+                { id: `${at}-${decodedText}`, guestName: result.guestName, noOfPax: result.noOfPax, at, token: decodedText },
                 ...prev,
               ].slice(0, 10));
               beep(880, 150);
@@ -161,6 +213,9 @@ export default function CheckInPage() {
           );
           setCameraActive(false);
         });
+    }).catch(() => {
+      setCameraError("Could not load camera scanner. Please try again.");
+      setCameraActive(false);
     });
 
     return () => {
@@ -170,7 +225,10 @@ export default function CheckInPage() {
         resetTimer.current = null;
       }
     };
-  }, [cameraActive, eventId, checkIn]);
+  // checkIn intentionally excluded: mutation state changes after each scan but
+  // the scanner should not restart — use checkInRef to always call the latest mutateAsync
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraActive, eventId]);
 
   const stats = useMemo(() => {
     const totalGuests = guests.length;
@@ -204,6 +262,15 @@ export default function CheckInPage() {
     }
     setScanState({ status: "idle" });
     isProcessing.current = false;
+  }
+
+  async function handleUndoScan(scanId: string, token: string) {
+    try {
+      await undoCheckIn.mutateAsync({ token, eventId: eventId! });
+      setRecentScans((prev) => prev.filter((s) => s.id !== scanId));
+    } catch {
+      // silently ignore — user can open manual modal to retry
+    }
   }
 
   function handleManualSuccess(result: CheckInResult) {
@@ -253,6 +320,7 @@ export default function CheckInPage() {
       </div>
 
       {/* Scanner card */}
+      <CameraErrorBoundary onReset={handleStopCamera}>
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col gap-4">
         {!cameraActive ? (
           <Button onClick={() => setCameraActive(true)}>QR Check In</Button>
@@ -317,6 +385,7 @@ export default function CheckInPage() {
           </Button>
         )}
       </div>
+      </CameraErrorBoundary>
 
       {/* Recent check-ins */}
       {recentScans.length > 0 && (
@@ -327,14 +396,26 @@ export default function CheckInPage() {
           </div>
           <ul className="divide-y divide-gray-100 dark:divide-gray-700">
             {recentScans.map((s) => (
-              <li key={s.id} className="py-2 flex items-center justify-between text-sm">
+              <li key={s.id} className="py-2 flex items-center justify-between text-sm gap-2">
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-gray-800 dark:text-gray-100 truncate">{s.guestName}</p>
                   <p className="text-[11px] text-gray-500 dark:text-gray-400">
                     {s.noOfPax} {s.noOfPax === 1 ? "person" : "pax"}
                   </p>
                 </div>
-                <span className="text-[11px] text-gray-400 flex-shrink-0 ml-2">{formatTime(s.at)}</span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-[11px] text-gray-400">{formatTime(s.at)}</span>
+                  {s.token && (
+                    <button
+                      type="button"
+                      onClick={() => handleUndoScan(s.id, s.token!)}
+                      disabled={undoCheckIn.isPending}
+                      className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-800/40 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Undo
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
