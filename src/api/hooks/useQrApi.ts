@@ -53,6 +53,28 @@ export function useCheckInScanApi(eventId: string) {
   });
 }
 
+// Force check-in: generates a QR token for a guest who doesn't have one, then checks them in.
+// Uses generateAll as a workaround since there's no single-guest generate endpoint yet.
+export function useForceCheckInApi(eventId: string) {
+  const qc = useQueryClient();
+  return useMutation<CheckInResult & { token: string }, Error, string>({
+    mutationFn: async (guestId: string) => {
+      await client.post(QrEndpoints.generateAll(eventId));
+      const res = await client.get(QrEndpoints.listByEvent(eventId));
+      const payload = res.data?.data ?? res.data;
+      const tokens: QrToken[] = Array.isArray(payload) ? payload : [];
+      const tokenRec = tokens.find((t) => t.guestId === guestId);
+      if (!tokenRec) throw new Error("Token could not be created for this guest");
+      const checkInRes = await client.post(CheckInEndpoints.scan, { token: tokenRec.token });
+      const result: CheckInResult = checkInRes.data?.data ?? checkInRes.data;
+      return { ...result, token: tokenRec.token };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["qr", eventId] });
+    },
+  });
+}
+
 export function useUndoCheckInApi() {
   const qc = useQueryClient();
   return useMutation<CheckInResult, Error, { token: string; eventId: string }>({
