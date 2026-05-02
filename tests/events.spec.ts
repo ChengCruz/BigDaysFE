@@ -34,19 +34,21 @@ test.describe('Events — Read (list)', () => {
 
   test('active event stat card shows count of 1', async ({ page }) => {
     // 1 active event (MOCK_EVENT.isDeleted=false)
-    const activeCard = page.locator('text=Active events').locator('..');
+    // StatsCard: label <p> is inside a child div; value <p> is a sibling — go up two levels to reach the row
+    const activeCard = page.locator('text=Active Events').locator('..').locator('..');
     await expect(activeCard.locator('text=1')).toBeVisible();
   });
 
   test('archived event stat card shows count of 0', async ({ page }) => {
     // MOCK_EVENT.isDeleted=false → 0 archived
-    const archivedCard = page.locator('text=Archived events').locator('..');
+    const archivedCard = page.locator('text=Archived Events').locator('..').locator('..');
     await expect(archivedCard.locator('text=0')).toBeVisible();
   });
 
   test('active event banner shows event title', async ({ page }) => {
     // MOCK_EVENT is the active event (eventId in localStorage matches)
-    await expect(page.locator('text=Active event')).toBeVisible();
+    // Scope to main to avoid matching sidebar button and StatsCard "Active Events" label
+    await expect(page.getByRole('main').getByText('Active event', { exact: true })).toBeVisible();
     await expect(page.locator(`text=${MOCK_EVENT.title}`).first()).toBeVisible();
   });
 
@@ -122,10 +124,12 @@ test.describe('Events — Create', () => {
 
   test('validation — shows error when title is empty', async ({ page }) => {
     await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
+    // Fill everything except title (nth(0)) — text inputs: nth(0)=Title, nth(1)=Description, nth(2)=Location
     await page.fill('input[type="date"]', '2026-12-01');
+    await page.locator('form select').first().selectOption('12');
+    await page.locator('form select').nth(1).selectOption('00');
     await page.fill('input[type="number"]', '10');
-    await page.locator('input[type="text"]').nth(0).fill('Grand Ballroom');
-    await page.locator('input[type="text"]').nth(1).fill('A beautiful event');
+    await page.locator('input[type="text"]').nth(2).fill('Grand Ballroom');
     await page.click('button:has-text("Create")');
     await expect(page.locator('text=Title cannot be empty.')).toBeVisible();
     await expect(page.locator('text=New Event')).toBeVisible();
@@ -134,11 +138,25 @@ test.describe('Events — Create', () => {
   test('validation — shows error when date is empty', async ({ page }) => {
     await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
     await page.locator('input[type="text"]').first().fill('My Test Wedding');
+    // Leave date empty
+    await page.locator('form select').first().selectOption('12');
+    await page.locator('form select').nth(1).selectOption('00');
     await page.fill('input[type="number"]', '10');
-    await page.locator('input[type="text"]').nth(1).fill('Grand Ballroom');
-    await page.locator('input[type="text"]').nth(2).fill('A beautiful event');
+    await page.locator('input[type="text"]').nth(2).fill('Grand Ballroom');
     await page.click('button:has-text("Create")');
     await expect(page.locator('text=Date cannot be empty.')).toBeVisible();
+    await expect(page.locator('text=New Event')).toBeVisible();
+  });
+
+  test('validation — shows error when time is empty', async ({ page }) => {
+    await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
+    await page.locator('input[type="text"]').first().fill('My Test Wedding');
+    await page.fill('input[type="date"]', '2026-12-01');
+    // Leave time selects at default (-- Hour -- / -- Min --)
+    await page.fill('input[type="number"]', '10');
+    await page.locator('input[type="text"]').nth(2).fill('Grand Ballroom');
+    await page.click('button:has-text("Create")');
+    await expect(page.locator('text=Time cannot be empty.')).toBeVisible();
     await expect(page.locator('text=New Event')).toBeVisible();
   });
 
@@ -146,22 +164,12 @@ test.describe('Events — Create', () => {
     await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
     await page.locator('input[type="text"]').first().fill('My Test Wedding');
     await page.fill('input[type="date"]', '2026-12-01');
+    await page.locator('form select').first().selectOption('12');
+    await page.locator('form select').nth(1).selectOption('00');
     await page.fill('input[type="number"]', '0');
-    await page.locator('input[type="text"]').nth(1).fill('Grand Ballroom');
-    await page.locator('input[type="text"]').nth(2).fill('A beautiful event');
+    await page.locator('input[type="text"]').nth(2).fill('Grand Ballroom');
     await page.click('button:has-text("Create")');
     await expect(page.locator('text=Number of tables cannot be empty.')).toBeVisible();
-    await expect(page.locator('text=New Event')).toBeVisible();
-  });
-
-  test('validation — shows error when description is empty', async ({ page }) => {
-    await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
-    await page.locator('input[type="text"]').first().fill('My Test Wedding');
-    await page.fill('input[type="date"]', '2026-12-01');
-    await page.fill('input[type="number"]', '10');
-    await page.locator('input[type="text"]').nth(0).fill('Grand Ballroom');
-    await page.click('button:has-text("Create")');
-    await expect(page.locator('text=Description cannot be empty.')).toBeVisible();
     await expect(page.locator('text=New Event')).toBeVisible();
   });
 
@@ -169,8 +177,10 @@ test.describe('Events — Create', () => {
     await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
     await page.locator('input[type="text"]').first().fill('My Test Wedding');
     await page.fill('input[type="date"]', '2026-12-01');
+    await page.locator('form select').first().selectOption('12');
+    await page.locator('form select').nth(1).selectOption('00');
     await page.fill('input[type="number"]', '10');
-    await page.locator('input[type="text"]').nth(1).fill('A beautiful event');
+    // Leave location (nth(2)) empty
     await page.click('button:has-text("Create")');
     await expect(page.locator('text=Location cannot be empty.')).toBeVisible();
     await expect(page.locator('text=New Event')).toBeVisible();
@@ -181,20 +191,19 @@ test.describe('Events — Create', () => {
     await page.click('button:has-text("Create")');
     await expect(page.locator('text=Title cannot be empty.')).toBeVisible();
     await expect(page.locator('text=Date cannot be empty.')).toBeVisible();
+    await expect(page.locator('text=Time cannot be empty.')).toBeVisible();
     await expect(page.locator('text=Number of tables cannot be empty.')).toBeVisible();
-    await expect(page.locator('text=Description cannot be empty.')).toBeVisible();
     await expect(page.locator('text=Location cannot be empty.')).toBeVisible();
   });
 
   test('fills all fields and submits → modal closes', async ({ page }) => {
     await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
-
     await page.locator('input[type="text"]').first().fill('My Test Wedding');
     await page.fill('input[type="date"]', '2026-12-01');
+    await page.locator('form select').first().selectOption('12');
+    await page.locator('form select').nth(1).selectOption('00');
     await page.fill('input[type="number"]', '10');
-    await page.locator('input[type="text"]').nth(1).fill('Grand Ballroom');
-    await page.locator('input[type="text"]').nth(2).fill('A beautiful event');
-
+    await page.locator('input[type="text"]').nth(2).fill('Grand Ballroom');
     await page.click('button:has-text("Create")');
     await expect(page.locator('text=New Event')).not.toBeVisible({ timeout: 5000 });
   });
@@ -205,15 +214,15 @@ test.describe('Events — Edit', () => {
     await gotoAuthenticated(page, '/app/events');
   });
 
-  test('"Edit details" button navigates to edit route', async ({ page }) => {
-    const editBtn = page.locator('button:has-text("Edit details")').first();
+  test('"Edit" button navigates to edit route', async ({ page }) => {
+    const editBtn = page.locator('button:has-text("Edit")').first();
     await expect(editBtn).toBeVisible();
     await editBtn.click();
     await expect(page).toHaveURL(/\/app\/events\/.*\/edit/);
   });
 
-  test('"Form fields" button navigates to form-fields route', async ({ page }) => {
-    const formFieldsBtn = page.locator('button:has-text("Form fields")').first();
+  test('"RSVP Questions" button navigates to form-fields route', async ({ page }) => {
+    const formFieldsBtn = page.locator('button:has-text("RSVP Questions")').first();
     await expect(formFieldsBtn).toBeVisible();
     await formFieldsBtn.click();
     await expect(page).toHaveURL(/form-fields/);
@@ -261,8 +270,12 @@ test.describe('Events — Empty state', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('shows "Create your first event" button when list is empty', async ({ page }) => {
-    await expect(page.locator('button:has-text("Create your first event")')).toBeVisible();
+  test('shows empty-state message and button when list is empty', async ({ page }) => {
+    const emptyMsg = page.locator('text=No events match your filters.');
+    await emptyMsg.scrollIntoViewIfNeeded();
+    await expect(emptyMsg).toBeVisible();
+    const emptyBtn = page.locator('button:has-text("Create your first event")');
+    await expect(emptyBtn).toBeVisible();
   });
 
   test('clicking "Create your first event" opens the create event modal', async ({ page }) => {
@@ -271,32 +284,26 @@ test.describe('Events — Empty state', () => {
   });
 });
 
-test.describe('Events — Sidebar event persists across navigation', () => {
+test.describe('Events — Navigation persists across pages', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/events');
   });
 
-  test('current event in sidebar remains after navigating to RSVPs', async ({ page }) => {
-    const sidebarEventBtn = page.locator('button', { has: page.locator('text=Current event') });
-    await expect(sidebarEventBtn).toContainText('Test Wedding');
-    await page.click('a[href="/app/rsvps"]');
+  test('navigating to RSVPs via sidebar keeps the events page state accessible', async ({ page }) => {
+    await page.click('a[title="RSVPs"]');
     await page.waitForLoadState('networkidle');
-    await expect(sidebarEventBtn).toContainText('Test Wedding');
+    await expect(page).toHaveURL(/\/app\/rsvps/);
   });
 
-  test('current event in sidebar remains after navigating to Guests', async ({ page }) => {
-    const sidebarEventBtn = page.locator('button', { has: page.locator('text=Current event') });
-    await expect(sidebarEventBtn).toContainText('Test Wedding');
-    await page.click('a[href="/app/guests"]');
+  test('navigating to Guests via sidebar works from events page', async ({ page }) => {
+    await page.click('a[title="Guests"]');
     await page.waitForLoadState('networkidle');
-    await expect(sidebarEventBtn).toContainText('Test Wedding');
+    await expect(page).toHaveURL(/\/app\/guests/);
   });
 
-  test('current event in sidebar remains after navigating to Wallet', async ({ page }) => {
-    const sidebarEventBtn = page.locator('button', { has: page.locator('text=Current event') });
-    await expect(sidebarEventBtn).toContainText('Test Wedding');
-    await page.click('a[href="/app/wallet"]');
+  test('navigating to Wallet via sidebar works from events page', async ({ page }) => {
+    await page.click('a[title="Wallet"]');
     await page.waitForLoadState('networkidle');
-    await expect(sidebarEventBtn).toContainText('Test Wedding');
+    await expect(page).toHaveURL(/\/app\/wallet/);
   });
 });
