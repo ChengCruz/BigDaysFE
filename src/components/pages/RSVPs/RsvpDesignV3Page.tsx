@@ -394,6 +394,7 @@ function renderSectionContent(
       const KNOWN_GUEST_KEYS = ["name", "phone", "pax", "remarks"] as const;
       const visible = KNOWN_GUEST_KEYS.filter((k) => fields[k] !== false);
       const placeholders: Record<string, string> = { name: "Full name", phone: "Phone number", pax: "Number of guests", remarks: "Remarks" };
+      const customQuestions = block.customQuestions ?? [];
       return (
         <div className="px-8 py-8">
           <p className="text-[13px] font-semibold mb-1" style={{ color: clr.heading }}>{block.title || "Guest Information"}</p>
@@ -406,6 +407,25 @@ function renderSectionContent(
               </div>
             ))}
           </div>
+
+          {customQuestions.length > 0 && (
+            <div className="mt-5 pt-5 border-t space-y-3" style={{ borderColor: clr.inputBdr }}>
+              <p className="text-[10px] uppercase tracking-[0.28em] font-semibold" style={{ color: accentColor }}>
+                Additional questions
+              </p>
+              {customQuestions.map((q) => (
+                <div key={q.id} className="space-y-1.5">
+                  <label className="block text-[11px] font-semibold" style={{ color: clr.body }}>
+                    {q.label || "Question"}{q.required && <span className="ml-1" style={{ color: accentColor }}>*</span>}
+                  </label>
+                  <div className="rounded-xl px-4 py-3 text-[12px]" style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.faint }}>
+                    {q.placeholder || "Guest response here..."}
+                  </div>
+                  {q.hint && <p className="text-[10px]" style={{ color: clr.faint }}>{q.hint}</p>}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       );
     }
@@ -852,17 +872,25 @@ export default function RsvpDesignV3Page() {
 
   const addRsvpFormPreset = () => {
     pushSnapshot();
-    const g: RsvpBlock = { id: uid(), type: "guestDetails", title: "Guest Information", subtitle: "", showFields: { name: true, phone: true, pax: true, remarks: true }, background: { images: [], overlay: 0.4 } };
-    const r: RsvpBlock = { id: uid(), type: "formField", label: "Remarks", placeholder: "Any notes or special requests...", required: false, width: "full", background: { images: [], overlay: 0.4 } };
-    const questionBlocks: RsvpBlock[] = availableQuestions.map((field) => ({
-      id: uid(), type: "formField" as const, label: field.label || (field as any).text || "Custom field",
-      placeholder: Array.isArray(field.options) ? String(field.options[0] ?? "") : "",
-      required: field.isRequired ?? false, width: "full" as const, hint: undefined,
+    const customQuestions = availableQuestions.map((field) => ({
+      id: uid(),
       questionId: String(field.id ?? (field as any).questionId ?? ""),
-      background: { images: [], overlay: 0.4 },
+      label: field.label || (field as any).text || "Custom field",
+      placeholder: Array.isArray(field.options) ? String(field.options[0] ?? "") : "",
+      required: field.isRequired ?? false,
+      hint: undefined as string | undefined,
     }));
+    const g: RsvpBlock = {
+      id: uid(),
+      type: "guestDetails",
+      title: "Guest Information",
+      subtitle: "",
+      showFields: { name: true, phone: true, pax: true, remarks: true },
+      customQuestions,
+      background: { images: [], overlay: 0.4 },
+    };
     const c: RsvpBlock = { id: uid(), type: "cta", label: "Submit RSVP", href: "#", align: "center", background: { images: [], overlay: 0.4 } };
-    dispatch({ type: "ADD_BLOCKS", payload: [g, r, ...questionBlocks, c] });
+    dispatch({ type: "ADD_BLOCKS", payload: [g, c] });
     setLeftTab("layers");
     setRightTab("block");
   };

@@ -5,9 +5,9 @@ import { Footer } from "../organisms/Footer";
 
 export default function PublicTemplate({ children }: { children?: ReactNode }) {
   return (
-    <div className="min-h-screen bg-background text-text flex flex-col">
+    <div className="min-h-screen bg-background text-text flex flex-col overflow-x-hidden">
       <PublicNavbar />
-      <main className="flex-1 container mx-auto px-4 pt-3">
+      <main className="flex-1 w-full">
         {children ?? <Outlet />}
       </main>
       <Footer />

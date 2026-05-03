@@ -666,6 +666,13 @@ export function BlockEditor({
                 </label>
               ))}
             </div>
+
+            {/* Custom questions — embedded inside this block */}
+            <GuestDetailsCustomQuestions
+              block={block}
+              formFields={formFields}
+              onUpdate={onUpdate}
+            />
           </div>
         )}
 
@@ -888,6 +895,161 @@ export function BlockEditor({
         </div>
 
       </div>
+    </div>
+  );
+}
+
+// ─── Custom-questions editor (embedded in guestDetails) ────────────────────
+
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+function GuestDetailsCustomQuestions({
+  block,
+  formFields,
+  onUpdate,
+}: {
+  block: Extract<RsvpBlock, { type: "guestDetails" }>;
+  formFields: FormFieldConfig[];
+  onUpdate: (id: string, patch: Partial<RsvpBlock>) => void;
+}) {
+  const questions = block.customQuestions ?? [];
+
+  const updateQuestions = (next: NonNullable<typeof block.customQuestions>) => {
+    onUpdate(block.id, { customQuestions: next } as Partial<RsvpBlock>);
+  };
+
+  const addBlank = () => {
+    updateQuestions([
+      ...questions,
+      { id: uid(), label: "Custom question", placeholder: "Guest response...", required: false },
+    ]);
+  };
+
+  const addFromBank = (formFieldId: string) => {
+    if (!formFieldId) return;
+    const field = formFields.find((f) => String(f.id ?? f.questionId) === formFieldId);
+    if (!field) return;
+    updateQuestions([
+      ...questions,
+      {
+        id: uid(),
+        questionId: formFieldId,
+        label: field.label || field.text || "Custom field",
+        placeholder: Array.isArray(field.options) ? String(field.options[0] ?? "") : "",
+        required: field.isRequired ?? false,
+        hint: field.typeKey ? `${field.typeKey}${field.isRequired ? " · required" : ""}` : undefined,
+      },
+    ]);
+  };
+
+  const patchQuestion = (qid: string, patch: Partial<NonNullable<typeof block.customQuestions>[number]>) => {
+    updateQuestions(questions.map((q) => (q.id === qid ? { ...q, ...patch } : q)));
+  };
+
+  const removeQuestion = (qid: string) => {
+    updateQuestions(questions.filter((q) => q.id !== qid));
+  };
+
+  const moveQuestion = (qid: string, dir: "up" | "down") => {
+    const i = questions.findIndex((q) => q.id === qid);
+    if (i === -1) return;
+    const j = dir === "up" ? i - 1 : i + 1;
+    if (j < 0 || j >= questions.length) return;
+    const next = [...questions];
+    [next[i], next[j]] = [next[j], next[i]];
+    updateQuestions(next);
+  };
+
+  // formFields not yet linked to any question on this block
+  const linkedIds = new Set(questions.map((q) => q.questionId).filter(Boolean));
+  const remainingFields = formFields.filter((f) => !linkedIds.has(String(f.id ?? f.questionId)));
+
+  return (
+    <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          Custom questions
+          {questions.length > 0 && <span className="ml-1.5 text-gray-400">({questions.length})</span>}
+        </p>
+        <button
+          type="button"
+          onClick={addBlank}
+          className="text-[11px] font-semibold text-primary hover:underline"
+        >
+          + Add blank
+        </button>
+      </div>
+
+      {remainingFields.length > 0 && (
+        <div className="rounded-lg bg-white border border-gray-200 px-2.5 py-2 flex items-center gap-2">
+          <span className="text-[10px] uppercase tracking-wider text-gray-400 shrink-0">From RSVP form</span>
+          <select
+            value=""
+            onChange={(e) => { addFromBank(e.target.value); e.target.value = ""; }}
+            className="flex-1 text-xs bg-transparent outline-none text-gray-700"
+          >
+            <option value="">— pick a question —</option>
+            {remainingFields.map((q) => (
+              <option key={q.id ?? q.questionId} value={String(q.id ?? q.questionId)}>
+                {q.label || q.text || q.name}{q.isRequired ? " *" : ""}
+                {q.typeKey ? ` (${q.typeKey})` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {questions.length === 0 ? (
+        <p className="text-[11px] text-gray-400 leading-relaxed">
+          No custom questions yet. Add a blank one or pull from your RSVP form bank.
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {questions.map((q, i) => (
+            <li key={q.id} className="rounded-lg border border-gray-200 bg-white p-2.5 space-y-2">
+              <div className="flex items-start gap-2">
+                <span className="mt-1.5 text-[10px] font-mono text-gray-400 w-5">#{i + 1}</span>
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <input
+                    value={q.label ?? ""}
+                    onChange={(e) => patchQuestion(q.id, { label: e.target.value })}
+                    placeholder="Question label"
+                    className="w-full text-sm font-medium bg-transparent outline-none border-b border-transparent focus:border-primary/40 transition pb-0.5"
+                  />
+                  <input
+                    value={q.placeholder ?? ""}
+                    onChange={(e) => patchQuestion(q.id, { placeholder: e.target.value })}
+                    placeholder="Placeholder text"
+                    className="w-full text-xs text-gray-600 bg-transparent outline-none border-b border-transparent focus:border-primary/40 transition pb-0.5"
+                  />
+                </div>
+                <div className="flex flex-col gap-0.5 shrink-0">
+                  <button type="button" onClick={() => moveQuestion(q.id, "up")} disabled={i === 0}
+                    className="w-5 h-5 grid place-items-center text-[10px] text-gray-400 hover:bg-gray-100 rounded disabled:opacity-30">↑</button>
+                  <button type="button" onClick={() => moveQuestion(q.id, "down")} disabled={i === questions.length - 1}
+                    className="w-5 h-5 grid place-items-center text-[10px] text-gray-400 hover:bg-gray-100 rounded disabled:opacity-30">↓</button>
+                </div>
+                <button type="button" onClick={() => removeQuestion(q.id)} title="Remove"
+                  className="w-5 h-5 grid place-items-center text-[11px] text-gray-400 hover:bg-rose-50 hover:text-rose-500 rounded shrink-0">✕</button>
+              </div>
+              <div className="flex items-center justify-between gap-3 pl-7">
+                <label className="flex items-center gap-1.5 text-[11px] text-gray-500 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!q.required}
+                    onChange={(e) => patchQuestion(q.id, { required: e.target.checked })}
+                    className="h-3.5 w-3.5 rounded border-gray-300 text-primary"
+                  />
+                  Required
+                </label>
+                {q.questionId && (
+                  <span className="text-[10px] text-emerald-600">✓ linked</span>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

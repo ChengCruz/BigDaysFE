@@ -95,6 +95,16 @@ export type RsvpBlock =
       };
       cardColor?: string;      // background color of the input card (default #ffffff)
       cardTextColor?: string;  // text color inside the input card (default #111827)
+      /** Custom questions rendered INSIDE the guest details card, after the built-in fields.
+       *  Each entry mirrors a `formField` block but is owned by this block. */
+      customQuestions?: Array<{
+        id: string;            // local UID (used as React key)
+        questionId?: string;   // linked RSVP form-field GUID
+        label?: string;
+        placeholder?: string;
+        required?: boolean;
+        hint?: string;
+      }>;
     })
   // ── V2 event-linked block types ──────────────────────────────────────────
   | (RsvpBlockBase & {
@@ -230,6 +240,16 @@ export interface ApiBlock {
   
   // Guest details field toggles
   showFields?: Record<string, boolean>;
+
+  // Guest details — custom questions embedded inside the block
+  customQuestions?: Array<{
+    id: string;
+    questionId?: string;
+    label?: string;
+    placeholder?: string;
+    required?: boolean;
+    hint?: string;
+  }>;
 
   // Card / field appearance colors (guestDetails + formField)
   cardColor?: string;
