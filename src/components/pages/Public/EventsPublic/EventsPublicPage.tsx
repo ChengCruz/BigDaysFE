@@ -227,7 +227,7 @@ export default function EventsPublicPage() {
 }
 
 function EventRow({ ev, index }: { ev: EventItem; index: number }) {
-  const r = useReveal<HTMLDivElement>();
+  const r = useReveal<HTMLLIElement>();
   const isLeft = index % 2 === 0;
 
   return (

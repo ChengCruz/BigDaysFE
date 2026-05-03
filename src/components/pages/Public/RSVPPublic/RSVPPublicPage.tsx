@@ -71,7 +71,7 @@ export default function RSVPPublicPage() {
 
   // ── Success ──────────────────────────────────────────────────────────
   if (submitted) {
-    return <RsvpSuccessScreen guestName={submittedName} design={design} />;
+    return <RsvpSuccessScreen guestName={submittedName} design={design} slug={token ?? ""} />;
   }
 
   // ── RSVP form ────────────────────────────────────────────────────────
