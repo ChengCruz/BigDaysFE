@@ -28,3 +28,14 @@ dist-ssr
 backend-context
 PRODUCT_ROADMAP.md
 .env.*
+.vs
+
+# Playwright
+playwright-report/
+playwright-reports/
+test-results/
+tests/**/*.png
+tests/**/*.jpg
+tests/**/*.jpeg
+tests/**/*.webp
+tests/**-snapshots/

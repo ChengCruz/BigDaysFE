@@ -48,7 +48,24 @@
       "Bash(git stash *)",
       "Bash(git rebase *)",
       "Bash(git merge *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(grep -r \"QueryClient\\\\|retry\" /c/Users/User/source/repos/BigDaysFE/src --include=*.ts --include=*.tsx)",
+      "Bash(mysql -h localhost -u mybigday -pasdf1234 mybigdaydb -e \"SELECT Id, Email, IsActive, Role, CreatedDate FROM User WHERE Email = ''a@b.c'' LIMIT 5;\")",
+      "Bash(ls \"C:\\\\Users\\\\User\\\\source\\\\repos\\\\MyBigDays_Mono\\\\API\\\\logs\"\" 2>/dev/null || echo \"No logs directory \")",
+      "Bash(find c:/Users/User/source/repos/BigDaysFE/src -iname *profile* -o -iname *account* -o -iname *user*)",
+      "Bash(gh api:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(git commit -m ' *)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\User\\source\\repos\\MyBigDays_Mono\\Application\\Interface",
+      "c:\\Users\\User\\source\\repos\\MyBigDays_Mono\\DataAccess\\Repository",
+      "c:\\Users\\User\\source\\repos\\MyBigDays_Mono\\Application\\Services",
+      "c:\\Users\\User\\source\\repos\\MyBigDays_Mono\\API\\Controllers",
+      "c:\\Users\\User\\source\\repos\\MyBigDays_Mono\\DataAccess\\Context",
+      "c:\\Users\\User\\source\\repos\\MyBigDays_Mono\\API"
+
     ]
   }
 }

@@ -29,6 +29,29 @@ const marqueeItems = [
   "Timeline Builder",
 ];
 
+const howItWorksSteps = [
+  {
+    num: "01",
+    title: "Create Your Event",
+    desc: "Set your wedding date, add event details, and get your personalised planning dashboard ready in minutes.",
+  },
+  {
+    num: "02",
+    title: "Share Your RSVP Link",
+    desc: "Guests receive a beautiful, branded RSVP page. No logins needed — just one tap to respond.",
+  },
+  {
+    num: "03",
+    title: "Manage Guests & Seating",
+    desc: "Track every response, dietary need, and table assignment — all in one real-time view.",
+  },
+  {
+    num: "04",
+    title: "Check In on the Day",
+    desc: "Scan QR codes at the entrance for instant check-in. No clipboards, no confusion.",
+  },
+];
+
 const services = [
   {
     num: "01",
@@ -433,6 +456,94 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════
+          HOW IT WORKS
+      ══════════════════════════════ */}
+      <section style={{ background: '#2A221E', padding: '8rem 2.5rem' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
+            <div
+              className="eyebrow"
+              style={{ color: '#A9895A', justifyContent: 'center', display: 'inline-flex', marginBottom: '1.5rem' }}
+            >
+              How It Works
+            </div>
+            <h2
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 300,
+                fontSize: 'clamp(2.25rem, 5vw, 4rem)',
+                lineHeight: 1.05,
+                letterSpacing: '-0.02em',
+                color: '#FAF6EF',
+              }}
+            >
+              From first visit to{' '}
+              <em style={{ fontStyle: 'italic', color: '#B4543A' }}>perfect day.</em>
+            </h2>
+          </div>
+
+          {/* Steps */}
+          <div
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}
+            className="grid-cols-1 md:grid-cols-4"
+          >
+            {howItWorksSteps.map((s, i) => (
+              <div
+                key={i}
+                style={{
+                  padding: '2.5rem 2rem',
+                  borderTop: '2px solid #B4543A',
+                  borderRight: i < howItWorksSteps.length - 1
+                    ? '1px solid rgba(250, 246, 239, 0.08)'
+                    : 'none',
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontStyle: 'italic',
+                    fontWeight: 300,
+                    fontSize: '3.5rem',
+                    color: '#B4543A',
+                    lineHeight: 1,
+                    marginBottom: '1.75rem',
+                  }}
+                >
+                  {s.num}
+                </div>
+                <h3
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 300,
+                    fontSize: '1.35rem',
+                    color: '#FAF6EF',
+                    marginBottom: '1rem',
+                    letterSpacing: '-0.01em',
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {s.title}
+                </h3>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-serif)',
+                    fontSize: '1rem',
+                    lineHeight: 1.65,
+                    color: 'rgba(250, 246, 239, 0.6)',
+                  }}
+                >
+                  {s.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+
         </div>
       </section>
 

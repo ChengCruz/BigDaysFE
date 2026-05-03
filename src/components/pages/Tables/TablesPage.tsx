@@ -346,11 +346,9 @@ export default function TablesPage() {
               </div>
 
               {/* Full-screen mode CTA */}
-              <a
-                href="/app/tables/fullscreen"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-accent hover:border-primary/40 dark:hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group no-underline"
+              <button
+                onClick={() => window.open("/app/tables/fullscreen", "_blank")}
+                className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-accent hover:border-primary/40 dark:hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group text-left"
               >
                 <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center group-hover:bg-primary/10 dark:group-hover:bg-primary/20 transition-colors">
                   <ArrowsExpandIcon className="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-primary transition-colors" />
@@ -364,7 +362,7 @@ export default function TablesPage() {
                   </p>
                 </div>
                 <ArrowsExpandIcon className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-primary flex-shrink-0 transition-colors" />
-              </a>
+              </button>
             </div>
           </>
         )}
