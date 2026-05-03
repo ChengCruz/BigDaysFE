@@ -72,6 +72,8 @@ import MemberDashboardPage from "../components/pages/Dashboard/MemberDashboardPa
 import RSVPPublicPage from "../components/pages/Public/RSVPPublic/RSVPPublicPage";
 import RsvpBySlugPage from "../components/pages/Public/RSVPPublic/RsvpBySlugPage";
 import EventPublicPage from "../components/pages/Public/EventsPublic/EventsPublicPage";
+import StoryPage from "../components/pages/Public/Story/StoryPage";
+import ContactPage from "../components/pages/Public/Contact/ContactPage";
 import { EventFormModal } from "../components/molecules/EventFormModal";
 import { NewRsvpModal } from "../components/pages/RSVPs/NewRsvpModal";
 import { EditRsvpModal } from "../components/pages/RSVPs/EditRsvpModal";
@@ -114,6 +116,8 @@ export default function AppRoutes() {
         {/* public landing pages */}
         <Route path="/events" element={<EventPublicPage />} />
         <Route path="/rsvp" element={<RSVPPublicPage />} />
+        <Route path="/story" element={<StoryPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         {/* Guest self-service QR lookup */}
         <Route path="/qr/lookup/:eventId" element={<QrLookupPage />} />
         {/* … other public pages … */}

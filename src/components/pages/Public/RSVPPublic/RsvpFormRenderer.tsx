@@ -152,11 +152,19 @@ export default function RsvpFormRenderer({
     return result;
   }, [rawBlocks]);
 
-  // ── Required formFieldConfigs not covered by a formField block ──────────
+  // ── Required formFieldConfigs not covered by a formField block OR by a
+  //    customQuestion embedded inside a guestDetails block ─────────────────
   const missingRequiredFields = useMemo(() => {
-    const coveredIds = new Set(
-      blocks.filter((b) => b.type === "formField" && b.questionId).map((b) => (b as any).questionId as string)
-    );
+    const coveredIds = new Set<string>();
+    for (const b of blocks) {
+      if (b.type === "formField" && b.questionId) {
+        coveredIds.add(b.questionId);
+      } else if (b.type === "guestDetails" && b.customQuestions) {
+        for (const q of b.customQuestions) {
+          if (q.questionId) coveredIds.add(q.questionId);
+        }
+      }
+    }
     return formFields.filter(
       (fc) => fc.isRequired && !coveredIds.has(fc.questionId ?? fc.id ?? "")
     );
@@ -237,6 +245,22 @@ export default function RsvpFormRenderer({
       if (isEmpty) {
         errs[block.questionId] = `${block.label || cfg?.label || "This field"} is required`;
       }
+    });
+
+    // Validate required customQuestions embedded inside guestDetails
+    blocks.forEach((block) => {
+      if (block.type !== "guestDetails" || !block.customQuestions) return;
+      block.customQuestions.forEach((q) => {
+        if (!q.questionId) return;
+        const cfg = formFields.find((f) => (f.questionId ?? f.id) === q.questionId);
+        const required = q.required ?? cfg?.isRequired ?? false;
+        if (!required) return;
+        const val = answers[q.questionId];
+        const isEmpty = Array.isArray(val) ? val.length === 0 : !(val ?? "").trim();
+        if (isEmpty) {
+          errs[q.questionId] = `${q.label || cfg?.label || "This field"} is required`;
+        }
+      });
     });
 
     // Validate required fields not in design blocks
@@ -393,6 +417,100 @@ export default function RsvpFormRenderer({
               </div>
             )}
           </div>
+
+          {block.customQuestions && block.customQuestions.length > 0 && (
+            <div className="mt-5 pt-5 border-t space-y-3" style={{ borderColor: clr.inputBdr }}>
+              <p className="text-[10px] uppercase tracking-[0.28em] font-semibold" style={{ color: accentColor }}>
+                Additional questions
+              </p>
+              {block.customQuestions.map((q) => {
+                if (!q.questionId) {
+                  // Free-form question with no linked config — render as plain text input
+                  // (won't be submitted because there's no questionId to key against)
+                  return (
+                    <div key={q.id} className="space-y-1.5">
+                      <label className="block text-[11px] font-semibold" style={{ color: clr.body }}>
+                        {q.label || "Question"}{q.required && <span className="ml-1" style={{ color: accentColor }}>*</span>}
+                      </label>
+                      <input
+                        type="text"
+                        placeholder={q.placeholder || "Your answer..."}
+                        className={inputCls}
+                        style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.heading }}
+                      />
+                      {q.hint && <p className="text-[10px]" style={{ color: clr.faint }}>{q.hint}</p>}
+                    </div>
+                  );
+                }
+
+                const qid = q.questionId;
+                const cfg = formFields.find((f) => (f.questionId ?? f.id) === qid);
+                const rawOpts = cfg?.options ?? undefined;
+                const opts = Array.isArray(rawOpts)
+                  ? rawOpts
+                  : typeof rawOpts === "string"
+                  ? rawOpts.split(",").map((s) => s.trim())
+                  : undefined;
+                const fieldType = cfg?.typeKey ?? "text";
+                const fieldLabel = q.label || cfg?.label || cfg?.text || "Custom field";
+                const fieldRequired = q.required ?? cfg?.isRequired ?? false;
+                const isCheckboxGroup = fieldType === "checkbox" && opts && opts.length > 1;
+                const currentAnswer = answers[qid];
+                const checkedValues: string[] = Array.isArray(currentAnswer)
+                  ? currentAnswer
+                  : currentAnswer
+                  ? [currentAnswer as string]
+                  : [];
+
+                return (
+                  <div key={q.id} className="space-y-1.5">
+                    <label className="block text-[11px] font-semibold" style={{ color: clr.body }}>
+                      {fieldLabel}{fieldRequired && <span className="ml-1" style={{ color: accentColor }}>*</span>}
+                    </label>
+                    {isCheckboxGroup ? (
+                      <div className="space-y-1.5">
+                        {opts!.map((opt) => (
+                          <label key={opt} className="flex cursor-pointer items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={checkedValues.includes(opt)}
+                              onChange={() => toggleCheckboxAnswer(qid, opt)}
+                              className="h-4 w-4 rounded"
+                              style={{ accentColor }}
+                            />
+                            <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
+                          </label>
+                        ))}
+                      </div>
+                    ) : fieldType === "select" ? (
+                      <select
+                        value={(currentAnswer as string) ?? ""}
+                        onChange={(e) => setAnswer(qid, e.target.value)}
+                        className={inputCls}
+                        style={{ background: clr.inputBg, border: `1px solid ${errors[qid] ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
+                      >
+                        <option value="">{q.placeholder || "Select..."}</option>
+                        {opts?.map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type={fieldType === "number" ? "number" : "text"}
+                        value={(currentAnswer as string) ?? ""}
+                        onChange={(e) => setAnswer(qid, e.target.value)}
+                        placeholder={q.placeholder || "Your answer..."}
+                        className={inputCls}
+                        style={{ background: clr.inputBg, border: `1px solid ${errors[qid] ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
+                      />
+                    )}
+                    {q.hint && <p className="text-[10px]" style={{ color: clr.faint }}>{q.hint}</p>}
+                    {errors[qid] && <p className="text-[11px] text-rose-400">{errors[qid]}</p>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       );
     } else if (block.type === "formField") {

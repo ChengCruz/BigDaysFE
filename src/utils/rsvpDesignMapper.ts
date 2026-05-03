@@ -126,6 +126,9 @@ function transformBlockToBackend(
       if (block.showFields) {
         base.showFields = { ...block.showFields };
       }
+      if (block.customQuestions?.length) {
+        base.customQuestions = block.customQuestions.map((q) => ({ ...q }));
+      }
       break;
 
     // ── V2 event-linked block types ─────────────────────────────────────
@@ -279,6 +282,7 @@ function transformBlockToFrontend(block: ApiBlock): RsvpBlock {
         },
         cardColor: block.cardColor,
         cardTextColor: block.cardTextColor,
+        customQuestions: block.customQuestions?.map((q) => ({ ...q })),
       };
 
     // ── V2 event-linked block types ─────────────────────────────────────
