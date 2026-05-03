@@ -13,7 +13,6 @@
 
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { Link } from "react-router-dom";
 import { useEventContext } from "../../../context/EventContext";
 import type { Event } from "../../../api/hooks/useEventsApi";
 import { useFormFields, type FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
@@ -660,7 +659,7 @@ export default function RsvpDesignV3Page() {
 
   const { data: serverFormFields = [] } = useFormFields(eventId, { enabled: !!eventId });
   const { data: savedDesign, isLoading: isLoadingDesign } = useRsvpDesign(eventId ?? "");
-  const { mutateAsync: saveDesignAsync, isPending: isSaving, isSuccess: isSaveSuccess, data: saveResponse } = useSaveRsvpDesign(eventId ?? "");
+  const { mutateAsync: saveDesignAsync, isPending: isSaving, isSuccess: isSaveSuccess, isError: isSaveError, data: saveResponse } = useSaveRsvpDesign(eventId ?? "");
   const { mutateAsync: publishDesignAsync, isPending: isPublishing } = usePublishRsvpDesign(eventId ?? "");
   const { mutateAsync: generateShareTokenAsync, isPending: isGeneratingLink } = useGenerateShareToken(eventId ?? "");
   const { mutateAsync: uploadMedia } = useUploadMedia();
@@ -1000,8 +999,8 @@ export default function RsvpDesignV3Page() {
   };
 
   // ── Save ──────────────────────────────────────────────────────────────────
-  const handleSave = async () => {
-    if (!eventId) return;
+  const handleSave = async (): Promise<boolean> => {
+    if (!eventId) return false;
     setIsUploadingForSave(true);
     try {
       const allBlobAssets: { id: string }[] = [];
@@ -1067,8 +1066,10 @@ export default function RsvpDesignV3Page() {
 
       await Promise.all(uploadedCacheIds.map((id) => removeCachedImage(id).catch(() => {})));
       if (uploadedBgCacheId) { await removeCachedImage(uploadedBgCacheId).catch(() => {}); globalBgCacheIdRef.current = null; }
+      return true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save design. Please try again.");
+      return false;
     } finally {
       setIsUploadingForSave(false);
     }
@@ -1113,7 +1114,8 @@ export default function RsvpDesignV3Page() {
 
   // ── Save & Publish (save first, then publish) ──────────────────────────────
   const handleSaveAndPublish = async () => {
-    await handleSave();
+    const saved = await handleSave();
+    if (!saved) return;
     // After save, version is updated via the useEffect. Use the version from the save response.
     const ver = saveResponse?.data?.version ?? version;
     if (!ver && ver !== 0) {
@@ -1166,10 +1168,15 @@ export default function RsvpDesignV3Page() {
 
       {/* ═══ TOP TOOLBAR ═══ */}
       <header className="flex items-center gap-2 px-4 shrink-0 bg-white border-b border-gray-200" style={{ height: 52, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", zIndex: 10 }}>
-        <Link to="/app/events" className="flex items-center gap-1.5 text-sm font-bold text-primary hover:opacity-80 transition shrink-0 mr-1">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="10 12 6 8 10 4" /></svg>
-          Back
-        </Link>
+        <button
+          onClick={() => window.close()}
+          className="flex items-center justify-center w-7 h-7 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition shrink-0 mr-1"
+          title="Close"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="1" y1="1" x2="13" y2="13" /><line x1="13" y1="1" x2="1" y2="13" />
+          </svg>
+        </button>
         <div className="w-px h-6 bg-gray-200 shrink-0" />
 
         <div className="min-w-0 flex-1">
@@ -1223,14 +1230,14 @@ export default function RsvpDesignV3Page() {
             Published{version !== undefined ? ` v${version}` : ""}
           </span>
         )}
-        {!isLoadingDesign && !isPublished && (isSaveSuccess || version !== undefined) && !isSaving && !isUploadingForSave && (
+        {!isLoadingDesign && !isPublished && (isSaveSuccess || version !== undefined) && !isSaveError && !isSaving && !isUploadingForSave && (
           <span
             title="Draft saved. Only the slug link (/rsvp/:slug) shows these edits — click Save & Publish to make the share-token preview live."
             className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
             Draft{version !== undefined ? ` v${version}` : ""} · slug-only
           </span>
         )}
-        {!isLoadingDesign && !isSaveSuccess && version === undefined && !isSaving && !isUploadingForSave && (
+        {!isLoadingDesign && ((!isSaveSuccess && version === undefined) || isSaveError) && !isSaving && !isUploadingForSave && (
           <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200 font-semibold">Unsaved</span>
         )}
 
