@@ -1,6 +1,6 @@
 // src/components/pages/Auth/LoginPage.tsx
 import React, { useState } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useLocation, useNavigate, Link, Navigate } from "react-router-dom";
 import { useAuth } from "../../../api/hooks/useAuth";
 import { useAuthApi } from "../../../api/hooks/useAuthApi";
 import { FormField } from "../../molecules/FormField";
@@ -17,7 +17,7 @@ type LoginMode = "admin" | "staff";
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '1rem 0',
+  padding: '0.75rem 0',
   border: 'none',
   borderBottom: '1px solid #EDE4D3',
   background: 'transparent',
@@ -39,11 +39,16 @@ const labelStyle: React.CSSProperties = {
 };
 
 export default function LoginPage() {
-  const { login, crewLogin, loading } = useAuth();
+  const { login, crewLogin, loading, user } = useAuth();
   const { forgotPassword, resetPassword } = useAuthApi();
   const nav = useNavigate();
   const location = useLocation();
-  const from = (location.state as any)?.from?.pathname || "/app";
+  const rawFrom = (location.state as any)?.from?.pathname || "/app";
+  const FULLSCREEN_FALLBACKS: Record<string, string> = {
+    "/app/tables/fullscreen": "/app/tables",
+    "/app/rsvps/designer-v3": "/app/events",
+  };
+  const from = FULLSCREEN_FALLBACKS[rawFrom] ?? rawFrom;
 
   const [loginMode, setLoginMode] = useState<LoginMode>("admin");
   const [email, setEmail] = useState("");
@@ -64,6 +69,9 @@ export default function LoginPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [forgotError, setForgotError] = useState<string | null>(null);
+
+  if (loading) return null;
+  if (user) return <Navigate to={from} replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,7 +148,8 @@ export default function LoginPage() {
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          height: 'calc(100vh - 77px)',
+          height: '100vh',
+          overflow: 'hidden',
         }}
         className="grid-cols-1 md:grid-cols-2"
       >
@@ -255,24 +264,21 @@ export default function LoginPage() {
             background: '#FAF6EF',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'center',
-            padding: '3rem 5rem',
-            position: 'relative',
             overflowY: 'auto',
           }}
           className="px-6 md:px-20"
         >
-          <div style={{ maxWidth: '26rem', width: '100%', margin: '0 auto' }}>
+          <div style={{ maxWidth: '26rem', width: '100%', margin: 'auto', padding: '2rem 0' }}>
 
             {/* Eyebrow */}
-            <div className="eyebrow" style={{ marginBottom: '2rem' }}>Welcome Back</div>
+            <div className="eyebrow" style={{ marginBottom: '1.25rem' }}>Welcome Back</div>
 
             <h1
               style={{
                 fontFamily: 'var(--font-display)',
                 fontWeight: 300,
                 fontSize: 'clamp(2.5rem, 5vw, 3.5rem)',
-                marginBottom: '1rem',
+                marginBottom: '0.75rem',
                 letterSpacing: '-0.02em',
                 lineHeight: 1.05,
               }}
@@ -280,7 +286,7 @@ export default function LoginPage() {
               Sign <em style={{ fontStyle: 'italic', color: '#B4543A' }}>in.</em>
             </h1>
 
-            <p style={{ color: '#7A6B5D', marginBottom: '2rem', fontSize: '1.1rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
+            <p style={{ color: '#7A6B5D', marginBottom: '1.25rem', fontSize: '1.1rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
               Enter your credentials to access your planning dashboard.
             </p>
 
@@ -292,7 +298,7 @@ export default function LoginPage() {
                 borderRadius: '2px',
                 padding: '3px',
                 gap: '3px',
-                marginBottom: '2rem',
+                marginBottom: '1.5rem',
               }}
             >
               {(['admin', 'staff'] as LoginMode[]).map(mode => (
@@ -322,7 +328,7 @@ export default function LoginPage() {
 
             {/* Admin form */}
             {loginMode === "admin" ? (
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>
                 <div>
                   <label style={labelStyle}>Email Address</label>
                   <input
@@ -403,10 +409,7 @@ export default function LoginPage() {
               </form>
             ) : (
               /* Staff form */
-              <form onSubmit={handleStaffSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-                <p style={{ color: '#7A6B5D', fontSize: '1rem', fontFamily: 'var(--font-serif)', lineHeight: 1.6 }}>
-                  Enter the Crew ID and PIN provided by your event admin.
-                </p>
+              <form onSubmit={handleStaffSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>
                 <div>
                   <label style={labelStyle}>Event Code</label>
                   <input

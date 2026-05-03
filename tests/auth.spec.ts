@@ -2,7 +2,7 @@
  * Auth tests — Login & Register (CRUD-equivalent: Create session, validate inputs).
  */
 import { test, expect } from '@playwright/test';
-import { mockApi, mockApiLoginFail } from './helpers';
+import { mockApi, mockApiLoginFail, MOCK_EVENT_GUID } from './helpers';
 
 // ── Login ─────────────────────────────────────────────────────────────────────
 
@@ -13,40 +13,54 @@ test.describe('Login', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('renders email, password fields and Sign In button', async ({ page }) => {
+  test('renders email, password fields and submit button', async ({ page }) => {
     await expect(page.locator('input[type="email"]')).toBeVisible();
     await expect(page.locator('input[type="password"]')).toBeVisible();
-    await expect(page.locator('button:has-text("Sign In")')).toBeVisible();
+    await expect(page.locator('button[type="submit"]')).toBeVisible();
   });
 
   test('stays on /login when submitted empty', async ({ page }) => {
-    await page.click('button:has-text("Sign In")');
+    await page.click('button[type="submit"]');
     await expect(page).toHaveURL(/\/login/);
   });
 
   test('shows error on invalid credentials', async ({ page }) => {
-    // Override mock to return 401
     await mockApiLoginFail(page);
     await page.fill('input[type="email"]', 'wrong@test.com');
     await page.fill('input[type="password"]', 'wrongpass');
-    await page.click('button:has-text("Sign In")');
-    // Should stay on login and show error message
+    await page.click('button[type="submit"]');
     await expect(page).toHaveURL(/\/login/);
-    await expect(page.locator('text=Invalid email or password').first()).toBeVisible({ timeout: 3000 }).catch(() => {
-      // error shown in some form — at minimum stays on /login which is already asserted
-    });
+    await expect(page.locator('text=Invalid email or password').first()).toBeVisible({ timeout: 3000 }).catch(() => {});
   });
 
   test('redirects to /app on valid credentials', async ({ page }) => {
     await page.fill('input[type="email"]', 'admin@test.com');
     await page.fill('input[type="password"]', 'password123');
-    await page.click('button:has-text("Sign In")');
+    await page.click('button[type="submit"]');
     await expect(page).toHaveURL(/\/app/, { timeout: 5000 });
   });
 
   test('"Create Account" link goes to /register', async ({ page }) => {
     await page.click('a:has-text("Create Account")');
     await expect(page).toHaveURL(/\/register/);
+  });
+
+  test('redirects to /app when already logged in and /login is typed in URL', async ({ page }) => {
+    // Step 1: login normally
+    await page.fill('input[type="email"]', 'admin@test.com');
+    await page.fill('input[type="password"]', 'password123');
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/\/app/, { timeout: 5000 });
+
+    // Step 2: set event context so dashboard doesn't bounce
+    await page.evaluate((guid) => localStorage.setItem('eventId', guid), MOCK_EVENT_GUID);
+
+    // Step 3: navigate to /login as if the user typed it in the address bar
+    await page.goto('/login');
+
+    // Should redirect away — never show the login form
+    await expect(page).not.toHaveURL(/\/login/, { timeout: 5000 });
+    await expect(page.locator('input[type="email"]')).not.toBeVisible();
   });
 });
 
