@@ -1,6 +1,6 @@
 // src/components/molecules/GuestCard.tsx
 import React, { useState } from "react";
-import { MenuIcon } from "@heroicons/react/outline";
+import { MenuIcon } from "@heroicons/react/solid";
 
 export interface GuestCardProps {
   guest: {

@@ -25,7 +25,7 @@ import { useEventContext } from "../../../context/EventContext";
 import { useAuth } from "../../../api/hooks/useAuth";
 import toast from "react-hot-toast";
 import { NoEventsState } from "../../molecules/NoEventsState";
-import { ChevronDownIcon, CollectionIcon, UserGroupIcon, UserIcon, ChartBarIcon } from "@heroicons/react/outline";
+import { ChevronDownIcon, CollectionIcon, UserGroupIcon, UserIcon, ChartBarIcon, ArrowsExpandIcon } from "@heroicons/react/solid";
 
 export default function TablesPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
@@ -333,10 +333,34 @@ export default function TablesPage() {
               <StatsCard label="Unassigned" value={stats.unassigned} variant="warning" size="sm" icon={<UserIcon className="w-4 h-4" />} />
               <StatsCard label="Total Capacity" value={stats.totalCapacity} variant="secondary" size="sm" icon={<ChartBarIcon className="w-4 h-4" />} />
             </div>
-            <div className="p-3 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-100 dark:border-indigo-800">
-              <p className="text-sm text-indigo-700 dark:text-indigo-300">
-                <strong>Tip:</strong> Drag guests from the unassigned panel and drop them onto tables
-              </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Drag-and-drop tip */}
+              <div className="flex-1 p-3 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-100 dark:border-indigo-800">
+                <p className="text-sm text-indigo-700 dark:text-indigo-300">
+                  <strong>Tip:</strong> Drag guests from the unassigned panel and drop them onto tables
+                </p>
+              </div>
+
+              {/* Full-screen mode CTA */}
+              <a
+                href="/app/tables/fullscreen"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-accent hover:border-primary/40 dark:hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group no-underline"
+              >
+                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center group-hover:bg-primary/10 dark:group-hover:bg-primary/20 transition-colors">
+                  <ArrowsExpandIcon className="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-primary transition-colors" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-200 leading-tight">
+                    Need a bigger screen?
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 leading-snug mt-0.5">
+                    Full-screen mode — guest list, table grid &amp; detail panel. Perfect for 100+ guests.
+                  </p>
+                </div>
+                <ArrowsExpandIcon className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-primary flex-shrink-0 transition-colors" />
+              </a>
             </div>
           </>
         )}

@@ -3,7 +3,7 @@ import { PageLoader } from "../../atoms/PageLoader";
 import { ErrorState } from "../../atoms/ErrorState";
 import React, { useState } from "react";
 import { saveAs } from "file-saver";
-import { ViewGridIcon, /* ViewListIcon, */ ClipboardListIcon, UserGroupIcon } from "@heroicons/react/outline";
+import { ViewGridIcon, /* ViewListIcon, */ ClipboardListIcon, UserGroupIcon } from "@heroicons/react/solid";
 import {
   useRsvpsApi,
   useCreateRsvp,

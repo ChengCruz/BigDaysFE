@@ -64,7 +64,7 @@ function CountdownDisplay({
   return (
     <div className="px-4 py-10 text-center">
       <p className="text-[10px] uppercase tracking-[0.28em] mb-6 font-semibold" style={{ color: accentColor }}>
-        {label || "Counting down to your big day"}
+        {label || "Counting down to our big day"}
       </p>
       {units ? (
         <div className="flex items-end justify-center gap-1.5 w-full">

@@ -83,8 +83,12 @@ export default function CrewPage() {
                 () => toast.error("Could not copy")
               );
             }}
-            className="text-xs text-primary hover:underline"
+            className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md border border-blue-300 dark:border-blue-700 bg-blue-100/60 dark:bg-blue-800/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200/70 dark:hover:bg-blue-700/40 transition-colors"
           >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+              <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+              <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+            </svg>
             Copy
           </button>
         </p>

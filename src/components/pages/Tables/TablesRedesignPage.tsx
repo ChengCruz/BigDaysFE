@@ -25,7 +25,7 @@ import {
 import { useEventContext } from "../../../context/EventContext";
 import { useAuth } from "../../../api/hooks/useAuth";
 import toast from "react-hot-toast";
-import { ChevronDownIcon, XIcon, MenuIcon } from "@heroicons/react/outline";
+import { ChevronDownIcon, XIcon, MenuIcon } from "@heroicons/react/solid";
 
 // ── Colour helpers ────────────────────────────────────────────────────────────
 function barFill(a: number, c: number) {
@@ -457,7 +457,7 @@ export default function TablesRedesignPage() {
                   const dropBad = isOver && draggedGuest!.paxCount >  (table.capacity - table.assignedCount);
 
                   const base = [
-                    "relative rounded-xl bg-white cursor-pointer transition-all select-none",
+                    "relative rounded-xl bg-white cursor-pointer transition-all select-none group",
                     isOpen    ? "ring-2 ring-primary shadow-md"
                     : dropOk  ? "ring-2 ring-primary ring-offset-1 bg-primary/5"
                     : dropBad ? "ring-2 ring-red-400 bg-red-50"
@@ -508,6 +508,25 @@ export default function TablesRedesignPage() {
                           )}
                         </div>
                       </div>
+                      {!isReadOnly && !selectMode && (
+                        <div
+                          className="flex gap-1.5 px-3 pb-2.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={() => handleEditTable(table.id)}
+                            className="flex-1 text-[10px] py-1 rounded-md border border-primary/20 text-gray-500 hover:bg-primary/5 hover:text-primary font-semibold transition"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTable(table.id)}
+                            className="flex-1 text-[10px] py-1 rounded-md border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 font-semibold transition"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     /* ── Detailed tile ────────────────────────── */
@@ -557,6 +576,25 @@ export default function TablesRedesignPage() {
                           </div>
                         )}
                       </div>
+                      {!isReadOnly && !selectMode && (
+                        <div
+                          className="flex gap-1.5 px-3 pb-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={() => handleEditTable(table.id)}
+                            className="flex-1 text-[10px] py-1 rounded-md border border-primary/20 text-gray-500 hover:bg-primary/5 hover:text-primary font-semibold transition"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTable(table.id)}
+                            className="flex-1 text-[10px] py-1 rounded-md border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 font-semibold transition"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
