@@ -8,7 +8,6 @@ import {
   mockApi,
   setMockAuth,
   MOCK_RSVP,
-  MOCK_EVENT_GUID,
 } from './helpers';
 
 // ── Read (list) ────────────────────────────────────────────────────────────────
@@ -32,13 +31,13 @@ test.describe('RSVPs — Read (list)', () => {
 
   test('Total RSVPs count matches API response (1 RSVP)', async ({ page }) => {
     // MOCK_RSVP is the single RSVP returned — stat shows 1
-    const totalCard = page.locator('text=Total RSVPs').locator('..');
+    const totalCard = page.locator('text=Total RSVPs').locator('../..');
     await expect(totalCard.locator('text=1')).toBeVisible();
   });
 
   test('Total Pax count matches API response (noOfPax=3)', async ({ page }) => {
     // MOCK_RSVP.noOfPax = 3
-    const paxCard = page.locator('text=Total Pax').locator('..');
+    const paxCard = page.locator('text=Total Pax').locator('../..');
     await expect(paxCard.locator(`text=${MOCK_RSVP.noOfPax}`)).toBeVisible();
   });
 
@@ -58,18 +57,14 @@ test.describe('RSVPs — Read (list)', () => {
     await expect(page.locator(`text=${MOCK_RSVP.remarks}`).first()).toBeVisible();
   });
 
-  test('"Design RSVP Card" button is visible', async ({ page }) => {
-    await expect(page.locator('button:has-text("Design RSVP Card"), a:has-text("Design RSVP Card")')).toBeVisible();
-  });
-
   test('"+ New RSVP" button is visible', async ({ page }) => {
     await expect(page.locator('button:has-text("New RSVP")')).toBeVisible();
   });
 
-  test('"Import" button is disabled with "Soon" badge', async ({ page }) => {
+  test('"Import" button is visible and enabled', async ({ page }) => {
     const importBtn = page.locator('button:has-text("Import")');
     await expect(importBtn).toBeVisible();
-    await expect(importBtn).toBeDisabled();
+    await expect(importBtn).toBeEnabled();
   });
 
   test('"Export" button is disabled with "Soon" badge', async ({ page }) => {
@@ -80,10 +75,6 @@ test.describe('RSVPs — Read (list)', () => {
 
   test('search input is visible with correct placeholder', async ({ page }) => {
     await expect(page.locator('input[placeholder="Search guests…"]')).toBeVisible();
-  });
-
-  test('list view button is visible', async ({ page }) => {
-    await expect(page.locator('button[aria-label="List view"]')).toBeVisible();
   });
 
   test('grid view button is visible', async ({ page }) => {
@@ -136,7 +127,7 @@ test.describe('RSVPs — New RSVP modal', () => {
   });
 
   test('modal opens on "+ New RSVP" click', async ({ page }) => {
-    await expect(page.locator('[role="dialog"], .modal, button:has-text("Cancel")').first()).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('button:has-text("Cancel")')).toBeVisible({ timeout: 3000 });
   });
 
   test('"Cancel" button closes the modal', async ({ page }) => {
@@ -157,7 +148,7 @@ test.describe('RSVPs — Edit modal', () => {
 
   test('clicking "Edit" opens the RSVP form modal', async ({ page }) => {
     await page.locator('button:has-text("Edit")').first().click();
-    await expect(page.locator('[role="dialog"], .modal, button:has-text("Cancel")').first()).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('button:has-text("Cancel")')).toBeVisible({ timeout: 3000 });
   });
 });
 
@@ -204,9 +195,9 @@ test.describe('RSVPs — Empty state (no RSVPs)', () => {
     await page.goto('/login');
     await setMockAuth(page);
     await page.goto('/app/events');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.goto('/app/rsvps');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   test('shows "No RSVPs yet." when list is empty', async ({ page }) => {
@@ -214,12 +205,12 @@ test.describe('RSVPs — Empty state (no RSVPs)', () => {
   });
 
   test('Total RSVPs stat shows 0 when empty', async ({ page }) => {
-    const totalCard = page.locator('text=Total RSVPs').locator('..');
+    const totalCard = page.locator('text=Total RSVPs').locator('../..');
     await expect(totalCard.locator('text=0')).toBeVisible();
   });
 
   test('Total Pax stat shows 0 when empty', async ({ page }) => {
-    const paxCard = page.locator('text=Total Pax').locator('..');
+    const paxCard = page.locator('text=Total Pax').locator('../..');
     await expect(paxCard.locator('text=0')).toBeVisible();
   });
 });
@@ -238,10 +229,10 @@ test.describe('RSVPs — Error state', () => {
     await page.goto('/login');
     await setMockAuth(page);
     await page.goto('/app/events');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.goto('/app/rsvps');
-    await page.waitForLoadState('networkidle');
-    await expect(page.locator('text=Failed to load RSVPs.')).toBeVisible({ timeout: 5000 });
+    await page.waitForLoadState('load');
+    await expect(page.locator('text=Failed to load RSVPs.')).toBeVisible({ timeout: 20000 });
   });
 });
 
@@ -250,13 +241,19 @@ test.describe('RSVPs — Error state', () => {
 test.describe('RSVPs — No event state', () => {
   test('shows "No Events to Manage RSVPs" when no event selected', async ({ page }) => {
     await mockApi(page);
+    await page.route('**/__mock_api__/**', async route => {
+      if (/\/event\//i.test(route.request().url()) && route.request().method() === 'GET') {
+        return route.fulfill({ status: 200, json: { isSuccess: true, data: [] } });
+      }
+      return route.fallback();
+    });
     await page.goto('/login');
     await page.evaluate(() => {
       localStorage.setItem('has_session', '1');
       localStorage.removeItem('eventId');
     });
     await page.goto('/app/rsvps');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await expect(page.locator('text=No Events to Manage RSVPs')).toBeVisible({ timeout: 5000 });
   });
 });

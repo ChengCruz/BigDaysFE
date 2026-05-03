@@ -231,23 +231,29 @@ export const TableCard: React.FC<TableCardProps> = ({
           )}
         </div>
 
-        {/* Action buttons */}
-        <div className="flex gap-2 pt-3 border-t dark:border-gray-700">
-          <Button
-            variant="secondary"
-            onClick={() => onEdit?.(table.id)}
-            className="flex-1 text-sm py-2"
-          >
-            Edit
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => onDelete?.(table.id)}
-            className="!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-900/20 text-sm py-2"
-          >
-            Delete
-          </Button>
-        </div>
+        {/* Action buttons — hidden entirely for read-only (crew) users */}
+        {(onEdit || onDelete) && (
+          <div className="flex gap-2 pt-3 border-t dark:border-gray-700">
+            {onEdit && (
+              <Button
+                variant="secondary"
+                onClick={() => onEdit(table.id)}
+                className="flex-1 text-sm py-2"
+              >
+                Edit
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                variant="ghost"
+                onClick={() => onDelete(table.id)}
+                className="!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-900/20 text-sm py-2"
+              >
+                Delete
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Drop indicator overlay */}

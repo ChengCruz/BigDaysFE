@@ -2,7 +2,7 @@
  * Dashboard page tests — quick actions navigation and page rendering.
  */
 import { test, expect } from '@playwright/test';
-import { gotoAuthenticated, mockApi, setMockAuth, MOCK_DASHBOARD } from './helpers';
+import { gotoAuthenticated, mockApi, mockApiEmptyEvents, setMockAuth, MOCK_DASHBOARD } from './helpers';
 
 test.describe('Dashboard — rendering', () => {
   test.beforeEach(async ({ page }) => {
@@ -10,7 +10,7 @@ test.describe('Dashboard — rendering', () => {
   });
 
   test('shows event name in spotlight', async ({ page }) => {
-    await expect(page.locator('text=Test Wedding')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Test Wedding' })).toBeVisible();
   });
 
   test('shows Quick Actions section', async ({ page }) => {
@@ -26,7 +26,7 @@ test.describe('Dashboard — rendering', () => {
   });
 
   test('shows Budget stats card', async ({ page }) => {
-    await expect(page.locator('text=Budget')).toBeVisible();
+    await expect(page.getByText('Budget', { exact: true }).first()).toBeVisible();
   });
 
   test('shows Seating Progress card', async ({ page }) => {
@@ -122,9 +122,9 @@ test.describe('Dashboard — rendering', () => {
 
   test('countdown shows "Days", "Hours", "Minutes" labels', async ({ page }) => {
     // MOCK_DASHBOARD.eventStats.eventDate = '2027-12-01' (future) → countdown visible
-    await expect(page.locator('text=Days')).toBeVisible();
-    await expect(page.locator('text=Hours')).toBeVisible();
-    await expect(page.locator('text=Minutes')).toBeVisible();
+    await expect(page.getByText('Days', { exact: true })).toBeVisible();
+    await expect(page.getByText('Hours', { exact: true })).toBeVisible();
+    await expect(page.getByText('Minutes', { exact: true })).toBeVisible();
   });
 
   test('"Send Invites" quick action is disabled', async ({ page }) => {
@@ -209,25 +209,32 @@ test.describe('Dashboard — no activity state', () => {
     await page.waitForLoadState('networkidle');
     await page.goto('/app/dashboard');
     await page.waitForLoadState('networkidle');
-    await expect(page.locator('text=No activity yet')).toBeVisible({ timeout: 5000 });
+    const emptyState = page.locator('text=No activity yet');
+    await emptyState.scrollIntoViewIfNeeded();
+    await expect(emptyState).toBeVisible({ timeout: 5000 });
   });
 });
 
-test.describe('Dashboard — no event selected', () => {
-  test('shows welcome prompt when no event is set', async ({ page }) => {
-    await gotoAuthenticated(page, '/app/dashboard');
-    await page.evaluate(() => localStorage.removeItem('eventId'));
-    await page.reload();
+test.describe('Dashboard — no events exist', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockApiEmptyEvents(page);
+    await page.goto('/login');
+    await setMockAuth(page);
+    await page.goto('/app/dashboard');
     await page.waitForLoadState('networkidle');
-    await expect(page.locator('text=Welcome to MyBigDays!')).toBeVisible();
   });
 
-  test('"Create Your First Event" navigates to /app/events?new=1', async ({ page }) => {
-    await gotoAuthenticated(page, '/app/dashboard');
-    await page.evaluate(() => localStorage.removeItem('eventId'));
-    await page.reload();
-    await page.waitForLoadState('networkidle');
-    await page.locator('button:has-text("Create Your First Event")').click();
-    await expect(page).toHaveURL(/\/app\/events\?new=1/);
+  test('shows "No Events Yet" when account has no events', async ({ page }) => {
+    const emptyState = page.locator('text=No Events Yet');
+    await emptyState.scrollIntoViewIfNeeded();
+    await expect(emptyState).toBeVisible();
+  });
+
+  test('"Create Your First Event" navigates to /app/events and opens new-event modal', async ({ page }) => {
+    const btn = page.locator('button:has-text("Create Your First Event")');
+    await btn.scrollIntoViewIfNeeded();
+    await btn.click();
+    await expect(page).toHaveURL(/\/app\/events/);
+    await expect(page.getByText('New Event', { exact: true })).toBeVisible();
   });
 });

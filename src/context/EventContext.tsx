@@ -1,7 +1,8 @@
 // src/context/EventContext.tsx
 import { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from "react";
-import { useEventsApi, type Event } from "../api/hooks/useEventsApi";
+import { useEventsApi, useEventApi, type Event } from "../api/hooks/useEventsApi";
 import { AuthContext } from "./AuthProvider";
+import { crewEventGuidStore } from "../utils/tokenStore";
 
 interface EventContextValue {
   eventId?: string;
@@ -24,15 +25,25 @@ const EventContext = createContext<EventContextValue>({
 export function EventProvider({ children }: { children: ReactNode }) {
   // Consume AuthContext so this provider re-renders whenever the auth state
   // changes (e.g. after login/token-refresh), which re-enables the events query.
-  const { userGuid, loading: authLoading } = useContext(AuthContext);
+  const { userGuid, userRole, loading: authLoading } = useContext(AuthContext);
   const isAuthenticated = !!userGuid;
-  const { data: events, isLoading: eventsLoading } = useEventsApi(false, { enabled: isAuthenticated });
+  const isCrew = userRole === 6;
+
+  // Crew users are scoped to a single event set at login — skip the admin
+  // events-list endpoint entirely and use the guid stored in sessionStorage.
+  const crewEventGuid = isCrew ? (crewEventGuidStore.get() ?? undefined) : undefined;
+
+  const { data: events, isLoading: eventsLoading } = useEventsApi(false, {
+    enabled: isAuthenticated && !isCrew,
+  });
+
   const [eventId, _setEventId] = useState<string | undefined>(
-    () => localStorage.getItem("eventId") || undefined
+    () => isCrew ? crewEventGuid : (localStorage.getItem("eventId") || undefined)
   );
 
   // Clear stale eventId if events loaded and it doesn't match any known event
   useEffect(() => {
+    if (isCrew) return;
     if (!eventsLoading && events && eventId) {
       const stillExists = events.some((e: Event) => e.id === eventId);
       if (!stillExists) {
@@ -40,19 +51,20 @@ export function EventProvider({ children }: { children: ReactNode }) {
         _setEventId(undefined);
       }
     }
-  }, [eventsLoading, events, eventId]);
+  }, [isCrew, eventsLoading, events, eventId]);
 
   // Synchronously resolve the best event when none is stored (e.g. after login).
   // Using useMemo means effectiveEventId is available on the same render that
   // events finish loading — no flash of "no event" or selector modal.
   const autoSelectedId = useMemo((): string | undefined => {
+    if (isCrew) return undefined;
     if (eventId || eventsLoading || !events || events.length === 0) return undefined;
     const now = Date.now();
     const upcoming = events
       .filter(ev => new Date(ev.date).getTime() >= now)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     return (upcoming[0] ?? events[0])?.id;
-  }, [eventId, eventsLoading, events]);
+  }, [isCrew, eventId, eventsLoading, events]);
 
   // Persist the auto-selected event to localStorage + state
   useEffect(() => {
@@ -62,18 +74,20 @@ export function EventProvider({ children }: { children: ReactNode }) {
   }, [autoSelectedId]);
 
   // Use the auto-selected id immediately (before the effect persists it)
-  const effectiveEventId = eventId ?? autoSelectedId;
+  const effectiveEventId = isCrew ? crewEventGuid : (eventId ?? autoSelectedId);
 
-  // True only when the user is fully loaded but still has no selectable event
-  // (i.e. they have zero events and need to create one).
-  const mustChooseEvent = !authLoading && isAuthenticated && !eventsLoading && !effectiveEventId;
+  // True only when a non-crew user is fully loaded but has no selectable event.
+  const mustChooseEvent = !isCrew && !authLoading && isAuthenticated && !eventsLoading && !effectiveEventId;
 
   const setEventId = (id: string) => {
+    if (isCrew) return;
     localStorage.setItem("eventId", id);
     _setEventId(id);
   };
 
-  const event = events?.find((e: Event) => e.id === effectiveEventId);
+  // For crew, fetch the single event directly instead of searching the list.
+  const { data: crewEvent } = useEventApi(crewEventGuid ?? "", { enabled: isCrew && !!crewEventGuid });
+  const event = isCrew ? crewEvent : events?.find((e: Event) => e.id === effectiveEventId);
 
   return (
     <EventContext.Provider

@@ -89,19 +89,17 @@ export default function TablesPageV2() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-3">
-          <a
-            href="/app/tables/fullscreen"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={() => window.open("/app/tables/fullscreen", "_blank")}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-semibold text-sm shadow hover:bg-primary/90 transition-colors"
           >
             Full Screen Mode
             <CollectionIcon className="w-4 h-4" />
-          </a>
+          </button>
         </div>
 
         <p className="text-xs text-gray-400 dark:text-gray-600">
-          Opens in a new tab · Live data · All changes sync instantly
+          Live data · All changes sync instantly
         </p>
       </div>
     </div>

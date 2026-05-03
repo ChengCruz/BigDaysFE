@@ -231,7 +231,7 @@ export default function RsvpFormRenderer({
 
     if (showFields.name !== false && !guestName.trim()) errs.guestName = "Name is required";
     if (showFields.phone !== false && !phoneNo.trim()) errs.phoneNo = "Phone number is required";
-    if (showFields.pax !== false && (!noOfPax || noOfPax < 1)) errs.noOfPax = "Please enter the number of guests";
+    if (showFields.pax !== false && (noOfPax == null || noOfPax < 0)) errs.noOfPax = "Please enter the number of guests";
 
     // Validate required formField blocks
     blocks.forEach((block) => {
@@ -390,11 +390,11 @@ export default function RsvpFormRenderer({
               <div>
                 <input
                   type="number"
-                  min={1}
+                  min={0}
                   value={noOfPax}
                   onChange={(e) => {
                     const val = parseInt(e.target.value, 10);
-                    setNoOfPax(isNaN(val) ? 1 : Math.max(1, val));
+                    setNoOfPax(isNaN(val) ? 0 : Math.max(0, val));
                     clearError("noOfPax");
                   }}
                   placeholder="Number of guests"

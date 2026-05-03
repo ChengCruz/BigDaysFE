@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import { useEventContext } from "../../../context/EventContext";
+import { useAuth } from "../../../api/hooks/useAuth";
 import { useTablesApi, useDeleteTable } from "../../../api/hooks/useTablesApi";
 import {
   useGuestsApi,
@@ -31,6 +32,8 @@ function uid() {
 type ToolMode = "select" | "round" | "rect" | "square";
 
 export default function FloorPlanPage() {
+  const { userRole } = useAuth();
+  const isReadOnly = userRole === 6;
   const { eventId, eventsLoading } = useEventContext();
   const { data: tables = [], isLoading: tablesLoading } = useTablesApi(eventId ?? "");
   const { data: guests = [], isLoading: guestsLoading } = useGuestsApi(eventId ?? "");
@@ -521,34 +524,36 @@ export default function FloorPlanPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex items-center justify-between gap-3 px-5 pt-4 pb-2 flex-wrap">
         <h2 className="text-2xl font-semibold text-primary">Floor Plan</h2>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="secondary"
-            onClick={handleAutoAssign}
-            disabled={autoAssign.isPending}
-          >
-            {autoAssign.isPending ? "Assigning..." : "Auto-Assign Guests"}
-          </Button>
-          <Button
-            variant="primary"
-            className="![background-image:none] !bg-indigo-500 !shadow-indigo-500/25 hover:!bg-indigo-600"
-            onClick={handleSaveLayout}
-            loading={saveFloorPlan.isPending}
-          >
-            {!saveFloorPlan.isPending && (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4 mr-1.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+        {!isReadOnly && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="secondary"
+              onClick={handleAutoAssign}
+              disabled={autoAssign.isPending}
+            >
+              {autoAssign.isPending ? "Assigning..." : "Auto-Assign Guests"}
+            </Button>
+            <Button
+              variant="primary"
+              className="![background-image:none] !bg-indigo-500 !shadow-indigo-500/25 hover:!bg-indigo-600"
+              onClick={handleSaveLayout}
+              loading={saveFloorPlan.isPending}
+            >
+              {!saveFloorPlan.isPending && (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4 mr-1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+                </svg>
+              )}
+              {saveFloorPlan.isPending ? "Saving..." : "Save Layout"}
+            </Button>
+            <Button onClick={() => { setEditTableId(null); setShowTableModal(true); }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-4 w-4 mr-1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
               </svg>
-            )}
-            {saveFloorPlan.isPending ? "Saving..." : "Save Layout"}
-          </Button>
-          <Button onClick={() => { setEditTableId(null); setShowTableModal(true); }}>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-4 w-4 mr-1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            New Table
-          </Button>
-        </div>
+              New Table
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="px-5 pb-2">
@@ -560,51 +565,55 @@ export default function FloorPlanPage() {
       </div>
 
       <div className="flex items-center gap-2 px-5 py-1.5 overflow-x-auto overflow-y-visible">
-        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-gray-100/80 dark:bg-slate-800/80 border border-gray-200/60 dark:border-gray-700/60 flex-shrink-0">
-          <button onClick={() => handleShapeTool("round")} className={toolBtn(toolMode === "round")} title="Round table">
-            <div className={`w-4 h-4 rounded-full border-2 ${toolMode === "round" ? "border-white/60" : "border-primary/60"}`} />
-          </button>
-          <button onClick={() => handleShapeTool("rect")} className={toolBtn(toolMode === "rect")} title="Long table">
-            <div className={`w-6 h-3.5 rounded-sm border-2 ${toolMode === "rect" ? "border-white/60" : "border-secondary/60"}`} />
-          </button>
-          <button onClick={() => handleShapeTool("square")} className={toolBtn(toolMode === "square")} title="Square table">
-            <div className={`w-4 h-4 rounded-sm border-2 ${toolMode === "square" ? "border-white/60" : "border-emerald-500/60"}`} />
-          </button>
-          <div className="w-px h-5 bg-gray-300/50 dark:bg-gray-600/50 mx-0.5" />
-          <button onClick={() => handleAddDecoration("stage")} className={toolBtn(false)} title="Add stage">
-            <span className="text-sm leading-none">🎭</span>
-          </button>
-          <button onClick={() => handleAddDecoration("danceFloor")} className={toolBtn(false)} title="Add dance floor">
-            <span className="text-sm leading-none">💃</span>
-          </button>
-          <div className="w-px h-5 bg-gray-300/50 dark:bg-gray-600/50 mx-0.5" />
-          <button onClick={() => handleAddDecoration("wall")} className={toolBtn(false)} title="Add wall">
-            <div className="w-5 h-3.5 rounded-sm bg-gradient-to-br from-slate-400 to-slate-600" />
-          </button>
-          <button onClick={() => handleAddDecoration("pillar")} className={toolBtn(false)} title="Add pillar">
-            <div className="w-4 h-4 rounded-full bg-gradient-to-br from-stone-400 to-stone-600" />
-          </button>
-          <div className="w-px h-5 bg-gray-300/50 dark:bg-gray-600/50 mx-0.5" />
-          <button onClick={handleAutoArrangeLayout} className={toolBtn(false)} title="Auto-arrange tables on canvas">
-            <span className="text-sm leading-none">✨</span>
-          </button>
-        </div>
+        {!isReadOnly && (
+          <>
+            <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-gray-100/80 dark:bg-slate-800/80 border border-gray-200/60 dark:border-gray-700/60 flex-shrink-0">
+              <button onClick={() => handleShapeTool("round")} className={toolBtn(toolMode === "round")} title="Round table">
+                <div className={`w-4 h-4 rounded-full border-2 ${toolMode === "round" ? "border-white/60" : "border-primary/60"}`} />
+              </button>
+              <button onClick={() => handleShapeTool("rect")} className={toolBtn(toolMode === "rect")} title="Long table">
+                <div className={`w-6 h-3.5 rounded-sm border-2 ${toolMode === "rect" ? "border-white/60" : "border-secondary/60"}`} />
+              </button>
+              <button onClick={() => handleShapeTool("square")} className={toolBtn(toolMode === "square")} title="Square table">
+                <div className={`w-4 h-4 rounded-sm border-2 ${toolMode === "square" ? "border-white/60" : "border-emerald-500/60"}`} />
+              </button>
+              <div className="w-px h-5 bg-gray-300/50 dark:bg-gray-600/50 mx-0.5" />
+              <button onClick={() => handleAddDecoration("stage")} className={toolBtn(false)} title="Add stage">
+                <span className="text-sm leading-none">🎭</span>
+              </button>
+              <button onClick={() => handleAddDecoration("danceFloor")} className={toolBtn(false)} title="Add dance floor">
+                <span className="text-sm leading-none">💃</span>
+              </button>
+              <div className="w-px h-5 bg-gray-300/50 dark:bg-gray-600/50 mx-0.5" />
+              <button onClick={() => handleAddDecoration("wall")} className={toolBtn(false)} title="Add wall">
+                <div className="w-5 h-3.5 rounded-sm bg-gradient-to-br from-slate-400 to-slate-600" />
+              </button>
+              <button onClick={() => handleAddDecoration("pillar")} className={toolBtn(false)} title="Add pillar">
+                <div className="w-4 h-4 rounded-full bg-gradient-to-br from-stone-400 to-stone-600" />
+              </button>
+              <div className="w-px h-5 bg-gray-300/50 dark:bg-gray-600/50 mx-0.5" />
+              <button onClick={handleAutoArrangeLayout} className={toolBtn(false)} title="Auto-arrange tables on canvas">
+                <span className="text-sm leading-none">✨</span>
+              </button>
+            </div>
 
-        <button
-          ref={standardizeBtnRef}
-          onClick={openStandardize}
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition ${
-            standardizeOpen
-              ? "bg-indigo-500 text-white border-indigo-500 shadow-sm shadow-indigo-500/25"
-              : "bg-white dark:bg-slate-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-300"
-          }`}
-          title="Standardize all tables (shape + size) and re-arrange"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-3.5 w-3.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
-          </svg>
-          Standardize
-        </button>
+            <button
+              ref={standardizeBtnRef}
+              onClick={openStandardize}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition ${
+                standardizeOpen
+                  ? "bg-indigo-500 text-white border-indigo-500 shadow-sm shadow-indigo-500/25"
+                  : "bg-white dark:bg-slate-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-300"
+              }`}
+              title="Standardize all tables (shape + size) and re-arrange"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-3.5 w-3.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+              </svg>
+              Standardize
+            </button>
+          </>
+        )}
 
         {selectedItem && (
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 animate-fade-in">
@@ -617,7 +626,7 @@ export default function FloorPlanPage() {
                 : "Wall"}
             </span>
 
-            {selectedItem.type === "table" && (
+            {!isReadOnly && selectedItem.type === "table" && (
               <div className="flex items-center gap-0.5 ml-1 p-0.5 rounded bg-indigo-100/80 dark:bg-indigo-800/40">
                 {(["round", "rect", "square"] as const).map((s) => (
                   <button
@@ -634,7 +643,7 @@ export default function FloorPlanPage() {
               </div>
             )}
 
-            {selectedItem.type !== "table" && (
+            {!isReadOnly && selectedItem.type !== "table" && (
               <button
                 onClick={rotateSelected}
                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition"
@@ -647,16 +656,18 @@ export default function FloorPlanPage() {
               </button>
             )}
 
-            <button
-              onClick={handleDeleteSelected}
-              disabled={deleteTable.isPending}
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition disabled:opacity-50"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-3 w-3">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-              </svg>
-              {deleteTable.isPending ? "Deleting..." : "Delete"}
-            </button>
+            {!isReadOnly && (
+              <button
+                onClick={handleDeleteSelected}
+                disabled={deleteTable.isPending}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition disabled:opacity-50"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-3 w-3">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                </svg>
+                {deleteTable.isPending ? "Deleting..." : "Delete"}
+              </button>
+            )}
 
             <button
               onClick={() => setSelectedId(null)}
@@ -733,24 +744,24 @@ export default function FloorPlanPage() {
               snapEnabled={snapEnabled}
               snapSize={snapSize}
               toolMode={toolMode}
-              draggedGuest={draggedGuest}
+              draggedGuest={isReadOnly ? null : draggedGuest}
               onZoomChange={setZoom}
               onPanChange={handlePanChange}
               onSelect={handleSelect}
-              onMoveItem={handleMoveItem}
-              onDoubleClickTable={handleDoubleClickTable}
-              onDropGuest={handleDropGuest}
-              onDeleteSelected={handleDeleteSelected}
-              onCanvasClick={handleCanvasClick}
-              onSeatClick={handleSeatClick}
-              onResizeItem={handleResizeItem}
+              onMoveItem={isReadOnly ? () => {} : handleMoveItem}
+              onDoubleClickTable={isReadOnly ? () => {} : handleDoubleClickTable}
+              onDropGuest={isReadOnly ? () => {} : handleDropGuest}
+              onDeleteSelected={isReadOnly ? () => {} : handleDeleteSelected}
+              onCanvasClick={isReadOnly ? () => {} : handleCanvasClick}
+              onSeatClick={isReadOnly ? () => {} : handleSeatClick}
+              onResizeItem={isReadOnly ? () => {} : handleResizeItem}
             />
             <div className="hidden lg:flex h-full">
               <FloorGuestPanelV3
                 guests={guests}
                 tables={tables.map((t) => ({ id: t.id, name: t.name }))}
-                onGuestDragStart={(id, pax) => setDraggedGuest({ id, pax })}
-                onGuestDragEnd={() => setDraggedGuest(null)}
+                onGuestDragStart={isReadOnly ? undefined : (id, pax) => setDraggedGuest({ id, pax })}
+                onGuestDragEnd={isReadOnly ? undefined : () => setDraggedGuest(null)}
               />
             </div>
             <button
@@ -812,8 +823,8 @@ export default function FloorPlanPage() {
             <FloorGuestPanelV3
               guests={guests}
               tables={tables.map((t) => ({ id: t.id, name: t.name }))}
-              onGuestDragStart={(id, pax) => setDraggedGuest({ id, pax })}
-              onGuestDragEnd={() => setDraggedGuest(null)}
+              onGuestDragStart={isReadOnly ? undefined : (id, pax) => setDraggedGuest({ id, pax })}
+              onGuestDragEnd={isReadOnly ? undefined : () => setDraggedGuest(null)}
             />
           </div>
         </div>

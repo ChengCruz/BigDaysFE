@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { AuthEndpoints, CrewEndpoints } from "../endpoints";
-import { tokenStore, sessionHint } from "../../utils/tokenStore";
+import { tokenStore, sessionHint, crewTokenStore, crewEventGuidStore } from "../../utils/tokenStore";
 
 export interface LoginPayload {
   email: string;
@@ -30,6 +30,7 @@ export interface AuthResponse {
   expiresIn: number;
   userGuid: string;
   role: number;
+  eventGuid?: string;
 }
 
 export interface LogoutResponse {
@@ -39,7 +40,7 @@ export interface LogoutResponse {
 export interface CrewLoginPayload {
   crewCode: string;
   pin: string;
-  eventId: string;
+  eventCode: string;
 }
 
 export function useAuthApi() {
@@ -47,7 +48,7 @@ export function useAuthApi() {
 
   const login = useMutation<AuthResponse, Error, LoginPayload>({
     mutationFn: (data: LoginPayload) =>
-      client.post<AuthResponse>(AuthEndpoints.login, data).then(r => r.data),
+      client.post<{ data: AuthResponse }>(AuthEndpoints.login, data).then(r => r.data.data),
     onSuccess: (data) => {
       tokenStore.set(data.accessToken);
       sessionHint.set();
@@ -90,9 +91,11 @@ export function useCrewLogin() {
   const qc = useQueryClient();
   return useMutation<AuthResponse, Error, CrewLoginPayload>({
     mutationFn: (data: CrewLoginPayload) =>
-      client.post<AuthResponse>(CrewEndpoints.login, data).then(r => r.data),
+      client.post<{ data: AuthResponse }>(CrewEndpoints.login, data).then(r => r.data.data),
     onSuccess: (data) => {
       tokenStore.set(data.accessToken);
+      crewTokenStore.set(data.accessToken);
+      if (data.eventGuid) crewEventGuidStore.set(data.eventGuid);
       sessionHint.set();
       qc.invalidateQueries({ queryKey: ["me"] });
     },

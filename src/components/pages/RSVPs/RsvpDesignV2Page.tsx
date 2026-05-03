@@ -5,7 +5,6 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { Link } from "react-router-dom";
 import { useEventContext } from "../../../context/EventContext";
 import type { Event } from "../../../api/hooks/useEventsApi";
 import { useFormFields, type FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
@@ -1340,13 +1339,16 @@ export default function RsvpDesignV2Page() {
         className="flex items-center gap-2 px-4 shrink-0 bg-white border-b border-gray-200"
         style={{ height: 52, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", zIndex: 10 }}
       >
-        {/* Brand + back */}
-        <Link
-          to="/app/events"
-          className="flex items-center gap-1.5 text-sm font-bold text-primary hover:opacity-80 transition shrink-0 mr-1"
+        {/* Close tab */}
+        <button
+          onClick={() => window.close()}
+          className="flex items-center justify-center w-7 h-7 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition shrink-0 mr-1"
+          title="Close"
         >
-          ← Back
-        </Link>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="1" y1="1" x2="13" y2="13" /><line x1="13" y1="1" x2="1" y2="13" />
+          </svg>
+        </button>
 
         <div className="w-px h-6 bg-gray-200 shrink-0" />
 

@@ -7,6 +7,8 @@ import type { Page, Route } from '@playwright/test';
 export const MOCK_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLWd1aWQtMDAwMSIsImVtYWlsIjoiYWRtaW5AdGVzdC5jb20iLCJyb2xlIjoiQWRtaW4iLCJleHAiOjk5OTk5OTk5OTl9.fakesig';
 // User role (3) → isAdmin=false in UsersPage (non-admin profile + change password view)
 export const MOCK_JWT_MEMBER = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLWd1aWQtMDAwMiIsImVtYWlsIjoibWVtYmVyQHRlc3QuY29tIiwicm9sZSI6IlVzZXIiLCJleHAiOjk5OTk5OTk5OTl9.fakesig';
+// Staff role (6) → sidebar restricted to checkin/guests/tables only
+export const MOCK_JWT_STAFF = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLWd1aWQtMDAwMyIsImVtYWlsIjoic3RhZmZAdGVzdC5jb20iLCJyb2xlIjoiU3RhZmYiLCJleHAiOjk5OTk5OTk5OTl9.fakesig';
 
 export const MOCK_EVENT_GUID = '11111111-1111-1111-1111-111111111111';
 export const MOCK_WALLET_GUID = 'aaaa-bbbb-cccc-dddd';
@@ -33,6 +35,16 @@ export const MOCK_MEMBER_USER = {
   lastUpdated: '2026-01-02T00:00:00',
 };
 
+export const MOCK_STAFF_USER = {
+  userId: 'u3',
+  userGuid: 'user-guid-0003',
+  fullName: 'Staff User',
+  email: 'staff@test.com',
+  role: 6, // Staff
+  createdDate: '2026-01-03T00:00:00',
+  lastUpdated: '2026-01-03T00:00:00',
+};
+
 export const MOCK_USER_LIST = [
   MOCK_USER,
   MOCK_MEMBER_USER,
@@ -51,6 +63,20 @@ export const MOCK_EVENT = {
   isDeleted: false,
   // convenience alias so tests can still do MOCK_EVENT.title
   title: 'Test Wedding',
+};
+
+// Second event owned by a different member — used in admin multi-event tests
+export const MOCK_EVENT_2_GUID = '22222222-2222-2222-2222-222222222222';
+export const MOCK_EVENT_2 = {
+  eventGuid: MOCK_EVENT_2_GUID,
+  eventName: 'Second Member Birthday',
+  eventDate: '2026-08-15',
+  eventTime: '18:00:00',
+  eventLocation: 'City Hall',
+  eventDescription: 'Another member event',
+  noOfTable: 5,
+  isDeleted: false,
+  title: 'Second Member Birthday',
 };
 
 export const MOCK_WALLET = {
@@ -180,7 +206,7 @@ export async function mockApi(page: Page) {
     if (/\/User\/Login/i.test(url)) {
       return route.fulfill({
         status: 200,
-        json: { isSuccess: true, data: { accessToken: MOCK_JWT, user: MOCK_USER } },
+        json: { accessToken: MOCK_JWT },
       });
     }
     if (/\/User\/Register/i.test(url)) {
@@ -192,7 +218,7 @@ export async function mockApi(page: Page) {
     if (/\/User\/Refresh/i.test(url)) {
       return route.fulfill({
         status: 200,
-        json: { isSuccess: true, data: { accessToken: MOCK_JWT, user: MOCK_USER } },
+        json: { accessToken: MOCK_JWT },
       });
     }
     if (/\/User\/UpdatePassword/i.test(url)) {
@@ -470,6 +496,20 @@ export async function gotoAuthenticated(page: Page, path: string) {
   await page.waitForLoadState('networkidle');
 }
 
+/** Override events endpoint to return multiple events (simulates admin seeing all members' events). */
+export async function mockApiMultipleEvents(page: Page) {
+  await page.route('**/__mock_api__/**', async (route: Route) => {
+    const url = route.request().url();
+    if (/\/event\//i.test(url) && route.request().method() === 'GET') {
+      return route.fulfill({
+        status: 200,
+        json: { isSuccess: true, data: [MOCK_EVENT, MOCK_EVENT_2] },
+      });
+    }
+    return route.fallback();
+  });
+}
+
 /** Navigate to a page as Member (role 3 — sees non-admin profile + change password view). */
 export async function gotoAuthenticatedAsMember(page: Page, path: string) {
   await mockApi(page);
@@ -480,13 +520,13 @@ export async function gotoAuthenticatedAsMember(page: Page, path: string) {
     if (/\/User\/Login/i.test(url)) {
       return route.fulfill({
         status: 200,
-        json: { isSuccess: true, data: { accessToken: MOCK_JWT_MEMBER, user: MOCK_MEMBER_USER } },
+        json: { accessToken: MOCK_JWT_MEMBER },
       });
     }
     if (/\/User\/Refresh/i.test(url)) {
       return route.fulfill({
         status: 200,
-        json: { isSuccess: true, data: { accessToken: MOCK_JWT_MEMBER, user: MOCK_MEMBER_USER } },
+        json: { accessToken: MOCK_JWT_MEMBER },
       });
     }
     if (/\/User\//i.test(url) && method === 'GET') {
@@ -511,6 +551,49 @@ export async function gotoAuthenticatedAsMember(page: Page, path: string) {
     await page.goto('/app/events');
     await page.waitForLoadState('networkidle');
   }
+  if (!page.url().includes(path)) {
+    await page.goto(path);
+  }
+  await page.waitForLoadState('networkidle');
+}
+
+/** Navigate to a page as Staff (role 6 — sidebar restricted to checkin/guests/tables). */
+export async function gotoAuthenticatedAsStaff(page: Page, path: string) {
+  await mockApi(page);
+  // Override auth/user responses for staff role (LIFO — this handler runs first)
+  await page.route('**/__mock_api__/**', async (route: Route) => {
+    const url = route.request().url();
+    const method = route.request().method();
+    if (/\/User\/Login/i.test(url)) {
+      return route.fulfill({
+        status: 200,
+        json: { accessToken: MOCK_JWT_STAFF },
+      });
+    }
+    if (/\/User\/Refresh/i.test(url)) {
+      return route.fulfill({
+        status: 200,
+        json: { accessToken: MOCK_JWT_STAFF },
+      });
+    }
+    if (/\/User\//i.test(url) && method === 'GET') {
+      return route.fulfill({
+        status: 200,
+        json: { isSuccess: true, data: MOCK_STAFF_USER },
+      });
+    }
+    return route.fallback();
+  });
+  await page.goto('/login');
+  await page.waitForLoadState('domcontentloaded');
+  await page.fill('input[type="email"]', MOCK_STAFF_USER.email);
+  await page.fill('input[type="password"]', 'password');
+  await page.click('button[type="submit"]');
+  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 5000 });
+  await page.evaluate((eventGuid) => {
+    localStorage.setItem('eventId', eventGuid);
+  }, MOCK_EVENT_GUID);
+  // Staff skips events page navigation — they don't have sidebar access to it
   if (!page.url().includes(path)) {
     await page.goto(path);
   }

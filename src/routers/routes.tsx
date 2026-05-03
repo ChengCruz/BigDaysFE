@@ -6,16 +6,29 @@ import LandingPage from "../components/pages/Landing/LandingPage";
 import LoginPage from "../components/pages/Auth/LoginPage";
 import RegisterPage from "../components/pages/Auth/RegisterPage";
 import ResetPasswordPage from "../components/pages/Auth/ResetPasswordPage";
+import ContactPage from "../components/pages/Auth/ContactPage";
+import StoryPage from "../components/pages/Public/Story/StoryPage";
+import GalleryPage from "../components/pages/Public/Gallery/GalleryPage";
+import PeoplePage from "../components/pages/Public/People/PeoplePage";
+import BlogPage from "../components/pages/Public/Blog/BlogPage";
+
 import PublicTemplate from "../components/templates/PublicTemplate";
 import { Navbar } from "../components/organisms/Navbar";
 import { Sidebar } from "../components/organisms/Sidebar";
 import { NoEventsState } from "../components/molecules/NoEventsState";
 import { useEventContext } from "../context/EventContext";
 
+const CREW_ALLOWED_PATHS = ["/app/checkin", "/app/guests", "/app/tables"];
+
 function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const { mustChooseEvent } = useEventContext();
+  const { userRole } = useAuth();
   const location = useLocation();
+
+  if (userRole === 6 && !CREW_ALLOWED_PATHS.some(p => location.pathname.startsWith(p))) {
+    return <Navigate to="/app/checkin" replace />;
+  }
 
   // When the user has zero events, show an inline onboarding state on every
   // route except /app/events (where they can actually create one).
@@ -72,8 +85,6 @@ import MemberDashboardPage from "../components/pages/Dashboard/MemberDashboardPa
 import RSVPPublicPage from "../components/pages/Public/RSVPPublic/RSVPPublicPage";
 import RsvpBySlugPage from "../components/pages/Public/RSVPPublic/RsvpBySlugPage";
 import EventPublicPage from "../components/pages/Public/EventsPublic/EventsPublicPage";
-import StoryPage from "../components/pages/Public/Story/StoryPage";
-import ContactPage from "../components/pages/Public/Contact/ContactPage";
 import { EventFormModal } from "../components/molecules/EventFormModal";
 import { NewRsvpModal } from "../components/pages/RSVPs/NewRsvpModal";
 import { EditRsvpModal } from "../components/pages/RSVPs/EditRsvpModal";
@@ -90,8 +101,11 @@ import FloorPlanPage from "../components/pages/Tables/FloorPlanPage";
 import TablesPageV2 from "../components/pages/Tables/TablesPageV2";
 import TablesRedesignPage from "../components/pages/Tables/TablesRedesignPage";
 import CheckInPage from "../components/pages/CheckIn/CheckInPage";
+import CheckInPageV1 from "../components/pages/CheckIn/CheckInPageV1";
+import CheckInPageV2 from "../components/pages/CheckIn/CheckInPageV2";
 import QrLookupPage from "../components/pages/Public/QrLookup/QrLookupPage";
 import RequireAuth from "../components/RequireAuth";
+import { useAuth } from "../api/hooks/useAuth";
 import CrewPage from "../components/pages/Crew/CrewPage";
 // …and other Public pages…
 
@@ -114,13 +128,15 @@ export default function AppRoutes() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* public landing pages */}
-        <Route path="/events" element={<EventPublicPage />} />
-        <Route path="/rsvp" element={<RSVPPublicPage />} />
-        <Route path="/story" element={<StoryPage />} />
+        <Route path="/events"  element={<EventPublicPage />} />
+        <Route path="/rsvp"    element={<RSVPPublicPage />} />
+        <Route path="/story"   element={<StoryPage />} />
+        <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/people"  element={<PeoplePage />} />
+        <Route path="/blog"    element={<BlogPage />} />
         {/* Guest self-service QR lookup */}
         <Route path="/qr/lookup/:eventId" element={<QrLookupPage />} />
-        {/* … other public pages … */}
       </Route>
 
       {/* ─── PROTECTED / DASHBOARD ─────────────────────────── */}
@@ -162,7 +178,7 @@ export default function AppRoutes() {
   <Route index element={<TablesPage />} />
   <Route path="floorplan" element={<FloorPlanPage />} />
   <Route path="v2" element={<TablesPageV2 />} />
-  <Route path="redesign" element={<TablesRedesignPage />} />
+  <Route path="fullscreen" element={<TablesRedesignPage />} />
 
   <Route path="new" element={
     <TableFormModal isOpen onClose={() => navigate(-1)} />
@@ -201,7 +217,11 @@ export default function AppRoutes() {
         <Route path="crew" element={<CrewPage />} />
 
         {/* CHECK-IN */}
-        <Route path="checkin" element={<CheckInPage />} />
+        <Route path="checkin" element={<Outlet />}>
+          <Route index element={<CheckInPage />} />
+          <Route path="v1" element={<CheckInPageV1 />} />
+          <Route path="v2" element={<CheckInPageV2 />} />
+        </Route>
 
         {/* WALLET */}
         <Route path="wallet" element={<WalletPage />} />

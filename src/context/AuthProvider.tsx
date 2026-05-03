@@ -1,9 +1,9 @@
 import { createContext, useState, useEffect, type ReactNode } from "react";
 import client from "../api/client";
-import { useAuthApi, type LoginPayload, type AuthResponse } from "../api/hooks/useAuthApi";
+import { useAuthApi, useCrewLogin, type LoginPayload, type AuthResponse, type CrewLoginPayload } from "../api/hooks/useAuthApi";
 import { AuthEndpoints } from "../api/endpoints";
-import { tokenStore, sessionHint } from "../utils/tokenStore";
-import { decodeJwt, getUserGuidFromToken, getUserRoleFromToken } from "../utils/jwtUtils";
+import { tokenStore, sessionHint, crewTokenStore, crewEventGuidStore } from "../utils/tokenStore";
+import { decodeJwt, getUserGuidFromToken, getUserRoleFromToken, isTokenExpired } from "../utils/jwtUtils";
 
 interface AuthUser {
   id: string;
@@ -16,6 +16,7 @@ interface AuthCtx {
   userGuid: string | null;
   userRole: number | null;
   login: (data: LoginPayload) => Promise<void>;
+  crewLogin: (data: CrewLoginPayload) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -25,6 +26,7 @@ export const AuthContext = createContext<AuthCtx>({
   userGuid: null,
   userRole: null,
   login: async () => {},
+  crewLogin: async () => {},
   logout: () => {},
   loading: false,
 });
@@ -42,6 +44,7 @@ function userFromToken(token: string | null): AuthUser | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { login: loginMutation, logout: logoutMutation } = useAuthApi();
+  const crewLoginMutation = useCrewLogin();
   const [loading, setLoading] = useState(true);
   // Incrementing this forces a re-render when the in-memory token changes
   const [tokenVersion, setTokenVersion] = useState(0);
@@ -57,11 +60,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     client
       .post<AuthResponse>(AuthEndpoints.refreshToken)
       .then(({ data }) => {
-        tokenStore.set(data.accessToken);
+        tokenStore.set(data.data?.accessToken ?? data.accessToken);
         setTokenVersion(v => v + 1);
       })
       .catch(() => {
+        // Crew (Staff) tokens have no refresh cookie — fall back to the token
+        // stored in sessionStorage if it hasn't expired yet.
+        const crewToken = crewTokenStore.get();
+        if (crewToken && !isTokenExpired(crewToken)) {
+          tokenStore.set(crewToken);
+          setTokenVersion(v => v + 1);
+          return;
+        }
         tokenStore.clear();
+        crewTokenStore.clear();
         sessionHint.clear();
       })
       .finally(() => setLoading(false));
@@ -77,6 +89,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTokenVersion(v => v + 1);
   };
 
+  const crewLogin = async (creds: CrewLoginPayload): Promise<void> => {
+    await crewLoginMutation.mutateAsync(creds);
+    setTokenVersion(v => v + 1);
+  };
+
   const logout = async () => {
     try {
       await logoutMutation.mutateAsync();
@@ -84,6 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Logout API error:", error);
     } finally {
       tokenStore.clear();
+      crewTokenStore.clear();
+      crewEventGuidStore.clear();
       setTokenVersion(v => v + 1);
       window.location.replace("/login");
     }
@@ -99,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         userGuid,
         userRole,
         login,
+        crewLogin,
         logout,
         loading: loading || loginMutation.isPending,
       }}
