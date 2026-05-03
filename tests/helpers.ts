@@ -206,7 +206,7 @@ export async function mockApi(page: Page) {
     if (/\/User\/Login/i.test(url)) {
       return route.fulfill({
         status: 200,
-        json: { accessToken: MOCK_JWT },
+        json: { data: { accessToken: MOCK_JWT } },
       });
     }
     if (/\/User\/Register/i.test(url)) {
@@ -520,7 +520,7 @@ export async function gotoAuthenticatedAsMember(page: Page, path: string) {
     if (/\/User\/Login/i.test(url)) {
       return route.fulfill({
         status: 200,
-        json: { accessToken: MOCK_JWT_MEMBER },
+        json: { data: { accessToken: MOCK_JWT_MEMBER } },
       });
     }
     if (/\/User\/Refresh/i.test(url)) {
@@ -567,7 +567,7 @@ export async function gotoAuthenticatedAsStaff(page: Page, path: string) {
     if (/\/User\/Login/i.test(url)) {
       return route.fulfill({
         status: 200,
-        json: { accessToken: MOCK_JWT_STAFF },
+        json: { data: { accessToken: MOCK_JWT_STAFF } },
       });
     }
     if (/\/User\/Refresh/i.test(url)) {

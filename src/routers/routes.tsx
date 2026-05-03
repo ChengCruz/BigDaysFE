@@ -119,13 +119,15 @@ export default function AppRoutes() {
       <Route path="/rsvp/:slug" element={<RsvpBySlugPage />} />
       <Route path="/rsvp/share/:token" element={<RsvpSharePreviewPage />} />
 
+      {/* ─── AUTH (standalone, no navbar/footer) ─────────── */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      {/* Dev/Staging only — blocked in prod via ResetPasswordPage internal guard */}
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+
       {/* ─── PUBLIC ───────────────────────────────────────── */}
       <Route element={<PublicTemplate />}>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        {/* Dev/Staging only — blocked in prod via ResetPasswordPage internal guard */}
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* public landing pages */}
         <Route path="/events"  element={<EventPublicPage />} />
