@@ -16,6 +16,7 @@ export interface Event {
   description?: string;
   location?: string;
   slug?: string;
+  eventCode?: string;
   raw?: ApiEvent;
 }
 
@@ -29,6 +30,7 @@ function toEvent(e: ApiEvent): Event {
     description: e.eventDescription,
     location: e.eventLocation,
     slug: e.slug,
+    eventCode: e.eventCode,
     raw: e,
   };
 }

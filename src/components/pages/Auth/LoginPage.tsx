@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../../api/hooks/useAuth";
-import { useAuthApi, useCrewLogin } from "../../../api/hooks/useAuthApi";
+import { useAuthApi } from "../../../api/hooks/useAuthApi";
 import { FormField } from "../../molecules/FormField";
 import { PasswordInput } from "../../molecules/PasswordInput";
 import { Button } from "../../atoms/Button";
@@ -39,9 +39,8 @@ const labelStyle: React.CSSProperties = {
 };
 
 export default function LoginPage() {
-  const { login, loading } = useAuth();
+  const { login, crewLogin, loading } = useAuth();
   const { forgotPassword, resetPassword } = useAuthApi();
-  const crewLogin = useCrewLogin();
   const nav = useNavigate();
   const location = useLocation();
   const from = (location.state as any)?.from?.pathname || "/app";
@@ -53,7 +52,7 @@ export default function LoginPage() {
 
   const [crewCode, setCrewCode] = useState("");
   const [crewPin, setCrewPin] = useState("");
-  const [crewEventId, setCrewEventId] = useState("");
+  const [crewEventCode, setCrewEventCode] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
   const [showCrewPin, setShowCrewPin] = useState(false);
@@ -81,9 +80,9 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     if (!crewCode.trim() || !crewPin) { setError("Crew ID and PIN are required."); return; }
-    if (!crewEventId.trim()) { setError("Event ID is required."); return; }
+    if (!crewEventCode.trim()) { setError("Event Code is required."); return; }
     try {
-      await crewLogin.mutateAsync({ crewCode: crewCode.trim(), pin: crewPin, eventId: crewEventId.trim() });
+      await crewLogin({ crewCode: crewCode.trim(), pin: crewPin, eventCode: crewEventCode.trim() });
       nav("/app/checkin", { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.message || "Invalid Crew ID, PIN, or Event ID.");
@@ -141,7 +140,7 @@ export default function LoginPage() {
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          minHeight: 'calc(100vh - 77px)',
+          height: 'calc(100vh - 77px)',
         }}
         className="grid-cols-1 md:grid-cols-2"
       >
@@ -259,6 +258,7 @@ export default function LoginPage() {
             justifyContent: 'center',
             padding: '3rem 5rem',
             position: 'relative',
+            overflowY: 'auto',
           }}
           className="px-6 md:px-20"
         >
@@ -315,7 +315,7 @@ export default function LoginPage() {
                     boxShadow: loginMode === mode ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
                   }}
                 >
-                  {mode === 'admin' ? 'Admin' : 'Staff'}
+                  {mode === 'admin' ? 'Admin' : 'Crew'}
                 </button>
               ))}
             </div>
@@ -408,13 +408,13 @@ export default function LoginPage() {
                   Enter the Crew ID and PIN provided by your event admin.
                 </p>
                 <div>
-                  <label style={labelStyle}>Event ID</label>
+                  <label style={labelStyle}>Event Code</label>
                   <input
                     type="text"
                     required
-                    value={crewEventId}
-                    onChange={e => setCrewEventId(e.target.value)}
-                    placeholder="Event ID from your admin"
+                    value={crewEventCode}
+                    onChange={e => setCrewEventCode(e.target.value)}
+                    placeholder="Event Code from your admin"
                     style={inputStyle}
                     onFocus={e => (e.target.style.borderBottomColor = '#B4543A')}
                     onBlur={e => (e.target.style.borderBottomColor = '#EDE4D3')}
@@ -459,7 +459,7 @@ export default function LoginPage() {
                 {error && <p style={{ color: '#B4543A', fontSize: '0.9rem' }}>{error}</p>}
                 <button
                   type="submit"
-                  disabled={crewLogin.isPending}
+                  disabled={loading}
                   style={{
                     width: '100%',
                     padding: '1.2rem',
@@ -476,7 +476,7 @@ export default function LoginPage() {
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#B4543A'}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#2A221E'}
                 >
-                  {crewLogin.isPending ? "Signing in…" : "Sign In as Staff →"}
+                  {loading ? "Signing in…" : "Sign In as Crew →"}
                 </button>
               </form>
             )}

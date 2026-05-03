@@ -7,6 +7,7 @@ import { QrcodeIcon, UserGroupIcon } from "@heroicons/react/solid";
 import { useEventContext } from "../../../context/EventContext";
 import { PageLoader } from "../../atoms/PageLoader";
 import { NoEventsState } from "../../molecules/NoEventsState";
+import toast from "react-hot-toast";
 
 type ScanState =
   | { status: "idle" }
@@ -251,6 +252,7 @@ export default function CheckInPageV2() {
       ].slice(0, 10));
       beep(880, 150);
       vibrate(80);
+      toast.success(`${result.guestName} · ${result.noOfPax} pax checked in`);
     } catch (err) {
       setManualError(errorMessages[mapError(err)]);
     } finally {
@@ -270,6 +272,7 @@ export default function CheckInPageV2() {
       ].slice(0, 10));
       beep(880, 150);
       vibrate(80);
+      toast.success(`${result.guestName} · ${result.noOfPax} pax checked in`);
     } catch {
       setManualError("Force check-in failed — try again.");
     } finally {

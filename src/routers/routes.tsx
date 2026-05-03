@@ -18,10 +18,17 @@ import { Sidebar } from "../components/organisms/Sidebar";
 import { NoEventsState } from "../components/molecules/NoEventsState";
 import { useEventContext } from "../context/EventContext";
 
+const CREW_ALLOWED_PATHS = ["/app/checkin", "/app/guests", "/app/tables"];
+
 function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const { mustChooseEvent } = useEventContext();
+  const { userRole } = useAuth();
   const location = useLocation();
+
+  if (userRole === 6 && !CREW_ALLOWED_PATHS.some(p => location.pathname.startsWith(p))) {
+    return <Navigate to="/app/checkin" replace />;
+  }
 
   // When the user has zero events, show an inline onboarding state on every
   // route except /app/events (where they can actually create one).
@@ -98,6 +105,7 @@ import CheckInPageV1 from "../components/pages/CheckIn/CheckInPageV1";
 import CheckInPageV2 from "../components/pages/CheckIn/CheckInPageV2";
 import QrLookupPage from "../components/pages/Public/QrLookup/QrLookupPage";
 import RequireAuth from "../components/RequireAuth";
+import { useAuth } from "../api/hooks/useAuth";
 import CrewPage from "../components/pages/Crew/CrewPage";
 // …and other Public pages…
 
