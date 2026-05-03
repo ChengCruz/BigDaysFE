@@ -68,18 +68,20 @@ export default function CrewPage() {
         <p>
           Crew members sign in via the <span className="font-medium">Staff</span> tab on the
           login page. They'll need their <span className="font-medium">Crew ID</span>,
-          <span className="font-medium"> PIN</span>, and the <span className="font-medium">Event ID</span> below.
+          <span className="font-medium"> PIN</span>, and the <span className="font-medium">Event Code</span> below.
         </p>
         <p className="flex flex-wrap items-center gap-2">
-          <span className="text-blue-700/80 dark:text-blue-300/80">Event ID:</span>
+          <span className="text-blue-700/80 dark:text-blue-300/80">Event Code:</span>
           <code className="font-mono text-xs bg-white/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded px-1.5 py-0.5 break-all">
-            {eventId}
+            {event?.eventCode ?? "—"}
           </code>
           <button
             type="button"
             onClick={() => {
-              navigator.clipboard?.writeText(eventId).then(
-                () => toast.success("Event ID copied"),
+              const code = event?.eventCode;
+              if (!code) return;
+              navigator.clipboard?.writeText(code).then(
+                () => toast.success("Event Code copied"),
                 () => toast.error("Could not copy")
               );
             }}

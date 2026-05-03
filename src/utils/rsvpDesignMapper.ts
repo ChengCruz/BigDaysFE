@@ -83,10 +83,9 @@ function transformBlockToBackend(
       base.required = block.required;
       base.width = block.width === "full" ? 100 : 50; // String → Number
       base.hint = block.hint;
-      // Preserve questionId as string GUID for round-trip
       if (block.questionId) {
-        base.questionId = block.questionId;
-        // Also set numeric formFieldId for legacy backends
+        const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (guidRegex.test(block.questionId)) base.questionId = block.questionId;
         const numericId = parseInt(block.questionId, 10);
         base.formFieldId = isNaN(numericId) ? undefined : numericId;
       }

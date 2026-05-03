@@ -157,6 +157,7 @@ export const MediaEndpoints = {
 
 export const CheckInEndpoints = {
   scan: `/checkin/scan`,
+  undo: `/checkin/undo`,
 };
 
 export const PublicQrEndpoints = {

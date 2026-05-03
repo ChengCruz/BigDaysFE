@@ -1,6 +1,6 @@
 // src/components/pages/Users/UsersPage.tsx
 import { PageLoader } from "../../atoms/PageLoader";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUserByGuidApi, useUsersListApi, useDeactivateUser, useUpdatePassword } from "../../../api/hooks/useUsersApi";
 import { UserFormModal } from "../../molecules/UserFormModal";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
@@ -10,6 +10,8 @@ import { FormError } from "../../molecules/FormError";
 import { useAuth } from "../../../api/hooks/useAuth";
 import { validatePassword } from "../../../utils/passwordValidation";
 import { getRoleLabel } from "../../../utils/jwtUtils";
+import { StatsCard } from "../../atoms/StatsCard";
+import { UserGroupIcon, UserIcon, ShieldCheckIcon, BriefcaseIcon } from "@heroicons/react/solid";
 
 function formatDate(dateStr?: string) {
   if (!dateStr) return "—";
@@ -58,6 +60,15 @@ export default function UsersPage() {
   }>({ open: false, user: null });
 
   const isAdmin = userRole === 1 || userRole === 2;
+
+  useEffect(() => {
+    if (isAdmin) fetchAllUsers();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const totalUsers = allUsers?.length ?? 0;
+  const adminCount = allUsers?.filter((u: any) => u.role === 1 || u.role === 2).length ?? 0;
+  const memberCount = allUsers?.filter((u: any) => u.role === 3).length ?? 0;
+  const staffCount = allUsers?.filter((u: any) => u.role === 6).length ?? 0;
 
   const handleViewAllUsers = async () => {
     await fetchAllUsers();
@@ -273,8 +284,8 @@ export default function UsersPage() {
             Unable to load user profile. Please try logging in again.
           </p>
         </div>
-      ) : (
-        <ul className="space-y-2">
+      ) : showAllUsers ? (
+        <ul className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {Array.isArray(usersToDisplay) &&
             usersToDisplay.map((u: any) => (
               <li
@@ -290,38 +301,139 @@ export default function UsersPage() {
                     </p>
                   )}
                 </div>
-                {showAllUsers && (
-                  <div className="space-x-2">
-                    <Button
-                      variant="secondary"
-                      onClick={() =>
-                        setModal({
-                          open: true,
-                          user: {
-                            userGuid: u.userGuid,
-                            fullName: u.fullName,
-                            email: u.email,
-                            id: u.id,
-                            role: u.role,
-                            createdDate: u.createdDate,
-                            lastUpdated: u.lastUpdated,
-                          },
-                        })
-                      }
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={() => handleDelete({ userGuid: u.userGuid, fullName: u.fullName, email: u.email, id: u.id })}
-                    >
-                      Deactivate
-                    </Button>
-                  </div>
-                )}
+                <div className="space-x-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() =>
+                      setModal({
+                        open: true,
+                        user: {
+                          userGuid: u.userGuid,
+                          fullName: u.fullName,
+                          email: u.email,
+                          id: u.id,
+                          role: u.role,
+                          createdDate: u.createdDate,
+                          lastUpdated: u.lastUpdated,
+                        },
+                      })
+                    }
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleDelete({ userGuid: u.userGuid, fullName: u.fullName, email: u.email, id: u.id })}
+                  >
+                    Deactivate
+                  </Button>
+                </div>
               </li>
             ))}
         </ul>
+      ) : (
+        <>
+          {/* Stats strip */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            <StatsCard
+              label="Total Users"
+              value={loadingAllUsers ? "…" : totalUsers}
+              variant="primary"
+              size="sm"
+              icon={<UserGroupIcon className="w-4 h-4" />}
+            />
+            <StatsCard
+              label="Admins"
+              value={loadingAllUsers ? "…" : adminCount}
+              variant="accent"
+              size="sm"
+              icon={<ShieldCheckIcon className="w-4 h-4" />}
+            />
+            <StatsCard
+              label="Members"
+              value={loadingAllUsers ? "…" : memberCount}
+              variant="success"
+              size="sm"
+              icon={<UserIcon className="w-4 h-4" />}
+            />
+            <StatsCard
+              label="Staff"
+              value={loadingAllUsers ? "…" : staffCount}
+              variant="secondary"
+              size="sm"
+              icon={<BriefcaseIcon className="w-4 h-4" />}
+            />
+          </div>
+
+          {/* Rich profile card — same layout as member */}
+          {currentUser && (
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+              <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-2xl font-bold mb-4">
+                  {initials}
+                </div>
+                <h3 className="text-xl font-semibold">{currentUser.fullName}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{currentUser.email}</p>
+                <span className="inline-block mt-3 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                  {getRoleLabel(currentUser.role)}
+                </span>
+                <div className="mt-6 space-y-2 text-sm border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">Member since</span>
+                    <span className="font-medium">{formatDate(currentUser.createdDate)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">Last updated</span>
+                    <span className="font-medium">{formatDate(currentUser.lastUpdated)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-3 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                  <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    Change Password
+                  </h4>
+                  {pwdError && <FormError message={pwdError} />}
+                  {pwdSuccess && (
+                    <p className="text-sm text-green-600 dark:text-green-400">Password updated successfully.</p>
+                  )}
+                  <PasswordInput
+                    label="Current Password"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    required
+                    placeholder="Enter current password"
+                    autoComplete="current-password"
+                  />
+                  <PasswordInput
+                    label="New Password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    showValidation
+                    showStrength
+                    required
+                    placeholder="Enter new password"
+                    autoComplete="new-password"
+                  />
+                  <PasswordInput
+                    label="Confirm New Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    placeholder="Re-enter new password"
+                    autoComplete="new-password"
+                  />
+                  <div className="flex justify-end">
+                    <Button type="submit" loading={updatePassword.isPending}>
+                      {updatePassword.isPending ? "Updating…" : "Update Password"}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       <UserFormModal

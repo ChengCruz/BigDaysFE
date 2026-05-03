@@ -22,6 +22,7 @@ const SearchIconSvg = ({ className }: { className?: string }) => (
 );
 import { CheckCircleIcon } from "@heroicons/react/solid";
 import { useEventContext } from "../../context/EventContext";
+import { useAuth } from "../../api/hooks/useAuth";
 import { formatEventDate, formatEventTime } from "../../utils/eventUtils";
 
 /**
@@ -30,7 +31,26 @@ import { formatEventDate, formatEventTime } from "../../utils/eventUtils";
  */
 export function EventSwitcher() {
   const { event, events = [], eventId, setEventId, mustChooseEvent } = useEventContext();
+  const { userRole } = useAuth();
+  const isCrew = userRole === 6;
   const navigate = useNavigate();
+
+  if (isCrew) {
+    return (
+      <div className="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 border bg-primary/5 border-primary/15 text-text dark:bg-white/5 dark:border-white/10 dark:text-white">
+        <CalendarIcon className="h-4 w-4 flex-shrink-0 text-primary" />
+        <div className="text-left leading-tight min-w-0 max-w-[180px] md:max-w-[260px]">
+          <p className="text-[10px] uppercase tracking-wide text-text/40 dark:text-white/40 font-medium">Active event</p>
+          <p className="text-sm font-semibold truncate">{event?.title ?? "Loading…"}</p>
+        </div>
+        {event?.date && (
+          <span className="hidden lg:inline text-[11px] text-text/50 dark:text-white/40 font-medium whitespace-nowrap">
+            · {formatEventDate(event.date)}
+          </span>
+        )}
+      </div>
+    );
+  }
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);

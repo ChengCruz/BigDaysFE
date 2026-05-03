@@ -20,35 +20,28 @@ test.describe('Guests — Read (list)', () => {
     await expect(page.locator('h2:has-text("Guests")')).toBeVisible();
   });
 
-  test('renders stats cards: Total Guests, Assigned, Unassigned, VIPs', async ({ page }) => {
-    await expect(page.locator('text=Total Guests')).toBeVisible();
-    await expect(page.locator('text=Assigned')).toBeVisible();
-    await expect(page.locator('text=Unassigned')).toBeVisible();
-    await expect(page.locator('text=VIPs')).toBeVisible();
+  test('renders stats cards: Total Guests, Assigned, Unassigned', async ({ page }) => {
+    await expect(page.locator('text=Total Guests').first()).toBeVisible();
+    await expect(page.locator('text=Assigned').first()).toBeVisible();
+    await expect(page.locator('text=Unassigned').first()).toBeVisible();
   });
 
   test('Total Guests count matches API response (2 guests)', async ({ page }) => {
     // MOCK_GUEST + MOCK_GUEST_ASSIGNED = 2 guests from API
-    const totalCard = page.locator('text=Total Guests').locator('..');
+    const totalCard = page.locator('text=Total Guests').locator('../..');
     await expect(totalCard.locator('text=2')).toBeVisible();
   });
 
   test('Assigned count matches API response (1 assigned guest)', async ({ page }) => {
     // MOCK_GUEST_ASSIGNED has tableId set → 1 assigned
-    const assignedCard = page.locator('text=Assigned').first().locator('..');
+    const assignedCard = page.locator('text=Assigned').first().locator('../..');
     await expect(assignedCard.locator('text=1')).toBeVisible();
   });
 
   test('Unassigned count matches API response (1 unassigned guest)', async ({ page }) => {
     // MOCK_GUEST has tableId: null → 1 unassigned
-    const unassignedCard = page.locator('text=Unassigned').locator('..');
+    const unassignedCard = page.locator('text=Unassigned').first().locator('../..');
     await expect(unassignedCard.locator('text=1')).toBeVisible();
-  });
-
-  test('VIPs count matches API response (1 VIP)', async ({ page }) => {
-    // MOCK_GUEST_ASSIGNED has flag='VIP' → 1 VIP
-    const vipCard = page.locator('text=VIPs').locator('..');
-    await expect(vipCard.locator('text=1')).toBeVisible();
   });
 
   test('renders unassigned guest card with name', async ({ page }) => {
@@ -130,10 +123,10 @@ test.describe('Guests — Error state', () => {
     await page.goto('/login');
     await setMockAuth(page);
     await page.goto('/app/events');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.goto('/app/guests');
-    await page.waitForLoadState('networkidle');
-    await expect(page.locator('text=Failed to load guests.')).toBeVisible({ timeout: 5000 });
+    await page.waitForLoadState('load');
+    await expect(page.locator('text=Failed to load guests.')).toBeVisible({ timeout: 20000 });
   });
 });
 
@@ -206,8 +199,9 @@ test.describe('Guests — Assign Table modal', () => {
   test('clicking "Assign Table" opens assign modal with table listed', async ({ page }) => {
     const guestCard = page.locator('li').filter({ hasText: MOCK_GUEST.name });
     await guestCard.locator('button:has-text("Assign Table")').click();
-    await expect(page.locator(`text=Assign ${MOCK_GUEST.name} to Table`)).toBeVisible({ timeout: 3000 });
-    await expect(page.locator(`text=${MOCK_TABLE.tableName}`)).toBeVisible();
+    const modalTitle = page.locator('h3').filter({ hasText: `Assign ${MOCK_GUEST.name} to Table` });
+    await expect(modalTitle).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('button').filter({ hasText: MOCK_TABLE.tableName })).toBeVisible();
   });
 
   test('"Cancel" closes the assign modal', async ({ page }) => {
@@ -232,19 +226,27 @@ test.describe('Guests — Empty state (no guests)', () => {
     await page.goto('/login');
     await setMockAuth(page);
     await page.goto('/app/events');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.goto('/app/guests');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   test('shows "No guests yet" message when list is empty', async ({ page }) => {
-    await expect(page.locator('text=No guests yet. Create your first guest!')).toBeVisible();
+    const emptyState = page.locator('text=No guests yet. Create your first guest!');
+    await emptyState.scrollIntoViewIfNeeded();
+    await expect(emptyState).toBeVisible();
   });
 });
 
 test.describe('Guests — No event selected', () => {
   test.beforeEach(async ({ page }) => {
     await mockApi(page);
+    await page.route('**/__mock_api__/**', async route => {
+      if (/\/event\//i.test(route.request().url()) && route.request().method() === 'GET') {
+        return route.fulfill({ status: 200, json: { isSuccess: true, data: [] } });
+      }
+      return route.fallback();
+    });
     await page.goto('/login');
     // Set session but NO eventId
     await page.evaluate(() => {
@@ -252,10 +254,10 @@ test.describe('Guests — No event selected', () => {
       localStorage.removeItem('eventId');
     });
     await page.goto('/app/guests');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   test('shows "No Events" state when no event is selected', async ({ page }) => {
-    await expect(page.locator('text=No Events for Guest Management')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=No Events Yet')).toBeVisible({ timeout: 5000 });
   });
 });

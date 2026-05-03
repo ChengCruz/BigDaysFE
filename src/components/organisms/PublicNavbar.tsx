@@ -1,133 +1,154 @@
-// src/components/organisms/PublicNavbar.tsx
-import  { useState } from "react";
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { MenuIcon, XIcon } from "@heroicons/react/solid";
 
-const links = [
-  { to: "/",        label: "Home"    },
-  { to: "/story",   label: "Story"   },
-  { to: "/events",  label: "Events"  },
-  { to: "/rsvp",    label: "RSVP"    },
-  { to: "/contact", label: "Contact" },
+const navLinks = [
+  { to: "/",        label: "HOME",    end: true },
+  { to: "/story",   label: "STORY",   end: false },
+  { to: "/people",  label: "PEOPLE",  end: false },
+  { to: "/contact", label: "CONTACT", end: false },
 ];
+
+const navLinkStyle: React.CSSProperties = {
+  fontFamily: 'var(--font-label)',
+  fontSize: '0.7rem',
+  letterSpacing: '0.2em',
+  textTransform: 'uppercase' as const,
+  position: 'relative',
+  padding: '0.25rem 0',
+  transition: 'color 0.3s ease',
+};
 
 export function PublicNavbar() {
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "backdrop-blur-xl bg-white/70 dark:bg-slate-950/60 border-b border-white/40 dark:border-white/5 shadow-[0_8px_30px_-12px_rgba(31,41,55,0.15)]"
-          : "bg-transparent border-b border-transparent"
-      }`}
+      className="sticky top-0 z-50"
+      style={{
+        background: 'rgba(250, 246, 239, 0.88)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(42, 34, 30, 0.08)',
+        padding: '1.25rem 2.5rem',
+      }}
     >
-      <div className="max-w-7xl mx-auto flex items-center justify-between py-4 px-6">
-        <NavLink to="/" className="flex items-center gap-2 group">
-          <span className="grid place-items-center h-9 w-9 rounded-full bg-gradient-to-br from-violet-600 via-fuchsia-500 to-rose-500 text-white font-playfair italic text-lg shadow-lg shadow-fuchsia-500/30 transition-transform group-hover:scale-105">
-            C
-          </span>
-          <span className="font-playfair italic text-2xl bg-gradient-to-r from-violet-700 via-fuchsia-600 to-rose-500 bg-clip-text text-transparent dark:from-violet-200 dark:via-fuchsia-200 dark:to-rose-200">
-            C &amp; C
-          </span>
+      <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+
+        {/* Brand */}
+        <NavLink
+          to="/"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 300,
+            fontSize: '1.5rem',
+            letterSpacing: '0.15em',
+            color: '#2A221E',
+            fontStyle: 'italic',
+            textDecoration: 'none',
+          }}
+        >
+          My<span style={{ color: '#B4543A' }}>·</span>Big<span style={{ color: '#B4543A' }}>·</span>Day
         </NavLink>
 
-        {/* desktop links */}
-        <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
-          {links.map(({ to, label }) => (
+        {/* Desktop nav */}
+        <nav className="hidden md:flex items-center" style={{ gap: '2.5rem' }}>
+          {navLinks.map(({ to, label, end }) => (
             <NavLink
               key={to}
               to={to}
-              end={to === "/"}
-              className={({ isActive }) =>
-                `relative px-4 py-2 rounded-full transition ${
-                  isActive
-                    ? "text-violet-700 dark:text-violet-200 bg-violet-100/70 dark:bg-white/10"
-                    : "text-slate-600 dark:text-slate-300 hover:text-violet-700 dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/5"
-                }`
-              }
+              end={end}
+              style={({ isActive }) => ({
+                ...navLinkStyle,
+                color: isActive ? '#B4543A' : '#2A221E',
+                textDecoration: 'none',
+              })}
             >
               {label}
             </NavLink>
           ))}
+
+          {/* Login button */}
+          <NavLink
+            to="/login"
+            style={({ isActive }) => ({
+              fontFamily: 'var(--font-label)',
+              fontSize: '0.7rem',
+              letterSpacing: '0.25em',
+              textTransform: 'uppercase' as const,
+              padding: '0.65rem 1.5rem',
+              border: `1px solid ${isActive ? '#B4543A' : '#2A221E'}`,
+              background: isActive ? '#B4543A' : 'transparent',
+              color: isActive ? '#FAF6EF' : '#2A221E',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              textDecoration: 'none',
+              display: 'inline-block',
+            })}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.background = '#2A221E';
+              (e.currentTarget as HTMLElement).style.color = '#FAF6EF';
+            }}
+            onMouseLeave={e => {
+              const isActive = (e.currentTarget as HTMLElement).getAttribute('aria-current') === 'page';
+              (e.currentTarget as HTMLElement).style.background = isActive ? '#B4543A' : 'transparent';
+              (e.currentTarget as HTMLElement).style.color = isActive ? '#FAF6EF' : '#2A221E';
+            }}
+          >
+            LOGIN
+          </NavLink>
         </nav>
 
-        <div className="hidden md:flex items-center gap-2">
-          <button
-            onClick={() => navigate("/login")}
-            className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-violet-700 dark:hover:text-white px-4 py-2 rounded-full transition"
-          >
-            Sign in
-          </button>
-          <button
-            onClick={() => navigate("/register")}
-            className="text-sm font-medium px-5 py-2 rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-rose-500 text-white shadow-[0_10px_30px_-10px_rgba(124,92,255,0.65)] hover:-translate-y-0.5 transition animate-gradient"
-          >
-            Get started
-          </button>
-        </div>
-
-        {/* mobile hamburger */}
+        {/* Mobile toggle */}
         <button
-          className="md:hidden p-2 rounded-full hover:bg-white/40 dark:hover:bg-white/5 transition"
+          className="md:hidden"
+          style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#2A221E', padding: '0.25rem' }}
           aria-label="Toggle menu"
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => setOpen(o => !o)}
         >
-          {open ? (
-            <XIcon className="h-6 w-6 text-slate-800 dark:text-white" />
-          ) : (
-            <MenuIcon className="h-6 w-6 text-slate-800 dark:text-white" />
-          )}
+          {open ? '✕' : '☰'}
         </button>
       </div>
 
-      {/* mobile menu panel */}
+      {/* Mobile drawer */}
       {open && (
-        <nav className="md:hidden border-t border-white/40 dark:border-white/5 backdrop-blur-xl bg-white/80 dark:bg-slate-950/80">
-          <ul className="py-3 px-6 font-medium">
-            {links.map(({ to, label }) => (
-              <li key={to}>
-                <NavLink
-                  to={to}
-                  end={to === "/"}
-                  className={({ isActive }) =>
-                    `block py-3 px-3 rounded-xl transition ${
-                      isActive
-                        ? "text-violet-700 dark:text-violet-200 bg-violet-100/70 dark:bg-white/10"
-                        : "text-slate-700 dark:text-slate-200 hover:bg-white/60 dark:hover:bg-white/5"
-                    }`
-                  }
-                  onClick={() => setOpen(false)}
-                >
-                  {label}
-                </NavLink>
-              </li>
-            ))}
-            <li className="pt-3 mt-2 border-t border-slate-200/60 dark:border-white/10 grid grid-cols-2 gap-2">
-              <button
-                onClick={() => { setOpen(false); navigate("/login"); }}
-                className="py-2.5 rounded-full border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white text-sm"
-              >
-                Sign in
-              </button>
-              <button
-                onClick={() => { setOpen(false); navigate("/register"); }}
-                className="py-2.5 rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-rose-500 text-white text-sm shadow-md"
-              >
-                Get started
-              </button>
-            </li>
-          </ul>
-        </nav>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            height: '100vh',
+            width: '80%',
+            maxWidth: '320px',
+            background: '#FAF6EF',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            gap: '2rem',
+            padding: '2.5rem',
+            boxShadow: '-10px 0 40px rgba(0,0,0,0.1)',
+            zIndex: 99,
+          }}
+        >
+          {[...navLinks, { to: '/login', label: 'LOGIN', end: false }].map(({ to, label, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              style={({ isActive }) => ({
+                fontFamily: 'var(--font-label)',
+                fontSize: '0.8rem',
+                letterSpacing: '0.25em',
+                textTransform: 'uppercase' as const,
+                color: isActive ? '#B4543A' : '#2A221E',
+                textDecoration: 'none',
+                transition: 'color 0.3s ease',
+              })}
+              onClick={() => setOpen(false)}
+            >
+              {label}
+            </NavLink>
+          ))}
+        </div>
       )}
     </header>
   );

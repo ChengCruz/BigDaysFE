@@ -54,7 +54,11 @@ export default function RegisterPage() {
       toast.success("Welcome to MyBigDays! Let's set up your first event.");
       navigate("/app/events");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
+      if (err.response?.status === 409) {
+        setError("email_taken");
+      } else {
+        setError(err.response?.data?.message || "Registration failed. Please try again.");
+      }
     }
   };
 
@@ -114,9 +118,18 @@ export default function RegisterPage() {
 
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
-          <p className="text-red-600 dark:text-red-400 text-sm whitespace-pre-line">
-            {error}
-          </p>
+          {error === "email_taken" ? (
+            <p className="text-red-600 dark:text-red-400 text-sm">
+              An account with this email already exists.{" "}
+              <Link to="/login" className="underline font-medium">
+                Sign in instead?
+              </Link>
+            </p>
+          ) : (
+            <p className="text-red-600 dark:text-red-400 text-sm whitespace-pre-line">
+              {error}
+            </p>
+          )}
         </div>
       )}
 

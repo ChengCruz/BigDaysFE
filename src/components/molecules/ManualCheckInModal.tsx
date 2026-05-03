@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Modal } from "./Modal";
 import { Button } from "../atoms/Button";
-import { useCheckInScanApi, useQrListApi } from "../../api/hooks/useQrApi";
+import { useCheckInScanApi, useQrListApi, useUndoCheckInApi } from "../../api/hooks/useQrApi";
 import { useGuestsApi } from "../../api/hooks/useGuestsApi";
 import type { CheckInErrorCode, CheckInResult } from "../../types/qr";
 import { FormError } from "./FormError";
@@ -46,8 +46,10 @@ export const ManualCheckInModal: React.FC<ManualCheckInModalProps> = ({
 }) => {
   const [query, setQuery] = useState("");
   const [submittingGuestId, setSubmittingGuestId] = useState<string | null>(null);
+  const [undoingGuestId, setUndoingGuestId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const checkIn = useCheckInScanApi();
+  const checkIn = useCheckInScanApi(eventId);
+  const undoCheckIn = useUndoCheckInApi();
   const { data: guests = [], isLoading: guestsLoading } = useGuestsApi(eventId);
   const { data: qrTokens = [] } = useQrListApi(eventId);
 
@@ -56,6 +58,7 @@ export const ManualCheckInModal: React.FC<ManualCheckInModalProps> = ({
       setQuery("");
       setError(null);
       setSubmittingGuestId(null);
+      setUndoingGuestId(null);
     }
   }, [isOpen]);
 
@@ -97,6 +100,20 @@ export const ManualCheckInModal: React.FC<ManualCheckInModalProps> = ({
     }
   }
 
+  async function handleUndo(guestId: string) {
+    setError(null);
+    const tokenRec = tokenByGuestId.get(guestId);
+    if (!tokenRec) return;
+    setUndoingGuestId(guestId);
+    try {
+      await undoCheckIn.mutateAsync({ token: tokenRec.token, eventId });
+    } catch {
+      setError("Failed to undo check-in — try again.");
+    } finally {
+      setUndoingGuestId(null);
+    }
+  }
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Manual Check-in">
       <div className="space-y-4">
@@ -130,30 +147,53 @@ export const ManualCheckInModal: React.FC<ManualCheckInModalProps> = ({
             const revoked = tokenRec?.isRevoked === true;
             const noToken = !tokenRec;
             const submitting = submittingGuestId === g.id;
-            const disabled = submitting || checkedIn || revoked || noToken;
+            const undoing = undoingGuestId === g.id;
+
+            const guestInfo = (
+              <div className="min-w-0 flex-1 pr-3">
+                <p className="font-medium text-gray-800 dark:text-gray-100 truncate">
+                  {g.name ?? g.guestName ?? "—"}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {g.phoneNo || "No phone"} · {g.pax ?? 1} pax
+                </p>
+              </div>
+            );
+
+            if (checkedIn) {
+              return (
+                <div key={g.id} className="py-3 flex items-center justify-between">
+                  {guestInfo}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                      In
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleUndo(g.id)}
+                      disabled={undoing}
+                      className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-800/40 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {undoing ? "Undoing…" : "Undo"}
+                    </button>
+                  </div>
+                </div>
+              );
+            }
 
             return (
               <button
                 key={g.id}
                 type="button"
                 onClick={() => handlePick(g.id)}
-                disabled={disabled}
+                disabled={submitting || revoked || noToken}
                 className="w-full py-3 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
               >
-                <div className="min-w-0 flex-1 pr-3">
-                  <p className="font-medium text-gray-800 dark:text-gray-100 truncate">
-                    {g.name ?? g.guestName ?? "—"}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {g.phoneNo || "No phone"} · {g.pax ?? 1} pax
-                  </p>
-                </div>
+                {guestInfo}
                 <span
                   className={`text-[11px] px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
                     submitting
                       ? "bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-white/60"
-                      : checkedIn
-                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                       : revoked
                       ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                       : noToken
@@ -163,8 +203,6 @@ export const ManualCheckInModal: React.FC<ManualCheckInModalProps> = ({
                 >
                   {submitting
                     ? "Checking…"
-                    : checkedIn
-                    ? "In"
                     : revoked
                     ? "Revoked"
                     : noToken

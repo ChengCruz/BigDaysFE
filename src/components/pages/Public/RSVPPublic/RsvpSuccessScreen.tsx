@@ -1,13 +1,16 @@
 // src/components/pages/Public/RSVPPublic/RsvpSuccessScreen.tsx
+import { useNavigate } from "react-router-dom";
 import type { RsvpDesign } from "../../../../types/rsvpDesign";
 
 interface Props {
   guestName: string;
   design: RsvpDesign;
+  slug: string;
 }
 
-export default function RsvpSuccessScreen({ guestName, design }: Props) {
+export default function RsvpSuccessScreen({ guestName, design, slug }: Props) {
   const accentColor = design.accentColor ?? "#f97316";
+  const navigate = useNavigate();
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-950 flex items-center justify-center px-4 text-white">
@@ -69,8 +72,7 @@ export default function RsvpSuccessScreen({ guestName, design }: Props) {
             Your RSVP has been received.
           </p>
           <p className="text-sm text-white/50 leading-relaxed">
-            We're looking forward to celebrating with you. A confirmation will
-            be sent to your email.
+            We're looking forward to celebrating with you. 
           </p>
         </div>
 
@@ -83,6 +85,13 @@ export default function RsvpSuccessScreen({ guestName, design }: Props) {
         <p className="text-xs uppercase tracking-[0.2em] text-white/40">
           See you soon
         </p>
+
+        <button
+          onClick={() => navigate(`/rsvp/${slug}`)}
+          className="mt-2 text-sm underline underline-offset-4 text-white/50 hover:text-white/80 transition-colors"
+        >
+          Back to RSVP page
+        </button>
       </div>
     </div>
   );

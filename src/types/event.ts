@@ -9,4 +9,5 @@ export interface ApiEvent {
   eventDescription?: string;
   isDeleted?: boolean;
   slug?: string;
+  eventCode?: string;
 }

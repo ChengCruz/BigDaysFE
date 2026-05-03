@@ -148,7 +148,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
       title={isEdit ? "Edit Event" : "New Event"}
       className={className}
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         {error && <FormError message={error} />}
         <FormField
           label="Title"
