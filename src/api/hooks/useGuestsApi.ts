@@ -26,6 +26,8 @@ export interface Guest {
   eventGuid?: string;
   rsvpId?: string;
   tableId?: string;
+  guestIndex?: number;
+  guestCode?: string;
   name: string; // guest name
   phoneNo?: string;
   pax?: number;
@@ -151,6 +153,29 @@ export function useAutoAssignGuests(eventId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["guests", eventId] });
       qc.invalidateQueries({ queryKey: ["tables", eventId] });
+    },
+  });
+}
+
+export function useRecordGift(eventId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      guestId,
+      eventGuid,
+      amount,
+    }: {
+      guestId: string;
+      eventGuid: string;
+      amount: number | null;
+    }) =>
+      client
+        .put(GuestEndpoints.gift(guestId), { eventGuid, amount })
+        .then((r) => r.data),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ["guests", eventId] });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["wallet", variables.eventGuid] });
     },
   });
 }

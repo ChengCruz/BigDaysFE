@@ -11,6 +11,8 @@ export function normalizeGuest(g: ApiGuest): Guest {
     eventGuid: g.eventGuid,
     rsvpId: g.rsvpId,
     tableId: g.tableId ?? undefined,
+    guestIndex: g.guestIndex,
+    guestCode: g.guestCode,
     name: g.name ?? "",
     phoneNo: g.phoneNo ?? "",
     pax: g.pax ?? 1,

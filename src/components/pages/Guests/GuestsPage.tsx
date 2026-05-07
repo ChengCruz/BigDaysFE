@@ -2,7 +2,7 @@
 import { PageLoader } from "../../atoms/PageLoader";
 import { ErrorState } from "../../atoms/ErrorState";
 import { useState, useMemo } from "react";
-import { UserGroupIcon, UserIcon, CheckCircleIcon } from "@heroicons/react/solid";
+import { UserGroupIcon, UserIcon, CheckCircleIcon, XIcon } from "@heroicons/react/solid";
 import { useAuth } from "../../../api/hooks/useAuth";
 import {
   useGuestsApi,
@@ -12,28 +12,36 @@ import {
 } from "../../../api/hooks/useGuestsApi";
 import { useTablesApi } from "../../../api/hooks/useTablesApi";
 import { useQrListApi, useGenerateQrApi, useRevokeQrApi } from "../../../api/hooks/useQrApi";
+import { useWalletsApi } from "../../../api/hooks/useWalletApi";
+import { useTransactionsApi } from "../../../api/hooks/useTransactionApi";
 import { Button } from "../../atoms/Button";
+import { Dropdown, DropdownItem } from "../../atoms/Dropdown";
 import { StatsCard } from "../../atoms/StatsCard";
 import { useEventContext } from "../../../context/EventContext";
 import toast from "react-hot-toast";
 import { GuestFormModal } from "./GuestFormModal";
+import { GiftFormModal } from "./GiftFormModal";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { Modal } from "../../molecules/Modal";
 import QrStatusBadge from "../../molecules/QrStatusBadge";
 import QrImageModal from "../../molecules/QrImageModal";
 import type { QrToken, QrStatus } from "../../../types/qr";
+import { CURRENCY_CONFIG } from "../../../types/wallet";
+import type { Currency } from "../../../types/wallet";
 
 export default function GuestsPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
   const { userRole } = useAuth();
   const isReadOnly = userRole === 6;
-  const { eventId, eventsLoading } = useEventContext()!;
+  const { eventId, eventsLoading, event } = useEventContext()!;
   const { data: guests = [], isLoading: guestsLoading, isError: guestsError } = useGuestsApi(eventId!);
   const { data: tables = [], isLoading: tablesLoading } = useTablesApi(eventId!);
   const assignGuestToTable = useAssignGuestToTable(eventId!);
   const unassignGuestFromTable = useUnassignGuestFromTable(eventId!);
   const { data: qrTokens = [] } = useQrListApi(eventId!);
+  const { data: wallet } = useWalletsApi(eventId!);
+  const { data: transactions = [] } = useTransactionsApi(wallet?.walletGuid ?? "", eventId!);
   const generateQr = useGenerateQrApi();
   const revokeQr = useRevokeQrApi();
 
@@ -50,14 +58,37 @@ export default function GuestsPage() {
   const [unassignConfirm, setUnassignConfirm] = useState<Guest | null>(null);
   const [qrModal, setQrModal] = useState<{ open: boolean; guest?: Guest; token?: string }>({ open: false });
   const [revokeConfirm, setRevokeConfirm] = useState<{ guest: Guest; token: string } | null>(null);
+  const [giftModal, setGiftModal] = useState<{ open: boolean; guest?: Guest; currentAmount: number | null }>({
+    open: false,
+    currentAmount: null,
+  });
+  const [waModal, setWaModal] = useState<{ open: boolean; guest?: Guest; message: string }>({
+    open: false,
+    message: "",
+  });
+
+  // Gift map: guestCode → amount (joined from wallet transactions)
+  const giftMap = useMemo(() => {
+    const map = new Map<string, number>();
+    transactions
+      .filter((t) => (t.category as string) === "Gift")
+      .forEach((t) => {
+        if (t.referenceId) map.set(t.referenceId, t.amount);
+      });
+    return map;
+  }, [transactions]);
+
+  const currencySymbol = wallet
+    ? (CURRENCY_CONFIG[wallet.currency as Currency]?.symbol ?? wallet.currency)
+    : "";
+
   // Calculate statistics
   const stats = useMemo(() => {
     const total = guests.length;
     const assigned = guests.filter(g => g.tableId).length;
     const unassigned = guests.filter(g => !g.tableId).length;
-
     return { total, assigned, unassigned };
-  }, [guests]);
+  }, [guests, giftMap]);
 
   // Create table lookup map
   const tableMap = useMemo(() => {
@@ -187,6 +218,10 @@ export default function GuestsPage() {
     });
   };
 
+  function buildWaMessage(guestName: string, eventTitle: string): string {
+    return `Hi ${guestName}! You're warmly invited to celebrate ${eventTitle} with us. Looking forward to seeing you! 🎉`;
+  }
+
   return (
     <>
       {/* Header + Controls */}
@@ -290,6 +325,16 @@ export default function GuestsPage() {
                     : "bg-orange-50 dark:bg-orange-900/10 border-2 border-orange-200 dark:border-orange-800"
                 }`}
               >
+                {/* Gift badge — top left */}
+                {(() => {
+                  const giftAmt = giftMap.get(guest.guestCode ?? "");
+                  if (giftAmt == null) return null;
+                  return (
+                    <span className="absolute top-2 left-2 px-2 py-0.5 text-xs font-bold rounded-full bg-emerald-600 text-white">
+                      {currencySymbol} {giftAmt.toLocaleString("en-MY", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                    </span>
+                  );
+                })()}
                 {/* Assignment Status Badge - Top Right */}
                 <span
                   className={`absolute top-2 right-2 px-3 py-1 text-xs font-bold rounded-full ${
@@ -302,10 +347,17 @@ export default function GuestsPage() {
                 </span>
 
                 <div className="space-y-2 mt-6">
-                  {/* Guest Name */}
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                    {guest.guestName}
-                  </h3>
+                  {/* Guest Name + Code */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                      {guest.guestName}
+                    </h3>
+                    {guest.guestCode && (
+                      <span className="px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-xs font-mono font-bold text-gray-700 dark:text-gray-200">
+                        {guest.guestCode}
+                      </span>
+                    )}
+                  </div>
 
                   {/* Phone Number */}
                   {guest.phoneNo && (
@@ -323,7 +375,7 @@ export default function GuestsPage() {
                     </p>
                   </div>
 
-                  {/* Guest Type Badge */}
+                  {/* Guest Type + QR Status — same row */}
                   <div className="flex flex-wrap gap-2 items-center">
                     <span
                       className={`inline-block px-2 py-0.5 rounded-full text-sm font-medium border-2 ${
@@ -338,84 +390,155 @@ export default function GuestsPage() {
                     >
                       {guest.guestType || "Other"}
                     </span>
-                  </div>
-
-                  {/* QR Status Badge */}
-                  <div>
                     <QrStatusBadge status={getQrStatus(qrMap.get(guest.guestId ?? guest.id))} />
                   </div>
 
                   {/* Table Assignment Display */}
-                  <div className={`mt-3 p-3 rounded-lg ${
+                  <div className={`mt-3 px-3 py-2 rounded-lg flex items-center gap-2 ${
                     isAssigned
                       ? "bg-green-100 dark:bg-green-900/30"
                       : "bg-orange-100 dark:bg-orange-900/30"
                   }`}>
-                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Table Seating:
-                    </p>
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Table Seating:</span>
                     {guest.tableId ? (
-                      <p className="text-sm font-bold text-green-800 dark:text-green-300">
+                      <span className="text-sm font-bold text-green-800 dark:text-green-300">
                         {tableMap.get(guest.tableId) || "Unknown Table"}
-                      </p>
+                      </span>
                     ) : (
-                      <p className="text-sm font-bold text-orange-800 dark:text-orange-300">
+                      <span className="text-sm font-bold text-orange-800 dark:text-orange-300">
                         No table assigned
-                      </p>
+                      </span>
                     )}
                   </div>
+
+                  {/* Gift Display */}
+                  {wallet && (
+                    <div className={`mt-2 px-3 py-2 rounded-lg flex items-center gap-2 ${
+                      giftMap.get(guest.guestCode ?? "") != null
+                        ? "bg-emerald-100 dark:bg-emerald-900/30"
+                        : "bg-gray-100 dark:bg-gray-800/30"
+                    }`}>
+                      <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Gift:</span>
+                      {giftMap.get(guest.guestCode ?? "") != null ? (
+                        <span className="text-sm font-bold text-emerald-800 dark:text-emerald-300">
+                          {currencySymbol} {giftMap.get(guest.guestCode ?? "")!.toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-500 dark:text-gray-500">No gift recorded</span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Buttons — hidden for Staff (read-only) */}
-                {!isReadOnly && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <Button
-                      variant="secondary"
-                      onClick={() => setModal({ open: true, guest })}
-                    >
-                      Edit
-                    </Button>
-                    {guest.tableId ? (
-                      <button
-                        onClick={() => handleUnassignTable(guest)}
-                        className="px-3 py-1.5 text-sm font-medium rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+                {!isReadOnly && (() => {
+                  const qrToken = qrMap.get(guest.guestId ?? guest.id);
+                  const qrStatus = getQrStatus(qrToken);
+                  const hasOverflow = !!wallet || qrStatus === "Generated" || qrStatus === "CheckedIn";
+                  return (
+                    <div className="mt-4 flex items-center gap-2">
+                      {/* Primary: Edit */}
+                      <Button
+                        variant="secondary"
+                        className="px-3 py-1.5 text-sm"
+                        onClick={() => setModal({ open: true, guest })}
                       >
-                        Unassign
-                      </button>
-                    ) : (
+                        Edit
+                      </Button>
+
+                      {/* Assign / Unassign icon button */}
+                      {guest.tableId ? (
+                        <button
+                          onClick={() => handleUnassignTable(guest)}
+                          title="Unassign from table"
+                          className="p-2 rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+                        >
+                          <XIcon className="h-4 w-4" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setAssignModal({ open: true, guest })}
+                          title="Assign to table"
+                          className="p-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
+                        >
+                          <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="5"/>
+                            <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(0, 12, 12)"/>
+                            <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(45, 12, 12)"/>
+                            <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(90, 12, 12)"/>
+                            <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(135, 12, 12)"/>
+                            <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(180, 12, 12)"/>
+                            <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(225, 12, 12)"/>
+                            <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(270, 12, 12)"/>
+                            <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(315, 12, 12)"/>
+                          </svg>
+                        </button>
+                      )}
+
+                      {/* WhatsApp Invite */}
                       <button
-                        onClick={() => setAssignModal({ open: true, guest })}
-                        className="px-3 py-1.5 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
+                        disabled={!guest.phoneNo}
+                        onClick={() =>
+                          setWaModal({
+                            open: true,
+                            guest,
+                            message: buildWaMessage(
+                              guest.guestName ?? guest.name ?? "Guest",
+                              event?.title ?? "our event"
+                            ),
+                          })
+                        }
+                        title={guest.phoneNo ? "Send WhatsApp Invite" : "No phone number"}
+                        className="p-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       >
-                        Assign Table
+                        <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                          <path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.555 4.122 1.523 5.855L.057 23.885a.5.5 0 0 0 .606.61l6.198-1.626A11.934 11.934 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.721 9.721 0 0 1-5.003-1.386l-.36-.214-3.724.977.993-3.614-.234-.374A9.718 9.718 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
+                        </svg>
                       </button>
-                    )}
-                    {(() => {
-                      const qrToken = qrMap.get(guest.guestId ?? guest.id);
-                      const qrStatus = getQrStatus(qrToken);
-                      return (
-                        <>
+
+                      {/* Overflow: ⋯ */}
+                      {hasOverflow && (
+                        <Dropdown
+                          trigger={
+                            <button className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-accent text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors">
+                              ···
+                            </button>
+                          }
+                        >
+                          {wallet && (
+                            <DropdownItem
+                              onClick={() =>
+                                setGiftModal({
+                                  open: true,
+                                  guest,
+                                  currentAmount: giftMap.get(guest.guestCode ?? "") ?? null,
+                                })
+                              }
+                            >
+                              {giftMap.get(guest.guestCode ?? "") != null ? "Edit Gift" : "Gift"}
+                            </DropdownItem>
+                          )}
                           {(qrStatus === "Generated" || qrStatus === "CheckedIn") && (
-                            <button
+                            <DropdownItem
                               onClick={() => setQrModal({ open: true, guest, token: qrToken!.token })}
-                              className="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:opacity-90 transition-opacity"
                             >
                               View QR
-                            </button>
+                            </DropdownItem>
                           )}
                           {qrStatus === "Generated" && (
-                            <button
+                            <DropdownItem
                               onClick={() => setRevokeConfirm({ guest, token: qrToken!.token })}
-                              className="px-3 py-1.5 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                              className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                             >
-                              Revoke
-                            </button>
+                              Revoke QR
+                            </DropdownItem>
                           )}
-                        </>
-                      );
-                    })()}
-                  </div>
-                )}
+                        </Dropdown>
+                      )}
+                    </div>
+                  );
+                })()}
               </li>
             );
           })}
@@ -465,6 +588,17 @@ export default function GuestsPage() {
         onClose={() => setModal({ open: false })}
         guest={modal.guest}
         eventId={eventId!}
+      />
+
+      {/* Gift Recording Modal */}
+      <GiftFormModal
+        isOpen={giftModal.open}
+        onClose={() => setGiftModal({ open: false, currentAmount: null })}
+        guest={giftModal.guest ?? null}
+        currentAmount={giftModal.currentAmount}
+        eventGuid={eventId!}
+        eventId={eventId!}
+        currencySymbol={currencySymbol}
       />
 
       {/* Table Assignment Modal */}
@@ -520,6 +654,60 @@ export default function GuestsPage() {
           >
             Cancel
           </Button>
+        </div>
+      </Modal>
+
+      {/* WhatsApp Invite Modal */}
+      <Modal
+        isOpen={waModal.open}
+        title="Send WhatsApp Invite"
+        onClose={() => setWaModal({ open: false, message: "" })}
+      >
+        <div className="p-6 flex flex-col gap-4">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="font-medium text-text">{waModal.guest?.guestName ?? waModal.guest?.name}</span>
+            {waModal.guest?.phoneNo && (
+              <span className="ml-2 font-mono">
+                {waModal.guest.phoneNo.startsWith("+") ? waModal.guest.phoneNo : `+${waModal.guest.phoneNo}`}
+              </span>
+            )}
+          </div>
+
+          <textarea
+            value={waModal.message}
+            onChange={(e) => setWaModal((prev) => ({ ...prev, message: e.target.value }))}
+            rows={5}
+            className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm bg-white dark:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+          />
+
+          <div className="flex items-center justify-between gap-2">
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(waModal.message).catch(() => {});
+                toast.success("Message copied to clipboard");
+              }}
+              className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition underline underline-offset-2"
+            >
+              Copy text
+            </button>
+
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setWaModal({ open: false, message: "" })}>
+                Cancel
+              </Button>
+              <button
+                onClick={() => {
+                  const phone = (waModal.guest?.phoneNo ?? "").replace(/\D/g, "");
+                  const url = `https://wa.me/${phone}?text=${encodeURIComponent(waModal.message)}`;
+                  window.open(url, "_blank");
+                  setWaModal({ open: false, message: "" });
+                }}
+                className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
+              >
+                Open WhatsApp
+              </button>
+            </div>
+          </div>
         </div>
       </Modal>
     </>

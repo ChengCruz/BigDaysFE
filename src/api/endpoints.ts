@@ -59,6 +59,7 @@ export const GuestEndpoints = {
   assignTable: (guestId: string, tableId: string) => `/Guest/${guestId}/AssignTable/${tableId}`,
   unassignTable: (guestId: string) => `/Guest/${guestId}/UnassignTable`,
   autoAssign: (eventGuid: string) => `/Guest/AutoAssign/${eventGuid}`,
+  gift: (guestId: string) => `/Guest/${guestId}/Gift`,
 };
 
 // TODO: No backend Seating API exists — these are stubs. Seating feature pages will 404.
