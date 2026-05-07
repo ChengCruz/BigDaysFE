@@ -341,15 +341,14 @@ export default function MemberDashboardPage() {
               <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Design V3</span>
             </a>
             <button
-              disabled
-              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border border-purple-100 dark:border-purple-800 opacity-60 cursor-not-allowed"
+              onClick={() => navigate("/app/guests")}
+              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border border-purple-100 dark:border-purple-800 hover:border-purple-200 dark:hover:border-purple-700 hover:shadow-md transition group"
             >
-              <div className="h-10 w-10 rounded-xl bg-purple-100 dark:bg-purple-900/50 grid place-items-center">
+              <div className="h-10 w-10 rounded-xl bg-purple-100 dark:bg-purple-900/50 group-hover:bg-purple-200 dark:group-hover:bg-purple-800 grid place-items-center transition">
                 <MailIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
-              <span className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1">
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Send Invites
-                <span className="text-xs bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded-full leading-none">Soon</span>
               </span>
             </button>
             <button

@@ -12,16 +12,17 @@ import {
   CalendarIcon,
   ClipboardListIcon,
   UserIcon,
-  TableIcon,
   CurrencyDollarIcon,
   UserGroupIcon,
   HomeIcon,
-  ViewGridIcon,
+  ViewBoardsIcon,
+  IdentificationIcon,
   HeartIcon,
   QrcodeIcon,
   QuestionMarkCircleIcon,
   PhotographIcon,
 } from "@heroicons/react/solid";
+import { Chair, Blueprint } from "@phosphor-icons/react";
 import { useEventContext } from "../../context/EventContext";
 import { useAuth } from "../../api/hooks/useAuth";
 import { getRoleLabel } from "../../utils/jwtUtils";
@@ -45,14 +46,14 @@ const BASE_LINKS: SidebarLink[] = [
   { to: "/app/form-fields", label: "RSVP Questions", Icon: QuestionMarkCircleIcon, sub: true },
   { to: "/app/rsvps", label: "RSVPs", Icon: ClipboardListIcon, end: true },
   { to: "/app/guests", label: "Guests", Icon: UserGroupIcon, sub: true },
-  { to: "/app/tables", label: "Tables", Icon: TableIcon, end: true },
-  { to: "/app/tables/floorplan", label: "Floor Plan", Icon: ViewGridIcon, sub: true },
+  { to: "/app/tables", label: "Tables", Icon: Chair, end: true },
+  { to: "/app/tables/floorplan", label: "Floor Plan", Icon: Blueprint, sub: true },
   { to: "/app/wallet", label: "Wallet", Icon: CurrencyDollarIcon },
   { to: "/app/checkin", label: "Check-in", Icon: QrcodeIcon, end: true },
   { to: "/app/checkin/v1", label: "Check-in V1", Icon: QrcodeIcon, sub: true },
   { to: "/app/checkin/v2", label: "Check-in V2", Icon: QrcodeIcon, sub: true },
   { to: "/app/users", label: "Users", Icon: UserIcon },
-  { to: "/app/crew", label: "Crew", Icon: UserGroupIcon },
+  { to: "/app/crew", label: "Crew", Icon: IdentificationIcon },
 ];
 
 // Pages accessible to Staff (role 6) only
