@@ -1,5 +1,6 @@
 // src/components/pages/Wallet/ExportReportModal.tsx
 import React, { useState } from "react";
+import { saveAs } from "file-saver";
 import { Modal } from "../../molecules/Modal";
 import { Button } from "../../atoms/Button";
 import type { Transaction } from "../../../types/transaction";
@@ -44,6 +45,63 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
       
       return true;
     });
+  };
+
+  const exportToXlsx = async () => {
+    const XLSX = await import("xlsx");
+    const filteredTransactions = filterTransactionsByDate(transactions);
+
+    if (filteredTransactions.length === 0) {
+      alert("No transactions to export with the selected date range.");
+      return;
+    }
+
+    const currencySymbol = CURRENCY_CONFIG[wallet.currency].symbol;
+    const wb = XLSX.utils.book_new();
+
+    if (includeTransactionDetails) {
+      const txnRows = filteredTransactions.map((txn) => {
+        const row: Record<string, unknown> = {
+          "Date": txn.transactionDate || "",
+          "Transaction Name": txn.transactionName,
+          "Type": getTransactionTypeLabel(txn.type),
+          "Category": txn.category,
+        };
+        if (includeVendorInfo) {
+          row["Vendor"] = txn.vendorName || "";
+          row["Vendor Contact"] = txn.vendorContact || "";
+        }
+        row["Amount"] = txn.amount;
+        row["Status"] = txn.paymentStatus || "";
+        row["Reference ID"] = txn.referenceId || "";
+        row["Remarks"] = txn.remarks || "";
+        return row;
+      });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(txnRows), "Transactions");
+    }
+
+    if (includeCategorySummary) {
+      const categoryTotals = new Map<string, { amount: number; count: number }>();
+      const totalSpending = filteredTransactions
+        .filter((t) => t.type === 1)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      filteredTransactions.filter((t) => t.type === 1).forEach((txn) => {
+        const existing = categoryTotals.get(txn.category) || { amount: 0, count: 0 };
+        categoryTotals.set(txn.category, { amount: existing.amount + txn.amount, count: existing.count + 1 });
+      });
+
+      const summaryRows: Record<string, unknown>[] = [];
+      categoryTotals.forEach((data, category) => {
+        const percentage = totalSpending > 0 ? (data.amount / totalSpending) * 100 : 0;
+        summaryRows.push({ "Category": category, "Total Spent": `${currencySymbol} ${data.amount.toFixed(2)}`, "Percentage": `${percentage.toFixed(1)}%`, "Transaction Count": data.count });
+      });
+      summaryRows.push({ "Category": "Total Spending", "Total Spent": `${currencySymbol} ${totalSpending.toFixed(2)}`, "Percentage": "", "Transaction Count": "" });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), "Category Summary");
+    }
+
+    saveAs(new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })]), `wallet-report-${Date.now()}.xlsx`);
+    onClose();
   };
 
   const exportToCSV = () => {
@@ -146,7 +204,11 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
   };
 
   const handleExport = () => {
-    exportToCSV();
+    if (format === "excel") {
+      exportToXlsx();
+    } else {
+      exportToCSV();
+    }
   };
 
   return (
@@ -212,11 +274,20 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
                 CSV
               </span>
             </button>
-            <div className="relative p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 flex flex-col items-center gap-2 opacity-50 cursor-not-allowed">
+            <button
+              type="button"
+              onClick={() => setFormat("excel")}
+              className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition ${
+                format === "excel"
+                  ? "border-primary bg-primary/5"
+                  : "border-gray-200 dark:border-gray-700 hover:border-primary hover:bg-primary/5"
+              }`}
+            >
               <span className="text-2xl">📄</span>
-              <span className="text-sm font-medium text-gray-400 dark:text-gray-500">Excel</span>
-              <span className="absolute -top-2 -right-2 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full leading-none">Soon</span>
-            </div>
+              <span className={`text-sm font-medium ${format === "excel" ? "text-primary" : "text-gray-600 dark:text-gray-400"}`}>
+                Excel
+              </span>
+            </button>
             <div className="relative p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 flex flex-col items-center gap-2 opacity-50 cursor-not-allowed">
               <span className="text-2xl">📝</span>
               <span className="text-sm font-medium text-gray-400 dark:text-gray-500">PDF</span>

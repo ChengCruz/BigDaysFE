@@ -148,10 +148,9 @@ export default function WalletPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
-            disabled
             variant="secondary"
-            className="flex items-center gap-2 opacity-50 cursor-not-allowed relative"
-            title="Coming Soon"
+            className="flex items-center gap-2"
+            onClick={() => setExportModal(true)}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -168,9 +167,6 @@ export default function WalletPage() {
               />
             </svg>
             Export
-            <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-0.5 rounded-full ml-1">
-              Coming Soon
-            </span>
           </Button>
           <Button
             onClick={() => handleOpenSetupWallet(true)}

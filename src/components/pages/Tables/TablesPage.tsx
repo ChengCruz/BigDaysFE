@@ -26,6 +26,7 @@ import { useAuth } from "../../../api/hooks/useAuth";
 import toast from "react-hot-toast";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { ChevronDownIcon, CollectionIcon, UserGroupIcon, UserIcon, ChartBarIcon, ArrowsExpandIcon } from "@heroicons/react/solid";
+import { saveAs } from "file-saver";
 
 export default function TablesPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
@@ -75,6 +76,58 @@ export default function TablesPage() {
   const unassignedGuests = useMemo(() => {
     return guests.filter(g => !g.tableId);
   }, [guests]);
+
+  const handleExportCsv = () => {
+    if (!eventId) return;
+    const tableMap = new Map(tables.map(t => [t.id, t.name]));
+    const escape = (v: unknown) => {
+      const s = String(v ?? "");
+      return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+
+    let csv = "Table Name,Capacity,Seats Filled,Seats Available\n";
+    tables.forEach(t => {
+      const filled = guests.filter(g => g.tableId === t.id).reduce((sum, g) => sum + (g.pax || g.noOfPax || 1), 0);
+      csv += [escape(t.name), t.capacity, filled, t.capacity - filled].join(",") + "\n";
+    });
+
+    csv += "\nGuest Name,Table,PAX,Phone,Notes,Status\n";
+    const seated = guests.filter(g => g.tableId);
+    const unassigned = guests.filter(g => !g.tableId);
+    [...seated, ...unassigned].forEach(g => {
+      const tableName = g.tableId ? (tableMap.get(g.tableId) ?? "Unknown") : "";
+      csv += [escape(g.name), escape(tableName), g.pax || g.noOfPax || 1, escape(g.phoneNo || ""), escape(g.notes || ""), g.tableId ? "Seated" : "Unassigned"].join(",") + "\n";
+    });
+
+    saveAs(new Blob([csv], { type: "text/csv;charset=utf-8;" }), `table-seating-${eventId}.csv`);
+  };
+
+  const handleExportXlsx = async () => {
+    if (!eventId) return;
+    const XLSX = await import("xlsx");
+    const tableMap = new Map(tables.map(t => [t.id, t.name]));
+
+    const summaryRows = tables.map(t => {
+      const filled = guests.filter(g => g.tableId === t.id).reduce((sum, g) => sum + (g.pax || g.noOfPax || 1), 0);
+      return { "Table Name": t.name, "Capacity": t.capacity, "Seats Filled": filled, "Seats Available": t.capacity - filled };
+    });
+
+    const seated = guests.filter(g => g.tableId);
+    const unassigned = guests.filter(g => !g.tableId);
+    const guestRows = [...seated, ...unassigned].map(g => ({
+      "Guest Name": g.name,
+      "Table": g.tableId ? (tableMap.get(g.tableId) ?? "Unknown") : "",
+      "PAX": g.pax || g.noOfPax || 1,
+      "Phone": g.phoneNo || "",
+      "Notes": g.notes || "",
+      "Status": g.tableId ? "Seated" : "Unassigned",
+    }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), "Table Summary");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(guestRows), "Guest Seating");
+    saveAs(new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })]), `table-seating-${eventId}.xlsx`);
+  };
 
   // Build tables with guest details
   const tablesWithGuests = useMemo(() => {
@@ -283,10 +336,10 @@ export default function TablesPage() {
                 Select
               </Button>
             )}
-            <Button disabled variant="secondary">
-              Export
-              <span className="ml-1.5 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">Soon</span>
-            </Button>
+            <Dropdown trigger={<Button variant="secondary">Export ▾</Button>}>
+              <DropdownItem onClick={handleExportXlsx}>Export as XLSX</DropdownItem>
+              <DropdownItem onClick={handleExportCsv}>Export as CSV</DropdownItem>
+            </Dropdown>
             <Dropdown
               trigger={
                 <Button className="flex items-center gap-1.5">

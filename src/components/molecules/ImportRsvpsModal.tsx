@@ -68,34 +68,13 @@ export const ImportRsvpsModal: React.FC<Props> = ({
     const customHeaders = formFields.map((f) => f.label ?? f.name ?? "");
     const allHeaders = [...STANDARD_HEADERS, ...customHeaders];
 
-    const typeHints = [
-      "text", "text", "number", "text",
-      ...formFields.map((f) => f.typeKey ?? "text"),
-    ];
+    const ws = XLSX.utils.aoa_to_sheet([allHeaders]);
 
-    const optionHints = [
-      "", "", "", "",
-      ...formFields.map((f) => {
-        if ((f.typeKey === "select" || f.typeKey === "radio") && f.options) {
-          const opts = Array.isArray(f.options) ? f.options : f.options.split(",");
-          return opts.map((o) => String(o).trim()).join(" | ");
-        }
-        return "";
-      }),
-    ];
-
-    const ws = XLSX.utils.aoa_to_sheet([allHeaders, typeHints, optionHints]);
-
-    // Style header row (bold) and hint rows (grey) where possible
     const headerRange = XLSX.utils.decode_range(ws["!ref"] ?? "A1");
     for (let c = headerRange.s.c; c <= headerRange.e.c; c++) {
       const headerCell = XLSX.utils.encode_cell({ r: 0, c });
       if (ws[headerCell]) {
         ws[headerCell].s = { font: { bold: true }, fill: { fgColor: { rgb: "4F81BD" } } };
-      }
-      const hintCell = XLSX.utils.encode_cell({ r: 1, c });
-      if (ws[hintCell]) {
-        ws[hintCell].s = { font: { italic: true, color: { rgb: "808080" } } };
       }
     }
 
@@ -195,7 +174,6 @@ export const ImportRsvpsModal: React.FC<Props> = ({
           colMap.forEach((col) => {
             if (col.isCustom && col.fieldName) {
               let val = String(obj[col.key] ?? "").trim();
-              // Find field definition
               const fieldDef = formFields.find((f) => f.name === col.fieldName);
               if (fieldDef?.typeKey === "checkbox") {
                 const lower = val.toLowerCase();
@@ -203,6 +181,12 @@ export const ImportRsvpsModal: React.FC<Props> = ({
               } else if (fieldDef?.typeKey === "date" && obj[col.key] instanceof Date) {
                 const d = obj[col.key] as Date;
                 val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+              } else if ((fieldDef?.typeKey === "select" || fieldDef?.typeKey === "radio") && fieldDef.options) {
+                const opts = (Array.isArray(fieldDef.options) ? fieldDef.options : fieldDef.options.split(",")).map((o) => String(o).trim());
+                const n = parseInt(val, 10);
+                if (!isNaN(n) && n >= 1 && n <= opts.length) {
+                  val = opts[n - 1];
+                }
               }
               extras[col.fieldName] = val;
             }
@@ -300,6 +284,75 @@ export const ImportRsvpsModal: React.FC<Props> = ({
               "↓ Download Template (.xlsx)"
             )}
           </Button>
+
+          {!formFieldsLoading && (() => {
+            type ColDef = { label: string; type: string; options: string[] | null };
+            const cols: ColDef[] = [
+              { label: "Guest Name", type: "text", options: null },
+              { label: "Phone No", type: "text", options: null },
+              { label: "No of Pax", type: "number", options: null },
+              { label: "Remarks", type: "text", options: null },
+              ...formFields.map((f) => {
+                const options =
+                  (f.typeKey === "select" || f.typeKey === "radio") && f.options
+                    ? (Array.isArray(f.options) ? f.options : f.options.split(",")).map((o) => String(o).trim())
+                    : null;
+                return { label: f.label ?? f.name ?? "", type: f.typeKey ?? "text", options };
+              }),
+            ];
+
+            const typeBadge = (type: string, options: string[] | null) => {
+              if (options) return { text: options.map((_, i) => i + 1).join(" / "), className: "bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 ring-1 ring-amber-200 dark:ring-amber-700" };
+              if (type === "number") return { text: "number", className: "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 ring-1 ring-blue-200 dark:ring-blue-700" };
+              if (type === "checkbox") return { text: "yes / no", className: "bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400 ring-1 ring-green-200 dark:ring-green-700" };
+              if (type === "date") return { text: "date", className: "bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 ring-1 ring-purple-200 dark:ring-purple-700" };
+              return { text: "text", className: "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400 ring-1 ring-gray-200 dark:ring-gray-600" };
+            };
+
+            return (
+              <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+                <div className="bg-gray-50 dark:bg-gray-800/80 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+                  <p className="text-[10px] font-semibold tracking-widest uppercase text-gray-400 dark:text-gray-500">
+                    Template columns
+                  </p>
+                </div>
+                <div className="max-h-52 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700/50">
+                  {cols.map((col, i) => {
+                    const badge = typeBadge(col.type, col.options);
+                    return (
+                      <div key={i} className="px-3 py-1.5">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300 min-w-0 truncate">
+                            {col.label}
+                          </span>
+                          <span className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${badge.className}`}>
+                            {badge.text}
+                          </span>
+                        </div>
+                        {col.options && (
+                          <div className="mt-1 space-y-0.5 pl-1">
+                            {col.options.map((opt, j) => (
+                              <p key={j} className="text-[10px] text-gray-400 dark:text-gray-500">
+                                <span className="font-semibold text-amber-500 dark:text-amber-400 mr-1">{j + 1}</span>
+                                {opt}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {cols.some((c) => c.options) && (
+                  <div className="px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border-t border-amber-100 dark:border-amber-800/40">
+                    <p className="text-[10px] text-amber-700 dark:text-amber-400">
+                      For fields showing <span className="font-semibold">1 / 2 / 3…</span>, enter the number in your Excel file — e.g. type <span className="font-semibold">1</span> for the first option.
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         <div className="border-t border-gray-100 dark:border-gray-700" />
