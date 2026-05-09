@@ -190,7 +190,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
     }
 
     // Create download
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["﻿", csv], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);

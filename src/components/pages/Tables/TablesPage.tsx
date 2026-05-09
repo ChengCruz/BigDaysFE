@@ -99,7 +99,7 @@ export default function TablesPage() {
       csv += [escape(g.name), escape(tableName), g.pax || g.noOfPax || 1, escape(g.phoneNo || ""), escape(g.notes || ""), g.tableId ? "Seated" : "Unassigned"].join(",") + "\n";
     });
 
-    saveAs(new Blob([csv], { type: "text/csv;charset=utf-8;" }), `table-seating-${eventId}.csv`);
+    saveAs(new Blob(["﻿", csv], { type: "text/csv;charset=utf-8;" }), `table-seating-${eventId}.csv`);
   };
 
   const handleExportXlsx = async () => {
@@ -493,7 +493,7 @@ export default function TablesPage() {
               {filteredTables.map(table => (
                 <div key={table.id} className="relative">
                   {selectMode && (
-                    <div className="absolute top-2 left-2 z-10">
+                    <div className="absolute top-2 right-2 z-10">
                       <input
                         type="checkbox"
                         className="w-4 h-4 accent-primary cursor-pointer"

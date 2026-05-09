@@ -97,7 +97,8 @@ export default function RsvpsPage() {
       };
       for (const field of formFields) {
         const answer = (r.answers ?? []).find((a) => a.questionId === field.questionId);
-        row[field.label ?? field.questionId] = answer?.text ?? "";
+        const key = field.label || field.questionId;
+        if (key) row[key] = answer?.text ?? "";
       }
       return row;
     });
@@ -122,7 +123,7 @@ export default function RsvpsPage() {
     };
     let csv = headers.map(escape).join(",") + "\n";
     rows.forEach((row) => { csv += headers.map((h) => escape(row[h])).join(",") + "\n"; });
-    saveAs(new Blob([csv], { type: "text/csv;charset=utf-8;" }), `rsvps-event-${eventId}.csv`);
+    saveAs(new Blob(["﻿", csv], { type: "text/csv;charset=utf-8;" }), `rsvps-event-${eventId}.csv`);
   };
 
   const renderAnswers = (answers: AnswerItem[]) =>
