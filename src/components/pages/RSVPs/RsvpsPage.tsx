@@ -13,10 +13,13 @@ import {
 } from "../../../api/hooks/useRsvpsApi";
 import type { AnswerItem } from "../../../api/hooks/useAnswersApi";
 import { useEventRsvpInternal } from "../../../api/hooks/useEventsApi";
+import { useTablesApi } from "../../../api/hooks/useTablesApi";
+import { useGuestsApi } from "../../../api/hooks/useGuestsApi";
 import { RsvpFormModal } from "../../molecules/RsvpFormModal";
 import { ImportRsvpsModal } from "../../molecules/ImportRsvpsModal";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { Button } from "../../atoms/Button";
+import { Dropdown, DropdownItem } from "../../atoms/Dropdown";
 import { useEventContext } from "../../../context/EventContext";
 import { useAuth } from "../../../api/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
@@ -32,6 +35,8 @@ export default function RsvpsPage() {
   const updateRsvp = useUpdateRsvp(eventId!);
   const deleteRsvp = useDeleteRsvp(eventId!);
   const { data: formFields = [], isLoading: formFieldsLoading } = useEventRsvpInternal(eventId ?? undefined);
+  const { data: tables = [] } = useTablesApi(eventId!);
+  const { data: guests = [] } = useGuestsApi(eventId!);
   const { user } = useAuth();
   const actor = user?.id ?? user?.name ?? "System";
   const qc = useQueryClient();
@@ -76,13 +81,49 @@ export default function RsvpsPage() {
     { total: 0, pax: 0 }
   );
 
-  const handleExport = async () => {
+  const buildRsvpRows = () => {
+    const tableMap = new Map(tables.map((t) => [t.id, t.name]));
+    const guestCodeMap = new Map<string, string>();
+    for (const g of guests) {
+      if (g.rsvpId && g.guestCode) guestCodeMap.set(g.rsvpId, g.guestCode);
+    }
+    return rsvps.map((r, idx) => {
+      const row: Record<string, unknown> = {
+        "No.": idx + 1,
+        "Guest Code": guestCodeMap.get(r.rsvpId ?? r.id) ?? "",
+        "Guest Name": r.guestName,
+        "No. of Pax": r.noOfPax ?? "",
+        "Table": r.tableId ? (tableMap.get(r.tableId) ?? "") : "",
+      };
+      for (const field of formFields) {
+        const answer = (r.answers ?? []).find((a) => a.questionId === field.questionId);
+        const key = field.label || field.questionId;
+        if (key) row[key] = answer?.text ?? "";
+      }
+      return row;
+    });
+  };
+
+  const handleExportXlsx = async () => {
     const XLSX = await import("xlsx");
-    const data = rsvps.map(({ eventId, ...rest }) => { void eventId; return rest; });
-    const ws = XLSX.utils.json_to_sheet(data);
+    const rows = buildRsvpRows();
+    const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "RSVPs");
-    saveAs(new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })]), "rsvps.xlsx");
+    saveAs(new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })]), `rsvps-event-${eventId}.xlsx`);
+  };
+
+  const handleExportCsv = () => {
+    const rows = buildRsvpRows();
+    if (rows.length === 0) return;
+    const headers = Object.keys(rows[0]);
+    const escape = (v: unknown) => {
+      const s = String(v ?? "");
+      return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    let csv = headers.map(escape).join(",") + "\n";
+    rows.forEach((row) => { csv += headers.map((h) => escape(row[h])).join(",") + "\n"; });
+    saveAs(new Blob(["﻿", csv], { type: "text/csv;charset=utf-8;" }), `rsvps-event-${eventId}.csv`);
   };
 
   const renderAnswers = (answers: AnswerItem[]) =>
@@ -107,10 +148,10 @@ export default function RsvpsPage() {
           <Button variant="secondary" onClick={() => setImportModalOpen(true)}>
             Import
           </Button>
-          <Button disabled variant="secondary" onClick={handleExport}>
-            Export
-            <span className="ml-1.5 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">Soon</span>
-          </Button>
+          <Dropdown trigger={<Button variant="secondary">Export ▾</Button>}>
+            <DropdownItem onClick={handleExportXlsx}>Export as XLSX</DropdownItem>
+            <DropdownItem onClick={handleExportCsv}>Export as CSV</DropdownItem>
+          </Dropdown>
         </div>
       </div>
 

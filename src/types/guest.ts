@@ -4,6 +4,8 @@ export interface ApiGuest {
   eventGuid: string;
   rsvpId?: string;
   tableId?: string | null;
+  guestIndex?: number;
+  guestCode?: string;
   name: string;
   phoneNo?: string;
   pax?: number;
