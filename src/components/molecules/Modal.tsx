@@ -1,4 +1,5 @@
 import React, { type ReactNode } from "react";
+import { XIcon } from "@heroicons/react/solid";
 
 export interface ModalProps {
   isOpen: boolean;
@@ -7,14 +8,17 @@ export interface ModalProps {
   children: ReactNode;
   /** optional extra Tailwind classes on the inner panel */
   className?: string;
+  /** show an X close button in the title bar */
+  showCloseButton?: boolean;
 }
 
 export const Modal: React.FC<ModalProps> = ({
   isOpen,
   title,
-  onClose: _onClose,
+  onClose,
   children,
   className = "",
+  showCloseButton = false,
 }) => {
   if (!isOpen) return null;
   return (
@@ -26,8 +30,18 @@ export const Modal: React.FC<ModalProps> = ({
         }
       >
         {title && (
-          <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-gray-100 dark:border-white/10">
+          <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-gray-100 dark:border-white/10 flex items-center justify-between">
             <h3 className="text-lg font-semibold">{title}</h3>
+            {showCloseButton && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                aria-label="Close"
+              >
+                <XIcon className="h-4 w-4" />
+              </button>
+            )}
           </div>
         )}
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5">{children}</div>

@@ -24,6 +24,7 @@ import { GiftFormModal } from "./GiftFormModal";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { Modal } from "../../molecules/Modal";
+import { GuestHelpModal } from "../../molecules/GuestHelpModal";
 import QrStatusBadge from "../../molecules/QrStatusBadge";
 import QrImageModal from "../../molecules/QrImageModal";
 import type { QrToken, QrStatus } from "../../../types/qr";
@@ -66,6 +67,7 @@ export default function GuestsPage() {
     open: false,
     message: "",
   });
+  const [helpModalOpen, setHelpModalOpen] = useState(false);
 
   // Gift map: guestCode → amount (joined from wallet transactions)
   const giftMap = useMemo(() => {
@@ -230,7 +232,16 @@ export default function GuestsPage() {
           <h2 className="text-2xl font-semibold text-primary">Guests</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage and organize your guest list</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setHelpModalOpen(true)}
+            title="How to use this page"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+            aria-label="Open help guide"
+          >
+            ? Guide
+          </button>
           {!isReadOnly && (
             <Button
               variant="secondary"
@@ -710,6 +721,8 @@ export default function GuestsPage() {
           </div>
         </div>
       </Modal>
+
+      <GuestHelpModal isOpen={helpModalOpen} onClose={() => setHelpModalOpen(false)} />
     </>
   );
 }
