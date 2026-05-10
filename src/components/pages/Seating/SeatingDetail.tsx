@@ -3,7 +3,7 @@ import { PageLoader } from "../../atoms/PageLoader";
 
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useSeatApi } from "../../../api/hooks/useSeatingApi";
-import { Button } from "../../atoms/Button";
+import { PencilIcon } from "@heroicons/react/solid";
 
 export default function SeatingDetail() {
   const { id } = useParams<{ id: string }>();
@@ -19,9 +19,7 @@ export default function SeatingDetail() {
         <h2 className="text-2xl font-semibold text-primary">
           Table {s.tableId} → Guest {s.guestId}
         </h2>
-        <Button variant="secondary" onClick={() => nav("edit")}>
-          Edit
-        </Button>
+        <button title="Edit" onClick={() => nav("edit")} className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-accent dark:border-white/10 dark:text-white dark:hover:bg-white/10 transition-colors"><PencilIcon className="h-4 w-4" /></button>
       </header>
       <Link to="/app/seating" className="text-sm text-gray-500 hover:underline">
         ← Back to list

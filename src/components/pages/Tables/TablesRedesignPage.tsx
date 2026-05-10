@@ -6,7 +6,6 @@ import { useState, useMemo } from "react";
 import { PageLoader } from "../../atoms/PageLoader";
 import { ErrorState } from "../../atoms/ErrorState";
 import { NoEventsState } from "../../molecules/NoEventsState";
-import { Button } from "../../atoms/Button";
 import { Dropdown, DropdownItem } from "../../atoms/Dropdown";
 import { QuickSetupModal } from "../../molecules/QuickSetupModal";
 import { TableFormModal } from "../../molecules/TableFormModal";
@@ -25,7 +24,7 @@ import {
 import { useEventContext } from "../../../context/EventContext";
 import { useAuth } from "../../../api/hooks/useAuth";
 import toast from "react-hot-toast";
-import { ChevronDownIcon, XIcon, MenuIcon } from "@heroicons/react/solid";
+import { ChevronDownIcon, XIcon, MenuIcon, PencilIcon, TrashIcon } from "@heroicons/react/solid";
 
 // ── Colour helpers ────────────────────────────────────────────────────────────
 function barFill(a: number, c: number) {
@@ -518,15 +517,17 @@ export default function TablesRedesignPage() {
                         >
                           <button
                             onClick={() => handleEditTable(table.id)}
-                            className="flex-1 text-[10px] py-1 rounded-md border border-primary/20 text-gray-500 hover:bg-primary/5 hover:text-primary font-semibold transition"
+                            title="Edit"
+                            className="flex-1 flex items-center justify-center py-1 rounded-md border border-primary/20 text-gray-500 hover:bg-primary/5 hover:text-primary transition"
                           >
-                            Edit
+                            <PencilIcon className="h-3 w-3" />
                           </button>
                           <button
                             onClick={() => handleDeleteTable(table.id)}
-                            className="flex-1 text-[10px] py-1 rounded-md border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 font-semibold transition"
+                            title="Delete"
+                            className="flex-1 flex items-center justify-center py-1 rounded-md border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 transition"
                           >
-                            Delete
+                            <TrashIcon className="h-3 w-3" />
                           </button>
                         </div>
                       )}
@@ -586,15 +587,17 @@ export default function TablesRedesignPage() {
                         >
                           <button
                             onClick={() => handleEditTable(table.id)}
-                            className="flex-1 text-[10px] py-1 rounded-md border border-primary/20 text-gray-500 hover:bg-primary/5 hover:text-primary font-semibold transition"
+                            title="Edit"
+                            className="flex-1 flex items-center justify-center py-1 rounded-md border border-primary/20 text-gray-500 hover:bg-primary/5 hover:text-primary transition"
                           >
-                            Edit
+                            <PencilIcon className="h-3 w-3" />
                           </button>
                           <button
                             onClick={() => handleDeleteTable(table.id)}
-                            className="flex-1 text-[10px] py-1 rounded-md border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 font-semibold transition"
+                            title="Delete"
+                            className="flex-1 flex items-center justify-center py-1 rounded-md border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 transition"
                           >
-                            Delete
+                            <TrashIcon className="h-3 w-3" />
                           </button>
                         </div>
                       )}
@@ -699,15 +702,17 @@ export default function TablesRedesignPage() {
               <div className="flex gap-2 px-4 py-3 border-t border-primary/10 shrink-0">
                 <button
                   onClick={() => handleEditTable(openTable.id)}
-                  className="flex-1 text-xs py-1.5 rounded-lg border border-primary/20 hover:bg-primary/5 font-semibold text-gray-600 transition"
+                  title="Edit"
+                  className="flex-1 flex items-center justify-center py-1.5 rounded-lg border border-primary/20 hover:bg-primary/5 text-gray-600 transition"
                 >
-                  Edit
+                  <PencilIcon className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => handleDeleteTable(openTable.id)}
-                  className="text-xs py-1.5 px-3 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 font-semibold transition"
+                  title="Delete"
+                  className="flex items-center justify-center p-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition"
                 >
-                  Delete
+                  <TrashIcon className="h-4 w-4" />
                 </button>
               </div>
             )}

@@ -7,7 +7,7 @@ import { NoEventsState } from "../../molecules/NoEventsState";
 import { useEventContext } from "../../../context/EventContext";
 import { useCrewListApi, useDeleteCrew, type CrewMember } from "../../../api/hooks/useCrewApi";
 import { CrewFormModal } from "./CrewFormModal";
-import { UserGroupIcon } from "@heroicons/react/solid";
+import { UserGroupIcon, PencilIcon, TrashIcon } from "@heroicons/react/solid";
 import toast from "react-hot-toast";
 
 function formatDate(dateStr?: string) {
@@ -142,19 +142,20 @@ export default function CrewPage() {
                   <td className="px-4 py-3 text-text/60 dark:text-white/40">{formatDate(member.createdDate)}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="secondary"
+                      <button
+                        title="Edit"
                         onClick={() => setModal({ open: true, crew: member })}
+                        className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-accent dark:border-white/10 dark:text-white dark:hover:bg-white/10 transition-colors"
                       >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="secondary"
+                        <PencilIcon className="h-4 w-4" />
+                      </button>
+                      <button
+                        title="Remove"
                         onClick={() => setDeleteModal({ open: true, crew: member })}
-                        className="text-red-500 hover:text-red-600 border-red-200 dark:border-red-800"
+                        className="p-2 rounded-lg bg-white border border-red-200 text-red-600 hover:bg-red-50 dark:bg-accent dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
                       >
-                        Remove
-                      </Button>
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>

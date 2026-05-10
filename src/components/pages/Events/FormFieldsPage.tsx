@@ -12,6 +12,7 @@ import {
   type QuestionPayload,
 } from "../../../api/hooks/useFormFieldsApi";
 import { Button } from "../../atoms/Button";
+import { PencilIcon, TrashIcon, CheckCircleIcon, XCircleIcon } from "@heroicons/react/solid";
 import { FormFieldModal, TYPE_LABELS } from "../../molecules/FormFieldModal";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { NoEventsState } from "../../molecules/NoEventsState";
@@ -120,8 +121,8 @@ export default function FormFieldsPage() {
                 </p>
               </div>
               <div className="space-x-2">
-                <Button
-                  variant="secondary"
+                <button
+                  title="Edit"
                   onClick={() => {
                     const field = f as FormFieldConfig & { questionId: string };
                     if (f.hasExistingAnswers) {
@@ -130,40 +131,34 @@ export default function FormFieldsPage() {
                       setModal({ open: true, initial: field });
                     }
                   }}
+                  className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-accent dark:border-white/10 dark:text-white dark:hover:bg-white/10 transition-colors"
                 >
-                  Edit
-                </Button>
+                  <PencilIcon className="h-4 w-4" />
+                </button>
                 {f.isActive === false ? (
-                  <Button
-                    variant="secondary"
-                    className="!text-green-700 !border-green-500 hover:!bg-green-50 dark:!text-green-400 dark:!border-green-600 dark:hover:!bg-green-900/20"
-                    onClick={() => {
-                      if (f.questionId) setActivateWarning({ open: true, field: f });
-                    }}
+                  <button
+                    title="Activate question"
+                    onClick={() => { if (f.questionId) setActivateWarning({ open: true, field: f }); }}
+                    className="p-2 rounded-lg bg-white border border-green-200 text-green-700 hover:bg-green-50 dark:bg-accent dark:border-green-900/30 dark:text-green-400 dark:hover:bg-green-900/20 transition-colors"
                   >
-                    Activate
-                  </Button>
+                    <CheckCircleIcon className="h-4 w-4" />
+                  </button>
                 ) : (
-                  <Button
-                    variant="secondary"
-                    className="!text-amber-700 !border-amber-400 hover:!bg-amber-50 dark:!text-amber-400 dark:!border-amber-500 dark:hover:!bg-amber-900/20"
-                    onClick={() => {
-                      if (f.questionId) setDeactivateWarning({ open: true, field: f });
-                    }}
+                  <button
+                    title="Deactivate question"
+                    onClick={() => { if (f.questionId) setDeactivateWarning({ open: true, field: f }); }}
+                    className="p-2 rounded-lg bg-white border border-amber-300 text-amber-700 hover:bg-amber-50 dark:bg-accent dark:border-amber-700/40 dark:text-amber-400 dark:hover:bg-amber-900/20 transition-colors"
                   >
-                    Deactivate
-                  </Button>
+                    <XCircleIcon className="h-4 w-4" />
+                  </button>
                 )}
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    if (f.questionId) {
-                      setDeleteWarning({ open: true, field: f });
-                    }
-                  }}
+                <button
+                  title="Delete"
+                  onClick={() => { if (f.questionId) setDeleteWarning({ open: true, field: f }); }}
+                  className="p-2 rounded-lg bg-white border border-red-200 text-red-600 hover:bg-red-50 dark:bg-accent dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
                 >
-                  Delete
-                </Button>
+                  <TrashIcon className="h-4 w-4" />
+                </button>
               </div>
             </li>
           ))}

@@ -2,7 +2,8 @@
 import { PageLoader } from "../../atoms/PageLoader";
 import { ErrorState } from "../../atoms/ErrorState";
 import { useState, useMemo } from "react";
-import { UserGroupIcon, UserIcon, CheckCircleIcon, XIcon } from "@heroicons/react/solid";
+import { UserGroupIcon, UserIcon, CheckCircleIcon, XIcon, PencilIcon } from "@heroicons/react/solid";
+import { Chair, DotsThree } from "@phosphor-icons/react";
 import { useAuth } from "../../../api/hooks/useAuth";
 import {
   useGuestsApi,
@@ -341,7 +342,7 @@ export default function GuestsPage() {
                   const giftAmt = giftMap.get(guest.guestCode ?? "");
                   if (giftAmt == null) return null;
                   return (
-                    <span className="absolute top-2 left-2 px-2 py-0.5 text-xs font-bold rounded-full bg-emerald-600 text-white">
+                    <span className="absolute top-2 left-2 px-2 py-0.5 text-xs font-bold rounded-full bg-amber-500 text-white">
                       {currencySymbol} {giftAmt.toLocaleString("en-MY", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                     </span>
                   );
@@ -363,7 +364,7 @@ export default function GuestsPage() {
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                       {guest.guestName}
                     </h3>
-                    {guest.guestCode && (
+                    {guest.guestCode && guest.guestCode.includes("-") && (
                       <span className="px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-xs font-mono font-bold text-gray-700 dark:text-gray-200">
                         {guest.guestCode}
                       </span>
@@ -449,13 +450,13 @@ export default function GuestsPage() {
                   return (
                     <div className="mt-4 flex items-center gap-2">
                       {/* Primary: Edit */}
-                      <Button
-                        variant="secondary"
-                        className="px-3 py-1.5 text-sm"
+                      <button
                         onClick={() => setModal({ open: true, guest })}
+                        title="Edit guest"
+                        className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-accent dark:border-white/10 dark:text-white dark:hover:bg-white/10 transition-colors"
                       >
-                        Edit
-                      </Button>
+                        <PencilIcon className="h-4 w-4" />
+                      </button>
 
                       {/* Assign / Unassign icon button */}
                       {guest.tableId ? (
@@ -470,19 +471,9 @@ export default function GuestsPage() {
                         <button
                           onClick={() => setAssignModal({ open: true, guest })}
                           title="Assign to table"
-                          className="p-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
+                          className="p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
                         >
-                          <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="12" cy="12" r="5"/>
-                            <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(0, 12, 12)"/>
-                            <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(45, 12, 12)"/>
-                            <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(90, 12, 12)"/>
-                            <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(135, 12, 12)"/>
-                            <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(180, 12, 12)"/>
-                            <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(225, 12, 12)"/>
-                            <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(270, 12, 12)"/>
-                            <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(315, 12, 12)"/>
-                          </svg>
+                          <Chair size={16} weight="bold" />
                         </button>
                       )}
 
@@ -512,8 +503,8 @@ export default function GuestsPage() {
                       {hasOverflow && (
                         <Dropdown
                           trigger={
-                            <button className="px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-accent text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors">
-                              ···
+                            <button className="p-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-accent text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors">
+                              <DotsThree size={16} weight="bold" />
                             </button>
                           }
                         >
