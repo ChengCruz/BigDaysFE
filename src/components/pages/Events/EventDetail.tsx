@@ -38,7 +38,14 @@ const [impOpen, setImpOpen] = useState(false);
   return (
     <div className="space-y-6">
       <header className="flex justify-between items-center">
-        <h2 className="text-3xl font-semibold text-primary">{event?.title}</h2>
+        <div className="flex items-center gap-3 flex-wrap">
+          <h2 className="text-3xl font-semibold text-primary">{event?.title}</h2>
+          {event?.slug && (
+            <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${event.isExpired ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+              RSVP {event.isExpired ? "Closed" : "Open"}
+            </span>
+          )}
+        </div>
         <Link
           to="edit"
           className="px-4 py-2 bg-secondary text-white rounded shadow"
