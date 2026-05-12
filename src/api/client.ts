@@ -73,10 +73,11 @@ client.interceptors.response.use(
       // No body needed — the HttpOnly cookie is sent automatically
       const { data } = await client.post(AuthEndpoints.refreshToken);
 
-      tokenStore.set(data.data?.accessToken ?? data.accessToken);
+      const newToken = data.data?.accessToken ?? data.accessToken;
+      tokenStore.set(newToken);
 
-      processQueue(null, data.accessToken);
-      original.headers["Authorization"] = `Bearer ${data.accessToken}`;
+      processQueue(null, newToken);
+      original.headers["Authorization"] = `Bearer ${newToken}`;
       return client(original);
     } catch (refreshError) {
       processQueue(refreshError, null);

@@ -25,6 +25,10 @@ export interface ResetPasswordPayload {
   newPassword: string;
 }
 
+export interface VerifyEmailPayload {
+  token: string;
+}
+
 export interface AuthResponse {
   accessToken: string;
   expiresIn: number;
@@ -71,6 +75,11 @@ export function useAuthApi() {
       client.post(AuthEndpoints.resetPassword, data).then(r => r.data),
   });
 
+  const verifyEmail = useMutation<{ data: boolean; message: string; isSuccess: boolean }, Error, VerifyEmailPayload>({
+    mutationFn: (data: VerifyEmailPayload) =>
+      client.post(AuthEndpoints.verifyEmail, data).then(r => r.data),
+  });
+
   const logout = useMutation<LogoutResponse, Error, void>({
     mutationFn: () =>
       client.post<LogoutResponse>(AuthEndpoints.logout).then(r => r.data),
@@ -84,7 +93,7 @@ export function useAuthApi() {
     },
   });
 
-  return { login, register, logout, forgotPassword, resetPassword };
+  return { login, register, logout, forgotPassword, resetPassword, verifyEmail };
 }
 
 export function useCrewLogin() {

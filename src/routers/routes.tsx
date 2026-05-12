@@ -5,6 +5,7 @@ import { Routes, Route, Navigate, Outlet, useNavigate, useLocation } from "react
 import LandingPage from "../components/pages/Landing/LandingPage";
 import LoginPage from "../components/pages/Auth/LoginPage";
 import RegisterPage from "../components/pages/Auth/RegisterPage";
+import VerifyEmailPage from "../components/pages/Auth/VerifyEmailPage";
 import ResetPasswordPage from "../components/pages/Auth/ResetPasswordPage";
 import ContactPage from "../components/pages/Auth/ContactPage";
 import StoryPage from "../components/pages/Public/Story/StoryPage";
@@ -120,6 +121,7 @@ export default function AppRoutes() {
       {/* ─── AUTH (standalone, no navbar/footer) ─────────── */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
       {/* Dev/Staging only — blocked in prod via ResetPasswordPage internal guard */}
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 

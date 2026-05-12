@@ -7,6 +7,7 @@ export const AuthEndpoints = {
   refreshToken: "/User/RefreshToken",
   me: "/auth/me",
   register: "/User/Create",
+  verifyEmail: "/User/VerifyEmail",
   forgotPassword: "/User/ForgotPassword",
   resetPassword: "/User/ResetForgotPassword",
 };

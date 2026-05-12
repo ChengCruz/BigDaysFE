@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, type ReactNode } from "react";
+import { createContext, useState, useEffect, useRef, type ReactNode } from "react";
 import client from "../api/client";
 import { useAuthApi, useCrewLogin, type LoginPayload, type AuthResponse, type CrewLoginPayload } from "../api/hooks/useAuthApi";
 import { AuthEndpoints } from "../api/endpoints";
@@ -49,6 +49,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Incrementing this forces a re-render when the in-memory token changes
   const [tokenVersion, setTokenVersion] = useState(0);
 
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Assigned fresh each render so the setTimeout callback always calls the
+  // latest closure via the ref — avoids stale capture of setTokenVersion.
+  const scheduleProactiveRefreshRef = useRef<(expiresIn: number) => void>(null!);
+  scheduleProactiveRefreshRef.current = (expiresIn: number) => {
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    refreshTimerRef.current = setTimeout(async () => {
+      try {
+        const { data } = await client.post(AuthEndpoints.refreshToken);
+        const authData = data.data ?? data;
+        tokenStore.set(authData.accessToken);
+        setTokenVersion(v => v + 1);
+        if (authData.expiresIn) scheduleProactiveRefreshRef.current(authData.expiresIn);
+      } catch {
+        tokenStore.clear();
+        sessionHint.clear();
+        setTokenVersion(v => v + 1);
+        if (window.location.pathname !== "/login") window.location.replace("/login");
+      }
+    }, expiresIn * 800); // fire at 80% of token lifetime
+  };
+
   // Silent session restore on app startup.
   // Only attempt refresh if the session hint flag exists, to avoid a noisy
   // 401 in the console when the user has never logged in.
@@ -60,7 +82,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     client
       .post(AuthEndpoints.refreshToken)
       .then(({ data }) => {
-        tokenStore.set(data.data?.accessToken ?? data.accessToken);
+        const authData = data.data ?? data;
+        tokenStore.set(authData.accessToken);
+        if (authData.expiresIn) scheduleProactiveRefreshRef.current(authData.expiresIn);
         setTokenVersion(v => v + 1);
       })
       .catch(() => {
@@ -85,7 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const userRole = getUserRoleFromToken(accessToken);
 
   const login = async (creds: LoginPayload): Promise<void> => {
-    await loginMutation.mutateAsync(creds);
+    const data = await loginMutation.mutateAsync(creds);
+    if (data.expiresIn) scheduleProactiveRefreshRef.current(data.expiresIn);
     setTokenVersion(v => v + 1);
   };
 
@@ -95,6 +120,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
     try {
       await logoutMutation.mutateAsync();
     } catch (error) {

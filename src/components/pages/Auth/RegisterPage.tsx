@@ -1,18 +1,15 @@
 // src/components/pages/Auth/RegisterPage.tsx
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FormField } from "../../molecules/FormField";
 import { PasswordInput } from "../../molecules/PasswordInput";
 import { Button } from "../../atoms/Button";
 import { validatePassword } from "../../../utils/passwordValidation";
 import { useAuthApi } from "../../../api/hooks/useAuthApi";
-import { AuthContext } from "../../../context/AuthProvider";
-import toast from "react-hot-toast";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { register } = useAuthApi();
-  const { login, loading: authLoading } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -47,12 +44,7 @@ export default function RegisterPage() {
         email: formData.email,
         password: formData.password,
       });
-      await login({
-        email: formData.email,
-        password: formData.password,
-      });
-      toast.success("Welcome to MyBigDays! Let's set up your first event.");
-      navigate("/app/events");
+      navigate("/verify-email", { state: { email: formData.email } });
     } catch (err: any) {
       if (err.response?.status === 409) {
         setError("email_taken");
@@ -136,10 +128,10 @@ export default function RegisterPage() {
       <Button
         type="submit"
         variant="primary"
-        disabled={register.isPending || authLoading}
+        disabled={register.isPending}
         className="w-full"
       >
-        {authLoading ? "Signing in…" : register.isPending ? "Creating Account…" : "Create Account"}
+        {register.isPending ? "Creating Account…" : "Create Account"}
       </Button>
 
       <div className="text-center text-sm">
