@@ -10,4 +10,6 @@ export interface ApiEvent {
   isDeleted?: boolean;
   slug?: string;
   eventCode?: string;
+  rsvpDueDate?: string | null;
+  isExpired?: boolean;
 }

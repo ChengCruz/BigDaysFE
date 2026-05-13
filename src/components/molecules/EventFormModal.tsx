@@ -37,6 +37,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
   );
   const [description, setDescription] = useState(initial?.description || "");
   const [location, setLocation] = useState(initial?.location || "");
+  const [rsvpDueDate, setRsvpDueDate] = useState<string>(initial?.rsvpDueDate?.slice(0, 10) ?? "");
 
   const { userGuid } = useContext(AuthContext);
   const createEvt = useCreateEvent();
@@ -58,6 +59,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
       setNoOfTable(initial?.noOfTable ? Number(initial.noOfTable) : 0);
       setDescription(initial?.description || "");
       setLocation(initial?.location || "");
+      setRsvpDueDate(initial?.rsvpDueDate?.slice(0, 10) ?? "");
       setError(null);
       setFieldErrors({});
     }
@@ -90,6 +92,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
           location,
           userGuid: userGuid ?? "",
           noOfTable,
+          rsvpDueDate: rsvpDueDate || null,
         });
         onSuccess?.(updated);
       } else {
@@ -101,6 +104,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
           location,
           userGuid: userGuid ?? "",
           noOfTable: noOfTable.toString(),
+          rsvpDueDate: rsvpDueDate || null,
         });
         onSuccess?.(created);
       }
@@ -119,6 +123,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
               location,
               userGuid: userGuid ?? "",
               noOfTable,
+              rsvpDueDate: rsvpDueDate || null,
             });
             onSuccess?.(updated);
           } else {
@@ -130,6 +135,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
               location,
               userGuid: userGuid ?? "",
               noOfTable: noOfTable.toString(),
+              rsvpDueDate: rsvpDueDate || null,
             });
             onSuccess?.(created);
           }
@@ -164,6 +170,13 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
           onChange={(e) => setDate(e.target.value)}
           required
           error={fieldErrors.date}
+        />
+        <FormField
+          label="RSVP Due Date"
+          type="date"
+          value={rsvpDueDate}
+          onChange={(e) => setRsvpDueDate(e.target.value)}
+          hint="If left blank, the event date will be used as the RSVP expiry date."
         />
         <div className="space-y-1">
           <label className="block font-medium">

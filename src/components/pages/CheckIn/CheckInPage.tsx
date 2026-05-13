@@ -1,10 +1,9 @@
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode, type ErrorInfo } from "react";
-import { useCheckInScanApi, useQrListApi, useUndoCheckInApi } from "../../../api/hooks/useQrApi";
+import { useCheckInScanApi, useForceCheckInApi, useQrListApi, useUndoCheckInApi } from "../../../api/hooks/useQrApi";
 import { useGuestsApi } from "../../../api/hooks/useGuestsApi";
 import type { CheckInErrorCode, CheckInResult } from "../../../types/qr";
 import { Button } from "../../atoms/Button";
-import { ManualCheckInModal } from "../../molecules/ManualCheckInModal";
-import { QrcodeIcon } from "@heroicons/react/solid";
+import { QrcodeIcon, UserGroupIcon } from "@heroicons/react/solid";
 import { useEventContext } from "../../../context/EventContext";
 import { PageLoader } from "../../atoms/PageLoader";
 import { NoEventsState } from "../../molecules/NoEventsState";
@@ -21,7 +20,7 @@ interface RecentScan {
   guestName: string;
   noOfPax: number;
   at: number;
-  token?: string; // only set for QR scans; absent for manual check-ins
+  token: string;
 }
 
 const errorMessages: Record<CheckInErrorCode | "UNKNOWN", string> = {
@@ -32,11 +31,6 @@ const errorMessages: Record<CheckInErrorCode | "UNKNOWN", string> = {
   UNKNOWN: "Unexpected error — try again",
 };
 
-/**
- * Derive the best-effort error code from a thrown axios-style error.
- * Backend returns 404 (not found) and 422 (already checked in or revoked);
- * may or may not set `errorCode` on response.data.
- */
 function mapError(err: unknown): CheckInErrorCode | "UNKNOWN" {
   const e = err as { response?: { status?: number; data?: { errorCode?: string; message?: string } } };
   const code = e?.response?.data?.errorCode;
@@ -53,10 +47,6 @@ function mapError(err: unknown): CheckInErrorCode | "UNKNOWN" {
   return "UNKNOWN";
 }
 
-/**
- * Single short WebAudio beep. Muted-safe — swallows failures on browsers
- * that block audio before user gesture.
- */
 function beep(frequency: number, duration = 120) {
   try {
     const AC: typeof AudioContext = (window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
@@ -70,13 +60,8 @@ function beep(frequency: number, duration = 120) {
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start();
-    setTimeout(() => {
-      osc.stop();
-      ctx.close().catch(() => {});
-    }, duration);
-  } catch {
-    /* ignore */
-  }
+    setTimeout(() => { osc.stop(); ctx.close().catch(() => {}); }, duration);
+  } catch { /* ignore */ }
 }
 
 function vibrate(pattern: number | number[]) {
@@ -94,30 +79,15 @@ class CameraErrorBoundary extends Component<
   { hasError: boolean }
 > {
   state = { hasError: false };
-
-  static getDerivedStateFromError(): { hasError: boolean } {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("Camera error:", error, info);
-  }
-
+  static getDerivedStateFromError(): { hasError: boolean } { return { hasError: true }; }
+  componentDidCatch(error: Error, info: ErrorInfo) { console.error("Camera error:", error, info); }
   render() {
     if (this.state.hasError) {
       return (
         <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-400 dark:border-red-600 p-6 text-center">
           <p className="text-4xl mb-2">📷</p>
-          <p className="text-lg font-semibold text-red-800 dark:text-red-300 mb-4">
-            Camera encountered an error
-          </p>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              this.setState({ hasError: false });
-              this.props.onReset();
-            }}
-          >
+          <p className="text-lg font-semibold text-red-800 dark:text-red-300 mb-4">Camera encountered an error</p>
+          <Button variant="secondary" onClick={() => { this.setState({ hasError: false }); this.props.onReset(); }}>
             Restart Camera
           </Button>
         </div>
@@ -130,38 +100,74 @@ class CameraErrorBoundary extends Component<
 export default function CheckInPage() {
   const { eventId, eventsLoading } = useEventContext();
   const scannerRef = useRef<{ stop: () => Promise<void> } | null>(null);
-  const scannerDivId = "qr-reader";
   const [scanState, setScanState] = useState<ScanState>({ status: "idle" });
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
-  const [manualModalOpen, setManualModalOpen] = useState(false);
   const [recentScans, setRecentScans] = useState<RecentScan[]>([]);
+  const [query, setQuery] = useState("");
+  const [manualError, setManualError] = useState<string | null>(null);
+  const [submittingGuestId, setSubmittingGuestId] = useState<string | null>(null);
+  const [forceGuestId, setForceGuestId] = useState<string | null>(null);
+  const [undoGuestId, setUndoGuestId] = useState<string | null>(null);
+  const [undoRecentId, setUndoRecentId] = useState<string | null>(null);
+
   const checkIn = useCheckInScanApi(eventId ?? "");
+  const forceCheckIn = useForceCheckInApi(eventId ?? "");
   const undoCheckIn = useUndoCheckInApi();
   const { data: qrTokens = [] } = useQrListApi(eventId ?? "");
-  const { data: guests = [] } = useGuestsApi(eventId ?? "");
+  const { data: guests = [], isLoading: guestsLoading } = useGuestsApi(eventId ?? "");
 
-  // Prevent scanning while a request is in flight
   const isProcessing = useRef(false);
   const resetTimer = useRef<number | null>(null);
-
   const checkInRef = useRef(checkIn.mutateAsync.bind(checkIn));
-  useEffect(() => {
-    checkInRef.current = checkIn.mutateAsync.bind(checkIn);
-  });
+  useEffect(() => { checkInRef.current = checkIn.mutateAsync.bind(checkIn); });
+
+  const tokenByGuestId = useMemo(() => {
+    const m = new Map<string, (typeof qrTokens)[number]>();
+    for (const t of qrTokens) m.set(t.guestId, t);
+    return m;
+  }, [qrTokens]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = q
+      ? guests.filter((g) => {
+          const name = (g.name ?? "").toLowerCase();
+          const phone = (g.phoneNo ?? "").toLowerCase();
+          return name.includes(q) || phone.includes(q);
+        })
+      : guests;
+    return [...list]
+      .sort((a, b) => {
+        const aIn = tokenByGuestId.get(a.id)?.checkedInAt != null ? 1 : 0;
+        const bIn = tokenByGuestId.get(b.id)?.checkedInAt != null ? 1 : 0;
+        return aIn - bIn;
+      })
+      .slice(0, 25);
+  }, [guests, query, tokenByGuestId]);
+
+  const stats = useMemo(() => {
+    const totalGuests = guests.length;
+    const totalPax = guests.reduce((s, g) => s + (g.pax ?? 1), 0);
+    const checkedInTokens = qrTokens.filter((t) => t.checkedInAt !== null);
+    const checkedInGuestIds = new Set(checkedInTokens.map((t) => t.guestId));
+    const checkedInPax = guests
+      .filter((g) => checkedInGuestIds.has(g.id))
+      .reduce((s, g) => s + (g.pax ?? 1), 0);
+    return { totalGuests, totalPax, checkedInGuests: checkedInGuestIds.size, checkedInPax };
+  }, [guests, qrTokens]);
 
   useEffect(() => {
     if (!cameraActive || !eventId) return;
-
     setCameraError(null);
     let scanner: { stop: () => Promise<void> } | null = null;
 
     import("html5-qrcode").then(({ Html5Qrcode }) => {
       let instance: InstanceType<typeof Html5Qrcode>;
       try {
-        instance = new Html5Qrcode(scannerDivId);
+        instance = new Html5Qrcode("qr-reader");
       } catch {
-        setCameraError("Could not initialize camera scanner. Please try again.");
+        setCameraError("Could not initialize camera scanner.");
         setCameraActive(false);
         return;
       }
@@ -176,7 +182,6 @@ export default function CheckInPage() {
             if (isProcessing.current) return;
             isProcessing.current = true;
             setScanState({ status: "loading" });
-
             try {
               const result = await checkInRef.current(decodedText);
               const at = Date.now();
@@ -190,20 +195,18 @@ export default function CheckInPage() {
               resetTimer.current = window.setTimeout(() => {
                 setScanState({ status: "idle" });
                 isProcessing.current = false;
-              }, 3000);
+              }, 2000);
             } catch (err: unknown) {
               setScanState({ status: "error", code: mapError(err), at: Date.now() });
               beep(220, 200);
               vibrate([80, 60, 80]);
-              // Shorter cooldown on error so crew can re-scan quickly
               resetTimer.current = window.setTimeout(() => {
+                setScanState({ status: "idle" });
                 isProcessing.current = false;
               }, 1200);
             }
           },
-          () => {
-            // Ignore per-frame decode failures
-          }
+          () => {}
         )
         .catch((err: unknown) => {
           const msg = (err as { message?: string })?.message ?? "";
@@ -220,32 +223,11 @@ export default function CheckInPage() {
     });
 
     return () => {
-      if (scanner) scanner.stop().catch(() => {});
-      if (resetTimer.current) {
-        window.clearTimeout(resetTimer.current);
-        resetTimer.current = null;
-      }
+      if (scanner) { try { scanner.stop().catch(() => {}); } catch { /* ignore */ } }
+      if (resetTimer.current) { window.clearTimeout(resetTimer.current); resetTimer.current = null; }
     };
-  // checkIn intentionally excluded: mutation state changes after each scan but
-  // the scanner should not restart — use checkInRef to always call the latest mutateAsync
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraActive, eventId]);
-
-  const stats = useMemo(() => {
-    const totalGuests = guests.length;
-    const totalPax = guests.reduce((s, g) => s + (g.pax ?? 1), 0);
-    const checkedInTokens = qrTokens.filter((t) => t.checkedInAt !== null);
-    const checkedInGuestIds = new Set(checkedInTokens.map((t) => t.guestId));
-    const checkedInPax = guests
-      .filter((g) => checkedInGuestIds.has(g.id))
-      .reduce((s, g) => s + (g.pax ?? 1), 0);
-    return {
-      totalGuests,
-      totalPax,
-      checkedInGuests: checkedInGuestIds.size,
-      checkedInPax,
-    };
-  }, [guests, qrTokens]);
 
   if (eventsLoading) return <PageLoader message="Loading..." />;
   if (!eventId) return <NoEventsState title="No Event Selected" message="Select or create an event to start checking in guests." />;
@@ -256,52 +238,77 @@ export default function CheckInPage() {
     isProcessing.current = false;
   }
 
-  function handleScanNext() {
-    if (resetTimer.current) {
-      window.clearTimeout(resetTimer.current);
-      resetTimer.current = null;
+  async function handleManualCheckIn(guestId: string) {
+    setManualError(null);
+    const tokenRec = tokenByGuestId.get(guestId);
+    if (!tokenRec) { setManualError("No QR token for this guest."); return; }
+    setSubmittingGuestId(guestId);
+    try {
+      const result = await checkIn.mutateAsync(tokenRec.token);
+      const at = Date.now();
+      setRecentScans((prev) => [
+        { id: `${at}-${guestId}`, guestName: result.guestName, noOfPax: result.noOfPax, at, token: tokenRec.token },
+        ...prev,
+      ].slice(0, 10));
+      beep(880, 150);
+      vibrate(80);
+      toast.success(`${result.guestName} · ${result.noOfPax} pax checked in`);
+    } catch (err) {
+      setManualError(errorMessages[mapError(err)]);
+    } finally {
+      setSubmittingGuestId(null);
     }
-    setScanState({ status: "idle" });
-    isProcessing.current = false;
   }
 
-  async function handleUndoScan(scanId: string, token: string) {
+  async function handleForceCheckIn(guestId: string) {
+    setManualError(null);
+    setForceGuestId(guestId);
+    try {
+      const result = await forceCheckIn.mutateAsync(guestId);
+      const at = Date.now();
+      setRecentScans((prev) => [
+        { id: `${at}-${guestId}`, guestName: result.guestName, noOfPax: result.noOfPax, at, token: result.token },
+        ...prev,
+      ].slice(0, 10));
+      beep(880, 150);
+      vibrate(80);
+      toast.success(`${result.guestName} · ${result.noOfPax} pax checked in`);
+    } catch {
+      setManualError("Force check-in failed — try again.");
+    } finally {
+      setForceGuestId(null);
+    }
+  }
+
+  async function handleUndoGuest(guestId: string) {
+    const tokenRec = tokenByGuestId.get(guestId);
+    if (!tokenRec) return;
+    setUndoGuestId(guestId);
+    try {
+      await undoCheckIn.mutateAsync({ token: tokenRec.token, eventId: eventId! });
+    } catch { /* silently ignore */ } finally {
+      setUndoGuestId(null);
+    }
+  }
+
+  async function handleUndoRecent(scanId: string, token: string) {
+    setUndoRecentId(scanId);
     try {
       await undoCheckIn.mutateAsync({ token, eventId: eventId! });
       setRecentScans((prev) => prev.filter((s) => s.id !== scanId));
-    } catch {
-      // silently ignore — user can open manual modal to retry
+    } catch { /* silently ignore */ } finally {
+      setUndoRecentId(null);
     }
   }
 
-  function handleManualSuccess(result: CheckInResult) {
-    const at = Date.now();
-    setScanState({ status: "success", result, at });
-    setRecentScans((prev) => [
-      { id: `${at}-manual`, guestName: result.guestName, noOfPax: result.noOfPax, at },
-      ...prev,
-    ].slice(0, 10));
-    beep(880, 150);
-    vibrate(80);
-    toast.success(`${result.guestName} · ${result.noOfPax} pax checked in`);
-    resetTimer.current = window.setTimeout(() => {
-      setScanState({ status: "idle" });
-    }, 3000);
-  }
-
   return (
-    <div className="max-w-lg mx-auto px-4 py-8 flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-primary">Guest Check-in</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Scan QR codes to validate guest arrivals</p>
-        </div>
-        <Button variant="secondary" onClick={() => setManualModalOpen(true)}>
-          Manual Check-in
-        </Button>
+    <div className="max-w-5xl mx-auto px-4 py-8 flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-bold text-primary">Guest Check-in</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Scan QR codes or manually check in guests</p>
       </div>
 
-      {/* Progress stats */}
+      {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-900/20 p-3">
           <p className="text-[11px] uppercase tracking-wider font-semibold text-emerald-700 dark:text-emerald-300">Checked In</p>
@@ -324,115 +331,193 @@ export default function CheckInPage() {
         </div>
       </div>
 
-      {/* Scanner card */}
-      <CameraErrorBoundary onReset={handleStopCamera}>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col gap-4">
-        {!cameraActive ? (
-          <Button onClick={() => setCameraActive(true)}>QR Check In</Button>
-        ) : (
-          <Button variant="secondary" onClick={handleStopCamera}>
-            Stop Camera
-          </Button>
-        )}
+      {/* ── Main grid: QR left, Manual right ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
 
-        {cameraActive && (
-          <div
-            id={scannerDivId}
-            className="rounded-xl overflow-hidden border border-gray-200 dark:border-white/10"
-          />
-        )}
+        {/* QR Scanner card */}
+        <CameraErrorBoundary onReset={handleStopCamera}>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 flex flex-col gap-4">
+            <div className="flex items-center gap-2 mb-1">
+              <QrcodeIcon className="h-4 w-4 text-gray-400" />
+              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">QR Scan</h2>
+            </div>
 
-        {cameraError && (
-          <div className="rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-400 p-4 text-center text-yellow-800 dark:text-yellow-300 text-sm">
-            {cameraError}
+            <Button
+              variant={cameraActive ? "secondary" : "primary"}
+              onClick={() => cameraActive ? handleStopCamera() : setCameraActive(true)}
+            >
+              {cameraActive ? "Stop Camera" : "Start Camera"}
+            </Button>
+
+            {cameraActive && (
+              <div id="qr-reader" className="rounded-xl overflow-hidden border border-gray-200 dark:border-white/10" />
+            )}
+
+            {cameraError && (
+              <div className="rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-400 p-3 text-center text-yellow-800 dark:text-yellow-300 text-sm">
+                {cameraError}
+              </div>
+            )}
+
+            {scanState.status === "idle" && (
+              <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-10 flex flex-col items-center gap-3 text-gray-400 dark:text-gray-500">
+                <QrcodeIcon className="h-10 w-10 text-gray-200 dark:text-gray-700" />
+                <p className="text-sm">
+                  {cameraActive ? "Point camera at a QR code" : "Tap Start Camera to begin"}
+                </p>
+              </div>
+            )}
+
+            {scanState.status === "loading" && (
+              <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 py-8 text-center text-sm text-gray-500 dark:text-gray-400 animate-pulse">
+                Validating…
+              </div>
+            )}
+
+            {scanState.status === "success" && (
+              <div className="rounded-2xl bg-green-50 dark:bg-green-900/20 border-2 border-green-400 dark:border-green-600 p-6 text-center">
+                <p className="text-5xl mb-3">✅</p>
+                <p className="text-3xl font-bold text-green-800 dark:text-green-200 leading-tight">
+                  {scanState.result.guestName}
+                </p>
+                <p className="text-base text-green-600 dark:text-green-400 mt-2 font-semibold">
+                  {scanState.result.noOfPax} {scanState.result.noOfPax === 1 ? "person" : "pax"}
+                </p>
+                <p className="text-xs text-green-500/60 dark:text-green-400/40 mt-3">Clearing in 2s…</p>
+              </div>
+            )}
+
+            {scanState.status === "error" && (
+              <div className="rounded-2xl bg-red-50 dark:bg-red-900/20 border-2 border-red-400 dark:border-red-600 p-5 text-center">
+                <p className="text-4xl mb-2">❌</p>
+                <p className="text-lg font-semibold text-red-800 dark:text-red-300">
+                  {errorMessages[scanState.code]}
+                </p>
+              </div>
+            )}
           </div>
-        )}
+        </CameraErrorBoundary>
 
-        {scanState.status === "idle" && (
-          <div className="rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 py-12 flex flex-col items-center gap-3 text-gray-400 dark:text-gray-500">
-            <QrcodeIcon className="h-12 w-12 text-gray-300 dark:text-gray-600" />
-            <p className="text-sm">
-              {cameraActive ? "Point camera at a QR code" : "Press the button above to start scanning"}
-            </p>
+        {/* Manual card */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="px-5 pt-5 pb-4 border-b border-gray-100 dark:border-gray-700/60 flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <UserGroupIcon className="h-4 w-4 text-gray-400" />
+              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Manual</h2>
+            </div>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); setManualError(null); }}
+              placeholder="Search by name or phone…"
+              className="w-full border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2.5 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 dark:text-gray-100 placeholder:text-gray-400"
+            />
+            {manualError && (
+              <p className="text-xs text-red-600 dark:text-red-400">{manualError}</p>
+            )}
           </div>
-        )}
 
-        {scanState.status === "loading" && (
-          <div className="rounded-xl bg-gray-50 dark:bg-gray-800 py-8 text-center text-gray-600 dark:text-gray-300 animate-pulse">
-            Validating...
+          <div className="max-h-[420px] overflow-y-auto divide-y divide-gray-100 dark:divide-white/5">
+            {guestsLoading && (
+              <p className="py-8 text-center text-sm text-gray-400">Loading guests…</p>
+            )}
+            {!guestsLoading && filtered.length === 0 && (
+              <p className="py-8 text-center text-sm text-gray-400">
+                {query ? "No matches found." : "No guests yet."}
+              </p>
+            )}
+            {!guestsLoading && filtered.map((g) => {
+              const tokenRec = tokenByGuestId.get(g.id);
+              const checkedIn = tokenRec?.checkedInAt != null;
+              const revoked = tokenRec?.isRevoked === true;
+              const noToken = !tokenRec;
+              const submitting = submittingGuestId === g.id;
+              const forcing = forceGuestId === g.id;
+              const undoingGuest = undoGuestId === g.id;
+              const name = g.name ?? "—";
+
+              return (
+                <div key={g.id} className="px-4 py-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-sm font-medium truncate ${checkedIn ? "text-gray-400 dark:text-gray-500" : "text-gray-800 dark:text-gray-100"}`}>
+                      {name}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                      {g.phoneNo || "No phone"} · {g.pax ?? 1} pax
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {checkedIn ? (
+                      <>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                          In ✓
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleUndoGuest(g.id)}
+                          disabled={undoingGuest}
+                          className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-800/40 disabled:opacity-50 transition-colors"
+                        >
+                          {undoingGuest ? "…" : "Undo"}
+                        </button>
+                      </>
+                    ) : revoked ? (
+                      <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                        Revoked
+                      </span>
+                    ) : noToken ? (
+                      <button
+                        type="button"
+                        onClick={() => handleForceCheckIn(g.id)}
+                        disabled={forcing}
+                        className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-800/40 disabled:opacity-50 transition-colors"
+                      >
+                        {forcing ? "Generating…" : "No QR · Force ↑"}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleManualCheckIn(g.id)}
+                        disabled={submitting}
+                        className="text-[11px] px-2.5 py-0.5 rounded-full font-medium bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 transition-colors"
+                      >
+                        {submitting ? "Checking…" : "Check in"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        )}
-
-        {scanState.status === "success" && (
-          <div className="rounded-xl bg-green-50 dark:bg-green-900/20 border-2 border-green-400 dark:border-green-600 p-6 text-center">
-            <p className="text-4xl mb-2">✅</p>
-            <p className="text-2xl font-bold text-green-800 dark:text-green-300">
-              {scanState.result.guestName}
-            </p>
-            <p className="text-lg text-green-700 dark:text-green-400 mt-1">
-              {scanState.result.noOfPax} {scanState.result.noOfPax === 1 ? "person" : "pax"}
-            </p>
-          </div>
-        )}
-
-        {scanState.status === "error" && (
-          <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-400 dark:border-red-600 p-6 text-center">
-            <p className="text-4xl mb-2">❌</p>
-            <p className="text-lg font-semibold text-red-800 dark:text-red-300">
-              {errorMessages[scanState.code]}
-            </p>
-          </div>
-        )}
-
-        {(scanState.status === "success" || scanState.status === "error") && (
-          <Button variant="secondary" onClick={handleScanNext}>
-            Scan next
-          </Button>
-        )}
+        </div>
       </div>
-      </CameraErrorBoundary>
 
       {/* Recent check-ins */}
       {recentScans.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Recent check-ins</h3>
-            <span className="text-[11px] text-gray-400">{recentScans.length}</span>
-          </div>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
+            Recent — {recentScans.length}
+          </h3>
           <ul className="divide-y divide-gray-100 dark:divide-gray-700">
             {recentScans.map((s) => (
-              <li key={s.id} className="py-2 flex items-center justify-between text-sm gap-2">
+              <li key={s.id} className="py-2.5 flex items-center justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-gray-800 dark:text-gray-100 truncate">{s.guestName}</p>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                    {s.noOfPax} {s.noOfPax === 1 ? "person" : "pax"}
-                  </p>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{s.guestName}</p>
+                  <p className="text-[11px] text-gray-400">{s.noOfPax} pax · {formatTime(s.at)}</p>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-[11px] text-gray-400">{formatTime(s.at)}</span>
-                  {s.token && (
-                    <button
-                      type="button"
-                      onClick={() => handleUndoScan(s.id, s.token!)}
-                      disabled={undoCheckIn.isPending}
-                      className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-800/40 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Undo
-                    </button>
-                  )}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => handleUndoRecent(s.id, s.token)}
+                  disabled={undoRecentId === s.id}
+                  className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-800/40 disabled:opacity-50 transition-colors flex-shrink-0"
+                >
+                  {undoRecentId === s.id ? "Undoing…" : "Undo"}
+                </button>
               </li>
             ))}
           </ul>
         </div>
       )}
-
-      <ManualCheckInModal
-        isOpen={manualModalOpen}
-        onClose={() => setManualModalOpen(false)}
-        onSuccess={handleManualSuccess}
-        eventId={eventId}
-      />
     </div>
   );
 }

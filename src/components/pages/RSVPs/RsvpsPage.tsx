@@ -3,7 +3,7 @@ import { PageLoader } from "../../atoms/PageLoader";
 import { ErrorState } from "../../atoms/ErrorState";
 import React, { useState } from "react";
 import { saveAs } from "file-saver";
-import { ViewGridIcon, /* ViewListIcon, */ ClipboardListIcon, UserGroupIcon } from "@heroicons/react/solid";
+import { ViewGridIcon, /* ViewListIcon, */ ClipboardListIcon, UserGroupIcon, PencilIcon, TrashIcon } from "@heroicons/react/solid";
 import {
   useRsvpsApi,
   useCreateRsvp,
@@ -246,8 +246,8 @@ export default function RsvpsPage() {
                 );
               })()}
               <div className="mt-auto flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-                <Button variant="secondary" onClick={() => setModal({ open: true, rsvp: r })}>Edit</Button>
-                <Button variant="secondary" onClick={() => handleDelete(r)}>Delete</Button>
+                <button title="Edit" onClick={() => setModal({ open: true, rsvp: r })} className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-accent dark:border-white/10 dark:text-white dark:hover:bg-white/10 transition-colors"><PencilIcon className="h-4 w-4" /></button>
+                <button title="Delete" onClick={() => handleDelete(r)} className="p-2 rounded-lg bg-white border border-red-200 text-red-600 hover:bg-red-50 dark:bg-accent dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"><TrashIcon className="h-4 w-4" /></button>
               </div>
             </li>
           ))}
@@ -283,8 +283,8 @@ export default function RsvpsPage() {
                   <td className="px-4 py-3 text-gray-500 dark:text-gray-400 max-w-[220px] truncate">{r.remarks || "—"}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
-                      <Button variant="secondary" onClick={() => setModal({ open: true, rsvp: r })}>Edit</Button>
-                      <Button variant="secondary" onClick={() => handleDelete(r)}>Delete</Button>
+                      <button title="Edit" onClick={() => setModal({ open: true, rsvp: r })} className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-accent dark:border-white/10 dark:text-white dark:hover:bg-white/10 transition-colors"><PencilIcon className="h-4 w-4" /></button>
+                      <button title="Delete" onClick={() => handleDelete(r)} className="p-2 rounded-lg bg-white border border-red-200 text-red-600 hover:bg-red-50 dark:bg-accent dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"><TrashIcon className="h-4 w-4" /></button>
                     </div>
                   </td>
                 </tr>

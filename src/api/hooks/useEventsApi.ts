@@ -17,6 +17,8 @@ export interface Event {
   location?: string;
   slug?: string;
   eventCode?: string;
+  rsvpDueDate?: string | null;
+  isExpired?: boolean;
   raw?: ApiEvent;
 }
 
@@ -31,6 +33,8 @@ function toEvent(e: ApiEvent): Event {
     location: e.eventLocation,
     slug: e.slug,
     eventCode: e.eventCode,
+    rsvpDueDate: e.rsvpDueDate,
+    isExpired: e.isExpired,
     raw: e,
   };
 }
@@ -86,6 +90,7 @@ export function useCreateEvent() {
       location: string;
       userGuid: string;
       noOfTable: string;
+      rsvpDueDate?: string | null;
     }) => {
       const res = await client.post(EventsEndpoints.create, data);
       return res.data;
@@ -111,6 +116,7 @@ export function useUpdateEvent() {
       time: string;
       userGuid: string;
       noOfTable: number;
+      rsvpDueDate?: string | null;
     }) => {
       const res = await client.post(EventsEndpoints.update, data);
       return res.data;

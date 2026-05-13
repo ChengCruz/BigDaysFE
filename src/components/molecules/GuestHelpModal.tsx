@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { XIcon } from "@heroicons/react/solid";
+import { XIcon, PencilIcon } from "@heroicons/react/solid";
+import { Chair, DotsThree } from "@phosphor-icons/react";
 import { Modal } from "./Modal";
 import QrStatusBadge from "./QrStatusBadge";
 
@@ -31,31 +32,21 @@ function IconsTab() {
     <div className="grid grid-cols-2 gap-3">
       <GuideCard
         icon={
-          <span className="px-4 py-2 text-sm font-semibold rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-accent text-gray-700 dark:text-white">
-            Edit
+          <span className="p-3 rounded-xl bg-white border border-gray-200 text-gray-700 dark:bg-accent dark:border-white/10 dark:text-white inline-flex">
+            <PencilIcon className="h-6 w-6" />
           </span>
         }
-        label="Edit"
-        description="Opens the form to update this guest's details"
+        label="Edit Guest"
+        description="Opens the form to edit this guest's details"
       />
       <GuideCard
         icon={
-          <span className="p-3 rounded-xl bg-green-600 text-white inline-flex">
-            <svg viewBox="0 0 24 24" className="h-6 w-6 fill-current" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="5"/>
-              <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(0, 12, 12)"/>
-              <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(45, 12, 12)"/>
-              <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(90, 12, 12)"/>
-              <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(135, 12, 12)"/>
-              <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(180, 12, 12)"/>
-              <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(225, 12, 12)"/>
-              <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(270, 12, 12)"/>
-              <rect x="10.5" y="2" width="3" height="2.5" rx="0.7" transform="rotate(315, 12, 12)"/>
-            </svg>
+          <span className="p-3 rounded-xl bg-blue-500 text-white inline-flex">
+            <Chair size={24} weight="bold" />
           </span>
         }
         label="Assign to Table"
-        description="Opens a table picker to seat this guest. Only shows when unassigned."
+        description="Opens a table picker to seat this guest. Only shows when the guest has no table assigned."
       />
       <GuideCard
         icon={
@@ -80,8 +71,8 @@ function IconsTab() {
       />
       <GuideCard
         icon={
-          <span className="px-4 py-2 text-sm font-medium rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-accent text-gray-700 dark:text-gray-200">
-            ···
+          <span className="p-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-accent text-gray-700 dark:text-white inline-flex">
+            <DotsThree size={24} weight="bold" />
           </span>
         }
         label="More Options"
@@ -137,9 +128,14 @@ function BadgesTab() {
         description="Generated → sent. Checked In → scanned at door. Revoked → cancelled."
       />
       <GuideCard
-        icon={<span className="px-3 py-1 text-xs font-bold rounded-full bg-emerald-600 text-white">RM 500</span>}
+        icon={<span className="px-3 py-1 text-xs font-bold rounded-full bg-amber-500 text-white">RM 500</span>}
         label="Gift Amount"
         description="Top-left corner when a gift is recorded for this guest."
+      />
+      <GuideCard
+        icon={<span className="px-2 py-0.5 rounded bg-gray-200 text-xs font-mono font-bold text-gray-700">Table A-3</span>}
+        label="Guest Code"
+        description="Shown once the guest is seated at a table (e.g. Table A-3). Write this on their angpao envelope for a smoother check-in."
       />
     </div>
   );

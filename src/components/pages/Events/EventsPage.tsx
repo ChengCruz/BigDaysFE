@@ -11,7 +11,7 @@ import { Button } from "../../atoms/Button";
 import { Outlet, useNavigate, useSearchParams } from "react-router-dom";
 import { useEventContext } from "../../../context/EventContext";
 import { CheckCircleIcon, CheckIcon } from "@heroicons/react/solid";
-import { CalendarIcon, LocationMarkerIcon, ArchiveIcon, PencilIcon, XIcon } from "@heroicons/react/solid";
+import { CalendarIcon, LocationMarkerIcon, ArchiveIcon, PencilIcon, XIcon, RefreshIcon } from "@heroicons/react/solid";
 import { StatsCard } from "../../atoms/StatsCard";
 import { formatEventDate, formatEventTime } from "../../../utils/eventUtils";
 
@@ -133,7 +133,7 @@ export default function EventsPage() {
                   {editingSlugId === activeEvent.id ? (
                     <>
                       <input
-                        className="text-xs font-mono border border-primary/30 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary/30 w-40"
+                        className="text-xs font-mono border border-primary/30 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary/30 w-full sm:w-40"
                         value={slugInput}
                         onChange={(e) => setSlugInput(e.target.value)}
                         autoFocus
@@ -255,6 +255,11 @@ export default function EventsPage() {
                           Archived
                         </span>
                       )}
+                      {ev.slug && (
+                        <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${ev.isExpired ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+                          RSVP {ev.isExpired ? "Closed" : "Open"}
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 flex flex-wrap items-center gap-2">
                       <span className="inline-flex items-center gap-1">
@@ -267,9 +272,9 @@ export default function EventsPage() {
                         {ev.location || "Add a venue"}
                       </span>
                     </p>
-                    {ev.description && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{ev.description}</p>
-                    )}
+                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 min-h-[1.25rem]">
+                      {ev.description ?? ""}
+                    </p>
                     <div className="flex items-center gap-3 text-sm font-medium text-gray-600 dark:text-gray-300">
                       <span>Tables: {ev.noOfTable ?? "Not set"}</span>
                       <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
@@ -280,7 +285,7 @@ export default function EventsPage() {
                       {editingSlugId === ev.id ? (
                         <>
                           <input
-                            className="text-xs font-mono border border-primary/30 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary/30 w-36"
+                            className="text-xs font-mono border border-primary/30 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary/30 w-full sm:w-36"
                             value={slugInput}
                             onChange={(e) => setSlugInput(e.target.value)}
                             autoFocus
@@ -331,24 +336,31 @@ export default function EventsPage() {
                   <div className="px-4 py-2.5 border-t border-gray-100 dark:border-white/10 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1">
                       {isArchived ? (
-                        <Button
-                          variant="ghost"
-                          className="![background-image:none] !text-green-600 hover:!bg-green-50 dark:hover:!bg-green-900/20 !text-sm !px-2.5"
+                        <button
+                          title="Restore event"
                           onClick={() => activateEvent.mutate(ev.id)}
                           disabled={activateEvent.isPending}
+                          className="p-2 rounded-lg bg-white border border-green-200 text-green-600 hover:bg-green-50 dark:bg-accent dark:border-green-900/30 dark:text-green-400 dark:hover:bg-green-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {activateEvent.isPending ? "Activating…" : "Activate"}
-                        </Button>
+                          <RefreshIcon className="h-4 w-4" />
+                        </button>
                       ) : (
-                        <Button
-                          variant="ghost"
-                          className="!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-900/20 !text-sm !px-2.5"
+                        <button
+                          title="Archive event"
                           onClick={() => deactivateEvent.mutate(ev.id)}
                           disabled={deactivateEvent.isPending}
+                          className="p-2 rounded-lg bg-white border border-red-200 text-red-500 hover:bg-red-50 dark:bg-accent dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {deactivateEvent.isPending ? "Archiving…" : "Archive"}
-                        </Button>
+                          <ArchiveIcon className="h-4 w-4" />
+                        </button>
                       )}
+                      <button
+                        title="Edit"
+                        onClick={() => navigate(`${ev.id}/edit`)}
+                        className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-accent dark:border-white/10 dark:text-white dark:hover:bg-white/10 transition-colors"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </button>
                       <span className="w-px h-4 bg-gray-200 dark:bg-white/10" />
                       <Button
                         variant="ghost"
@@ -356,13 +368,6 @@ export default function EventsPage() {
                         onClick={() => navigate(`${ev.id}/form-fields`)}
                       >
                         RSVP Questions
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        className="!text-sm !px-2.5"
-                        onClick={() => navigate(`${ev.id}/edit`)}
-                      >
-                        Edit
                       </Button>
                     </div>
                     <Button

@@ -5,6 +5,7 @@ import { Routes, Route, Navigate, Outlet, useNavigate, useLocation } from "react
 import LandingPage from "../components/pages/Landing/LandingPage";
 import LoginPage from "../components/pages/Auth/LoginPage";
 import RegisterPage from "../components/pages/Auth/RegisterPage";
+import VerifyEmailPage from "../components/pages/Auth/VerifyEmailPage";
 import ResetPasswordPage from "../components/pages/Auth/ResetPasswordPage";
 import ContactPage from "../components/pages/Auth/ContactPage";
 import StoryPage from "../components/pages/Public/Story/StoryPage";
@@ -101,8 +102,6 @@ import FloorPlanPage from "../components/pages/Tables/FloorPlanPage";
 import TablesPageV2 from "../components/pages/Tables/TablesPageV2";
 import TablesRedesignPage from "../components/pages/Tables/TablesRedesignPage";
 import CheckInPage from "../components/pages/CheckIn/CheckInPage";
-import CheckInPageV1 from "../components/pages/CheckIn/CheckInPageV1";
-import CheckInPageV2 from "../components/pages/CheckIn/CheckInPageV2";
 import QrLookupPage from "../components/pages/Public/QrLookup/QrLookupPage";
 import RequireAuth from "../components/RequireAuth";
 import { useAuth } from "../api/hooks/useAuth";
@@ -122,6 +121,7 @@ export default function AppRoutes() {
       {/* ─── AUTH (standalone, no navbar/footer) ─────────── */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
       {/* Dev/Staging only — blocked in prod via ResetPasswordPage internal guard */}
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
@@ -219,11 +219,7 @@ export default function AppRoutes() {
         <Route path="crew" element={<CrewPage />} />
 
         {/* CHECK-IN */}
-        <Route path="checkin" element={<Outlet />}>
-          <Route index element={<CheckInPage />} />
-          <Route path="v1" element={<CheckInPageV1 />} />
-          <Route path="v2" element={<CheckInPageV2 />} />
-        </Route>
+        <Route path="checkin" element={<CheckInPage />} />
 
         {/* WALLET */}
         <Route path="wallet" element={<WalletPage />} />

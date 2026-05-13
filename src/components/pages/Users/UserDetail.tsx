@@ -2,7 +2,7 @@
 import { PageLoader } from "../../atoms/PageLoader";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useUserByGuidApi } from "../../../api/hooks/useUsersApi";
-import { Button } from "../../atoms/Button";
+import { PencilIcon } from "@heroicons/react/solid";
 
 export default function UserDetail() {
   const { id } = useParams<{ id: string }>();
@@ -16,9 +16,7 @@ export default function UserDetail() {
     <div className="space-y-4">
       <header className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold text-primary">{u.name}</h2>
-        <Button variant="secondary" onClick={() => nav("edit")}>
-          Edit
-        </Button>
+        <button title="Edit" onClick={() => nav("edit")} className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-accent dark:border-white/10 dark:text-white dark:hover:bg-white/10 transition-colors"><PencilIcon className="h-4 w-4" /></button>
       </header>
       <p className="text-gray-600 dark:text-gray-400">Email: {u.email}</p>
       <Link to="/app/users" className="text-sm text-gray-500 hover:underline">

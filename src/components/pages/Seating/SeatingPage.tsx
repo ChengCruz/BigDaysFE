@@ -5,6 +5,7 @@ import { useSeatingApi, useDeleteSeat } from "../../../api/hooks/useSeatingApi";
 import { SeatingFormModal } from "../../molecules/SeatingFormModal";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { Button } from "../../atoms/Button";
+import { PencilIcon, TrashIcon } from "@heroicons/react/solid";
 
 export default function SeatingPage() {
   const { data: seats, isLoading, isError } = useSeatingApi();
@@ -64,23 +65,20 @@ export default function SeatingPage() {
               </p>
             </div>
             <div className="space-x-2">
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  setModal({
-                    open: true,
-                    seat: { id: s.id, tableId: s.tableId, guestId: s.guestId },
-                  })
-                }
+              <button
+                title="Edit"
+                onClick={() => setModal({ open: true, seat: { id: s.id, tableId: s.tableId, guestId: s.guestId } })}
+                className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-accent dark:border-white/10 dark:text-white dark:hover:bg-white/10 transition-colors"
               >
-                Edit
-              </Button>
-              <Button
-                variant="secondary"
+                <PencilIcon className="h-4 w-4" />
+              </button>
+              <button
+                title="Delete"
                 onClick={() => handleDelete({ id: s.id, tableId: s.tableId, guestId: s.guestId })}
+                className="p-2 rounded-lg bg-white border border-red-200 text-red-600 hover:bg-red-50 dark:bg-accent dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
               >
-                Delete
-              </Button>
+                <TrashIcon className="h-4 w-4" />
+              </button>
             </div>
           </li>
         ))}

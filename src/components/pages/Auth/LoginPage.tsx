@@ -80,7 +80,12 @@ export default function LoginPage() {
       await login({ email, password });
       nav(from, { replace: true });
     } catch (err: any) {
-      setError(err.response?.data?.message || "Login failed");
+      const errorCode = err.response?.data?.errorCode;
+      if (errorCode === "ACCOUNT_NOT_ACTIVE") {
+        setError("account_not_active");
+      } else {
+        setError(err.response?.data?.message || "Login failed");
+      }
     }
   };
 
@@ -376,7 +381,18 @@ export default function LoginPage() {
                   </button>
                 </div>
 
-                {error && <p style={{ color: '#B4543A', fontSize: '0.9rem', fontFamily: 'var(--font-serif)' }}>{error}</p>}
+                {error && (
+                  error === "account_not_active" ? (
+                    <p style={{ color: '#B4543A', fontSize: '0.9rem', fontFamily: 'var(--font-serif)' }}>
+                      Your email isn't verified yet.{" "}
+                      <Link to="/verify-email" style={{ color: '#B4543A', borderBottom: '1px solid #B4543A', paddingBottom: '1px' }}>
+                        Enter your verification code
+                      </Link>
+                    </p>
+                  ) : (
+                    <p style={{ color: '#B4543A', fontSize: '0.9rem', fontFamily: 'var(--font-serif)' }}>{error}</p>
+                  )
+                )}
 
                 <button
                   type="submit"

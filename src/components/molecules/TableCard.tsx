@@ -1,7 +1,6 @@
 // src/components/molecules/TableCard.tsx
 import React, { useState } from "react";
-import { Button } from "../atoms/Button";
-import { XIcon } from "@heroicons/react/solid";
+import { XIcon, PencilIcon, TrashIcon } from "@heroicons/react/solid";
 
 const categoryDisplayNames: Record<string, string> = {
   vip: "VIP",
@@ -235,22 +234,22 @@ export const TableCard: React.FC<TableCardProps> = ({
         {(onEdit || onDelete) && (
           <div className="flex gap-2 pt-3 border-t dark:border-gray-700">
             {onEdit && (
-              <Button
-                variant="secondary"
+              <button
+                title="Edit"
                 onClick={() => onEdit(table.id)}
-                className="flex-1 text-sm py-2"
+                className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-accent dark:border-white/10 dark:text-white dark:hover:bg-white/10 transition-colors"
               >
-                Edit
-              </Button>
+                <PencilIcon className="h-4 w-4" />
+              </button>
             )}
             {onDelete && (
-              <Button
-                variant="ghost"
+              <button
+                title="Delete"
                 onClick={() => onDelete(table.id)}
-                className="!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-900/20 text-sm py-2"
+                className="p-2 rounded-lg bg-white border border-red-200 text-red-600 hover:bg-red-50 dark:bg-accent dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
               >
-                Delete
-              </Button>
+                <TrashIcon className="h-4 w-4" />
+              </button>
             )}
           </div>
         )}
