@@ -133,7 +133,7 @@ export default function EventsPage() {
                   {editingSlugId === activeEvent.id ? (
                     <>
                       <input
-                        className="text-xs font-mono border border-primary/30 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary/30 w-40"
+                        className="text-xs font-mono border border-primary/30 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary/30 w-full sm:w-40"
                         value={slugInput}
                         onChange={(e) => setSlugInput(e.target.value)}
                         autoFocus
@@ -285,7 +285,7 @@ export default function EventsPage() {
                       {editingSlugId === ev.id ? (
                         <>
                           <input
-                            className="text-xs font-mono border border-primary/30 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary/30 w-36"
+                            className="text-xs font-mono border border-primary/30 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary/30 w-full sm:w-36"
                             value={slugInput}
                             onChange={(e) => setSlugInput(e.target.value)}
                             autoFocus

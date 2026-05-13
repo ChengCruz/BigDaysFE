@@ -332,7 +332,7 @@ export default function CheckInPage() {
       </div>
 
       {/* ── Main grid: QR left, Manual right ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
 
         {/* QR Scanner card */}
         <CameraErrorBoundary onReset={handleStopCamera}>
