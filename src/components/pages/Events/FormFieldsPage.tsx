@@ -91,11 +91,11 @@ export default function FormFieldsPage() {
 
   return (
     <>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
         <h2 className="text-2xl font-semibold">Custom RSVP Fields</h2>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setTemplateModal(true)}>+ Add from Template</Button>
-          <Button onClick={() => setModal({ open: true })}>+ New Field</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={() => setTemplateModal(true)} className="whitespace-nowrap">+ Add from Template</Button>
+          <Button onClick={() => setModal({ open: true })} className="whitespace-nowrap">+ New Field</Button>
         </div>
       </div>
 
@@ -112,15 +112,15 @@ export default function FormFieldsPage() {
           {fields.map((f) => (
             <li
               key={f.questionId ?? f.id}
-              className="p-4 bg-white dark:bg-gray-800 rounded-lg flex justify-between items-center"
+              className="p-4 bg-white dark:bg-gray-800 rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3"
             >
-              <div>
-                <p className="font-medium">{f.label ?? f.text}</p>
+              <div className="min-w-0">
+                <p className="font-medium break-words">{f.label ?? f.text}</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Type: {TYPE_LABELS[f.typeKey as keyof typeof TYPE_LABELS] ?? f.typeKey ?? String(f.type)} · Order: {f.order ?? "—"}{f.isRequired && " · Required"}
                 </p>
               </div>
-              <div className="space-x-2">
+              <div className="flex gap-2 flex-shrink-0 self-end sm:self-auto">
                 <button
                   title="Edit"
                   onClick={() => {

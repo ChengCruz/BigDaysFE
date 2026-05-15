@@ -36,6 +36,26 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   const valueSize = size === "sm" ? "text-lg font-bold" : "text-2xl font-bold";
   const iconSize = size === "sm" ? "w-4 h-4" : "w-5 h-5";
 
+  if (size === "sm") {
+    return (
+      <div className={`${padding} rounded-xl border ${colorClasses[variant]} transition-all hover:shadow-md`}>
+        <div className="flex items-center gap-1.5 mb-0.5">
+          {icon && (
+            <div className={`${iconSize} ${valueColorClasses[variant]} opacity-80 flex-shrink-0`}>
+              {icon}
+            </div>
+          )}
+          <p className="text-[10px] sm:text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide leading-tight">
+            {label}
+          </p>
+        </div>
+        <p className={`${valueSize} ${valueColorClasses[variant]} leading-none`}>
+          {value}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className={`${padding} rounded-xl border ${colorClasses[variant]} transition-all hover:shadow-md`}>
       <div className="flex items-center justify-between gap-2">
@@ -46,7 +66,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({
               {icon}
             </div>
           )}
-          <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide truncate">
+          <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide leading-tight">
             {label}
           </p>
         </div>

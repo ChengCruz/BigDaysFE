@@ -171,13 +171,24 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
           required
           error={fieldErrors.date}
         />
-        <FormField
-          label="RSVP Due Date"
-          type="date"
-          value={rsvpDueDate}
-          onChange={(e) => setRsvpDueDate(e.target.value)}
-          hint="If left blank, the event date will be used as the RSVP expiry date."
-        />
+        <div className="relative">
+          <FormField
+            label="RSVP Due Date"
+            type="date"
+            value={rsvpDueDate}
+            onChange={(e) => setRsvpDueDate(e.target.value)}
+            hint="If left blank, the event date will be used as the RSVP expiry date."
+          />
+          {rsvpDueDate && (
+            <button
+              type="button"
+              onClick={() => setRsvpDueDate("")}
+              className="absolute top-0 right-0 text-xs text-blue-600 hover:underline"
+            >
+              Clear
+            </button>
+          )}
+        </div>
         <div className="space-y-1">
           <label className="block font-medium">
             Time <span className="ml-1 text-red-600">*</span>

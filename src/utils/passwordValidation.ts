@@ -8,6 +8,7 @@ export interface PasswordValidationResult {
     hasUppercase: boolean;
     hasLowercase: boolean;
     hasNumber: boolean;
+    hasSymbol: boolean;
   };
 }
 
@@ -38,6 +39,11 @@ export const PASSWORD_REQUIREMENTS: PasswordRequirement[] = [
     label: "At least 1 number (0-9)",
     validator: (password: string) => /[0-9]/.test(password),
   },
+  {
+    id: "hasSymbol",
+    label: "At least 1 symbol (!@#$%^&* etc.)",
+    validator: (password: string) => /[^A-Za-z0-9]/.test(password),
+  },
 ];
 
 /**
@@ -51,6 +57,7 @@ export function validatePassword(password: string): PasswordValidationResult {
     hasUppercase: /[A-Z]/.test(password),
     hasLowercase: /[a-z]/.test(password),
     hasNumber: /[0-9]/.test(password),
+    hasSymbol: /[^A-Za-z0-9]/.test(password),
   };
 
   const errors: string[] = [];
@@ -66,6 +73,9 @@ export function validatePassword(password: string): PasswordValidationResult {
   }
   if (!checks.hasNumber) {
     errors.push("Password must contain at least one number");
+  }
+  if (!checks.hasSymbol) {
+    errors.push("Password must contain at least one symbol");
   }
 
   return {

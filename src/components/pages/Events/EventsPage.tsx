@@ -182,11 +182,8 @@ export default function EventsPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Button onClick={() => navigate("/app/rsvps")}>Continue planning</Button>
-              <Button variant="secondary" onClick={() => navigate("/app/rsvps/designer")}>
-                Design RSVP Card
-              </Button>
-              <a href="/app/rsvps/designer-v2" target="_blank" rel="noopener noreferrer">
-                <Button variant="secondary">Design V2 ↗</Button>
+              <a href="/app/rsvps/designer-v3" target="_blank" rel="noopener noreferrer">
+                <Button variant="secondary">Design RSVP Card ↗</Button>
               </a>
               <Button variant="secondary" onClick={() => navigate(`${activeEvent.id}/form-fields`)}>
                 RSVP Questions
