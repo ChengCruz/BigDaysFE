@@ -177,17 +177,17 @@ export default function MemberDashboardPage() {
             ) : (
               // Show countdown
               <>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <div className="px-5 py-3 rounded-xl bg-white/15 backdrop-blur-sm text-center min-w-[90px]">
-                    <p className="text-3xl font-bold">{countdown.days}</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="px-2 py-3 rounded-xl bg-white/15 backdrop-blur-sm text-center">
+                    <p className="text-2xl sm:text-3xl font-bold">{countdown.days}</p>
                     <p className="text-xs text-white/70 mt-0.5">Days</p>
                   </div>
-                  <div className="px-5 py-3 rounded-xl bg-white/15 backdrop-blur-sm text-center min-w-[90px]">
-                    <p className="text-3xl font-bold">{countdown.hours}</p>
+                  <div className="px-2 py-3 rounded-xl bg-white/15 backdrop-blur-sm text-center">
+                    <p className="text-2xl sm:text-3xl font-bold">{countdown.hours}</p>
                     <p className="text-xs text-white/70 mt-0.5">Hours</p>
                   </div>
-                  <div className="px-5 py-3 rounded-xl bg-white/15 backdrop-blur-sm text-center min-w-[90px]">
-                    <p className="text-3xl font-bold">{countdown.minutes}</p>
+                  <div className="px-2 py-3 rounded-xl bg-white/15 backdrop-blur-sm text-center">
+                    <p className="text-2xl sm:text-3xl font-bold">{countdown.minutes}</p>
                     <p className="text-xs text-white/70 mt-0.5">Minutes</p>
                   </div>
                 </div>
@@ -320,25 +320,16 @@ export default function MemberDashboardPage() {
               </div>
               <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Add RSVP</span>
             </button>
-            <button
-              onClick={() => navigate("/app/rsvps/designer")}
+            <a
+              href="/app/rsvps/designer-v3"
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border border-indigo-100 dark:border-indigo-800 hover:border-indigo-200 dark:hover:border-indigo-700 hover:shadow-md transition group"
             >
               <div className="h-10 w-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 group-hover:bg-indigo-200 dark:group-hover:bg-indigo-800 grid place-items-center transition">
                 <ClipboardCheckIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
               </div>
               <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Design RSVP</span>
-            </button>
-            <a
-              href="/app/rsvps/designer-v3"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/20 border border-rose-100 dark:border-rose-800 hover:border-rose-200 dark:hover:border-rose-700 hover:shadow-md transition group"
-            >
-              <div className="h-10 w-10 rounded-xl bg-rose-100 dark:bg-rose-900/50 group-hover:bg-rose-200 dark:group-hover:bg-rose-800 grid place-items-center transition">
-                <ClipboardCheckIcon className="h-5 w-5 text-rose-600 dark:text-rose-400" />
-              </div>
-              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Design V3</span>
             </a>
             <button
               onClick={() => navigate("/app/guests")}

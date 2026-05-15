@@ -3,7 +3,7 @@ import { PageLoader } from "../../atoms/PageLoader";
 import { ErrorState } from "../../atoms/ErrorState";
 import React, { useState } from "react";
 import { saveAs } from "file-saver";
-import { ViewGridIcon, /* ViewListIcon, */ ClipboardListIcon, UserGroupIcon, PencilIcon, TrashIcon } from "@heroicons/react/solid";
+import { ClipboardListIcon, UserGroupIcon, PencilIcon, TrashIcon } from "@heroicons/react/solid";
 import {
   useRsvpsApi,
   useCreateRsvp,
@@ -170,23 +170,7 @@ export default function RsvpsPage() {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="md:ml-auto w-full md:w-64 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
-        <div className="flex gap-1.5">
-          {/* List view temporarily hidden — re-enable when Q&A layout is ready */}
-          {/* <button
-            disabled
-            className="p-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed"
-            aria-label="List view"
-          >
-            <ViewListIcon className="h-5 w-5" />
-          </button> */}
-          <button
-            onClick={() => setViewMode("grid")}
-            className={`p-2 rounded-xl transition-colors ${viewMode === "grid" ? "bg-primary text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"}`}
-            aria-label="Grid view"
-          >
-            <ViewGridIcon className="h-5 w-5" />
-          </button>
-        </div>
+        {/* View toggle hidden — only grid view is implemented. Re-enable when list/Q&A layout is ready. */}
       </div>
 
       {/* ─── EMPTY STATE ──────────────────────────────────────────────── */}
