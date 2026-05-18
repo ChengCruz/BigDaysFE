@@ -20,12 +20,12 @@ import { TableCard } from "../../molecules/TableCard";
 import { QuickSetupModal } from "../../molecules/QuickSetupModal";
 import { TableFormModal } from "../../molecules/TableFormModal";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useEventContext } from "../../../context/EventContext";
 import { useAuth } from "../../../api/hooks/useAuth";
 import toast from "react-hot-toast";
 import { NoEventsState } from "../../molecules/NoEventsState";
-import { ChevronDownIcon, CollectionIcon, UserGroupIcon, UserIcon, ChartBarIcon, ArrowsExpandIcon } from "@heroicons/react/solid";
+import { ChevronDownIcon, CollectionIcon, UserGroupIcon, UserIcon, ChartBarIcon, ArrowsExpandIcon, XIcon, SparklesIcon } from "@heroicons/react/solid";
 import { saveAs } from "file-saver";
 
 export default function TablesPage() {
@@ -53,6 +53,11 @@ export default function TablesPage() {
   const [selectedTableIds, setSelectedTableIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [statsExpanded, setStatsExpanded] = useState(true);
+  // Tap-to-assign pickup state — works alongside HTML5 drag-and-drop.
+  // sourceTableId === null means the guest was picked from the Unassigned panel.
+  const [picked, setPicked] = useState<{ guestId: string; paxCount: number; sourceTableId: string | null } | null>(null);
+  // Mobile tab switcher (only visible < lg). Defaults to "tables" — the main work surface.
+  const [mobileTab, setMobileTab] = useState<"unassigned" | "tables">("tables");
 
   // Calculate statistics (must be before early returns - React rules of hooks)
   const stats = useMemo(() => {
@@ -168,6 +173,23 @@ export default function TablesPage() {
     });
   }, [tablesWithGuests, searchTerm, filterType]);
 
+  // ESC cancels pickup. Declared up here so it stays above the early returns
+  // (Rules of Hooks — hooks must run in the same order every render).
+  useEffect(() => {
+    if (!picked) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setPicked(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [picked]);
+
+  // Mobile: when a guest is picked from the Unassigned panel, auto-switch to
+  // the Tables tab so the user can see where to drop. No-op on desktop.
+  useEffect(() => {
+    if (picked && picked.sourceTableId === null) {
+      setMobileTab("tables");
+    }
+  }, [picked]);
+
   // ─── Early returns AFTER all hooks ─────────────────────────────────────────
 
   // Show "no events" state if no events exist (check BEFORE loading state)
@@ -227,6 +249,50 @@ export default function TablesPage() {
     });
   };
 
+  // ── Tap-to-assign pickup flow (works alongside drag-and-drop) ─────────────
+  const handlePickGuest = (guestId: string, sourceTableId: string | null) => {
+    const g = guests.find(x => x.id === guestId);
+    if (!g) return;
+    // Tapping the already-picked guest cancels the pickup.
+    if (picked?.guestId === guestId) {
+      setPicked(null);
+      return;
+    }
+    setPicked({
+      guestId,
+      paxCount: g.pax || g.noOfPax || 1,
+      sourceTableId: sourceTableId ?? g.tableId ?? null,
+    });
+  };
+
+  const handleTableClick = (tableId: string) => {
+    if (!picked) return;
+    // Tapping the source table cancels the pickup (rather than no-op assigning).
+    if (picked.sourceTableId === tableId) {
+      setPicked(null);
+      return;
+    }
+    handleDrop(picked.guestId, tableId);
+    setPicked(null);
+  };
+
+  const handleUnassignPicked = () => {
+    if (!picked) return;
+    // No-op if the picked guest came from Unassigned panel.
+    if (picked.sourceTableId === null) {
+      setPicked(null);
+      return;
+    }
+    handleUnassignGuest(picked.guestId);
+    setPicked(null);
+  };
+
+  // Convenience lookups for the banner:
+  const pickedGuest = picked ? guests.find(g => g.id === picked.guestId) : null;
+  const pickedSourceTableName = picked?.sourceTableId
+    ? tablesWithGuests.find(t => t.id === picked.sourceTableId)?.name
+    : null;
+
   const handleEditTable = (tableId: string) => {
     const table = tablesWithGuests.find(t => t.id === tableId);
     if (table) {
@@ -285,6 +351,41 @@ export default function TablesPage() {
 
   return (
     <div className="flex flex-col h-full">
+      {/* ── Tap-to-assign pickup banner ─────────────────────────────────────
+          Floats above the page when a guest is "picked". Shows source +
+          contextual [Unassign] for guests that came from a table. */}
+      {picked && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed z-40 left-1/2 -translate-x-1/2 top-4 md:top-6 max-w-[calc(100vw-2rem)] flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 rounded-full bg-primary text-white shadow-xl border border-primary/40"
+        >
+          <SparklesIcon className="w-4 h-4 flex-shrink-0" />
+          <span className="text-xs md:text-sm font-medium truncate">
+            {picked.sourceTableId
+              ? <>Moving <strong>{pickedGuest?.guestName || pickedGuest?.name}</strong>{pickedSourceTableName ? <> from <em className="not-italic opacity-80">{pickedSourceTableName}</em></> : ""} — tap a table</>
+              : <>Assigning <strong>{pickedGuest?.guestName || pickedGuest?.name}</strong> — tap a table</>
+            }
+          </span>
+          {picked.sourceTableId && (
+            <button
+              onClick={handleUnassignPicked}
+              className="ml-1 text-xs font-semibold bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-full transition whitespace-nowrap"
+            >
+              Unassign
+            </button>
+          )}
+          <button
+            onClick={() => setPicked(null)}
+            className="ml-1 p-1 rounded-full hover:bg-white/20 transition"
+            aria-label="Cancel pickup"
+            title="Cancel (Esc)"
+          >
+            <XIcon className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Page Title & Actions */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
         <div>
@@ -440,11 +541,61 @@ export default function TablesPage() {
         />
       </div>
 
+      {/* Mobile tab switcher — picks which panel is visible on < lg.
+          Auto-switches to "tables" when a guest is picked from the Unassigned panel. */}
+      <div className="lg:hidden flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 mb-4">
+        {([
+          { id: "unassigned" as const, label: "Unassigned", count: unassignedGuests.length },
+          { id: "tables" as const, label: "Tables", count: filteredTables.length },
+        ]).map(({ id, label, count }) => (
+          <button
+            key={id}
+            onClick={() => setMobileTab(id)}
+            className={`flex-1 py-2 text-sm font-semibold rounded-md transition-colors ${
+              mobileTab === id
+                ? "bg-white dark:bg-accent text-primary shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            }`}
+            aria-pressed={mobileTab === id}
+          >
+            {label} <span className={`ml-1 text-xs font-bold ${mobileTab === id ? "text-primary/70" : "text-gray-400"}`}>({count})</span>
+          </button>
+        ))}
+      </div>
+
       {/* Main Two-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
         {/* Unassigned Panel (1 column) */}
-        <div className="lg:col-span-1 lg:max-h-full">
-          <div className="lg:sticky lg:top-0 bg-white dark:bg-accent rounded-xl shadow-lg p-4 border border-gray-200 dark:border-gray-700">
+        <div className={`${mobileTab === "unassigned" ? "block" : "hidden"} lg:block lg:col-span-1 lg:max-h-full`}>
+          <div
+            onDragOver={(e) => {
+              if (!draggedGuest || !draggedGuest.sourceTableId) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              const guestId = e.dataTransfer.getData("guestId");
+              const g = guests.find(x => x.id === guestId);
+              if (guestId && g?.tableId) handleUnassignGuest(guestId);
+            }}
+            onClick={picked && picked.sourceTableId ? handleUnassignPicked : undefined}
+            role={picked && picked.sourceTableId ? "button" : undefined}
+            aria-label={picked && picked.sourceTableId ? `Drop here to unassign ${pickedGuest?.guestName || pickedGuest?.name}` : undefined}
+            className={`lg:sticky lg:top-0 bg-white dark:bg-accent rounded-xl shadow-lg p-4 border transition-all
+              ${picked && picked.sourceTableId
+                ? "border-rose-400 ring-2 ring-rose-300 ring-offset-1 cursor-pointer bg-rose-50/40 dark:bg-rose-900/10"
+                : draggedGuest && draggedGuest.sourceTableId
+                ? "border-rose-300 ring-2 ring-rose-200"
+                : "border-gray-200 dark:border-gray-700"}
+            `}
+          >
+            {(picked && picked.sourceTableId) || (draggedGuest && draggedGuest.sourceTableId) ? (
+              <p className="text-xs font-semibold text-rose-700 dark:text-rose-300 mb-2 flex items-center gap-1.5">
+                <XIcon className="w-3.5 h-3.5" />
+                Drop here to unassign
+              </p>
+            ) : null}
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Unassigned Guests ({unassignedGuests.length})
             </h3>
@@ -468,7 +619,9 @@ export default function TablesPage() {
                     }}
                     onDragStart={handleDragStart}
                     onDragEnd={handleDragEnd}
+                    onPick={isReadOnly ? undefined : (id) => handlePickGuest(id, null)}
                     isDragging={draggedGuestId === guest.id}
+                    isPicked={picked?.guestId === guest.id}
                   />
                 ))
               )}
@@ -477,7 +630,7 @@ export default function TablesPage() {
         </div>
         
         {/* Tables Grid (3 columns) */}
-        <div className="lg:col-span-3 overflow-y-auto">
+        <div className={`${mobileTab === "tables" ? "block" : "hidden"} lg:block lg:col-span-3 overflow-y-auto`}>
           {filteredTables.length === 0 ? (
             <div className="p-6 rounded-lg border-2 border-dashed border-primary/25 text-center space-y-2 bg-white/70 dark:bg-accent/70">
               <p className="text-lg font-semibold">No tables found.</p>
@@ -510,8 +663,11 @@ export default function TablesPage() {
                     onUnassignGuest={(selectMode || isReadOnly) ? undefined : handleUnassignGuest}
                     onGuestDragStart={(selectMode || isReadOnly) ? undefined : handleDragStart}
                     onGuestDragEnd={(selectMode || isReadOnly) ? undefined : handleDragEnd}
+                    onGuestPick={(selectMode || isReadOnly) ? undefined : handlePickGuest}
+                    onTableClick={(selectMode || isReadOnly) ? undefined : handleTableClick}
                     isDropTarget={!selectMode && !isReadOnly && !!draggedGuestId}
                     draggedGuest={(selectMode || isReadOnly) ? null : draggedGuest}
+                    pickedGuest={(selectMode || isReadOnly) || !picked ? null : { id: picked.guestId, paxCount: picked.paxCount, sourceTableId: picked.sourceTableId }}
                   />
                 </div>
               ))}
