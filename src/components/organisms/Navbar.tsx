@@ -25,7 +25,9 @@ export function Navbar({
             <MenuIcon className="h-5 w-5" />
           </button>
         )}
-        <EventSwitcher />
+        <div data-tour="event-switcher">
+          <EventSwitcher />
+        </div>
       </div>
 
       {/* Spacer */}

@@ -228,7 +228,7 @@ export default function GuestsPage() {
   return (
     <>
       {/* Header + Controls */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-3">
+      <div data-tour="guests-header" className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-3">
         <div>
           <h2 className="text-2xl font-semibold text-primary">Guests</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage and organize your guest list</p>
@@ -246,6 +246,7 @@ export default function GuestsPage() {
           </button>
           {!isReadOnly && (
             <Button
+              data-tour="guests-generate-qr"
               variant="secondary"
               onClick={handleGenerateQr}
               disabled={generateQr.isPending}
@@ -273,14 +274,14 @@ export default function GuestsPage() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div data-tour="guests-stats" className="grid grid-cols-3 gap-3 mb-6">
         <StatsCard label="Total Guests" value={stats.total} variant="primary" size="sm" icon={<UserGroupIcon className="w-4 h-4" />} />
         <StatsCard label="Assigned" value={stats.assigned} variant="success" size="sm" icon={<CheckCircleIcon className="w-4 h-4" />} />
         <StatsCard label="Unassigned" value={stats.unassigned} variant="warning" size="sm" icon={<UserIcon className="w-4 h-4" />} />
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row md:items-center mb-4 gap-4">
+      <div data-tour="guests-filters" className="flex flex-col md:flex-row md:items-center mb-4 gap-4">
         <select
           value={guestTypeFilter}
           onChange={(e) => setGuestTypeFilter(e.target.value)}

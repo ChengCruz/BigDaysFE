@@ -387,13 +387,13 @@ export default function TablesPage() {
       )}
 
       {/* Page Title & Actions */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+      <div data-tour="tables-header" className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
         <div>
           <h2 className="text-2xl font-semibold text-primary">Table Arrangement</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Organize seating and arrange guests by table</p>
         </div>
         {!isReadOnly && (
-          <div className="flex flex-wrap gap-2">
+          <div data-tour="tables-actions" className="flex flex-wrap gap-2">
             <Button
               variant="secondary"
               disabled={autoAssign.isPending}
@@ -550,7 +550,7 @@ export default function TablesPage() {
       {/* Main Two-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
         {/* Unassigned Panel (1 column) */}
-        <div className={`${mobileTab === "unassigned" ? "block" : "hidden"} lg:block lg:col-span-1 lg:max-h-full`}>
+        <div data-tour="tables-unassigned" className={`${mobileTab === "unassigned" ? "block" : "hidden"} lg:block lg:col-span-1 lg:max-h-full`}>
           <div
             onDragOver={(e) => {
               if (!draggedGuest || !draggedGuest.sourceTableId) return;
@@ -614,7 +614,7 @@ export default function TablesPage() {
         </div>
         
         {/* Tables Grid (3 columns) */}
-        <div className={`${mobileTab === "tables" ? "block" : "hidden"} lg:block lg:col-span-3 overflow-y-auto`}>
+        <div data-tour="tables-grid" className={`${mobileTab === "tables" ? "block" : "hidden"} lg:block lg:col-span-3 overflow-y-auto`}>
           {filteredTables.length === 0 ? (
             <div className="p-6 rounded-lg border-2 border-dashed border-primary/25 text-center space-y-2 bg-white/70 dark:bg-accent/70">
               <p className="text-lg font-semibold">No tables found.</p>

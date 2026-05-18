@@ -225,7 +225,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
 
       {/* Transaction Table */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-lg overflow-hidden">
-        <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-800 flex items-center justify-between">
+        <div data-tour="wallet-transactions" className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-lg">📋</span>
             <h3 className="font-semibold text-slate-800 dark:text-white">Transaction History</h3>
