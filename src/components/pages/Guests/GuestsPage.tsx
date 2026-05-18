@@ -2,7 +2,7 @@
 import { PageLoader } from "../../atoms/PageLoader";
 import { ErrorState } from "../../atoms/ErrorState";
 import { useState, useMemo } from "react";
-import { UserGroupIcon, UserIcon, CheckCircleIcon, XIcon, PencilIcon } from "@heroicons/react/solid";
+import { UserGroupIcon, UserIcon, CheckCircleIcon, XIcon, PencilIcon, LightBulbIcon } from "@heroicons/react/solid";
 import { Chair, DotsThree } from "@phosphor-icons/react";
 import { useAuth } from "../../../api/hooks/useAuth";
 import {
@@ -237,11 +237,12 @@ export default function GuestsPage() {
           <button
             type="button"
             onClick={() => setHelpModalOpen(true)}
-            title="How to use this page"
+            title="Tips for this page"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
-            aria-label="Open help guide"
+            aria-label="Open page tips"
           >
-            ? Guide
+            <LightBulbIcon className="h-3.5 w-3.5" />
+            Tips
           </button>
           {!isReadOnly && (
             <Button
