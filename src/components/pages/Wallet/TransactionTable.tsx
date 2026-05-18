@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from "react";
 import type { Transaction } from "../../../types/transaction";
 import { TransactionType, PaymentStatus } from "../../../types/transaction";
-import { CATEGORY_CONFIG, getAllCategories } from "../../../utils/categoryConfig";
+import { CATEGORY_CONFIG, getAllCategories, getCategoryConfig } from "../../../utils/categoryConfig";
 import { formatAmount, getTransactionTypeLabel } from "../../../utils/transactionUtils";
 import type { Wallet } from "../../../types/wallet";
 import { CURRENCY_CONFIG } from "../../../types/wallet";
@@ -276,7 +276,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                 {sortedTransactions.map((txn) => {
-                  const categoryConfig = CATEGORY_CONFIG[txn.category];
+                  const categoryConfig = getCategoryConfig(txn.category);
                   const vendorInitials = txn.vendorName
                     ? txn.vendorName
                         .split(" ")
