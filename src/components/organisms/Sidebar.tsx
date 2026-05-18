@@ -143,7 +143,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
 
           {/* Nav links — scrollable middle */}
-          <div className={`flex-1 overflow-y-auto py-3 ${collapsed ? "md:px-2" : "px-3"}`}>
+          <div className={`flex-1 overflow-y-auto py-3 ${collapsed ? "md:px-2" : "px-3"}`} data-tour="sidebar-nav">
             {/* Navigation links */}
             <nav className="space-y-0.5">
               {visibleLinks.map(({ to, label, Icon, end, sub, external, soon }) =>

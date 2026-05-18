@@ -525,7 +525,7 @@ export default function FloorPlanPage() {
       <div className="flex items-center justify-between gap-3 px-5 pt-4 pb-2 flex-wrap">
         <h2 className="text-2xl font-semibold text-primary">Floor Plan</h2>
         {!isReadOnly && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div data-tour="floorplan-actions" className="flex flex-wrap items-center gap-2">
             <Button
               variant="secondary"
               onClick={handleAutoAssign}
@@ -567,7 +567,7 @@ export default function FloorPlanPage() {
       <div className="flex items-center gap-2 px-5 py-1.5 overflow-x-auto overflow-y-visible">
         {!isReadOnly && (
           <>
-            <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-gray-100/80 dark:bg-slate-800/80 border border-gray-200/60 dark:border-gray-700/60 flex-shrink-0">
+            <div data-tour="floorplan-toolbar" className="flex items-center gap-0.5 p-0.5 rounded-lg bg-gray-100/80 dark:bg-slate-800/80 border border-gray-200/60 dark:border-gray-700/60 flex-shrink-0">
               <button onClick={() => handleShapeTool("round")} className={toolBtn(toolMode === "round")} title="Round table">
                 <div className={`w-4 h-4 rounded-full border-2 ${toolMode === "round" ? "border-white/60" : "border-primary/60"}`} />
               </button>
@@ -756,7 +756,7 @@ export default function FloorPlanPage() {
               onSeatClick={isReadOnly ? () => {} : handleSeatClick}
               onResizeItem={isReadOnly ? () => {} : handleResizeItem}
             />
-            <div className="hidden lg:flex h-full">
+            <div data-tour="floorplan-guest-panel" className="hidden lg:flex h-full">
               <FloorGuestPanelV3
                 guests={guests}
                 tables={tables.map((t) => ({ id: t.id, name: t.name }))}

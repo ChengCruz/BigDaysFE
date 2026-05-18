@@ -58,13 +58,13 @@ export default function CrewPage() {
             <span className="font-medium text-text dark:text-white">{event?.title}</span>
           </p>
         </div>
-        <Button variant="primary" onClick={() => setModal({ open: true })}>
+        <Button data-tour="crew-add" variant="primary" onClick={() => setModal({ open: true })}>
           + Add Crew
         </Button>
       </div>
 
       {/* Info banner */}
-      <div className="mb-6 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-sm text-blue-700 dark:text-blue-300 space-y-1">
+      <div data-tour="crew-event-code" className="mb-6 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-sm text-blue-700 dark:text-blue-300 space-y-1">
         <p>
           Crew members sign in via the <span className="font-medium">Staff</span> tab on the
           login page. They'll need their <span className="font-medium">Crew ID</span>,
@@ -98,7 +98,7 @@ export default function CrewPage() {
 
       {/* Empty state */}
       {crew.length === 0 && (
-        <div className="text-center py-16">
+        <div data-tour="crew-list" className="text-center py-16">
           <UserGroupIcon className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
           <p className="text-gray-500 dark:text-gray-400 mb-4">No crew members yet.</p>
           <Button variant="primary" onClick={() => setModal({ open: true })}>
@@ -109,7 +109,7 @@ export default function CrewPage() {
 
       {/* Crew table */}
       {crew.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-primary/10 dark:border-white/10">
+        <div data-tour="crew-list" className="overflow-x-auto rounded-xl border border-primary/10 dark:border-white/10">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-primary/5 dark:bg-white/5 border-b border-primary/10 dark:border-white/10">
