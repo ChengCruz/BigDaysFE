@@ -111,6 +111,7 @@ import QrLookupPage from "../components/pages/Public/QrLookup/QrLookupPage";
 import RequireAuth from "../components/RequireAuth";
 import { useAuth } from "../api/hooks/useAuth";
 import CrewPage from "../components/pages/Crew/CrewPage";
+import ChecklistPage from "../components/pages/Checklist/ChecklistPage";
 import TutorialPage from "../components/pages/Tutorial/TutorialPage";
 // …and other Public pages…
 
@@ -223,6 +224,9 @@ export default function AppRoutes() {
 
         {/* CREW */}
         <Route path="crew" element={<CrewPage />} />
+
+        {/* CHECKLIST */}
+        <Route path="checklist" element={<ChecklistPage />} />
 
         {/* CHECK-IN */}
         <Route path="checkin" element={<CheckInPage />} />
