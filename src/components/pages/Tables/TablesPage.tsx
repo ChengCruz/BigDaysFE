@@ -237,10 +237,17 @@ export default function TablesPage() {
       });
     }
 
+    // Mobile UX: if the guest came from the Unassigned panel, flip back to it
+    // after assignment so the user can keep picking the next guest without
+    // tapping the tab manually. No-op on desktop (tabs are hidden by CSS).
+    const wasUnassigned = !guest.tableId;
+
     // Call the assign API (reassigns if the guest was already on another table)
     assignGuest.mutate({ guestId, tableId }, {
       onError: () => toast.error("Failed to assign guest to table"),
     });
+
+    if (wasUnassigned) setMobileTab("unassigned");
   };
 
   const handleUnassignGuest = (guestId: string) => {
@@ -350,7 +357,7 @@ export default function TablesPage() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col lg:h-full">
       {/* ── Tap-to-assign pickup banner ─────────────────────────────────────
           Floats above the page when a guest is "picked". Shows source +
           contextual [Unassign] for guests that came from a table. */}
@@ -583,7 +590,7 @@ export default function TablesPage() {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Unassigned Guests ({unassignedGuests.length})
             </h3>
-            <div className="space-y-2 max-h-96 lg:max-h-[calc(100vh-350px)] overflow-y-auto">
+            <div className="space-y-2 lg:max-h-[calc(100vh-350px)] lg:overflow-y-auto">
               {unassignedGuests.length === 0 ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-8">
                   All guests have been assigned!
@@ -614,7 +621,7 @@ export default function TablesPage() {
         </div>
         
         {/* Tables Grid (3 columns) */}
-        <div data-tour="tables-grid" className={`${mobileTab === "tables" ? "block" : "hidden"} lg:block lg:col-span-3 overflow-y-auto`}>
+        <div data-tour="tables-grid" className={`${mobileTab === "tables" ? "block" : "hidden"} lg:block lg:col-span-3 lg:overflow-y-auto`}>
           {filteredTables.length === 0 ? (
             <div className="p-6 rounded-lg border-2 border-dashed border-primary/25 text-center space-y-2 bg-white/70 dark:bg-accent/70">
               <p className="text-lg font-semibold">No tables found.</p>
