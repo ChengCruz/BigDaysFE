@@ -136,7 +136,7 @@ export default function MemberDashboardPage() {
       </div>
 
       {/* Active Event Spotlight */}
-      <div data-tour="dashboard-spotlight" className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 p-8 text-white shadow-2xl shadow-indigo-500/30">
+      <div data-tour="dashboard-spotlight" className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary via-button to-secondary p-8 text-white shadow-2xl shadow-primary/30">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
         <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-white/5 rounded-full translate-y-24"></div>
 
@@ -203,7 +203,7 @@ export default function MemberDashboardPage() {
       {/* Stats Grid */}
       <div data-tour="dashboard-stats" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {/* RSVP Progress */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-lg hover:border-indigo-100 dark:hover:border-indigo-800 transition-all group">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-lg hover:border-primary/20 transition-all group">
           <div className="flex items-start justify-between mb-4">
             <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-500 grid place-items-center shadow-lg shadow-green-500/20 group-hover:scale-110 transition">
               <CheckCircleIcon className="h-6 w-6 text-white" />
@@ -233,9 +233,9 @@ export default function MemberDashboardPage() {
         </div>
 
         {/* Budget Status */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-lg hover:border-indigo-100 dark:hover:border-indigo-800 transition-all group">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-lg hover:border-primary/20 transition-all group">
           <div className="flex items-start justify-between mb-4">
-            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-400 to-purple-500 grid place-items-center shadow-lg shadow-indigo-500/20 group-hover:scale-110 transition">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-button grid place-items-center shadow-lg shadow-primary/20 group-hover:scale-110 transition">
               <CurrencyDollarIcon className="h-6 w-6 text-white" />
             </div>
             <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
@@ -259,14 +259,14 @@ export default function MemberDashboardPage() {
                   ? 'bg-gradient-to-r from-red-400 to-red-500'
                   : (dashboard?.budgetStats?.spentPercentage ?? 0) >= 90
                   ? 'bg-gradient-to-r from-amber-400 to-orange-500'
-                  : 'bg-gradient-to-r from-indigo-400 to-purple-500'
+                  : 'bg-gradient-to-r from-primary to-button'
               }`}
               style={{ width: `${Math.min(dashboard?.budgetStats?.spentPercentage ?? 0, 100)}%` }}
             ></div>
           </div>
           <button
             onClick={() => navigate("/app/wallet")}
-            className="flex items-center gap-2 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition"
+            className="flex items-center gap-2 text-xs text-primary hover:text-button transition"
           >
             <CashIcon className="h-4 w-4" />
             Manage Budget
@@ -274,9 +274,9 @@ export default function MemberDashboardPage() {
         </div>
 
         {/* Tables */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-lg hover:border-pink-100 dark:hover:border-pink-800 transition-all group">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-lg hover:border-secondary/30 transition-all group">
           <div className="flex items-start justify-between mb-4">
-            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-pink-400 to-rose-500 grid place-items-center shadow-lg shadow-pink-500/20 group-hover:scale-110 transition">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-secondary to-primary grid place-items-center shadow-lg shadow-secondary/20 group-hover:scale-110 transition">
               <ClipboardCheckIcon className="h-6 w-6 text-white" />
             </div>
           </div>
@@ -297,7 +297,7 @@ export default function MemberDashboardPage() {
           </div>
           <button
             onClick={() => navigate("/app/tables")}
-            className="flex items-center gap-2 text-xs text-pink-600 dark:text-pink-400 hover:text-pink-700 dark:hover:text-pink-300 transition"
+            className="flex items-center gap-2 text-xs text-primary hover:text-button transition"
           >
             <TableIcon className="h-4 w-4" />
             Manage Tables
@@ -387,7 +387,7 @@ export default function MemberDashboardPage() {
                   key={index}
                   className="px-6 py-4 hover:bg-slate-50/50 dark:hover:bg-slate-700/50 transition flex items-start gap-4"
                 >
-                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 grid place-items-center flex-shrink-0">
+                  <div className="h-10 w-10 rounded-xl bg-accent grid place-items-center flex-shrink-0">
                     <span className="text-lg">{activity.icon}</span>
                   </div>
                   <div className="flex-1 min-w-0">
