@@ -504,12 +504,41 @@ export default function TablesPage() {
           </button>
         </div>
         {statsExpanded && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatsCard label="Total Tables" value={stats.totalTables} variant="primary" size="sm" icon={<CollectionIcon className="w-4 h-4" />} />
-            <StatsCard label="Seated Guests" value={stats.seatedGuests} variant="success" size="sm" icon={<UserGroupIcon className="w-4 h-4" />} />
-            <StatsCard label="Unassigned" value={stats.unassigned} variant="warning" size="sm" icon={<UserIcon className="w-4 h-4" />} />
-            <StatsCard label="Total Capacity" value={stats.totalCapacity} variant="secondary" size="sm" icon={<ChartBarIcon className="w-4 h-4" />} />
-          </div>
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
+              <StatsCard label="Total Tables" value={stats.totalTables} variant="primary" size="sm" icon={<CollectionIcon className="w-4 h-4" />} />
+              <StatsCard label="Seated Guests" value={stats.seatedGuests} variant="success" size="sm" icon={<UserGroupIcon className="w-4 h-4" />} />
+              <StatsCard label="Unassigned" value={stats.unassigned} variant="warning" size="sm" icon={<UserIcon className="w-4 h-4" />} />
+              <StatsCard label="Total Capacity" value={stats.totalCapacity} variant="secondary" size="sm" icon={<ChartBarIcon className="w-4 h-4" />} />
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Drag-and-drop tip */}
+              <div className="flex-1 p-3 rounded-xl bg-primary/5 border border-primary/20">
+                <p className="text-sm text-primary">
+                  <strong>Tip:</strong> Drag guests from the unassigned panel and drop them onto tables
+                </p>
+              </div>
+
+              {/* Full-screen mode CTA */}
+              <button
+                onClick={() => window.open("/app/tables/fullscreen", "_blank")}
+                className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-accent hover:border-primary/40 dark:hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group text-left"
+              >
+                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center group-hover:bg-primary/10 dark:group-hover:bg-primary/20 transition-colors">
+                  <ArrowsExpandIcon className="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-primary transition-colors" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-200 leading-tight">
+                    Need a bigger screen?
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 leading-snug mt-0.5">
+                    Full-screen mode — guest list, table grid &amp; detail panel. Perfect for 100+ guests.
+                  </p>
+                </div>
+                <ArrowsExpandIcon className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-primary flex-shrink-0 transition-colors" />
+              </button>
+            </div>
+          </>
         )}
       </div>
 
