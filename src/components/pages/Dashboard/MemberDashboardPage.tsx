@@ -126,7 +126,7 @@ export default function MemberDashboardPage() {
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800 dark:text-white mb-1">
+          <h1 className="text-3xl font-display font-semibold text-text dark:text-text mb-1">
             Good {new Date().getHours() < 12 ? "Morning" : "Afternoon"}! ✨
           </h1>
           <p className="text-slate-500 dark:text-slate-400">

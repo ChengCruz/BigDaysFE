@@ -230,7 +230,7 @@ export default function GuestsPage() {
       {/* Header + Controls */}
       <div data-tour="guests-header" className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-3">
         <div>
-          <h2 className="text-2xl font-semibold text-primary">Guests</h2>
+          <h1 className="text-3xl font-display font-semibold text-primary">Guests</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage and organize your guest list</p>
         </div>
         <div className="flex items-center gap-2">

@@ -396,7 +396,7 @@ export default function TablesPage() {
       {/* Page Title & Actions */}
       <div data-tour="tables-header" className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-primary">Table Arrangement</h2>
+          <h1 className="text-3xl font-display font-semibold text-primary">Table Arrangement</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Organize seating and arrange guests by table</p>
         </div>
         {!isReadOnly && (

@@ -99,7 +99,7 @@ export default function EventsPage() {
       <div className="space-y-4">
         <div data-tour="events-header" className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="space-y-1">
-            <h2 className="text-2xl font-semibold text-primary">Your Events</h2>
+            <h1 className="text-3xl font-display font-semibold text-primary">Your Events</h1>
             <p className="text-sm text-gray-600 dark:text-gray-400">Prioritize the next celebration or revisit archived plans.</p>
           </div>
           <div className="flex flex-wrap gap-3">

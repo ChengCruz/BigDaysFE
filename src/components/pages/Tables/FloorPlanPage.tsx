@@ -523,7 +523,7 @@ export default function FloorPlanPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex items-center justify-between gap-3 px-5 pt-4 pb-2 flex-wrap">
-        <h2 className="text-2xl font-semibold text-primary">Floor Plan</h2>
+        <h1 className="text-3xl font-display font-semibold text-primary">Floor Plan</h1>
         {!isReadOnly && (
           <div data-tour="floorplan-actions" className="flex flex-wrap items-center gap-2">
             <Button
