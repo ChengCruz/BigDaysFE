@@ -140,7 +140,7 @@ export default function RsvpsPage() {
       {/* ─── HEADER + ACTIONS ─────────────────────────────────────────── */}
       <div data-tour="rsvps-header" className="flex flex-col md:flex-row md:justify-between md:items-center mb-5 gap-3">
         <div>
-          <h2 className="text-2xl font-semibold text-primary">RSVPs</h2>
+          <h1 className="text-3xl font-display font-semibold text-primary">RSVPs</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Track guest responses and manage invitations</p>
         </div>
         <div data-tour="rsvps-actions" className="flex flex-wrap gap-2">

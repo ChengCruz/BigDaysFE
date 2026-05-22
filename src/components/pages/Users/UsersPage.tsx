@@ -155,7 +155,7 @@ export default function UsersPage() {
       <>
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-2xl font-semibold text-primary">My Profile</h2>
+            <h1 className="text-3xl font-display font-semibold text-primary">My Profile</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Update your profile and account settings</p>
           </div>
         </div>
@@ -254,9 +254,9 @@ export default function UsersPage() {
     <>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-semibold text-primary">
+          <h1 className="text-3xl font-display font-semibold text-primary">
             {showAllUsers ? "All Users" : "My Profile"}
-          </h2>
+          </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {showAllUsers ? "Manage user accounts and permissions" : "Update your profile and account settings"}
           </p>
