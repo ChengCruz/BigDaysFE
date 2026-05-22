@@ -11,7 +11,7 @@ import { Button } from "../../atoms/Button";
 import { Outlet, useNavigate, useSearchParams } from "react-router-dom";
 import { useEventContext } from "../../../context/EventContext";
 import { CheckCircleIcon, CheckIcon } from "@heroicons/react/solid";
-import { CalendarIcon, LocationMarkerIcon, ArchiveIcon, PencilIcon, XIcon, RefreshIcon } from "@heroicons/react/solid";
+import { CalendarIcon, LocationMarkerIcon, ArchiveIcon, PencilIcon, XIcon, RefreshIcon, ArrowRightIcon, TemplateIcon, ClipboardListIcon, ExternalLinkIcon } from "@heroicons/react/solid";
 import { StatsCard } from "../../atoms/StatsCard";
 import { formatEventDate, formatEventTime } from "../../../utils/eventUtils";
 
@@ -180,14 +180,24 @@ export default function EventsPage() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={() => navigate("/app/rsvps")}>Continue planning</Button>
-              <a href="/app/rsvps/designer-v3" target="_blank" rel="noopener noreferrer">
-                <Button variant="secondary">Design RSVP Card ↗</Button>
-              </a>
-              <Button variant="secondary" onClick={() => navigate(`${activeEvent.id}/form-fields`)}>
-                RSVP Questions
+            <div className="flex flex-col gap-2 min-w-[220px]">
+              <Button onClick={() => navigate("/app/rsvps")} className="w-full gap-2">
+                <ArrowRightIcon className="w-4 h-4" />
+                Continue planning
               </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <a href="/app/rsvps/designer-v3" target="_blank" rel="noopener noreferrer">
+                  <Button variant="secondary" className="w-full gap-1.5 !text-sm">
+                    <TemplateIcon className="w-3.5 h-3.5 shrink-0" />
+                    RSVP Card
+                    <ExternalLinkIcon className="w-3 h-3 opacity-50 shrink-0" />
+                  </Button>
+                </a>
+                <Button variant="secondary" className="w-full gap-1.5 !text-sm" onClick={() => navigate(`${activeEvent.id}/form-fields`)}>
+                  <ClipboardListIcon className="w-3.5 h-3.5 shrink-0" />
+                  Questions
+                </Button>
+              </div>
             </div>
           </div>
         )}

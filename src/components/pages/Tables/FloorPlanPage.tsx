@@ -786,6 +786,7 @@ export default function FloorPlanPage() {
         isOpen={showTableModal}
         onClose={handleTableModalClose}
         initial={editTable ? { id: editTable.id, name: editTable.name, capacity: editTable.capacity } : undefined}
+        guests={editTable ? guests.filter((g) => g.tableId === editTable.id) : []}
       />
 
       <DeleteConfirmationModal
