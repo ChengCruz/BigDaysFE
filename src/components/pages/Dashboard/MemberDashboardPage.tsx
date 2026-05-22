@@ -324,19 +324,19 @@ export default function MemberDashboardPage() {
               href="/app/rsvps/designer-v3"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border border-indigo-100 dark:border-indigo-800 hover:border-indigo-200 dark:hover:border-indigo-700 hover:shadow-md transition group"
+              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-primary/5 to-secondary/10 border border-primary/15 hover:border-primary/30 hover:shadow-md transition group"
             >
-              <div className="h-10 w-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 group-hover:bg-indigo-200 dark:group-hover:bg-indigo-800 grid place-items-center transition">
-                <ClipboardCheckIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+              <div className="h-10 w-10 rounded-xl bg-primary/10 group-hover:bg-primary/20 grid place-items-center transition">
+                <ClipboardCheckIcon className="h-5 w-5 text-primary" />
               </div>
               <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Design RSVP</span>
             </a>
             <button
               onClick={() => navigate("/app/guests")}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border border-purple-100 dark:border-purple-800 hover:border-purple-200 dark:hover:border-purple-700 hover:shadow-md transition group"
+              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-secondary/10 to-primary/5 border border-secondary/20 hover:border-secondary/40 hover:shadow-md transition group"
             >
-              <div className="h-10 w-10 rounded-xl bg-purple-100 dark:bg-purple-900/50 group-hover:bg-purple-200 dark:group-hover:bg-purple-800 grid place-items-center transition">
-                <MailIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <div className="h-10 w-10 rounded-xl bg-secondary/15 group-hover:bg-secondary/25 grid place-items-center transition">
+                <MailIcon className="h-5 w-5 text-secondary" />
               </div>
               <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Send Invites
@@ -353,10 +353,10 @@ export default function MemberDashboardPage() {
             </button>
             <button
               onClick={() => navigate("/app/wallet")}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-950/20 dark:to-rose-950/20 border border-pink-100 dark:border-pink-800 hover:border-pink-200 dark:hover:border-pink-700 hover:shadow-md transition group"
+              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-button/5 to-primary/10 border border-button/15 hover:border-button/30 hover:shadow-md transition group"
             >
-              <div className="h-10 w-10 rounded-xl bg-pink-100 dark:bg-pink-900/50 group-hover:bg-pink-200 dark:group-hover:bg-pink-800 grid place-items-center transition">
-                <CurrencyDollarIcon className="h-5 w-5 text-pink-600 dark:text-pink-400" />
+              <div className="h-10 w-10 rounded-xl bg-button/10 group-hover:bg-button/20 grid place-items-center transition">
+                <CurrencyDollarIcon className="h-5 w-5 text-button" />
               </div>
               <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Add Expense</span>
             </button>
