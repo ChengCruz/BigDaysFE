@@ -54,7 +54,7 @@ export const GuestCard: React.FC<GuestCardProps> = ({
         bg-white dark:bg-accent/50 dark:border-gray-600
         transition-all ${onPick ? "cursor-pointer" : "cursor-grab"} active:cursor-grabbing
         touch-none select-none
-        ${isHovering && !isPicked ? "border-primary bg-indigo-50 dark:bg-primary/10 shadow-md" : ""}
+        ${isHovering && !isPicked ? "border-primary bg-primary/5 shadow-md" : ""}
         ${isPicked ? "ring-2 ring-primary ring-offset-1 bg-primary/10 dark:bg-primary/20 border-primary shadow-md" : ""}
         ${isDragging ? "opacity-50" : "opacity-100"}
       `}
