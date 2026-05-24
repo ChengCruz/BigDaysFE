@@ -11,7 +11,7 @@ import { Button } from "../../atoms/Button";
 import { Outlet, useNavigate, useSearchParams } from "react-router-dom";
 import { useEventContext } from "../../../context/EventContext";
 import { CheckCircleIcon, CheckIcon } from "@heroicons/react/solid";
-import { CalendarIcon, LocationMarkerIcon, ArchiveIcon, PencilIcon, XIcon, RefreshIcon } from "@heroicons/react/solid";
+import { CalendarIcon, LocationMarkerIcon, ArchiveIcon, PencilIcon, XIcon, RefreshIcon, ArrowRightIcon, TemplateIcon, ClipboardListIcon, ExternalLinkIcon } from "@heroicons/react/solid";
 import { StatsCard } from "../../atoms/StatsCard";
 import { formatEventDate, formatEventTime } from "../../../utils/eventUtils";
 
@@ -99,7 +99,7 @@ export default function EventsPage() {
       <div className="space-y-4">
         <div data-tour="events-header" className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="space-y-1">
-            <h2 className="text-2xl font-semibold text-primary">Your Events</h2>
+            <h1 className="text-3xl font-display font-semibold text-primary">Your Events</h1>
             <p className="text-sm text-gray-600 dark:text-gray-400">Prioritize the next celebration or revisit archived plans.</p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -180,14 +180,24 @@ export default function EventsPage() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={() => navigate("/app/rsvps")}>Continue planning</Button>
-              <a href="/app/rsvps/designer-v3" target="_blank" rel="noopener noreferrer">
-                <Button variant="secondary">Design RSVP Card ↗</Button>
-              </a>
-              <Button variant="secondary" onClick={() => navigate(`${activeEvent.id}/form-fields`)}>
-                RSVP Questions
+            <div className="flex flex-col gap-2 min-w-[220px]">
+              <Button onClick={() => navigate("/app/rsvps")} className="w-full gap-2">
+                <ArrowRightIcon className="w-4 h-4" />
+                Continue planning
               </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <a href="/app/rsvps/designer-v3" target="_blank" rel="noopener noreferrer">
+                  <Button variant="secondary" className="w-full gap-1.5 !text-sm">
+                    <TemplateIcon className="w-3.5 h-3.5 shrink-0" />
+                    RSVP Card
+                    <ExternalLinkIcon className="w-3 h-3 opacity-50 shrink-0" />
+                  </Button>
+                </a>
+                <Button variant="secondary" className="w-full gap-1.5 !text-sm" onClick={() => navigate(`${activeEvent.id}/form-fields`)}>
+                  <ClipboardListIcon className="w-3.5 h-3.5 shrink-0" />
+                  Questions
+                </Button>
+              </div>
             </div>
           </div>
         )}

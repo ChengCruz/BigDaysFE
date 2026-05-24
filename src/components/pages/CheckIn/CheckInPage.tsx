@@ -304,7 +304,7 @@ export default function CheckInPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 flex flex-col gap-6">
       <div data-tour="checkin-header">
-        <h1 className="text-2xl font-bold text-primary">Guest Check-in</h1>
+        <h1 className="text-3xl font-display font-semibold text-primary">Guest Check-in</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Scan QR codes or manually check in guests</p>
       </div>
 
