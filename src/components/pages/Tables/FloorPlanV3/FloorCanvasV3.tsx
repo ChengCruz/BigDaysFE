@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useState, useEffect } from "react";
+import React, { useRef, useCallback, useEffect } from "react";
 import type { FloorItem } from "../useFloorPlanState";
 import type { TableBase } from "../../../../api/hooks/useTablesApi";
 import type { Guest } from "../../../../api/hooks/useGuestsApi";
@@ -12,14 +12,16 @@ interface Props {
   zoom: number;
   panX: number;
   panY: number;
-  selectedId: string | null;
+  selectedIds: string[];
   snapEnabled: boolean;
   snapSize: number;
   toolMode: string;
   draggedGuest: { id: string; pax: number } | null;
   onZoomChange: (z: number) => void;
   onPanChange: (x: number, y: number) => void;
-  onSelect: (id: string | null) => void;
+  onSelect: (id: string | null, addToSelection?: boolean) => void;
+  onGroupDragStart: () => void;
+  onGroupDragMove: (dx: number, dy: number) => void;
   onMoveItem: (id: string, x: number, y: number) => void;
   onDoubleClickTable: (id: string) => void;
   onDropGuest: (tableId: string, guestId: string) => void;
@@ -36,7 +38,7 @@ export const FloorCanvasV3: React.FC<Props> = ({
   zoom,
   panX,
   panY,
-  selectedId,
+  selectedIds,
   snapEnabled,
   snapSize,
   toolMode,
@@ -44,6 +46,8 @@ export const FloorCanvasV3: React.FC<Props> = ({
   onZoomChange,
   onPanChange,
   onSelect,
+  onGroupDragStart,
+  onGroupDragMove,
   onMoveItem,
   onDoubleClickTable,
   onDropGuest,
@@ -55,18 +59,12 @@ export const FloorCanvasV3: React.FC<Props> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0, px: 0, py: 0 });
-  const [showHint, setShowHint] = useState(true);
 
   useEffect(() => {
-    if (selectedId && containerRef.current) {
+    if (selectedIds.length > 0 && containerRef.current) {
       containerRef.current.focus();
     }
-  }, [selectedId]);
-
-  useEffect(() => {
-    const t = setTimeout(() => setShowHint(false), 8000);
-    return () => clearTimeout(t);
-  }, []);
+  }, [selectedIds]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -182,6 +180,7 @@ export const FloorCanvasV3: React.FC<Props> = ({
         backgroundSize: "40px 40px, 40px 40px, 100% 100%",
         cursor: toolMode !== "select" ? "crosshair" : isPanning.current ? "grabbing" : "grab",
         minHeight: 400,
+        userSelect: "none",
       }}
       tabIndex={0}
       onMouseDown={handleMouseDown}
@@ -213,11 +212,14 @@ export const FloorCanvasV3: React.FC<Props> = ({
                   table={table}
                   assignedGuests={assigned}
                   zoom={zoom}
-                  selected={selectedId === item.id}
+                  selected={selectedIds.includes(item.id)}
+                  selectedIds={selectedIds}
                   snapEnabled={snapEnabled}
                   snapSize={snapSize}
                   draggedGuest={draggedGuest}
                   onSelect={onSelect}
+                  onGroupDragStart={onGroupDragStart}
+                  onGroupDragMove={onGroupDragMove}
                   onMove={onMoveItem}
                   onDoubleClick={onDoubleClickTable}
                   onDropGuest={onDropGuest}
@@ -232,8 +234,11 @@ export const FloorCanvasV3: React.FC<Props> = ({
               <FloorObstacleItem
                 item={item}
                 zoom={zoom}
-                selected={selectedId === item.id}
+                selected={selectedIds.includes(item.id)}
+                selectedIds={selectedIds}
                 onSelect={onSelect}
+                onGroupDragStart={onGroupDragStart}
+                onGroupDragMove={onGroupDragMove}
                 onMove={onMoveItem}
                 onResize={onResizeItem}
               />
@@ -242,29 +247,6 @@ export const FloorCanvasV3: React.FC<Props> = ({
         })}
       </div>
 
-      {showHint && (
-        <div className="fp-no-print absolute top-3 left-3 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-gray-200/80 dark:border-gray-700/80 rounded-lg px-3 py-2.5 shadow-lg max-w-[240px] z-20 animate-fade-in">
-          <div className="flex items-start justify-between gap-2 mb-1.5">
-            <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Quick Tips</p>
-            <button
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition -mt-0.5"
-              onClick={() => setShowHint(false)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-3 w-3">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <ul className="text-[10px] text-gray-500 dark:text-gray-400 space-y-0.5 leading-relaxed">
-            <li>Drag tables to reposition</li>
-            <li>Double-click table to edit</li>
-            <li>Click an occupied seat → menu (Unassign has Undo)</li>
-            <li>Drag a guest onto a table — green ring = valid, red = full</li>
-            <li>Hover a table to see its guest list</li>
-            <li>Scroll to zoom, drag minimap to navigate</li>
-          </ul>
-        </div>
-      )}
 
       <div
         className="fp-no-print absolute bottom-3 right-3 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-gray-200/80 dark:border-gray-700/80 rounded-lg overflow-hidden shadow-md z-20"

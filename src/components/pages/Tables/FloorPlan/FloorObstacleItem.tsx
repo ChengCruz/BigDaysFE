@@ -1,54 +1,87 @@
 import React, { useRef, useCallback } from "react";
-import type { FloorItem } from "./useFloorPlanState";
+import type { FloorItem } from "../useFloorPlanState";
 
 interface Props {
   item: FloorItem;
   zoom: number;
   selected: boolean;
-  onSelect: (id: string) => void;
+  selectedIds: string[];
+  onSelect: (id: string, addToSelection?: boolean) => void;
+  onGroupDragStart: () => void;
+  onGroupDragMove: (dx: number, dy: number) => void;
   onMove: (id: string, x: number, y: number) => void;
   onResize: (id: string, w: number, h: number) => void;
 }
 
-export const FloorObstacleItem: React.FC<Props> = ({ item, zoom, selected, onSelect, onMove, onResize }) => {
+export const FloorObstacleItem: React.FC<Props> = ({ item, zoom, selected, selectedIds, onSelect, onGroupDragStart, onGroupDragMove, onMove, onResize }) => {
   const dragging = useRef(false);
+  const dragMoved = useRef(false);
   const offset = useRef({ x: 0, y: 0 });
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (e.button !== 0) return;
       e.stopPropagation();
-      onSelect(item.id);
       dragging.current = true;
-      offset.current = {
-        x: (e.clientX - (e.currentTarget as HTMLElement).getBoundingClientRect().left) / zoom,
-        y: (e.clientY - (e.currentTarget as HTMLElement).getBoundingClientRect().top) / zoom,
-      };
+      dragMoved.current = false;
 
-      const onMouseMove = (ev: MouseEvent) => {
-        if (!dragging.current) return;
+      const alreadyInGroup = selectedIds.includes(item.id) && selectedIds.length > 1 && !e.shiftKey;
+
+      if (alreadyInGroup) {
+        onGroupDragStart();
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const onMouseMove = (ev: MouseEvent) => {
+          if (!dragging.current) return;
+          dragMoved.current = true;
+          onGroupDragMove((ev.clientX - startX) / zoom, (ev.clientY - startY) / zoom);
+        };
+        const onMouseUp = () => {
+          dragging.current = false;
+          if (!dragMoved.current) onSelect(item.id);
+          window.removeEventListener("mousemove", onMouseMove);
+          window.removeEventListener("mouseup", onMouseUp);
+        };
+        window.addEventListener("mousemove", onMouseMove);
+        window.addEventListener("mouseup", onMouseUp);
+      } else {
+        onSelect(item.id, e.shiftKey);
         const canvas = document.getElementById("floor-canvas-content");
-        if (!canvas) return;
-        const canvasRect = canvas.getBoundingClientRect();
-        const nx = (ev.clientX - canvasRect.left) / zoom - offset.current.x;
-        const ny = (ev.clientY - canvasRect.top) / zoom - offset.current.y;
-        onMove(item.id, nx, ny);
-      };
-      const onMouseUp = () => {
-        dragging.current = false;
-        window.removeEventListener("mousemove", onMouseMove);
-        window.removeEventListener("mouseup", onMouseUp);
-      };
-      window.addEventListener("mousemove", onMouseMove);
-      window.addEventListener("mouseup", onMouseUp);
+        const canvasRect = canvas?.getBoundingClientRect();
+        if (canvasRect) {
+          offset.current = {
+            x: (e.clientX - canvasRect.left) / zoom - item.x,
+            y: (e.clientY - canvasRect.top) / zoom - item.y,
+          };
+        }
+        const onMouseMove = (ev: MouseEvent) => {
+          if (!dragging.current) return;
+          const canvas = document.getElementById("floor-canvas-content");
+          if (!canvas) return;
+          const canvasRect = canvas.getBoundingClientRect();
+          const nx = (ev.clientX - canvasRect.left) / zoom - offset.current.x;
+          const ny = (ev.clientY - canvasRect.top) / zoom - offset.current.y;
+          onMove(item.id, nx, ny);
+        };
+        const onMouseUp = () => {
+          dragging.current = false;
+          window.removeEventListener("mousemove", onMouseMove);
+          window.removeEventListener("mouseup", onMouseUp);
+        };
+        window.addEventListener("mousemove", onMouseMove);
+        window.addEventListener("mouseup", onMouseUp);
+      }
     },
-    [item.id, zoom, onSelect, onMove]
+    [item.id, item.x, item.y, zoom, selectedIds, onSelect, onGroupDragStart, onGroupDragMove, onMove]
   );
 
   const isStage = item.type === "stage";
   const isDanceFloor = item.type === "danceFloor";
   const isPillar = item.type === "pillar";
+  const isWalkway = item.type === "walkway";
+  const isDeco = item.type === "deco";
 
+  const rotation = item.rotation ?? 0;
   let style: React.CSSProperties = {
     position: "absolute",
     left: item.x,
@@ -63,6 +96,8 @@ export const FloorObstacleItem: React.FC<Props> = ({ item, zoom, selected, onSel
     fontSize: 10,
     zIndex: selected ? 50 : 5,
     transition: "box-shadow 0.2s",
+    transform: rotation ? `rotate(${rotation}deg)` : undefined,
+    transformOrigin: "center center",
   };
 
   if (isStage) {
@@ -96,6 +131,28 @@ export const FloorObstacleItem: React.FC<Props> = ({ item, zoom, selected, onSel
       color: "white",
       textShadow: "0 1px 2px rgba(0,0,0,0.3)",
     };
+  } else if (isWalkway) {
+    style = {
+      ...style,
+      background: "linear-gradient(135deg, #991b1b, #450a0a)",
+      border: "2px solid #7f1d1d",
+      borderRadius: 6,
+      color: "rgba(255,255,255,0.75)",
+      fontSize: 10,
+      fontWeight: 600,
+      letterSpacing: 1,
+      textShadow: "0 1px 2px rgba(0,0,0,0.5)",
+    };
+  } else if (isDeco) {
+    style = {
+      ...style,
+      background: "radial-gradient(ellipse at 50% 80%, #86efac 0%, #4ade80 40%, #16a34a 100%)",
+      border: "2px solid #15803d",
+      borderRadius: "50% 50% 40% 40%",
+      color: "#14532d",
+      fontSize: 20,
+      flexDirection: "column" as const,
+    };
   } else {
     // wall
     style = {
@@ -114,7 +171,17 @@ export const FloorObstacleItem: React.FC<Props> = ({ item, zoom, selected, onSel
     style.boxShadow = "0 8px 25px rgba(79, 70, 229, 0.25)";
   }
 
-  const label = isStage ? "\ud83c\udfad Stage" : isDanceFloor ? "\ud83d\udc83 Dance Floor" : isPillar ? "\ud83d\udd18" : "\ud83e\uddf1 Wall";
+  const label = isStage
+    ? "🎭 Stage"
+    : isDanceFloor
+    ? "💃 Dance Floor"
+    : isPillar
+    ? "🔘"
+    : isWalkway
+    ? "Walkway"
+    : isDeco
+    ? "🌸"
+    : "🧱 Wall";
 
   return (
     <div
@@ -128,9 +195,9 @@ export const FloorObstacleItem: React.FC<Props> = ({ item, zoom, selected, onSel
         label
       )}
 
-      {/* Resize handle when selected */}
       {selected && (
         <div
+          className="fp-no-print"
           onMouseDown={(e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -141,7 +208,7 @@ export const FloorObstacleItem: React.FC<Props> = ({ item, zoom, selected, onSel
             const onMouseMove = (ev: MouseEvent) => {
               const dx = (ev.clientX - startX) / zoom;
               const dy = (ev.clientY - startY) / zoom;
-              const minSize = isPillar ? 20 : 30;
+              const minSize = isPillar || isDeco ? 20 : 30;
               onResize(item.id, Math.max(minSize, startW + dx), Math.max(minSize, startH + dy));
             };
             const onMouseUp = () => {

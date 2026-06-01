@@ -246,14 +246,14 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="floorplan-toolbar"]',
         title: "Toolbox",
         content:
-          "Pick a table shape (round, long or square) to drop onto the canvas, or add decorations like a stage, dance floor, walls or pillars.",
+          "Pick a table shape (round, long or square) to place on the canvas. Add venue features like a stage, dance floor, walls, pillars, walkways or decorations. Use ✨ to auto-arrange all tables, or Standardize to unify shape and size in one go.",
       },
       {
         ...commonStepProps,
         target: ".floor-canvas",
         title: "The canvas",
         content:
-          "Drag tables anywhere to position them. Click a seat to assign a guest, or double-click a table to edit its name and capacity.",
+          "Drag tables and decorations to position them. Click a table to select it — then assign guests, resize, change shape or delete. Drag guests from the panel on the right to seat them.",
         placement: "top",
       },
       {
@@ -261,7 +261,7 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="floorplan-guest-panel"]',
         title: "Guest list",
         content:
-          "Drag any guest from here straight onto a seat or table on the canvas to assign them.",
+          "Unassigned guests are listed at the top — drag one onto a table to seat them. Assigned guests are grouped below; collapse that section to keep things tidy.",
         placement: "left",
       },
       {
@@ -269,7 +269,7 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="floorplan-actions"]',
         title: "Don't forget to save",
         content:
-          'Layout changes are not auto-saved. Hit "Save Layout" before leaving the page or your arrangement is lost.',
+          'Layout changes are not auto-saved. Hit "Save Layout" before leaving the page or your arrangement will be lost.',
       },
     ],
   },

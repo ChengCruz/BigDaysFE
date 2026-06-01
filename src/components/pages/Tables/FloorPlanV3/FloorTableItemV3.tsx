@@ -10,10 +10,13 @@ interface Props {
   assignedGuests: Guest[];
   zoom: number;
   selected: boolean;
+  selectedIds: string[];
   snapEnabled: boolean;
   snapSize: number;
   draggedGuest?: { id: string; pax: number } | null;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, addToSelection?: boolean) => void;
+  onGroupDragStart: () => void;
+  onGroupDragMove: (dx: number, dy: number) => void;
   onMove: (id: string, x: number, y: number) => void;
   onDoubleClick: (id: string) => void;
   onDropGuest: (tableId: string, guestId: string) => void;
@@ -103,10 +106,13 @@ export const FloorTableItemV3: React.FC<Props> = ({
   assignedGuests,
   zoom,
   selected,
+  selectedIds,
   snapEnabled,
   snapSize,
   draggedGuest,
   onSelect,
+  onGroupDragStart,
+  onGroupDragMove,
   onMove,
   onDoubleClick,
   onDropGuest,
@@ -131,33 +137,54 @@ export const FloorTableItemV3: React.FC<Props> = ({
     (e: React.MouseEvent) => {
       if (e.button !== 0) return;
       e.stopPropagation();
-      onSelect(item.id);
       dragging.current = true;
       dragMoved.current = false;
-      offset.current = {
-        x: (e.clientX - (e.currentTarget as HTMLElement).getBoundingClientRect().left) / zoom,
-        y: (e.clientY - (e.currentTarget as HTMLElement).getBoundingClientRect().top) / zoom,
-      };
 
-      const onMouseMove = (ev: MouseEvent) => {
-        if (!dragging.current) return;
-        dragMoved.current = true;
-        const canvas = document.getElementById("floor-canvas-content");
-        if (!canvas) return;
-        const canvasRect = canvas.getBoundingClientRect();
-        const rawX = (ev.clientX - canvasRect.left) / zoom - offset.current.x;
-        const rawY = (ev.clientY - canvasRect.top) / zoom - offset.current.y;
-        onMove(item.id, snap(rawX, snapSize, snapEnabled), snap(rawY, snapSize, snapEnabled));
-      };
-      const onMouseUp = () => {
-        dragging.current = false;
-        window.removeEventListener("mousemove", onMouseMove);
-        window.removeEventListener("mouseup", onMouseUp);
-      };
-      window.addEventListener("mousemove", onMouseMove);
-      window.addEventListener("mouseup", onMouseUp);
+      const alreadyInGroup = selectedIds.includes(item.id) && selectedIds.length > 1 && !e.shiftKey;
+
+      if (alreadyInGroup) {
+        onGroupDragStart();
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const onMouseMove = (ev: MouseEvent) => {
+          if (!dragging.current) return;
+          dragMoved.current = true;
+          onGroupDragMove((ev.clientX - startX) / zoom, (ev.clientY - startY) / zoom);
+        };
+        const onMouseUp = () => {
+          dragging.current = false;
+          if (!dragMoved.current) onSelect(item.id); // click without drag → single-select
+          window.removeEventListener("mousemove", onMouseMove);
+          window.removeEventListener("mouseup", onMouseUp);
+        };
+        window.addEventListener("mousemove", onMouseMove);
+        window.addEventListener("mouseup", onMouseUp);
+      } else {
+        onSelect(item.id, e.shiftKey);
+        offset.current = {
+          x: (e.clientX - (e.currentTarget as HTMLElement).getBoundingClientRect().left) / zoom,
+          y: (e.clientY - (e.currentTarget as HTMLElement).getBoundingClientRect().top) / zoom,
+        };
+        const onMouseMove = (ev: MouseEvent) => {
+          if (!dragging.current) return;
+          dragMoved.current = true;
+          const canvas = document.getElementById("floor-canvas-content");
+          if (!canvas) return;
+          const canvasRect = canvas.getBoundingClientRect();
+          const rawX = (ev.clientX - canvasRect.left) / zoom - offset.current.x;
+          const rawY = (ev.clientY - canvasRect.top) / zoom - offset.current.y;
+          onMove(item.id, snap(rawX, snapSize, snapEnabled), snap(rawY, snapSize, snapEnabled));
+        };
+        const onMouseUp = () => {
+          dragging.current = false;
+          window.removeEventListener("mousemove", onMouseMove);
+          window.removeEventListener("mouseup", onMouseUp);
+        };
+        window.addEventListener("mousemove", onMouseMove);
+        window.addEventListener("mouseup", onMouseUp);
+      }
     },
-    [item.id, zoom, snapEnabled, snapSize, onSelect, onMove]
+    [item.id, zoom, snapEnabled, snapSize, selectedIds, onSelect, onGroupDragStart, onGroupDragMove, onMove]
   );
 
   const handleDoubleClick = useCallback(
