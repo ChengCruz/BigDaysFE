@@ -59,8 +59,6 @@ import EventsPage from "../components/pages/Events/EventsPage";
 import EditEventModal from "../components/pages/Events/EditEventModal";
 
 import RsvpsPage from "../components/pages/RSVPs/RsvpsPage";
-import RsvpDesignPage from "../components/pages/RSVPs/RsvpDesignPage";
-import RsvpDesignV2Page from "../components/pages/RSVPs/RsvpDesignV2Page";
 import RsvpDesignV3Page from "../components/pages/RSVPs/RsvpDesignV3Page";
 import RsvpSharePreviewPage from "../components/pages/RSVPs/RsvpSharePreviewPage";
 // import RsvpDetail from "../components/pages/RSVPs/RsvpDetail";
@@ -70,14 +68,11 @@ import RsvpSharePreviewPage from "../components/pages/RSVPs/RsvpSharePreviewPage
 import GuestsPage from "../components/pages/Guests/GuestsPage";
 
 import TablesPage from "../components/pages/Tables/TablesPage";
+import TablesPageV3 from "../components/pages/Tables/TablesPageV3";
 // import TableDetail from "../components/pages/Tables/TableDetail";
 // import TableFormModal from "../components/molecules/TableFormModal";
 import EditTableModal from "../components/pages/Tables/EditTableModal";
 
-import SeatingPage from "../components/pages/Seating/SeatingPage";
-// import SeatingDetail from "../components/pages/Seating/SeatingDetail";
-// import SeatingFormModal from "../components/molecules/SeatingFormModal";
-import EditSeatingModal from "../components/pages/Seating/EditSeatingModal";
 
 import UsersPage from "../components/pages/Users/UsersPage";
 // import UserDetail from "../components/pages/Users/UserDetail";
@@ -95,7 +90,6 @@ import { EventFormModal } from "../components/molecules/EventFormModal";
 import { NewRsvpModal } from "../components/pages/RSVPs/NewRsvpModal";
 import { EditRsvpModal } from "../components/pages/RSVPs/EditRsvpModal";
 import { TableFormModal } from "../components/molecules/TableFormModal";
-import { SeatingFormModal } from "../components/molecules/SeatingFormModal";
 import { UserFormModal } from "../components/molecules/UserFormModal";
 import FormFieldsPage from "../components/pages/Events/FormFieldsPage";
 import { TableAssignments } from "../components/pages/Tables/TableAssignments";
@@ -104,8 +98,7 @@ import { TableLayoutPlanner } from "../components/pages/Tables/TableLayoutPlanne
 import { TablePrintView } from "../components/pages/Tables/TablePrintView";
 import { TableSummary } from "../components/pages/Tables/TableSummary";
 import FloorPlanPage from "../components/pages/Tables/FloorPlanPage";
-import TablesPageV2 from "../components/pages/Tables/TablesPageV2";
-import TablesRedesignPage from "../components/pages/Tables/TablesRedesignPage";
+import TablesFullscreenPage from "../components/pages/Tables/TablesFullscreenPage";
 import CheckInPage from "../components/pages/CheckIn/CheckInPage";
 import QrLookupPage from "../components/pages/Public/QrLookup/QrLookupPage";
 import RequireAuth from "../components/RequireAuth";
@@ -120,6 +113,9 @@ export default function AppRoutes() {
 
   return (
     <Routes>
+      {/* ─── STANDALONE PROTECTED (no sidebar/navbar — full viewport) ─── */}
+      <Route path="/app/tables/fullscreen" element={<RequireAuth><TablesFullscreenPage /></RequireAuth>} />
+
       {/* ─── STANDALONE PUBLIC (no navbar/footer) ───────── */}
       <Route path="/rsvp/submit/:token" element={<RSVPPublicPage />} />
       <Route path="/rsvp/:slug" element={<RsvpBySlugPage />} />
@@ -172,8 +168,6 @@ export default function AppRoutes() {
         {/* RSVPs (no :eventId in the URL) */}
         <Route path="rsvps" element={<Outlet />}>
           <Route index element={<RsvpsPage />} />
-          <Route path="designer" element={<RsvpDesignPage />} />
-          <Route path="designer-v2" element={<RsvpDesignV2Page />} />
           <Route path="designer-v3" element={<RsvpDesignV3Page />} />
           <Route path="new" element={<NewRsvpModal />} />
           <Route path=":id/edit" element={<EditRsvpModal />} />
@@ -185,10 +179,8 @@ export default function AppRoutes() {
         {/* ─── TABLES ─────────────────────────────────────────── */}
 <Route path="tables" element={<Outlet/>}>
   <Route index element={<TablesPage />} />
+  <Route path="v3" element={<TablesPageV3 />} />
   <Route path="floorplan" element={<FloorPlanPage />} />
-  <Route path="v2" element={<TablesPageV2 />} />
-  <Route path="fullscreen" element={<TablesRedesignPage />} />
-
   <Route path="new" element={
     <TableFormModal isOpen onClose={() => navigate(-1)} />
   }/>
@@ -202,16 +194,6 @@ export default function AppRoutes() {
     <Route path="edit"        element={<EditTableModal   />} />
   </Route>
 </Route>
-        {/* SEATING */}
-        <Route path="seating" element={<Outlet />}>
-          <Route index element={<SeatingPage />} />
-          <Route
-            path="new"
-            element={<SeatingFormModal isOpen onClose={() => navigate(-1)} />}
-          />
-          <Route path=":id/edit" element={<EditSeatingModal />} />
-        </Route>
-
         {/* USERS */}
         <Route path="users" element={<Outlet />}>
           <Route index element={<UsersPage />} />

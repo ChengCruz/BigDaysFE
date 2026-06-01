@@ -1,4 +1,4 @@
-// src/components/pages/Tables/TablesPage.tsx
+// src/components/pages/Tables/TablesPageV3.tsx
 import { PageLoader } from "../../atoms/PageLoader";
 import { ErrorState } from "../../atoms/ErrorState";
 import {
@@ -15,20 +15,19 @@ import {
 import { Button } from "../../atoms/Button";
 import { Dropdown, DropdownItem } from "../../atoms/Dropdown";
 import { StatsCard } from "../../atoms/StatsCard";
-import { GuestCard } from "../../molecules/GuestCard";
 import { TableCard } from "../../molecules/TableCard";
 import { QuickSetupModal } from "../../molecules/QuickSetupModal";
 import { TableFormModal } from "../../molecules/TableFormModal";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useEventContext } from "../../../context/EventContext";
 import { useAuth } from "../../../api/hooks/useAuth";
 import toast from "react-hot-toast";
 import { NoEventsState } from "../../molecules/NoEventsState";
-import { ChevronDownIcon, CollectionIcon, UserGroupIcon, UserIcon, ChartBarIcon, ArrowsExpandIcon, TrashIcon, XIcon, SparklesIcon } from "@heroicons/react/solid";
+import { ChevronDownIcon, ChevronUpIcon, XIcon, CollectionIcon, UserGroupIcon, UserIcon, ChartBarIcon, ArrowsExpandIcon, TrashIcon } from "@heroicons/react/solid";
 import { saveAs } from "file-saver";
 
-export default function TablesPage() {
+export default function TablesPageV3() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
   const { userRole } = useAuth();
   const isReadOnly = userRole === 6;
@@ -43,21 +42,16 @@ export default function TablesPage() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "hasEmpty" | "full">("all");
-  const [draggedGuestId, setDraggedGuestId] = useState<string | null>(null);
-  const [draggedGuest, setDraggedGuest] = useState<{ id: string; paxCount: number; sourceTableId: string | null } | null>(null);
   const [showQuickSetup, setShowQuickSetup] = useState(false);
   const [showCreateTable, setShowCreateTable] = useState(false);
   const [editingTable, setEditingTable] = useState<{ id: string; name: string; capacity: number } | null>(null);
+  const [editInitialTab, setEditInitialTab] = useState<"guests" | "edit">("guests");
   const [deletingTable, setDeletingTable] = useState<{ id: string; name: string } | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedTableIds, setSelectedTableIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [statsExpanded, setStatsExpanded] = useState(true);
-  // Tap-to-assign pickup state — works alongside HTML5 drag-and-drop.
-  // sourceTableId === null means the guest was picked from the Unassigned panel.
-  const [picked, setPicked] = useState<{ guestId: string; paxCount: number; sourceTableId: string | null } | null>(null);
-  // Mobile tab switcher (only visible < lg). Defaults to "tables" — the main work surface.
-  const [mobileTab, setMobileTab] = useState<"unassigned" | "tables">("tables");
+  const [showUnassignedSheet, setShowUnassignedSheet] = useState(false);
 
   // Calculate statistics (must be before early returns - React rules of hooks)
   const stats = useMemo(() => {
@@ -68,7 +62,7 @@ export default function TablesPage() {
       .filter(g => !g.tableId)
       .reduce((sum, g) => sum + (g.pax || g.noOfPax || 1), 0);
     const totalCapacity = tables.reduce((sum, t) => sum + t.capacity, 0);
-    
+
     return {
       totalTables: tables.length,
       seatedGuests,
@@ -77,7 +71,7 @@ export default function TablesPage() {
     };
   }, [tables, guests]);
 
-  // Get unassigned guests
+  // Get unassigned guests (used by assign modal)
   const unassignedGuests = useMemo(() => {
     return guests.filter(g => !g.tableId);
   }, [guests]);
@@ -153,102 +147,27 @@ export default function TablesPage() {
   // Filter tables
   const filteredTables = useMemo(() => {
     return tablesWithGuests.filter(t => {
-      // Search filter
       if (searchTerm && !t.name.toLowerCase().includes(searchTerm.toLowerCase())) {
-        const hasMatchingGuest = t.guests.some(g => 
+        const hasMatchingGuest = t.guests.some(g =>
           g.guestName.toLowerCase().includes(searchTerm.toLowerCase())
         );
         if (!hasMatchingGuest) return false;
       }
-      
-      // Type filter
-      if (filterType === "hasEmpty" && t.assignedCount >= t.capacity) {
-        return false;
-      }
-      if (filterType === "full" && t.assignedCount < t.capacity) {
-        return false;
-      }
-      
+
+      if (filterType === "hasEmpty" && t.assignedCount >= t.capacity) return false;
+      if (filterType === "full" && t.assignedCount < t.capacity) return false;
+
       return true;
     });
   }, [tablesWithGuests, searchTerm, filterType]);
 
-  // ESC cancels pickup. Declared up here so it stays above the early returns
-  // (Rules of Hooks — hooks must run in the same order every render).
-  useEffect(() => {
-    if (!picked) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setPicked(null); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [picked]);
-
-  // Mobile: when a guest is picked from the Unassigned panel, auto-switch to
-  // the Tables tab so the user can see where to drop. No-op on desktop.
-  useEffect(() => {
-    if (picked && picked.sourceTableId === null) {
-      setMobileTab("tables");
-    }
-  }, [picked]);
-
   // ─── Early returns AFTER all hooks ─────────────────────────────────────────
 
-  // Show "no events" state if no events exist (check BEFORE loading state)
   if (eventsLoading) return <PageLoader message="Loading..." />;
   if (!eventId) return <NoEventsState title="No Events for Table Management" message="Create your first event to start organizing seating arrangements and table assignments." />;
 
   if (tablesLoading || guestsLoading) return <PageLoader message="Loading tables..." />;
   if (tablesError || guestsError) return <ErrorState message="Failed to load data." onRetry={() => window.location.reload()} />;
-
-  // Drag and drop handlers
-  const handleDragStart = (guestId: string, sourceTableId: string | null = null) => {
-    const guest = guests.find(g => g.id === guestId);
-    if (guest) {
-      setDraggedGuestId(guestId);
-      setDraggedGuest({
-        id: guestId,
-        paxCount: guest.pax || guest.noOfPax || 1,
-        sourceTableId: sourceTableId ?? guest.tableId ?? null,
-      });
-    }
-  };
-
-  const handleDragEnd = () => {
-    setDraggedGuestId(null);
-    setDraggedGuest(null);
-  };
-
-  const handleDrop = (guestId: string, tableId: string) => {
-    // Find the guest and table
-    const guest = guests.find(g => g.id === guestId);
-    const table = tablesWithGuests.find(t => t.id === tableId);
-    if (!guest || !table) return;
-
-    // No-op if guest is already on this table
-    if (guest.tableId === tableId) return;
-
-    // Validate: Check if adding this guest would exceed table capacity
-    const guestPaxCount = guest.pax || guest.noOfPax || 1;
-    const availableSeats = table.capacity - table.assignedCount;
-
-    if (guestPaxCount > availableSeats) {
-      toast(`⚠️ ${table.name} is over capacity (${table.assignedCount + guestPaxCount}/${table.capacity}). Guest assigned anyway.`, {
-        duration: 4000,
-        style: { background: "#fef3c7", color: "#92400e" },
-      });
-    }
-
-    // Mobile UX: if the guest came from the Unassigned panel, flip back to it
-    // after assignment so the user can keep picking the next guest without
-    // tapping the tab manually. No-op on desktop (tabs are hidden by CSS).
-    const wasUnassigned = !guest.tableId;
-
-    // Call the assign API (reassigns if the guest was already on another table)
-    assignGuest.mutate({ guestId, tableId }, {
-      onError: () => toast.error("Failed to assign guest to table"),
-    });
-
-    if (wasUnassigned) setMobileTab("unassigned");
-  };
 
   const handleUnassignGuest = (guestId: string) => {
     unassignGuest.mutate(guestId, {
@@ -256,68 +175,37 @@ export default function TablesPage() {
     });
   };
 
-  // ── Tap-to-assign pickup flow (works alongside drag-and-drop) ─────────────
-  const handlePickGuest = (guestId: string, sourceTableId: string | null) => {
-    const g = guests.find(x => x.id === guestId);
-    if (!g) return;
-    // Tapping the already-picked guest cancels the pickup.
-    if (picked?.guestId === guestId) {
-      setPicked(null);
-      return;
-    }
-    setPicked({
-      guestId,
-      paxCount: g.pax || g.noOfPax || 1,
-      sourceTableId: sourceTableId ?? g.tableId ?? null,
-    });
-  };
-
-  const handleTableClick = (tableId: string) => {
-    if (!picked) return;
-    // Tapping the source table cancels the pickup (rather than no-op assigning).
-    if (picked.sourceTableId === tableId) {
-      setPicked(null);
-      return;
-    }
-    handleDrop(picked.guestId, tableId);
-    setPicked(null);
-  };
-
-  const handleUnassignPicked = () => {
-    if (!picked) return;
-    // No-op if the picked guest came from Unassigned panel.
-    if (picked.sourceTableId === null) {
-      setPicked(null);
-      return;
-    }
-    handleUnassignGuest(picked.guestId);
-    setPicked(null);
-  };
-
-  // Convenience lookups for the banner:
-  const pickedGuest = picked ? guests.find(g => g.id === picked.guestId) : null;
-  const pickedSourceTableName = picked?.sourceTableId
-    ? tablesWithGuests.find(t => t.id === picked.sourceTableId)?.name
-    : null;
-
   const handleEditTable = (tableId: string) => {
     const table = tablesWithGuests.find(t => t.id === tableId);
     if (table) {
-      setEditingTable({
-        id: table.id,
-        name: table.name,
-        capacity: table.capacity,
-      });
+      setEditInitialTab("edit");
+      setEditingTable({ id: table.id, name: table.name, capacity: table.capacity });
     }
+  };
+
+  const handleOpenAssignModal = (tableId: string) => {
+    const table = tablesWithGuests.find(t => t.id === tableId);
+    if (table) {
+      setEditInitialTab("guests");
+      setEditingTable({ id: table.id, name: table.name, capacity: table.capacity });
+    }
+  };
+
+  const handleBulkAssign = async (guestIds: string[]) => {
+    if (!editingTable) return;
+    await Promise.all(
+      guestIds.map(guestId =>
+        assignGuest.mutateAsync({ guestId, tableId: editingTable.id })
+      )
+    );
+    toast.success(`${guestIds.length} guest${guestIds.length > 1 ? "s" : ""} assigned to ${editingTable.name}.`);
+    setEditingTable(null);
   };
 
   const handleDeleteTable = (tableId: string) => {
     const table = tablesWithGuests.find(t => t.id === tableId);
     if (table) {
-      setDeletingTable({
-        id: table.id,
-        name: table.name,
-      });
+      setDeletingTable({ id: table.id, name: table.name });
     }
   };
 
@@ -358,41 +246,6 @@ export default function TablesPage() {
 
   return (
     <div className="flex flex-col lg:h-full">
-      {/* ── Tap-to-assign pickup banner ─────────────────────────────────────
-          Floats above the page when a guest is "picked". Shows source +
-          contextual [Unassign] for guests that came from a table. */}
-      {picked && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed z-40 left-1/2 -translate-x-1/2 top-4 md:top-6 max-w-[calc(100vw-2rem)] flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 rounded-full bg-primary text-white shadow-xl border border-primary/40"
-        >
-          <SparklesIcon className="w-4 h-4 flex-shrink-0" />
-          <span className="text-xs md:text-sm font-medium truncate">
-            {picked.sourceTableId
-              ? <>Moving <strong>{pickedGuest?.guestName || pickedGuest?.name}</strong>{pickedSourceTableName ? <> from <em className="not-italic opacity-80">{pickedSourceTableName}</em></> : ""} — tap a table</>
-              : <>Assigning <strong>{pickedGuest?.guestName || pickedGuest?.name}</strong> — tap a table</>
-            }
-          </span>
-          {picked.sourceTableId && (
-            <button
-              onClick={handleUnassignPicked}
-              className="ml-1 text-xs font-semibold bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-full transition whitespace-nowrap"
-            >
-              Unassign
-            </button>
-          )}
-          <button
-            onClick={() => setPicked(null)}
-            className="ml-1 p-1 rounded-full hover:bg-white/20 transition"
-            aria-label="Cancel pickup"
-            title="Cancel (Esc)"
-          >
-            <XIcon className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
       {/* Page Title & Actions */}
       <div data-tour="tables-header" className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
         <div>
@@ -504,14 +357,12 @@ export default function TablesPage() {
           </button>
         </div>
         {statsExpanded && (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
-              <StatsCard label="Total Tables" value={stats.totalTables} variant="primary" size="sm" icon={<CollectionIcon className="w-4 h-4" />} />
-              <StatsCard label="Seated Guests" value={stats.seatedGuests} variant="success" size="sm" icon={<UserGroupIcon className="w-4 h-4" />} />
-              <StatsCard label="Unassigned" value={stats.unassigned} variant="warning" size="sm" icon={<UserIcon className="w-4 h-4" />} />
-              <StatsCard label="Total Capacity" value={stats.totalCapacity} variant="secondary" size="sm" icon={<ChartBarIcon className="w-4 h-4" />} />
-            </div>
-          </>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
+            <StatsCard label="Total Tables" value={stats.totalTables} variant="primary" size="sm" icon={<CollectionIcon className="w-4 h-4" />} />
+            <StatsCard label="Seated Guests" value={stats.seatedGuests} variant="success" size="sm" icon={<UserGroupIcon className="w-4 h-4" />} />
+            <StatsCard label="Unassigned" value={stats.unassigned} variant="warning" size="sm" icon={<UserIcon className="w-4 h-4" />} />
+            <StatsCard label="Total Capacity" value={stats.totalCapacity} variant="secondary" size="sm" icon={<ChartBarIcon className="w-4 h-4" />} />
+          </div>
         )}
       </div>
 
@@ -519,146 +370,68 @@ export default function TablesPage() {
       <div className="flex flex-col md:flex-row md:items-center mb-4 gap-4">
         <select
           className="w-full md:w-1/4 border border-primary/20 dark:border-primary/30 rounded-lg p-2 bg-white dark:bg-accent text-gray-900 dark:text-white"
-          value={filterType} 
+          value={filterType}
           onChange={(e) => setFilterType(e.target.value as any)}
         >
           <option value="all">All Tables</option>
           <option value="hasEmpty">Has Empty Seats</option>
           <option value="full">Full Tables</option>
         </select>
-        <input 
+        <input
           placeholder="Search guests or tables..."
           className="w-full md:flex-1 border border-primary/20 dark:border-primary/30 rounded-lg p-2 bg-white dark:bg-accent text-gray-900 dark:text-white"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-      </div>
-
-      {/* Mobile tab switcher — picks which panel is visible on < lg.
-          Auto-switches to "tables" when a guest is picked from the Unassigned panel. */}
-      <div className="lg:hidden flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 mb-4">
-        {([
-          { id: "unassigned" as const, label: "Unassigned", count: unassignedGuests.length },
-          { id: "tables" as const, label: "Tables", count: filteredTables.length },
-        ]).map(({ id, label, count }) => (
+        {unassignedGuests.length > 0 && (
           <button
-            key={id}
-            onClick={() => setMobileTab(id)}
-            className={`flex-1 py-2 text-sm font-semibold rounded-md transition-colors ${
-              mobileTab === id
-                ? "bg-white dark:bg-accent text-primary shadow-sm"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-            }`}
-            aria-pressed={mobileTab === id}
+            data-tour="tables-unassigned"
+            onClick={() => setShowUnassignedSheet(true)}
+            className="hidden lg:flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium whitespace-nowrap transition-colors"
           >
-            {label} <span className={`ml-1 text-xs font-bold ${mobileTab === id ? "text-primary/70" : "text-gray-400"}`}>({count})</span>
+            <UserIcon className="w-3.5 h-3.5" />
+            {unassignedGuests.length} unassigned →
           </button>
-        ))}
+        )}
       </div>
 
-      {/* Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
-        {/* Unassigned Panel (1 column) */}
-        <div data-tour="tables-unassigned" className={`${mobileTab === "unassigned" ? "block" : "hidden"} lg:block lg:col-span-1 lg:max-h-full`}>
-          <div
-            onDragOver={(e) => {
-              if (!draggedGuest || !draggedGuest.sourceTableId) return;
-              e.preventDefault();
-              e.dataTransfer.dropEffect = "move";
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              const guestId = e.dataTransfer.getData("guestId");
-              const g = guests.find(x => x.id === guestId);
-              if (guestId && g?.tableId) handleUnassignGuest(guestId);
-            }}
-            onClick={picked && picked.sourceTableId ? handleUnassignPicked : undefined}
-            role={picked && picked.sourceTableId ? "button" : undefined}
-            aria-label={picked && picked.sourceTableId ? `Drop here to unassign ${pickedGuest?.guestName || pickedGuest?.name}` : undefined}
-            className={`lg:sticky lg:top-0 bg-white dark:bg-accent rounded-xl shadow-lg p-4 border transition-all
-              ${picked && picked.sourceTableId
-                ? "border-rose-400 ring-2 ring-rose-300 ring-offset-1 cursor-pointer bg-rose-50/40 dark:bg-rose-900/10"
-                : draggedGuest && draggedGuest.sourceTableId
-                ? "border-rose-300 ring-2 ring-rose-200"
-                : "border-gray-200 dark:border-gray-700"}
-            `}
-          >
-            {(picked && picked.sourceTableId) || (draggedGuest && draggedGuest.sourceTableId) ? (
-              <p className="text-xs font-semibold text-rose-700 dark:text-rose-300 mb-2 flex items-center gap-1.5">
-                <XIcon className="w-3.5 h-3.5" />
-                Drop here to unassign
-              </p>
-            ) : null}
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Unassigned Guests ({unassignedGuests.length})
-            </h3>
-            <div className="space-y-2 lg:max-h-[calc(100vh-350px)] lg:overflow-y-auto">
-              {unassignedGuests.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-8">
-                  All guests have been assigned!
-                </p>
-              ) : (
-                unassignedGuests.map(guest => (
-                  <GuestCard
-                    key={guest.id}
-                    guest={{
-                      id: guest.id,
-                      guestName: guest.guestName || guest.name,
-                      phoneNo: guest.phoneNo,
-                      paxCount: guest.pax || guest.noOfPax || 1,
-                      // These fields can be parsed from remarks or added to API later
-                      isVip: (guest.remarks || guest.notes)?.toLowerCase().includes('vip'),
-                      dietaryRestrictions: (guest.remarks || guest.notes)?.toLowerCase().includes('vegetarian') ? ['Vegetarian'] : undefined,
-                    }}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                    onPick={isReadOnly ? undefined : (id) => handlePickGuest(id, null)}
-                    isDragging={draggedGuestId === guest.id}
-                    isPicked={picked?.guestId === guest.id}
-                  />
-                ))
-              )}
-            </div>
+      {/* Tables Grid */}
+      <div data-tour="tables-grid" className={`flex-1 lg:overflow-y-auto ${unassignedGuests.length > 0 ? "pb-20 lg:pb-0" : ""}`}>
+        {filteredTables.length === 0 ? (
+          <div className="p-6 rounded-lg border-2 border-dashed border-primary/25 text-center space-y-2 bg-white/70 dark:bg-accent/70">
+            <p className="text-lg font-semibold">No tables found.</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {searchTerm
+                ? "No tables match your search. Try a different search term."
+                : "Create your first table to start organizing your seating arrangements."}
+            </p>
+            <Button onClick={() => setShowCreateTable(true)}>+ Create First Table</Button>
           </div>
-        </div>
-        
-        {/* Tables Grid (3 columns) */}
-        <div data-tour="tables-grid" className={`${mobileTab === "tables" ? "block" : "hidden"} lg:block lg:col-span-3 lg:overflow-y-auto`}>
-          {filteredTables.length === 0 ? (
-            <div className="p-6 rounded-lg border-2 border-dashed border-primary/25 text-center space-y-2 bg-white/70 dark:bg-accent/70">
-              <p className="text-lg font-semibold">No tables found.</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {searchTerm 
-                  ? "No tables match your search. Try a different search term." 
-                  : "Create your first table to start organizing your seating arrangements."}
-              </p>
-              <Button onClick={() => setShowCreateTable(true)}>+ Create First Table</Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pb-6">
-              {filteredTables.map(table => (
-                <div key={table.id} className="relative">
-                  {selectMode && (
-                    <div className="absolute top-2 right-2 z-10">
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 accent-primary cursor-pointer"
-                        checked={selectedTableIds.has(table.id)}
-                        onChange={() => toggleTableSelection(table.id)}
-                      />
-                    </div>
-                  )}
-                  <TableCard
-                    table={table}
-                    onEdit={(selectMode || isReadOnly) ? undefined : handleEditTable}
-                    onDelete={(selectMode || isReadOnly) ? undefined : handleDeleteTable}
-                    onUnassignGuest={(selectMode || isReadOnly) ? undefined : handleUnassignGuest}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 pb-6">
+            {filteredTables.map(table => (
+              <div key={table.id} className="relative">
+                {selectMode && (
+                  <div className="absolute top-2 right-2 z-10">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 accent-primary cursor-pointer"
+                      checked={selectedTableIds.has(table.id)}
+                      onChange={() => toggleTableSelection(table.id)}
+                    />
+                  </div>
+                )}
+                <TableCard
+                  table={table}
+                  onEdit={(selectMode || isReadOnly) ? undefined : handleEditTable}
+                  onAddGuests={(selectMode || isReadOnly) ? undefined : handleOpenAssignModal}
+                  onDelete={(selectMode || isReadOnly) ? undefined : handleDeleteTable}
+                  onUnassignGuest={(selectMode || isReadOnly) ? undefined : handleUnassignGuest}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Modals */}
@@ -667,7 +440,6 @@ export default function TablesPage() {
         onClose={() => setShowQuickSetup(false)}
       />
 
-      {/* Create/Edit Table Modal */}
       <TableFormModal
         isOpen={showCreateTable || !!editingTable}
         onClose={() => {
@@ -675,9 +447,32 @@ export default function TablesPage() {
           setEditingTable(null);
         }}
         initial={editingTable || undefined}
+        initialTab={editingTable ? editInitialTab : undefined}
+        guests={
+          editingTable
+            ? guests
+                .filter(g => g.tableId === editingTable.id)
+                .map(g => ({
+                  id: g.id,
+                  name: g.guestName || g.name,
+                  pax: g.pax || g.noOfPax || 1,
+                  flag: (g.remarks || g.notes)?.toLowerCase().includes("vip") ? "VIP" : undefined,
+                }))
+            : []
+        }
+        unassignedGuests={
+          editingTable
+            ? unassignedGuests.map(g => ({
+                id: g.id,
+                name: g.guestName || g.name,
+                pax: g.pax || g.noOfPax || 1,
+                flag: (g.remarks || g.notes)?.toLowerCase().includes("vip") ? "VIP" : undefined,
+              }))
+            : undefined
+        }
+        onAssignGuests={editingTable ? handleBulkAssign : undefined}
       />
 
-      {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal
         isOpen={!!deletingTable}
         isDeleting={deleteTable.isPending}
@@ -702,7 +497,6 @@ export default function TablesPage() {
         )}
       </DeleteConfirmationModal>
 
-      {/* Bulk Delete Confirmation Modal */}
       <DeleteConfirmationModal
         isOpen={showBulkDeleteConfirm}
         isDeleting={bulkDeleteTables.isPending}
@@ -711,6 +505,85 @@ export default function TablesPage() {
         title="Delete Selected Tables"
         description={`Are you sure you want to delete ${selectedTableIds.size} table${selectedTableIds.size > 1 ? "s" : ""}? Guests assigned to these tables will be unassigned. This action cannot be undone.`}
       />
+
+      {/* ── Mobile: sticky unassigned bottom bar ───────────────────────────────
+          Only visible on < lg. Hidden when all guests are seated. */}
+      {unassignedGuests.length > 0 && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 px-4 pb-4 pt-2 bg-gradient-to-t from-white dark:from-gray-950 to-transparent pointer-events-none">
+          <button
+            onClick={() => setShowUnassignedSheet(true)}
+            className="pointer-events-auto w-full flex items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-accent border border-amber-200 dark:border-amber-800/50 rounded-xl shadow-lg"
+          >
+            <div className="flex items-center gap-2">
+              <UserIcon className="w-4 h-4 text-amber-500" />
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                {unassignedGuests.length} unassigned guest{unassignedGuests.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <ChevronUpIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          </button>
+        </div>
+      )}
+
+      {/* ── Unassigned guests sheet ────────────────────────────────────────────
+          Mobile: full-width bottom sheet with backdrop.
+          Desktop: compact floating panel in bottom-right corner, no backdrop. */}
+      <div
+        className={`fixed inset-0 z-50 transition-all duration-300 ${showUnassignedSheet ? "visible" : "invisible pointer-events-none"}`}
+      >
+        {/* Backdrop — mobile only */}
+        <div
+          className={`absolute inset-0 bg-black/40 transition-opacity duration-300 lg:hidden ${showUnassignedSheet ? "opacity-100" : "opacity-0"}`}
+          onClick={() => setShowUnassignedSheet(false)}
+        />
+        <div
+          className={`absolute bottom-0 left-0 right-0 lg:left-auto lg:right-4 lg:bottom-4 lg:w-80 lg:rounded-2xl bg-white dark:bg-accent rounded-t-2xl shadow-xl transition-transform duration-300 max-h-[72vh] flex flex-col ${showUnassignedSheet ? "translate-y-0" : "translate-y-full"}`}
+        >
+          {/* Drag handle — mobile only */}
+          <div className="lg:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
+            <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+          </div>
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b dark:border-gray-700 flex-shrink-0">
+            <h3 className="font-semibold text-gray-900 dark:text-white">
+              Unassigned Guests ({unassignedGuests.length})
+            </h3>
+            <button
+              onClick={() => setShowUnassignedSheet(false)}
+              className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              <XIcon className="w-4 h-4 text-gray-500" />
+            </button>
+          </div>
+          {/* Guest list */}
+          <div className="overflow-y-auto flex-1 p-4 space-y-2">
+            {unassignedGuests.map(g => {
+              const name = g.guestName || g.name;
+              const pax = g.pax || g.noOfPax || 1;
+              return (
+                <div key={g.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                    {name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {name}
+                      {pax > 1 && (
+                        <span className="ml-1.5 text-xs font-normal text-gray-400 dark:text-gray-500">
+                          · {pax} pax
+                        </span>
+                      )}
+                    </p>
+                    {g.phoneNo && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{g.phoneNo}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

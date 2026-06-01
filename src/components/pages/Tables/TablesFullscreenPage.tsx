@@ -1,4 +1,4 @@
-// src/components/pages/Tables/TablesRedesignPage.tsx
+// src/components/pages/Tables/TablesFullscreenPage.tsx
 // Full-screen table assignment builder — covers the whole viewport (fixed inset-0 z-50),
 // same pattern as RsvpDesignV2Page. Opens in a new tab.
 
@@ -45,7 +45,7 @@ function countCls(a: number, c: number) {
   return "text-gray-700";
 }
 
-export default function TablesRedesignPage() {
+export default function TablesFullscreenPage() {
   // ── API hooks (all before early returns) ──────────────────────────────────
   const { userRole } = useAuth();
   const isReadOnly = userRole === 6;
