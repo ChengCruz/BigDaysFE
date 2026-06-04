@@ -18,7 +18,7 @@ import type { Event } from "../../../api/hooks/useEventsApi";
 import { useFormFields, type FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
 import { useRsvpDesign, useSaveRsvpDesign, usePublishRsvpDesign, useGenerateShareToken } from "../../../api/hooks/useRsvpDesignApi";
 import { useUploadMedia, useDeleteMedia } from "../../../api/hooks/useMediaApi";
-import type { RsvpBlock, RsvpDesign, FlowPreset } from "../../../types/rsvpDesign";
+import type { RsvpBlock, RsvpDesign } from "../../../types/rsvpDesign";
 import {
   saveImageToCache,
   getImageFromCache,
@@ -29,7 +29,7 @@ import {
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { PageLoader } from "../../atoms/PageLoader";
 import { BlockEditor } from "./designer/BlockEditor";
-import { GlobalSettingsPanel } from "./designer/GlobalSettingsPanel";
+import { GlobalSettingsPanel, BACKDROP_OPTIONS } from "./designer/GlobalSettingsPanel";
 import { Spinner } from "../../atoms/Spinner";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -98,7 +98,6 @@ interface DesignState {
   globalBackgroundColor: string;
   globalOverlay: number;
   accentColor: string;
-  flowPreset: FlowPreset;
   globalMusicUrl: string;
   submitButtonColor: string;
   submitButtonTextColor: string;
@@ -109,6 +108,8 @@ interface DesignState {
   blockMarginY: number;
   version: number | undefined;
   isDesignLoaded: boolean;
+  previewBackdropColor: string;
+  previewBackdropImage: string;
 }
 
 const initialState: DesignState = {
@@ -123,7 +124,6 @@ const initialState: DesignState = {
   globalBackgroundColor: "#0f172a",
   globalOverlay: 0.35,
   accentColor: "#f97316",
-  flowPreset: "serene",
   globalMusicUrl: "",
   submitButtonColor: "",
   submitButtonTextColor: "",
@@ -134,6 +134,8 @@ const initialState: DesignState = {
   blockMarginY: 0,
   version: undefined,
   isDesignLoaded: false,
+  previewBackdropColor: "#ffffff",
+  previewBackdropImage: "",
 };
 
 type DesignAction =
@@ -687,7 +689,7 @@ export default function RsvpDesignV3Page() {
 
   // ── Consolidated state ────────────────────────────────────────────────────
   const [state, dispatch] = useReducer(designReducer, initialState);
-  const { blocks, selectedId, globalBackgroundType, globalBackgroundAsset, globalBackgroundColor, globalOverlay, accentColor, flowPreset, globalMusicUrl, submitButtonColor, submitButtonTextColor, submitButtonLabel, globalFontFamily, contentWidth, blockMarginX, blockMarginY, version, isDesignLoaded } = state;
+  const { blocks, selectedId, globalBackgroundType, globalBackgroundAsset, globalBackgroundColor, globalOverlay, accentColor, globalMusicUrl, submitButtonColor, submitButtonTextColor, submitButtonLabel, globalFontFamily, contentWidth, blockMarginX, blockMarginY, version, isDesignLoaded, previewBackdropColor, previewBackdropImage } = state;
 
   const { pushSnapshot, undo, redo, canUndo, canRedo } = useUndoRedo(state, dispatch);
 
@@ -757,7 +759,6 @@ export default function RsvpDesignV3Page() {
       if (savedDesign.globalBackgroundColor) patch.globalBackgroundColor = savedDesign.globalBackgroundColor;
       if (savedDesign.globalOverlay !== undefined) patch.globalOverlay = savedDesign.globalOverlay;
       if (savedDesign.accentColor)        patch.accentColor = savedDesign.accentColor;
-      if (savedDesign.flowPreset)         patch.flowPreset = savedDesign.flowPreset;
       if (savedDesign.globalMusicUrl)     patch.globalMusicUrl = savedDesign.globalMusicUrl;
       if (savedDesign.submitButtonColor)  patch.submitButtonColor = savedDesign.submitButtonColor;
       if (savedDesign.submitButtonTextColor) patch.submitButtonTextColor = savedDesign.submitButtonTextColor;
@@ -767,6 +768,16 @@ export default function RsvpDesignV3Page() {
       if (savedDesign.blockMarginX !== undefined) patch.blockMarginX = savedDesign.blockMarginX;
       if (savedDesign.blockMarginY !== undefined) patch.blockMarginY = savedDesign.blockMarginY;
       if (savedDesign.version !== undefined) patch.version = savedDesign.version;
+      if (savedDesign.previewBackdropColor) patch.previewBackdropColor = savedDesign.previewBackdropColor;
+      if (savedDesign.previewBackdropLabel !== undefined) {
+        const match = BACKDROP_OPTIONS.find((o) => o.label === savedDesign.previewBackdropLabel);
+        if (match) {
+          patch.previewBackdropImage = match.value;
+          patch.previewBackdropColor = match.value === "" ? "#ffffff" : "#f3f4f6";
+        }
+      } else if (savedDesign.previewBackdropImage && !isBlob(savedDesign.previewBackdropImage)) {
+        patch.previewBackdropImage = savedDesign.previewBackdropImage;
+      }
       dispatch({ type: "LOAD_DESIGN", payload: patch });
 
       // Restore share link. Prefer the slug URL (public, reflects latest design)
@@ -959,6 +970,7 @@ export default function RsvpDesignV3Page() {
     dispatch({ type: "SET_GLOBAL", payload: { globalBackgroundAsset: blobUrl } });
   };
 
+
   const handleImageUploadBlock = async (files: FileList) => {
     const gallery = await Promise.all(Array.from(files).map(toImageAsset));
     const block: RsvpBlock = { id: uid(), type: "image", images: gallery, activeImageId: gallery[0]?.id, caption: "Add a caption or blessing", height: "medium", background: { images: [], overlay: 0.4 } };
@@ -1074,7 +1086,7 @@ export default function RsvpDesignV3Page() {
       }
 
       const currentDesign: RsvpDesign = {
-        blocks: sanitizeBlocks(swappedBlocks), flowPreset,
+        blocks: sanitizeBlocks(swappedBlocks),
         globalBackgroundType, globalBackgroundAsset: isBlob(resolvedBgAsset) ? "" : resolvedBgAsset, globalBackgroundColor,
         globalOverlay, accentColor,
         globalMusicUrl: globalMusicUrl || undefined,
@@ -1083,12 +1095,15 @@ export default function RsvpDesignV3Page() {
         submitButtonLabel: submitButtonLabel || undefined,
         globalFontFamily: globalFontFamily || undefined,
         layoutStyle: "flush" as const,
-        contentWidth: contentWidth || "full",
+        contentWidth: "full",
         blockMarginX,
         blockMarginY,
         formFieldConfigs: availableQuestions,
         shareToken,
         publicLink,
+        previewBackdropColor: previewBackdropColor || undefined,
+        previewBackdropImage: isBlob(previewBackdropImage) ? "" : (previewBackdropImage || undefined),
+        previewBackdropLabel: BACKDROP_OPTIONS.find((o) => o.value === previewBackdropImage)?.label,
       };
       await saveDesignAsync({ design: currentDesign, isPublished: false, isDraft: true, shareToken, publicLink });
 
@@ -1178,9 +1193,9 @@ export default function RsvpDesignV3Page() {
     : canvasMode === "tablet" ? 768
     : undefined;
   const canvasClass = canvasMode === "mobile"
-    ? "w-[375px] rounded-[28px] shadow-[0_0_0_8px_#1a1a2e,0_24px_64px_rgba(0,0,0,0.45)]"
+    ? "w-[375px] rounded-[2.5rem] shadow-[0_8px_48px_0_rgba(0,0,0,0.15),0_0_0_6px_#9ca3af]"
     : canvasMode === "tablet"
-    ? "w-[768px] rounded-[20px] shadow-[0_0_0_6px_#1a1a2e,0_24px_64px_rgba(0,0,0,0.35)]"
+    ? "w-[768px] rounded-[2rem] shadow-[0_8px_48px_0_rgba(0,0,0,0.15),0_0_0_6px_#9ca3af]"
     : "w-full rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.22)]";
 
   const chevronSvg = (open: boolean) => (
@@ -1443,7 +1458,13 @@ export default function RsvpDesignV3Page() {
         </button>
 
         {/* ─── CANVAS ─── */}
-        <main className="flex-1 overflow-y-auto" style={{ background: "#eaecf0" }}>
+        <main className="flex-1 overflow-y-auto" style={{
+          backgroundColor: previewBackdropColor || "#eaecf0",
+          backgroundImage: previewBackdropImage ? `url(${previewBackdropImage})` : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundAttachment: "local",
+        }}>
           <div className="p-6 flex flex-col items-center" onClick={(e) => { if (e.target === e.currentTarget) dispatch({ type: "SELECT", payload: null }); }}
             style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top center", transition: "transform 0.2s ease" }}>
 
@@ -1579,12 +1600,14 @@ export default function RsvpDesignV3Page() {
             <div className="flex-1 overflow-y-auto">
               <GlobalSettingsPanel
                 globalBackgroundType={globalBackgroundType} globalBackgroundColor={globalBackgroundColor}
-                globalOverlay={globalOverlay} accentColor={accentColor} flowPreset={flowPreset}
+                globalOverlay={globalOverlay} accentColor={accentColor}
                 globalMusicUrl={globalMusicUrl} submitButtonColor={submitButtonColor}
                 submitButtonTextColor={submitButtonTextColor} submitButtonLabel={submitButtonLabel}
                 globalFontFamily={globalFontFamily} contentWidth={contentWidth}
                 blockMarginX={blockMarginX} blockMarginY={blockMarginY}
                 hasBackgroundAsset={!!globalBackgroundAsset}
+                previewBackdropColor={previewBackdropColor}
+                previewBackdropImage={previewBackdropImage}
                 onChange={(patch) => dispatch({ type: "SET_GLOBAL", payload: patch as Partial<DesignState> })}
                 onUploadBackground={handleBackgroundUpload}
               />
@@ -1616,46 +1639,59 @@ export default function RsvpDesignV3Page() {
       </footer>
 
       {/* ═══ PREVIEW OVERLAY ═══ */}
-      {/* ═══ PREVIEW — mirrors the canvas frame exactly ═══ */}
       {showPreview && (
-        <div className="fixed inset-0 z-[100] overflow-auto"
-          style={{ ...frameBg, fontFamily: globalFontFamily || "Georgia, 'Times New Roman', serif" }}>
+        <div className="fixed inset-0 z-[100] overflow-auto py-8"
+          style={{
+            fontFamily: globalFontFamily || "Georgia, 'Times New Roman', serif",
+            backgroundColor: previewBackdropColor || "#f3f4f6",
+            backgroundImage: previewBackdropImage ? `url(${previewBackdropImage})` : undefined,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}>
           <button onClick={() => setShowPreview(false)}
             className="fixed top-4 right-4 z-[101] flex items-center gap-1.5 rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm hover:bg-black/80 transition">
             Close Preview
           </button>
-          {/* Background layers — identical to canvas */}
-          {globalBackgroundType === "image" && globalBackgroundAsset && (
-            <div className="fixed inset-0 bg-cover bg-center pointer-events-none" style={{ backgroundImage: `url(${globalBackgroundAsset})` }} />
-          )}
-          {globalBackgroundType === "video" && globalBackgroundAsset && (
-            <video className="fixed inset-0 w-full h-full object-cover pointer-events-none" src={globalBackgroundAsset} autoPlay loop muted playsInline />
-          )}
-          {(globalBackgroundType === "image" || globalBackgroundType === "video") && (
-            <div className="fixed inset-0 pointer-events-none" style={{ background: `rgba(15,23,42,${globalOverlay})` }} />
-          )}
-          {/* Blocks — same width + margins as canvas and public RsvpFormRenderer */}
-          <div
-            className={`relative z-10 mx-auto flex flex-col ${contentWidth === "compact" ? "max-w-sm" : contentWidth === "standard" ? "max-w-lg" : contentWidth === "wide" ? "max-w-2xl" : ""}`}
-            style={{
-              paddingLeft: blockMarginX,
-              paddingRight: blockMarginX,
-              rowGap: blockMarginY,
-            }}
-          >
-            {blocks.map((block) => {
-              const sectionImg = block.background?.images?.find((img) => img.id === block.background?.activeImageId) ?? block.background?.images?.[0] ?? block.sectionImage;
-              const blockOverlay = block.background?.overlay ?? 0.4;
-              const blockIsLight = sectionImg ? false : globalIsLight;
-              return (
-                <div key={block.id}
-                  style={sectionImg?.src ? { backgroundImage: `linear-gradient(rgba(15,23,42,${blockOverlay}),rgba(15,23,42,${blockOverlay})), url(${sectionImg.src})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}>
-                  {renderSectionContent(block, accentColor, blockIsLight, event)}
-                  <div className="h-px" style={{ background: "rgba(255,255,255,0.04)" }} />
-                </div>
-              );
-            })}
+          {/* Phone card frame */}
+          <div className="relative mx-auto w-full max-w-[375px] rounded-[2.5rem] shadow-2xl overflow-hidden"
+            style={{ boxShadow: "0 8px 48px 0 rgba(0,0,0,0.15), 0 0 0 6px #9ca3af" }}>
+          {/* Mobile content — backgrounds scoped inside card frame */}
+          <div className="relative w-full min-h-[600px] overflow-hidden"
+            style={frameBg}>
+            {/* Background layers — scoped to mobile container */}
+            {globalBackgroundType === "image" && globalBackgroundAsset && (
+              <div className="absolute inset-0 bg-cover bg-center pointer-events-none" style={{ backgroundImage: `url(${globalBackgroundAsset})` }} />
+            )}
+            {globalBackgroundType === "video" && globalBackgroundAsset && (
+              <video className="absolute inset-0 w-full h-full object-cover pointer-events-none" src={globalBackgroundAsset} autoPlay loop muted playsInline />
+            )}
+            {(globalBackgroundType === "image" || globalBackgroundType === "video") && (
+              <div className="absolute inset-0 pointer-events-none" style={{ background: `rgba(15,23,42,${globalOverlay})` }} />
+            )}
+            {/* Blocks */}
+            <div
+              className="relative z-10 mx-auto flex flex-col w-full max-w-[375px]"
+              style={{
+                paddingLeft: blockMarginX,
+                paddingRight: blockMarginX,
+                rowGap: blockMarginY,
+              }}
+            >
+              {blocks.map((block) => {
+                const sectionImg = block.background?.images?.find((img) => img.id === block.background?.activeImageId) ?? block.background?.images?.[0] ?? block.sectionImage;
+                const blockOverlay = block.background?.overlay ?? 0.4;
+                const blockIsLight = sectionImg ? false : globalIsLight;
+                return (
+                  <div key={block.id}
+                    style={sectionImg?.src ? { backgroundImage: `linear-gradient(rgba(15,23,42,${blockOverlay}),rgba(15,23,42,${blockOverlay})), url(${sectionImg.src})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}>
+                    {renderSectionContent(block, accentColor, blockIsLight, event)}
+                    <div className="h-px" style={{ background: "rgba(255,255,255,0.04)" }} />
+                  </div>
+                );
+              })}
+            </div>
           </div>
+          </div>{/* end phone card frame */}
         </div>
       )}
     </div>

@@ -1,7 +1,51 @@
 // designer/GlobalSettingsPanel.tsx
-// Global design settings: background, accent color, overlay, music, flow preset, submit button.
+// Global design settings: background, accent color, overlay, music, submit button.
 import React, { useEffect } from "react";
-import type { FlowPreset } from "../../../../types/rsvpDesign";
+
+import bg01   from "../../../../assets/bg-01-misty-mountains.png";
+import bg01b  from "../../../../assets/bg-01b-sumi-mountains.png";
+import bg01c  from "../../../../assets/bg-01c-sunset-mountains.png";
+import bg02   from "../../../../assets/bg-02-silk-ribbons.png";
+import bg02b  from "../../../../assets/bg-02b-blush-ribbons.png";
+import bg02c  from "../../../../assets/bg-02c-dustyblue-ribbons.png";
+import bg03   from "../../../../assets/bg-03-garden-bottom.png";
+import bg03b  from "../../../../assets/bg-03b-lavender-field.png";
+import bg03c  from "../../../../assets/bg-03c-wildflower-peach.png";
+import bg04   from "../../../../assets/bg-04-ocean-horizon.png";
+import bg04b  from "../../../../assets/bg-04b-tropical-water.png";
+import bg04c  from "../../../../assets/bg-04c-goldenhour-coast.png";
+import bg05   from "../../../../assets/bg-05-herbarium.png";
+import bg05b  from "../../../../assets/bg-05b-pressed-flowers.png";
+import bg05c  from "../../../../assets/bg-05c-eucalyptus.png";
+import bg06   from "../../../../assets/bg-06-celestial-midnight.png";
+import bg06b  from "../../../../assets/bg-06b-celestial-plum.png";
+import bg06c  from "../../../../assets/bg-06c-celestial-emerald.png";
+import bg06mg from "../../../../assets/bg-06-minimal-gold.png";
+import bg06rg from "../../../../assets/bg-06c-rosegold-arch.png";
+
+export const BACKDROP_OPTIONS: { label: string; value: string }[] = [
+  { label: "None",              value: "" },
+  { label: "Misty Mountains",   value: bg01 },
+  { label: "Sumi Mountains",    value: bg01b },
+  { label: "Sunset Mountains",  value: bg01c },
+  { label: "Silk Ribbons",      value: bg02 },
+  { label: "Blush Ribbons",     value: bg02b },
+  { label: "Dusty Blue Ribbons",value: bg02c },
+  { label: "Garden",            value: bg03 },
+  { label: "Lavender Field",    value: bg03b },
+  { label: "Wildflower Peach",  value: bg03c },
+  { label: "Ocean Horizon",     value: bg04 },
+  { label: "Tropical Water",    value: bg04b },
+  { label: "Golden Hour Coast", value: bg04c },
+  { label: "Herbarium",         value: bg05 },
+  { label: "Pressed Flowers",   value: bg05b },
+  { label: "Eucalyptus",        value: bg05c },
+  { label: "Celestial Midnight",value: bg06 },
+  { label: "Celestial Plum",    value: bg06b },
+  { label: "Celestial Emerald", value: bg06c },
+  { label: "Minimal Gold",      value: bg06mg },
+  { label: "Rose Gold Arch",    value: bg06rg },
+];
 
 type ContentWidth = "compact" | "standard" | "wide" | "full";
 
@@ -10,7 +54,6 @@ interface GlobalSettings {
   globalBackgroundColor: string;
   globalOverlay: number;
   accentColor: string;
-  flowPreset: FlowPreset;
   globalMusicUrl: string;
   submitButtonColor: string;
   submitButtonTextColor: string;
@@ -19,6 +62,8 @@ interface GlobalSettings {
   contentWidth?: ContentWidth;
   blockMarginX?: number;
   blockMarginY?: number;
+  previewBackdropColor?: string;
+  previewBackdropImage?: string;
 }
 
 interface Props extends GlobalSettings {
@@ -43,11 +88,6 @@ const WIDTH_PRESETS: { value: ContentWidth; label: string; desc: string; icon: s
   { value: "full",     icon: "↔",  label: "Full",     desc: "Edge-to-edge, no side margins" },
 ];
 
-const FLOW_PRESETS: { value: FlowPreset; label: string; desc: string; icon: string }[] = [
-  { value: "serene",   label: "Serene",   icon: "✦", desc: "Gentle blur + subtle hover lift" },
-  { value: "parallax", label: "Parallax", icon: "⟳", desc: "Backgrounds scroll at fixed depth" },
-  { value: "stacked",  label: "Stacked",  icon: "⬛", desc: "Snap-scroll between sections" },
-];
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">{children}</p>
@@ -87,7 +127,6 @@ export function GlobalSettingsPanel({
   globalBackgroundColor,
   globalOverlay,
   accentColor,
-  flowPreset,
   globalMusicUrl,
   submitButtonColor,
   submitButtonTextColor,
@@ -96,6 +135,8 @@ export function GlobalSettingsPanel({
   contentWidth = "full",
   blockMarginX = 0,
   blockMarginY = 0,
+  previewBackdropColor = "#f3f4f6",
+  previewBackdropImage = "",
   onChange,
   onUploadBackground,
   hasBackgroundAsset,
@@ -270,56 +311,8 @@ export function GlobalSettingsPanel({
           </div>
         </div>
 
-        {/* ── Scroll style ── */}
-        <div className="space-y-2">
-          <SectionTitle>Scroll style</SectionTitle>
-          <div className="space-y-1.5">
-            {FLOW_PRESETS.map(({ value, label, desc, icon }) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => onChange({ flowPreset: value })}
-                className={`w-full rounded-xl border px-4 py-2.5 text-left transition ${
-                  flowPreset === value
-                    ? "border-primary bg-primary/5 text-primary shadow-sm"
-                    : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">{icon}</span>
-                  <span className="text-sm font-semibold">{label}</span>
-                </div>
-                <p className="mt-0.5 text-xs opacity-60">{desc}</p>
-              </button>
-            ))}
-          </div>
-        </div>
 
-        {/* ── Content width ── */}
-        <div className="space-y-2">
-          <SectionTitle>Guest page width</SectionTitle>
-          <div className="space-y-1.5">
-            {WIDTH_PRESETS.map(({ value, label, desc, icon }) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => onChange({ contentWidth: value })}
-                className={`w-full rounded-xl border px-4 py-2.5 text-left transition ${
-                  contentWidth === value
-                    ? "border-primary bg-primary/5 text-primary shadow-sm"
-                    : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">{icon}</span>
-                  <span className="text-sm font-semibold">{label}</span>
-                </div>
-                <p className="mt-0.5 text-xs opacity-60">{desc}</p>
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-gray-400">Controls how wide the RSVP page appears to guests.</p>
-        </div>
+        {/* ── Content width — hidden (mobile-only; always "full") ── */}
 
         {/* ── Block spacing ── */}
         <div className="space-y-3">
@@ -366,6 +359,53 @@ export function GlobalSettingsPanel({
           <p className="text-xs text-gray-400">
             Adds optional horizontal inset and vertical gap between blocks. 0 = edge-to-edge (default). Applied identically in the canvas, preview, and public guest page.
           </p>
+        </div>
+
+        {/* ── Preview backdrop ── */}
+        <div className="space-y-3">
+          <SectionTitle>Preview backdrop</SectionTitle>
+          <p className="text-xs text-gray-400">Shown outside the mobile frame in preview only — not visible to guests.</p>
+          <div className="grid grid-cols-3 gap-1.5">
+            {BACKDROP_OPTIONS.map((opt) => {
+              const selected = previewBackdropImage === opt.value;
+              return (
+                <button
+                  key={opt.value || "__none__"}
+                  type="button"
+                  title={opt.label}
+                  onClick={() => onChange({
+                    previewBackdropImage: opt.value,
+                    previewBackdropColor: opt.value === "" ? "#ffffff" : "#f3f4f6",
+                  })}
+                  className={`relative rounded-lg overflow-hidden border-2 transition-all ${
+                    selected
+                      ? "border-primary shadow-md scale-[1.04]"
+                      : "border-gray-200 hover:border-gray-400"
+                  }`}
+                  style={{ height: 48 }}
+                >
+                  {opt.value === "" ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-white gap-0.5">
+                      <span className="text-[16px] leading-none">○</span>
+                      <span className="text-[9px] text-gray-400 font-medium">None</span>
+                    </div>
+                  ) : (
+                    <img src={opt.value} alt={opt.label} className="w-full h-full object-cover" />
+                  )}
+                  {selected && opt.value !== "" && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                      <span className="text-white text-xs font-bold drop-shadow">✓</span>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {previewBackdropImage && (
+            <p className="text-xs text-gray-500 truncate">
+              {BACKDROP_OPTIONS.find((o) => o.value === previewBackdropImage)?.label ?? "Custom"}
+            </p>
+          )}
         </div>
 
         {/* ── Ambient music — hidden for now, to be implemented later ──

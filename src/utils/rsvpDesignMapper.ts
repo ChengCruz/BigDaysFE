@@ -357,6 +357,7 @@ export function mapToBackendPayload(
         contentWidth: frontendDesign.contentWidth ?? undefined,
         blockMarginX: frontendDesign.blockMarginX ?? undefined,
         blockMarginY: frontendDesign.blockMarginY ?? undefined,
+        previewBackdropLabel: frontendDesign.previewBackdropLabel ?? undefined,
       },
       layout: {
         // Encode contentWidth as layout.width so the backend preserves it
@@ -459,6 +460,7 @@ export function mapToFrontendDesign(
     shareToken: shareToken ?? null,
     publicLink: null,    // Public link is generated client-side
     formFieldConfigs: design.formFieldConfigs,
+    previewBackdropLabel: design.theme.previewBackdropLabel,
   };
 }
 
