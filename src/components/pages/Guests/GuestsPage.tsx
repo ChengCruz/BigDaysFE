@@ -2,6 +2,7 @@
 import { PageLoader } from "../../atoms/PageLoader";
 import { ErrorState } from "../../atoms/ErrorState";
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { UserGroupIcon, UserIcon, CheckCircleIcon, XIcon, PencilIcon, LightBulbIcon } from "@heroicons/react/solid";
 import { Chair, DotsThree } from "@phosphor-icons/react";
 import { useAuth } from "../../../api/hooks/useAuth";
@@ -34,6 +35,7 @@ import type { Currency } from "../../../types/wallet";
 
 export default function GuestsPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
+  const navigate = useNavigate();
   const { userRole } = useAuth();
   const isReadOnly = userRole === 6;
   const { eventId, eventsLoading, event } = useEventContext()!;
@@ -254,6 +256,9 @@ export default function GuestsPage() {
               {generateQr.isPending ? "Generating..." : "Generate QR"}
             </Button>
           )}
+          <Button variant="primary" onClick={() => navigate("/app/checkin")}>
+            Check-in
+          </Button>
         </div>
       </div>
 
