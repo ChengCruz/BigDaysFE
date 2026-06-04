@@ -161,6 +161,12 @@ export interface RsvpDesign {
   publicLink?: string | null;
   /** Embedded form field definitions so the public page is self-contained (no auth needed) */
   formFieldConfigs?: import("../api/hooks/useFormFieldsApi").FormFieldConfig[];
+  /** Background color shown outside the 375px mobile frame in the designer preview */
+  previewBackdropColor?: string;
+  /** Background image URL shown outside the 375px mobile frame in the designer preview */
+  previewBackdropImage?: string;
+  /** Stable label key for the preview backdrop preset — persisted to backend instead of the hashed Vite URL */
+  previewBackdropLabel?: string;
 }
 
 /**
@@ -282,6 +288,8 @@ export interface ApiTheme {
   blockMarginX?: number;
   /** Vertical gap (px) between consecutive blocks */
   blockMarginY?: number;
+  /** Stable label key for the preview backdrop — round-trips via backend without hashed URLs */
+  previewBackdropLabel?: string;
 }
 
 export interface ApiLayout {

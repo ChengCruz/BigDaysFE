@@ -97,7 +97,6 @@ export default function RsvpFormRenderer({
 }: Props) {
   const {
     blocks: rawBlocks,
-    flowPreset = "serene",
     globalBackgroundType,
     globalBackgroundAsset,
     globalBackgroundColor,
@@ -108,7 +107,11 @@ export default function RsvpFormRenderer({
     contentWidth = "full",
     blockMarginX = 0,
     blockMarginY = 0,
+    previewBackdropImage,
+    previewBackdropColor,
   } = design;
+
+  const backdropColor = previewBackdropColor || "#f3f4f6";
 
   // V3 designs save layoutStyle:"flush"; default to flush when unset
   const isFlush = layoutStyle !== "cards";
@@ -308,7 +311,7 @@ export default function RsvpFormRenderer({
           backgroundImage: `linear-gradient(rgba(15,23,42,${overlayStrength}),rgba(15,23,42,${overlayStrength})),url(${activeBg.src})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
-          backgroundAttachment: flowPreset === "parallax" ? "fixed" : "scroll",
+          backgroundAttachment: "scroll",
         }
       : {};
 
@@ -713,7 +716,7 @@ export default function RsvpFormRenderer({
       <section
         key={block.id}
         className={`relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl ring-1 ring-white/5 backdrop-blur-sm transition duration-500 hover:-translate-y-1 ${
-          flowPreset === "stacked" ? "scroll-snap-start" : ""
+          ""
         }`}
         style={sectionStyle}
       >
@@ -724,7 +727,25 @@ export default function RsvpFormRenderer({
 
   // ── Layout ────────────────────────────────────────────────────────────
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-white" style={{ fontFamily: design.globalFontFamily || "Georgia, 'Times New Roman', serif" }}>
+    // Backdrop — full screen, shows on desktop around the phone frame
+    <div
+      className="min-h-screen sm:py-8"
+      style={{
+        backgroundColor: backdropColor,
+        backgroundImage: previewBackdropImage ? `url(${previewBackdropImage})` : undefined,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        fontFamily: design.globalFontFamily || "Georgia, 'Times New Roman', serif",
+      }}
+    >
+      {/* Phone frame — 375px on desktop, full-width on real mobile */}
+      <div
+        className="relative mx-auto w-full max-w-[375px] overflow-hidden text-white sm:rounded-[2.5rem]"
+        style={{
+          minHeight: "100vh",
+          boxShadow: "0 8px 48px 0 rgba(0,0,0,0.15), 0 0 0 6px #9ca3af",
+        }}
+      >
       {/* Global background */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
         {globalBackgroundType === "color" && (
@@ -779,7 +800,7 @@ export default function RsvpFormRenderer({
         <div
           className={`relative mx-auto flex flex-col ${
             isFlush ? maxWidthCls : `${maxWidthCls || "max-w-3xl"} gap-6 px-4 py-12`
-          } ${flowPreset === "stacked" ? "scroll-snap-y scroll-smooth" : ""}`}
+          }`}
           style={
             isFlush
               ? { paddingLeft: blockMarginX, paddingRight: blockMarginX, rowGap: blockMarginY }
@@ -871,6 +892,7 @@ export default function RsvpFormRenderer({
           </div>
         </div>
       </form>
+      </div>{/* end phone frame */}
     </div>
   );
 }

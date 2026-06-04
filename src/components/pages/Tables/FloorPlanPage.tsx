@@ -13,8 +13,8 @@ import {
 import { useGetFloorPlan, useSaveFloorPlan } from "../../../api/hooks/useFloorPlanApi";
 import { useFloorPlanState } from "./useFloorPlanState";
 import type { FloorItem, FloorItemType } from "./useFloorPlanState";
-import { FloorCanvasV3 } from "./FloorPlanV3/FloorCanvasV3";
-import { FloorGuestPanelV3 } from "./FloorPlanV3/FloorGuestPanelV3";
+import { FloorCanvas } from "./FloorPlan/FloorCanvas";
+import { FloorGuestPanel } from "./FloorPlan/FloorGuestPanel";
 import { Spinner } from "../../atoms/Spinner";
 import { Button } from "../../atoms/Button";
 import { StatsCard } from "../../atoms/StatsCard";
@@ -58,7 +58,10 @@ export default function FloorPlanPage() {
   const [zoom, setZoom] = useState(1);
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const groupDragSnapshots = useRef<Map<string, { x: number; y: number }>>(new Map());
+
+  const selectedId = selectedIds.size > 0 ? [...selectedIds][0] : null;
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [toolMode, setToolMode] = useState<ToolMode>("select");
   const [showTableModal, setShowTableModal] = useState(false);
@@ -84,6 +87,35 @@ export default function FloorPlanPage() {
   } | null>(null);
 
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+  const FLOOR_TIPS = [
+    { icon: "⇧", text: "Shift+Click tables to select multiple, then drag any of them to move the group together" },
+    { icon: "✦", text: "Pick a shape tool then click the canvas to place a new table instantly" },
+    { icon: "↔", text: "Drag a guest card onto a table — green ring means it fits, red ring means full" },
+    { icon: "⊡", text: "Double-click any table to edit its name, capacity, or view seated guests" },
+    { icon: "◎", text: "Click a seat to assign a guest, or click an occupied seat to unassign (Undo available)" },
+    { icon: "⊕", text: "Hover over a table to see its full guest list and seating progress" },
+    { icon: "⌕", text: "Scroll to zoom in/out — drag the minimap in the bottom-right to navigate" },
+  ];
+  const [tipIndex, setTipIndex] = useState(0);
+  const [tipsVisible, setTipsVisible] = useState(true);
+  const [tipFading, setTipFading] = useState(false);
+
+  const changeTip = useCallback((next: number) => {
+    setTipFading(true);
+    setTimeout(() => {
+      setTipIndex(next);
+      setTipFading(false);
+    }, 200);
+  }, []);
+
+  useEffect(() => {
+    if (!tipsVisible) return;
+    const t = setInterval(() => {
+      changeTip((tipIndex + 1) % FLOOR_TIPS.length);
+    }, 10000);
+    return () => clearInterval(t);
+  }, [tipsVisible, tipIndex, changeTip, FLOOR_TIPS.length]);
 
   const [standardizeOpen, setStandardizeOpen] = useState(false);
   const [stdShape, setStdShape] = useState<"round" | "rect" | "square">("round");
@@ -133,22 +165,63 @@ export default function FloorPlanPage() {
     [updateItem]
   );
 
-  const handleSelect = useCallback((id: string | null) => {
-    setSelectedId(id);
-  }, []);
-
-  const handleDeleteSelected = useCallback(() => {
-    if (!selectedId) return;
-    const item = floorItems.find((i) => i.id === selectedId);
-    if (!item) return;
-    if (item.type === "table") {
-      setPendingDeleteId(selectedId);
+  const handleSelect = useCallback((id: string | null, addToSelection?: boolean) => {
+    if (id === null) {
+      setSelectedIds(new Set());
       return;
     }
-    removeItem(selectedId);
-    setSelectedId(null);
-    toast.success("Element removed");
-  }, [selectedId, floorItems, removeItem]);
+    if (addToSelection) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+    } else {
+      setSelectedIds(new Set([id]));
+    }
+  }, []);
+
+  const handleGroupDragStart = useCallback(() => {
+    const snaps = new Map<string, { x: number; y: number }>();
+    selectedIds.forEach((id) => {
+      const item = floorItems.find((i) => i.id === id);
+      if (item) snaps.set(id, { x: item.x, y: item.y });
+    });
+    groupDragSnapshots.current = snaps;
+  }, [selectedIds, floorItems]);
+
+  const handleGroupDragMove = useCallback(
+    (dx: number, dy: number) => {
+      groupDragSnapshots.current.forEach((snap, id) => {
+        updateItem(id, { x: snap.x + dx, y: snap.y + dy });
+      });
+    },
+    [updateItem]
+  );
+
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedIds.size === 0) return;
+    const ids = [...selectedIds];
+    if (ids.length === 1) {
+      const item = floorItems.find((i) => i.id === ids[0]);
+      if (!item) return;
+      if (item.type === "table") {
+        setPendingDeleteId(ids[0]);
+        return;
+      }
+      removeItem(ids[0]);
+      setSelectedIds(new Set());
+      toast.success("Element removed");
+    } else {
+      const nonTables = ids.filter((id) => floorItems.find((i) => i.id === id)?.type !== "table");
+      const tableCount = ids.length - nonTables.length;
+      nonTables.forEach((id) => removeItem(id));
+      setSelectedIds(new Set());
+      if (nonTables.length > 0) toast.success(`${nonTables.length} item${nonTables.length > 1 ? "s" : ""} removed`);
+      if (tableCount > 0) toast.error(`${tableCount} table${tableCount > 1 ? "s" : ""} must be deleted individually`);
+    }
+  }, [selectedIds, floorItems, removeItem]);
 
   const confirmDeleteTable = useCallback(() => {
     if (!pendingDeleteId) return;
@@ -156,7 +229,7 @@ export default function FloorPlanPage() {
     deleteTable.mutate(id, {
       onSuccess: () => {
         removeItem(id);
-        setSelectedId(null);
+        setSelectedIds(new Set());
         setPendingDeleteId(null);
         toast.success("Table deleted");
       },
@@ -364,6 +437,8 @@ export default function FloorPlanPage() {
         danceFloor: { w: 180, h: 160 },
         pillar: { w: 45, h: 45 },
         wall: { w: 80, h: 40 },
+        walkway: { w: 200, h: 40 },
+        deco: { w: 50, h: 70 },
       };
       const d = defaults[type] ?? { w: 100, h: 100 };
       // Drop the new item at the current viewport center in world coords, so it lands
@@ -382,7 +457,11 @@ export default function FloorPlanPage() {
         width: d.w,
         height: d.h,
       });
-      toast.success(`${type === "danceFloor" ? "Dance floor" : type.charAt(0).toUpperCase() + type.slice(1)} added`);
+      const typeLabel: Record<string, string> = {
+        danceFloor: "Dance floor",
+        deco: "Decoration",
+      };
+      toast.success(`${typeLabel[type] ?? (type.charAt(0).toUpperCase() + type.slice(1))} added`);
     },
     [addItem, panX, panY, zoom]
   );
@@ -527,13 +606,6 @@ export default function FloorPlanPage() {
         {!isReadOnly && (
           <div data-tour="floorplan-actions" className="flex flex-wrap items-center gap-2">
             <Button
-              variant="secondary"
-              onClick={handleAutoAssign}
-              disabled={autoAssign.isPending}
-            >
-              {autoAssign.isPending ? "Assigning..." : "Auto-Assign Guests"}
-            </Button>
-            <Button
               variant="primary"
               className="![background-image:none] !bg-primary !shadow-primary/25 hover:!bg-button"
               onClick={handleSaveLayout}
@@ -564,6 +636,54 @@ export default function FloorPlanPage() {
         </div>
       </div>
 
+      {tipsVisible && (
+        <div className="flex items-center gap-2 px-5 py-1 animate-fade-in">
+          <div className="flex items-center gap-2 flex-1 min-w-0 px-3 py-1.5 rounded-lg bg-primary/5 border border-primary/15">
+            <span className="text-primary text-xs flex-shrink-0 w-4 text-center font-bold select-none">
+              {FLOOR_TIPS[tipIndex].icon}
+            </span>
+            <p
+              className="text-[11px] text-slate-600 dark:text-slate-300 flex-1 min-w-0 truncate transition-opacity duration-200"
+              style={{ opacity: tipFading ? 0 : 1 }}
+            >
+              {FLOOR_TIPS[tipIndex].text}
+            </p>
+            <div className="flex items-center gap-0.5 flex-shrink-0">
+              <button
+                onClick={() => changeTip((tipIndex - 1 + FLOOR_TIPS.length) % FLOOR_TIPS.length)}
+                className="p-0.5 rounded text-primary/50 hover:text-primary transition"
+                title="Previous tip"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-3 w-3">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                </svg>
+              </button>
+              <span className="text-[10px] text-primary/40 font-medium select-none w-8 text-center">
+                {tipIndex + 1}/{FLOOR_TIPS.length}
+              </span>
+              <button
+                onClick={() => changeTip((tipIndex + 1) % FLOOR_TIPS.length)}
+                className="p-0.5 rounded text-primary/50 hover:text-primary transition"
+                title="Next tip"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-3 w-3">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setTipsVisible(false)}
+                className="ml-1 p-0.5 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+                title="Dismiss tips"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-3 w-3">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-2 px-5 py-1.5 overflow-x-auto overflow-y-visible">
         {!isReadOnly && (
           <>
@@ -591,6 +711,12 @@ export default function FloorPlanPage() {
               <button onClick={() => handleAddDecoration("pillar")} className={toolBtn(false)} title="Add pillar">
                 <div className="w-4 h-4 rounded-full bg-gradient-to-br from-stone-400 to-stone-600" />
               </button>
+              <button onClick={() => handleAddDecoration("walkway")} className={toolBtn(false)} title="Add walkway">
+                <div className="w-6 h-3 rounded-sm bg-gradient-to-br from-red-800 to-red-950 border border-red-900/60" />
+              </button>
+              <button onClick={() => handleAddDecoration("deco")} className={toolBtn(false)} title="Add decoration">
+                <span className="text-sm leading-none">🌸</span>
+              </button>
               <div className="w-px h-5 bg-gray-300/50 dark:bg-gray-600/50 mx-0.5" />
               <button onClick={handleAutoArrangeLayout} className={toolBtn(false)} title="Auto-arrange tables on canvas">
                 <span className="text-sm leading-none">✨</span>
@@ -615,18 +741,22 @@ export default function FloorPlanPage() {
           </>
         )}
 
-        {selectedItem && (
+        {selectedIds.size > 0 && (
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 animate-fade-in">
             <span className="text-[11px] font-semibold text-primary whitespace-nowrap">
-              {selectedItem.type === "table"
+              {selectedIds.size > 1
+                ? `${selectedIds.size} items`
+                : selectedItem?.type === "table"
                 ? (selectedTable?.name ?? "Table")
-                : selectedItem.type === "stage" ? "Stage"
-                : selectedItem.type === "danceFloor" ? "Dance Floor"
-                : selectedItem.type === "pillar" ? "Pillar"
+                : selectedItem?.type === "stage" ? "Stage"
+                : selectedItem?.type === "danceFloor" ? "Dance Floor"
+                : selectedItem?.type === "pillar" ? "Pillar"
+                : selectedItem?.type === "walkway" ? "Walkway"
+                : selectedItem?.type === "deco" ? "Decoration"
                 : "Wall"}
             </span>
 
-            {!isReadOnly && selectedItem.type === "table" && (
+            {!isReadOnly && selectedIds.size === 1 && selectedItem?.type === "table" && (
               <div className="flex items-center gap-0.5 ml-1 p-0.5 rounded bg-primary/15">
                 {(["round", "rect", "square"] as const).map((s) => (
                   <button
@@ -643,11 +773,11 @@ export default function FloorPlanPage() {
               </div>
             )}
 
-            {!isReadOnly && selectedItem.type !== "table" && (
+            {!isReadOnly && selectedIds.size === 1 && selectedItem?.type !== "table" && (
               <button
                 onClick={rotateSelected}
                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium text-primary hover:bg-primary/15 transition"
-                title={`Rotate 45° (current: ${selectedItem.rotation ?? 0}°)`}
+                title={`Rotate 45° (current: ${selectedItem?.rotation ?? 0}°)`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-3 w-3">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -670,7 +800,7 @@ export default function FloorPlanPage() {
             )}
 
             <button
-              onClick={() => setSelectedId(null)}
+              onClick={() => setSelectedIds(new Set())}
               className="ml-0.5 p-0.5 rounded text-primary/60 hover:text-primary transition"
               title="Deselect"
             >
@@ -733,14 +863,14 @@ export default function FloorPlanPage() {
           </div>
         ) : (
           <>
-            <FloorCanvasV3
+            <FloorCanvas
               floorItems={floorItems}
               tables={tables}
               guests={guests}
               zoom={zoom}
               panX={panX}
               panY={panY}
-              selectedId={selectedId}
+              selectedIds={[...selectedIds]}
               snapEnabled={snapEnabled}
               snapSize={snapSize}
               toolMode={toolMode}
@@ -748,6 +878,8 @@ export default function FloorPlanPage() {
               onZoomChange={setZoom}
               onPanChange={handlePanChange}
               onSelect={handleSelect}
+              onGroupDragStart={isReadOnly ? () => {} : handleGroupDragStart}
+              onGroupDragMove={isReadOnly ? () => {} : handleGroupDragMove}
               onMoveItem={isReadOnly ? () => {} : handleMoveItem}
               onDoubleClickTable={isReadOnly ? () => {} : handleDoubleClickTable}
               onDropGuest={isReadOnly ? () => {} : handleDropGuest}
@@ -757,7 +889,7 @@ export default function FloorPlanPage() {
               onResizeItem={isReadOnly ? () => {} : handleResizeItem}
             />
             <div data-tour="floorplan-guest-panel" className="hidden lg:flex h-full">
-              <FloorGuestPanelV3
+              <FloorGuestPanel
                 guests={guests}
                 tables={tables.map((t) => ({ id: t.id, name: t.name }))}
                 onGuestDragStart={isReadOnly ? undefined : (id, pax) => setDraggedGuest({ id, pax })}
@@ -821,7 +953,7 @@ export default function FloorPlanPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <FloorGuestPanelV3
+            <FloorGuestPanel
               guests={guests}
               tables={tables.map((t) => ({ id: t.id, name: t.name }))}
               onGuestDragStart={isReadOnly ? undefined : (id, pax) => setDraggedGuest({ id, pax })}

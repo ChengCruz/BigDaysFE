@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 
-export type FloorItemType = "table" | "stage" | "danceFloor" | "pillar" | "wall";
+export type FloorItemType = "table" | "stage" | "danceFloor" | "pillar" | "wall" | "walkway" | "deco";
 export type TableShape = "round" | "rect" | "square";
 
 export interface FloorItem {

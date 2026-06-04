@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
-import { FullPagePreview, type FlowPreset, type RsvpBlock } from "./RsvpDesignPage";
+import { FullPagePreview, type RsvpBlock } from "./RsvpDesignPage";
 import { Button } from "../../atoms/Button";
 import { Spinner } from "../../atoms/Spinner";
 import client from "../../../api/client";
@@ -16,7 +16,6 @@ import { mapToFrontendDesign } from "../../../utils/rsvpDesignMapper";
 type PreviewData = {
   eventTitle?: string;
   blocks: RsvpBlock[];
-  flowPreset: FlowPreset;
   backgroundColor: string;
   backgroundAsset: string;
   backgroundType: "color" | "image" | "video";
@@ -30,7 +29,6 @@ function toPreview(apiDesign: ApiRsvpDesign): PreviewData | null {
   const mapped = mapToFrontendDesign(apiDesign);
   return {
     blocks: (mapped.blocks ?? []) as RsvpBlock[],
-    flowPreset: (mapped.flowPreset ?? "serene") as FlowPreset,
     backgroundColor: mapped.globalBackgroundColor ?? "#0f172a",
     backgroundAsset: mapped.globalBackgroundAsset ?? "",
     backgroundType: (mapped.globalBackgroundType ?? "color") as "color" | "image" | "video",
@@ -153,7 +151,6 @@ export default function RsvpSharePreviewPage() {
       backgroundType={preview.backgroundType}
       overlay={preview.overlay}
       accentColor={preview.accentColor}
-      flowPreset={preview.flowPreset}
       contentWidth={preview.contentWidth}
     />
   );

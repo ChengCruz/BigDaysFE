@@ -197,10 +197,10 @@ export const TOURS: TourDefinition[] = [
     ],
   },
   {
-    routePath: "/app/tables",
+    routePath: "/app/tables/v3",
     title: "Tables",
     description:
-      "Arrange seating with drag-and-drop. Auto-assign guests or build your layout manually.",
+      "Arrange seating in a clean grid view. Auto-assign guests, bulk-manage tables, and export your seating plan.",
     icon: "tables",
     steps: [
       {
@@ -208,28 +208,28 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="tables-actions"]',
         title: "Create and auto-assign",
         content:
-          'Create tables one-at-a-time or in bulk, and use "Auto-Assign" to fill seats automatically based on capacity.',
+          'Create tables one-at-a-time or in bulk, use "Auto-Assign" to fill seats automatically, or bulk-delete tables you no longer need.',
       },
       {
         ...commonStepProps,
         target: '[data-tour="tables-unassigned"]',
         title: "Unassigned guests",
         content:
-          "All guests without a table appear here. Drag any of them onto a table to seat them.",
+          "Click here to see all guests who don't have a table yet. Open any table card to assign them.",
       },
       {
         ...commonStepProps,
         target: '[data-tour="tables-grid"]',
         title: "Tables grid",
         content:
-          "Each card shows a table's seats filled vs capacity. Drop guests here, or click to edit/delete.",
+          "Each card shows a table's pax filled vs capacity. Click a card to view seated guests, assign more, or edit the table.",
       },
       {
         ...commonStepProps,
         target: '[data-tour="tables-fullscreen"]',
         title: "Got 100+ guests?",
         content:
-          "Open fullscreen mode for a roomier layout with the guest list, table grid and a detail panel side-by-side. Much easier for big weddings.",
+          "Open fullscreen mode for a roomier layout — guest list, table grid and detail panel side-by-side. Much easier for big weddings.",
       },
     ],
   },
@@ -246,14 +246,14 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="floorplan-toolbar"]',
         title: "Toolbox",
         content:
-          "Pick a table shape (round, long or square) to drop onto the canvas, or add decorations like a stage, dance floor, walls or pillars.",
+          "Pick a table shape (round, long or square) to place on the canvas. Add venue features like a stage, dance floor, walls, pillars, walkways or decorations. Use ✨ to auto-arrange all tables, or Standardize to unify shape and size in one go.",
       },
       {
         ...commonStepProps,
         target: ".floor-canvas",
         title: "The canvas",
         content:
-          "Drag tables anywhere to position them. Click a seat to assign a guest, or double-click a table to edit its name and capacity.",
+          "Drag tables and decorations to position them. Click a table to select it — then assign guests, resize, change shape or delete. Drag guests from the panel on the right to seat them.",
         placement: "top",
       },
       {
@@ -261,7 +261,7 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="floorplan-guest-panel"]',
         title: "Guest list",
         content:
-          "Drag any guest from here straight onto a seat or table on the canvas to assign them.",
+          "Unassigned guests are listed at the top — drag one onto a table to seat them. Assigned guests are grouped below; collapse that section to keep things tidy.",
         placement: "left",
       },
       {
@@ -269,7 +269,7 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="floorplan-actions"]',
         title: "Don't forget to save",
         content:
-          'Layout changes are not auto-saved. Hit "Save Layout" before leaving the page or your arrangement is lost.',
+          'Layout changes are not auto-saved. Hit "Save Layout" before leaving the page or your arrangement will be lost.',
       },
     ],
   },

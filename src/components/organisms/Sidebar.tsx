@@ -45,7 +45,7 @@ const BASE_LINKS: SidebarLink[] = [
   { to: "/app/form-fields", label: "RSVP Questions", Icon: QuestionMarkCircleIcon, sub: true },
   { to: "/app/rsvps", label: "RSVPs", Icon: ClipboardListIcon, end: true },
   { to: "/app/guests", label: "Guests", Icon: UserGroupIcon, sub: true },
-  { to: "/app/tables", label: "Tables", Icon: Chair, end: true },
+  { to: "/app/tables/v3", label: "Tables", Icon: Chair, end: true },
   { to: "/app/tables/floorplan", label: "Floor Plan", Icon: Blueprint, sub: true },
   { to: "/app/wallet", label: "Wallet", Icon: CurrencyDollarIcon },
   { to: "/app/checkin", label: "Check-in", Icon: QrcodeIcon, end: true },
