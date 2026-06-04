@@ -24,7 +24,7 @@ import {
 import { useEventContext } from "../../../context/EventContext";
 import { useAuth } from "../../../api/hooks/useAuth";
 import toast from "react-hot-toast";
-import { ChevronDownIcon, XIcon, MenuIcon, PencilIcon, TrashIcon } from "@heroicons/react/solid";
+import { ChevronDownIcon, XIcon, PencilIcon, TrashIcon } from "@heroicons/react/solid";
 
 // ── Colour helpers ────────────────────────────────────────────────────────────
 function barFill(a: number, c: number) {
@@ -66,10 +66,8 @@ export default function TablesFullscreenPage() {
   const [tableSearch,     setTableSearch]     = useState("");
   const [tableFilter,     setTableFilter]     = useState<"all" | "hasEmpty" | "full">("all");
   const [density,         setDensity]         = useState<"compact" | "detailed">("compact");
-  const [draggedGuestId,  setDraggedGuestId]  = useState<string | null>(null);
-  const [draggedGuest,    setDraggedGuest]    = useState<{ id: string; paxCount: number } | null>(null);
-  const [dragOverTableId, setDragOverTableId] = useState<string | null>(null);
   const [openTableId,     setOpenTableId]     = useState<string | null>(null);
+  const [editInitialTab,  setEditInitialTab]  = useState<"guests" | "edit">("guests");
   const [showQuickSetup,  setShowQuickSetup]  = useState(false);
   const [showCreateTable, setShowCreateTable] = useState(false);
   const [editingTable,    setEditingTable]    = useState<{ id: string; name: string; capacity: number } | null>(null);
@@ -137,45 +135,26 @@ export default function TablesFullscreenPage() {
   if (tablesLoading || guestsLoading) return <div className="fixed inset-0 z-50 bg-white flex items-center justify-center"><PageLoader message="Loading tables…" /></div>;
   if (tablesError   || guestsError)   return <div className="fixed inset-0 z-50 bg-white flex items-center justify-center"><ErrorState message="Failed to load data." onRetry={() => window.location.reload()} /></div>;
 
-  // ── Drag & drop ───────────────────────────────────────────────────────────
-  const handleDragStart = (e: React.DragEvent, guestId: string) => {
-    const g = guests.find(x => x.id === guestId);
-    if (!g) return;
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("guestId", guestId);
-    setDraggedGuestId(guestId);
-    setDraggedGuest({ id: guestId, paxCount: g.pax || g.noOfPax || 1 });
-  };
-  const handleDragEnd = () => { setDraggedGuestId(null); setDraggedGuest(null); setDragOverTableId(null); };
-
-  const handleDrop = (e: React.DragEvent, tableId: string) => {
-    e.preventDefault();
-    setDragOverTableId(null);
-    const guestId = e.dataTransfer.getData("guestId");
-    if (guestId) doAssign(guestId, tableId);
-  };
-
-  const doAssign = (guestId: string, tableId: string) => {
-    const g = guests.find(x => x.id === guestId);
-    const t = tablesWithGuests.find(x => x.id === tableId);
-    if (!g || !t) return;
-    const pax = g.pax || g.noOfPax || 1;
-    if (pax > t.capacity - t.assignedCount) {
-      toast(`⚠️ ${t.name} is over capacity. Guest assigned anyway.`, {
-        duration: 4000, style: { background: "#fef3c7", color: "#92400e" },
-      });
-    }
-    assignGuest.mutate({ guestId, tableId }, { onError: () => toast.error("Failed to assign guest") });
-  };
-
   const handleUnassign = (guestId: string) => {
     unassignGuest.mutate(guestId, { onError: () => toast.error("Failed to unassign guest") });
+  };
+
+  const handleOpenAssignModal = (tableId: string) => {
+    const t = tablesWithGuests.find(x => x.id === tableId);
+    if (t) { setEditInitialTab("guests"); setEditingTable({ id: t.id, name: t.name, capacity: t.capacity }); }
+  };
+
+  const handleBulkAssign = async (guestIds: string[]) => {
+    if (!editingTable) return;
+    await Promise.all(guestIds.map(guestId => assignGuest.mutateAsync({ guestId, tableId: editingTable.id })));
+    toast.success(`${guestIds.length} guest${guestIds.length > 1 ? "s" : ""} assigned to ${editingTable.name}.`);
+    setEditingTable(null);
   };
 
   // ── Table CRUD ────────────────────────────────────────────────────────────
   const handleEditTable = (tableId: string) => {
     const t = tablesWithGuests.find(x => x.id === tableId);
-    if (t) setEditingTable({ id: t.id, name: t.name, capacity: t.capacity });
+    if (t) { setEditInitialTab("edit"); setEditingTable({ id: t.id, name: t.name, capacity: t.capacity }); }
   };
   const handleDeleteTable = (tableId: string) => {
     const t = tablesWithGuests.find(x => x.id === tableId);
@@ -387,16 +366,8 @@ export default function TablesFullscreenPage() {
                 return (
                   <div
                     key={guest.id}
-                    draggable={!isReadOnly}
-                    onDragStart={e => handleDragStart(e, guest.id)}
-                    onDragEnd={handleDragEnd}
-                    className={`
-                      flex items-center gap-2 px-3 py-1.5 mx-1 rounded-lg text-xs border border-transparent select-none transition-colors
-                      ${!isReadOnly ? "cursor-grab active:cursor-grabbing hover:bg-primary/5 hover:border-primary/20" : ""}
-                      ${draggedGuestId === guest.id ? "opacity-40" : ""}
-                    `}
+                    className="flex items-center gap-2 px-3 py-1.5 mx-1 rounded-lg text-xs border border-transparent select-none transition-colors hover:bg-primary/5 hover:border-primary/20"
                   >
-                    {!isReadOnly && <MenuIcon className="w-3 h-3 text-gray-300 flex-shrink-0" />}
                     <span className="flex-1 truncate font-medium text-gray-800">{name}</span>
                     {isVip && <span className="text-[10px] bg-amber-100 text-amber-700 rounded-full px-1.5 font-semibold flex-shrink-0">VIP</span>}
                     {pax > 1 && <span className="text-[10px] bg-gray-100 text-gray-500 rounded-full px-1.5 font-semibold flex-shrink-0">+{pax - 1}</span>}
@@ -451,26 +422,14 @@ export default function TablesFullscreenPage() {
             ) : (
               <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(172px, 1fr))" }}>
                 {filteredTables.map(table => {
-                  const pct     = Math.min((table.assignedCount / table.capacity) * 100, 100);
-                  const bc      = barFill(table.assignedCount, table.capacity);
-                  const isOpen  = openTableId === table.id;
-                  const isOver  = dragOverTableId === table.id && !!draggedGuest;
-                  const dropOk  = isOver && draggedGuest!.paxCount <= (table.capacity - table.assignedCount);
-                  const dropBad = isOver && draggedGuest!.paxCount >  (table.capacity - table.assignedCount);
+                  const pct    = Math.min((table.assignedCount / table.capacity) * 100, 100);
+                  const bc     = barFill(table.assignedCount, table.capacity);
+                  const isOpen = openTableId === table.id;
 
                   const base = [
                     "relative rounded-xl bg-white cursor-pointer transition-all select-none group",
-                    isOpen    ? "ring-2 ring-primary shadow-md"
-                    : dropOk  ? "ring-2 ring-primary ring-offset-1 bg-primary/5"
-                    : dropBad ? "ring-2 ring-red-400 bg-red-50"
-                    : "border border-primary/20 hover:border-primary/40 hover:shadow-sm",
+                    isOpen ? "ring-2 ring-primary shadow-md" : "border border-primary/20 hover:border-primary/40 hover:shadow-sm",
                   ].join(" ");
-
-                  const dnd = !isReadOnly && !selectMode ? {
-                    onDragOver:  (e: React.DragEvent) => { e.preventDefault(); setDragOverTableId(table.id); },
-                    onDragLeave: () => setDragOverTableId(null),
-                    onDrop:      (e: React.DragEvent) => handleDrop(e, table.id),
-                  } : {};
 
                   const onClick = () => {
                     if (selectMode) { toggleTableSelection(table.id); return; }
@@ -479,7 +438,7 @@ export default function TablesFullscreenPage() {
 
                   return density === "compact" ? (
                     /* ── Compact tile ─────────────────────────── */
-                    <div key={table.id} className={base} style={{ minHeight: 114 }} onClick={onClick} {...dnd}>
+                    <div key={table.id} className={base} style={{ minHeight: 114 }} onClick={onClick}>
                       {selectMode && (
                         <div className="absolute top-2 left-2 z-10" onClick={e => e.stopPropagation()}>
                           <input type="checkbox" className="w-4 h-4 accent-primary cursor-pointer"
@@ -534,7 +493,7 @@ export default function TablesFullscreenPage() {
                     </div>
                   ) : (
                     /* ── Detailed tile ────────────────────────── */
-                    <div key={table.id} className={base} onClick={onClick} {...dnd}>
+                    <div key={table.id} className={base} onClick={onClick}>
                       {selectMode && (
                         <div className="absolute top-2 left-2 z-10" onClick={e => e.stopPropagation()}>
                           <input type="checkbox" className="w-4 h-4 accent-primary cursor-pointer"
@@ -657,7 +616,7 @@ export default function TablesFullscreenPage() {
               <div className="space-y-1.5">
                 {openTable.guests.length === 0 ? (
                   <p className="text-xs text-gray-400 italic text-center py-6">
-                    No guests yet.<br />Drag from the left panel.
+                    No guests yet.
                   </p>
                 ) : (
                   openTable.guests.map(g => (
@@ -685,15 +644,13 @@ export default function TablesFullscreenPage() {
                 )}
               </div>
 
-              {/* Drop zone */}
               {!isReadOnly && (
-                <div
-                  className="mt-4 border-2 border-dashed border-primary/20 rounded-xl p-4 text-center text-xs text-gray-400 hover:border-primary hover:bg-primary/5 transition"
-                  onDragOver={e => e.preventDefault()}
-                  onDrop={e => { e.preventDefault(); const id = e.dataTransfer.getData("guestId"); if (id) doAssign(id, openTable.id); }}
+                <button
+                  onClick={() => handleOpenAssignModal(openTable.id)}
+                  className="mt-4 w-full py-2 text-xs font-semibold rounded-lg border border-primary/30 text-primary hover:bg-primary/5 transition"
                 >
-                  Drop guest here
-                </div>
+                  + Assign Guests
+                </button>
               )}
             </div>
 
@@ -728,6 +685,32 @@ export default function TablesFullscreenPage() {
         isOpen={showCreateTable || !!editingTable}
         onClose={() => { setShowCreateTable(false); setEditingTable(null); }}
         initial={editingTable || undefined}
+        initialTab={editingTable ? editInitialTab : undefined}
+        guests={
+          editingTable
+            ? guests
+                .filter(g => g.tableId === editingTable.id)
+                .map(g => ({
+                  id: g.id,
+                  name: g.guestName || g.name,
+                  pax: g.pax || g.noOfPax || 1,
+                  flag: (g.remarks || g.notes)?.toLowerCase().includes("vip") ? "VIP" : undefined,
+                }))
+            : []
+        }
+        unassignedGuests={
+          editingTable
+            ? guests
+                .filter(g => !g.tableId)
+                .map(g => ({
+                  id: g.id,
+                  name: g.guestName || g.name,
+                  pax: g.pax || g.noOfPax || 1,
+                  flag: (g.remarks || g.notes)?.toLowerCase().includes("vip") ? "VIP" : undefined,
+                }))
+            : undefined
+        }
+        onAssignGuests={editingTable ? handleBulkAssign : undefined}
       />
 
       <DeleteConfirmationModal
