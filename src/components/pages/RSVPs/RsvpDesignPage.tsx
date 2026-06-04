@@ -861,7 +861,6 @@ export default function RsvpDesignPage() {
             globalBackgroundColor={globalBackgroundColor}
             globalOverlay={globalOverlay}
             accentColor={accentColor}
-            flowPreset={flowPreset}
             globalMusicUrl={globalMusicUrl}
             submitButtonColor={submitButtonColor}
             submitButtonTextColor={submitButtonTextColor}
@@ -873,7 +872,6 @@ export default function RsvpDesignPage() {
               if (patch.globalBackgroundColor !== undefined) setGlobalBackgroundColor(patch.globalBackgroundColor);
               if (patch.globalOverlay !== undefined) setGlobalOverlay(patch.globalOverlay);
               if (patch.accentColor !== undefined) setAccentColor(patch.accentColor);
-              if (patch.flowPreset !== undefined) setFlowPreset(patch.flowPreset);
               if (patch.globalMusicUrl !== undefined) setGlobalMusicUrl(patch.globalMusicUrl);
               if (patch.submitButtonColor !== undefined) setSubmitButtonColor(patch.submitButtonColor);
               if (patch.submitButtonTextColor !== undefined) setSubmitButtonTextColor(patch.submitButtonTextColor);

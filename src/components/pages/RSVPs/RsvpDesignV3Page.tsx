@@ -1104,6 +1104,7 @@ export default function RsvpDesignV3Page() {
         previewBackdropColor: previewBackdropColor || undefined,
         previewBackdropImage: isBlob(previewBackdropImage) ? "" : (previewBackdropImage || undefined),
         previewBackdropLabel: BACKDROP_OPTIONS.find((o) => o.value === previewBackdropImage)?.label,
+        flowPreset: "serene",
       };
       await saveDesignAsync({ design: currentDesign, isPublished: false, isDraft: true, shareToken, publicLink });
 
