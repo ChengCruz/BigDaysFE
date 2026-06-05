@@ -2,49 +2,28 @@
 // Global design settings: background, accent color, overlay, music, submit button.
 import React, { useEffect } from "react";
 
-import bg01   from "../../../../assets/bg-01-misty-mountains.png";
-import bg01b  from "../../../../assets/bg-01b-sumi-mountains.png";
-import bg01c  from "../../../../assets/bg-01c-sunset-mountains.png";
-import bg02   from "../../../../assets/bg-02-silk-ribbons.png";
-import bg02b  from "../../../../assets/bg-02b-blush-ribbons.png";
-import bg02c  from "../../../../assets/bg-02c-dustyblue-ribbons.png";
-import bg03   from "../../../../assets/bg-03-garden-bottom.png";
-import bg03b  from "../../../../assets/bg-03b-lavender-field.png";
-import bg03c  from "../../../../assets/bg-03c-wildflower-peach.png";
-import bg04   from "../../../../assets/bg-04-ocean-horizon.png";
-import bg04b  from "../../../../assets/bg-04b-tropical-water.png";
-import bg04c  from "../../../../assets/bg-04c-goldenhour-coast.png";
-import bg05   from "../../../../assets/bg-05-herbarium.png";
-import bg05b  from "../../../../assets/bg-05b-pressed-flowers.png";
-import bg05c  from "../../../../assets/bg-05c-eucalyptus.png";
-import bg06   from "../../../../assets/bg-06-celestial-midnight.png";
-import bg06b  from "../../../../assets/bg-06b-celestial-plum.png";
-import bg06c  from "../../../../assets/bg-06c-celestial-emerald.png";
-import bg06mg from "../../../../assets/bg-06-minimal-gold.png";
-import bg06rg from "../../../../assets/bg-06c-rosegold-arch.png";
-
 export const BACKDROP_OPTIONS: { label: string; value: string }[] = [
   { label: "None",              value: "" },
-  { label: "Misty Mountains",   value: bg01 },
-  { label: "Sumi Mountains",    value: bg01b },
-  { label: "Sunset Mountains",  value: bg01c },
-  { label: "Silk Ribbons",      value: bg02 },
-  { label: "Blush Ribbons",     value: bg02b },
-  { label: "Dusty Blue Ribbons",value: bg02c },
-  { label: "Garden",            value: bg03 },
-  { label: "Lavender Field",    value: bg03b },
-  { label: "Wildflower Peach",  value: bg03c },
-  { label: "Ocean Horizon",     value: bg04 },
-  { label: "Tropical Water",    value: bg04b },
-  { label: "Golden Hour Coast", value: bg04c },
-  { label: "Herbarium",         value: bg05 },
-  { label: "Pressed Flowers",   value: bg05b },
-  { label: "Eucalyptus",        value: bg05c },
-  { label: "Celestial Midnight",value: bg06 },
-  { label: "Celestial Plum",    value: bg06b },
-  { label: "Celestial Emerald", value: bg06c },
-  { label: "Minimal Gold",      value: bg06mg },
-  { label: "Rose Gold Arch",    value: bg06rg },
+  { label: "Misty Mountains",   value: "/backgrounds/bg-01-misty-mountains.png" },
+  { label: "Sumi Mountains",    value: "/backgrounds/bg-01b-sumi-mountains.png" },
+  { label: "Sunset Mountains",  value: "/backgrounds/bg-01c-sunset-mountains.png" },
+  { label: "Silk Ribbons",      value: "/backgrounds/bg-02-silk-ribbons.png" },
+  { label: "Blush Ribbons",     value: "/backgrounds/bg-02b-blush-ribbons.png" },
+  { label: "Dusty Blue Ribbons",value: "/backgrounds/bg-02c-dustyblue-ribbons.png" },
+  { label: "Garden",            value: "/backgrounds/bg-03-garden-bottom.png" },
+  { label: "Lavender Field",    value: "/backgrounds/bg-03b-lavender-field.png" },
+  { label: "Wildflower Peach",  value: "/backgrounds/bg-03c-wildflower-peach.png" },
+  { label: "Ocean Horizon",     value: "/backgrounds/bg-04-ocean-horizon.png" },
+  { label: "Tropical Water",    value: "/backgrounds/bg-04b-tropical-water.png" },
+  { label: "Golden Hour Coast", value: "/backgrounds/bg-04c-goldenhour-coast.png" },
+  { label: "Herbarium",         value: "/backgrounds/bg-05-herbarium.png" },
+  { label: "Pressed Flowers",   value: "/backgrounds/bg-05b-pressed-flowers.png" },
+  { label: "Eucalyptus",        value: "/backgrounds/bg-05c-eucalyptus.png" },
+  { label: "Celestial Midnight",value: "/backgrounds/bg-06-celestial-midnight.png" },
+  { label: "Celestial Plum",    value: "/backgrounds/bg-06b-celestial-plum.png" },
+  { label: "Celestial Emerald", value: "/backgrounds/bg-06c-celestial-emerald.png" },
+  { label: "Minimal Gold",      value: "/backgrounds/bg-06-minimal-gold.png" },
+  { label: "Rose Gold Arch",    value: "/backgrounds/bg-06c-rosegold-arch.png" },
 ];
 
 type ContentWidth = "compact" | "standard" | "wide" | "full";
