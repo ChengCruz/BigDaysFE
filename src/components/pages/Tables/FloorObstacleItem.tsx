@@ -149,11 +149,10 @@ export const FloorObstacleItem: React.FC<Props> = ({ item, zoom, selected, selec
   } else if (isDeco) {
     style = {
       ...style,
-      background: "radial-gradient(ellipse at 50% 80%, #86efac 0%, #4ade80 40%, #16a34a 100%)",
-      border: "2px solid #15803d",
-      borderRadius: "50% 50% 40% 40%",
-      color: "#14532d",
-      fontSize: 20,
+      background: "rgba(255,255,255,0.85)",
+      border: "1.5px dashed #d1d5db",
+      borderRadius: 10,
+      fontSize: 28,
       flexDirection: "column" as const,
     };
   } else {
@@ -183,7 +182,7 @@ export const FloorObstacleItem: React.FC<Props> = ({ item, zoom, selected, selec
     : isWalkway
     ? "Walkway"
     : isDeco
-    ? "\ud83c\udf38"
+    ? ((item.meta?.emoji as string) ?? "\ud83c\udf38")
     : "\ud83e\uddf1 Wall";
 
   return (
