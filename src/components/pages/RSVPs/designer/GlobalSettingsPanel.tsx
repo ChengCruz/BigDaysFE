@@ -175,7 +175,7 @@ export function GlobalSettingsPanel({
             <div className="space-y-1.5">
               <input
                 type="file"
-                accept={globalBackgroundType === "video" ? "video/*" : "image/*"}
+                accept={globalBackgroundType === "video" ? "video/*" : "image/jpeg,image/png,image/webp"}
                 onChange={(e) => e.target.files?.[0] && onUploadBackground(e.target.files[0])}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs text-gray-600 file:mr-2 file:rounded file:border-0 file:bg-gray-100 file:px-2 file:py-1 file:text-xs"
               />

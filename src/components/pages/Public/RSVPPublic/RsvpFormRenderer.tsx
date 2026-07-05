@@ -740,10 +740,9 @@ export default function RsvpFormRenderer({
     >
       {/* Phone frame — 375px on desktop, full-width on real mobile */}
       <div
-        className="relative mx-auto w-full max-w-[375px] overflow-hidden text-white sm:rounded-[2.5rem]"
+        className="relative mx-auto w-full sm:max-w-[430px] overflow-hidden text-white sm:rounded-[2.5rem] sm:shadow-[0_8px_48px_0_rgba(0,0,0,0.15),0_0_0_6px_#9ca3af]"
         style={{
           minHeight: "100vh",
-          boxShadow: "0 8px 48px 0 rgba(0,0,0,0.15), 0 0 0 6px #9ca3af",
         }}
       >
       {/* Global background */}
