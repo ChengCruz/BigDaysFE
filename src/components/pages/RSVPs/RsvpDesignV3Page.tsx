@@ -1229,7 +1229,7 @@ export default function RsvpDesignV3Page() {
     <div className="fixed inset-0 z-50 flex flex-col overflow-hidden" style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", background: "#f0f2f5" }}>
 
       {/* ═══ TOP TOOLBAR ═══ */}
-      <header className="flex items-center gap-2 px-4 shrink-0 bg-white border-b border-gray-200" style={{ height: 52, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", zIndex: 10 }}>
+      <header data-tour="designer-toolbar" className="flex items-center gap-2 px-4 shrink-0 bg-white border-b border-gray-200" style={{ height: 52, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", zIndex: 10 }}>
         <button
           onClick={() => window.close()}
           className="flex items-center justify-center w-7 h-7 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition shrink-0 mr-1"
@@ -1333,7 +1333,7 @@ export default function RsvpDesignV3Page() {
         </div>
 
         {/* Save */}
-        <button onClick={handleSave} disabled={isSaving || isUploadingForSave || isLoadingDesign}
+        <button data-tour="designer-save" onClick={handleSave} disabled={isSaving || isUploadingForSave || isLoadingDesign}
           className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold border border-primary text-primary rounded-md hover:bg-primary/5 disabled:opacity-50 transition bg-white">
           {isSaving || isUploadingForSave ? <><Spinner />&nbsp;Saving...</> : "Save draft"}
         </button>
@@ -1349,7 +1349,7 @@ export default function RsvpDesignV3Page() {
       <div className="flex flex-1 overflow-hidden">
 
         {/* ─── LEFT PANEL ─── */}
-        <aside className={`flex flex-col overflow-hidden bg-white border-r border-gray-100 shrink-0 transition-all duration-200 ${leftCollapsed ? "w-0 border-r-0" : ""}`} style={leftCollapsed ? { width: 0 } : { width: 248 }}>
+        <aside data-tour="designer-left-panel" className={`flex flex-col overflow-hidden bg-white border-r border-gray-100 shrink-0 transition-all duration-200 ${leftCollapsed ? "w-0 border-r-0" : ""}`} style={leftCollapsed ? { width: 0 } : { width: 248 }}>
           {/* Tabs */}
           <div className="flex border-b border-gray-100 shrink-0">
             {(["blocks", "layers"] as const).map((tab) => (
@@ -1469,7 +1469,7 @@ export default function RsvpDesignV3Page() {
         </button>
 
         {/* ─── CANVAS ─── */}
-        <main className="flex-1 overflow-y-auto" style={{
+        <main data-tour="designer-canvas" className="flex-1 overflow-y-auto" style={{
           backgroundColor: previewBackdropColor || "#eaecf0",
           backgroundImage: previewBackdropImage ? `url(${previewBackdropImage})` : undefined,
           backgroundSize: "cover",
@@ -1557,7 +1557,7 @@ export default function RsvpDesignV3Page() {
         </main>
 
         {/* ─── RIGHT PANEL ─── */}
-        <aside className="flex flex-col overflow-hidden bg-white border-l border-gray-100 shrink-0" style={{ width: 360 }}>
+        <aside data-tour="designer-right-panel" className="flex flex-col overflow-hidden bg-white border-l border-gray-100 shrink-0" style={{ width: 360 }}>
           <div className="flex border-b border-gray-100 shrink-0">
             {(["block", "page"] as const).map((tab) => (
               <button key={tab} onClick={() => setRightTab(tab)}

@@ -14,7 +14,9 @@ export type TourIconKey =
   | "wallet"
   | "checkin"
   | "users"
-  | "crew";
+  | "crew"
+  | "rsvp-designer"
+  | "checklist";
 
 export interface TourDefinition {
   routePath: string;
@@ -24,6 +26,8 @@ export interface TourDefinition {
   description: string;
   icon: TourIconKey;
   steps: Step[];
+  /** When true, the Tutorial page opens this tour in a new browser tab. */
+  openInNewTab?: boolean;
 }
 
 const commonStepProps: Partial<Step> = {};
@@ -139,6 +143,57 @@ export const TOURS: TourDefinition[] = [
         title: "Search guests",
         content:
           "Find a specific guest by typing their name.",
+      },
+    ],
+  },
+  {
+    routePath: "/app/rsvps/designer-v3",
+    pathPattern: /^\/app\/rsvps\/designer-v3\/?$/,
+    openInNewTab: true,
+    title: "RSVP Designer",
+    description:
+      "Build and style your RSVP page visually — drag blocks, customise colours and fonts, then publish a shareable link for guests.",
+    icon: "rsvp-designer",
+    steps: [
+      {
+        ...commonStepProps,
+        target: '[data-tour="designer-toolbar"]',
+        title: "Toolbar",
+        content:
+          "Undo/redo changes, switch between mobile, tablet and desktop previews, zoom in/out, check save status, and hit Preview to see the live form.",
+        placement: "bottom",
+      },
+      {
+        ...commonStepProps,
+        target: '[data-tour="designer-left-panel"]',
+        title: "Block library",
+        content:
+          "Pick a block from the left panel and click it to add it to your design — headings, event details, the RSVP form, images, countdowns and more. Switch to the Layers tab to reorder blocks by dragging.",
+        placement: "right",
+      },
+      {
+        ...commonStepProps,
+        target: '[data-tour="designer-canvas"]',
+        title: "Live canvas",
+        content:
+          "This is your RSVP page as guests will see it. Click any block to select it, then edit its settings in the right panel. Reorder blocks with the arrows that appear on hover.",
+        placement: "left",
+      },
+      {
+        ...commonStepProps,
+        target: '[data-tour="designer-right-panel"]',
+        title: "Block & page settings",
+        content:
+          'The "Block" tab shows settings for the selected block (text, colours, layout). The "Page" tab controls global settings — background, font, accent colour and the preview backdrop.',
+        placement: "left",
+      },
+      {
+        ...commonStepProps,
+        target: '[data-tour="designer-save"]',
+        title: "Save & publish",
+        content:
+          '"Save draft" preserves your work and updates the slug link (/rsvp/:slug). "Save & Publish" also updates the share-token link — use this when you\'re ready to send invites.',
+        placement: "bottom",
       },
     ],
   },
@@ -343,6 +398,20 @@ export const TOURS: TourDefinition[] = [
     steps: [
       {
         ...commonStepProps,
+        target: '[data-tour="users-stats"]',
+        title: "Account overview",
+        content:
+          "A quick count of all users broken down by role — total, admins, members and staff. Only visible to admins.",
+      },
+      {
+        ...commonStepProps,
+        target: '[data-tour="users-actions"]',
+        title: "Switch between views",
+        content:
+          'Admins can click "View All Users" to manage every account, or "New User" to invite someone. Everyone else just sees their own profile here.',
+      },
+      {
+        ...commonStepProps,
         target: '[data-tour="users-profile"]',
         title: "Your profile",
         content:
@@ -384,6 +453,44 @@ export const TOURS: TourDefinition[] = [
         title: "Manage crew",
         content:
           "Everyone you've added shows up here. Edit names or remove crew members anytime.",
+      },
+    ],
+  },
+  {
+    routePath: "/app/checklist",
+    title: "Checklist",
+    description:
+      "Track every wedding to-do from venue booking to final fittings — add items, set due dates and tick them off as you go.",
+    icon: "checklist",
+    steps: [
+      {
+        ...commonStepProps,
+        target: '[data-tour="checklist-actions"]',
+        title: "Add to-dos",
+        content:
+          'Hit "+ Add Item" to create a to-do manually. Or use "Load Starter Checklist" on the empty state to pre-fill a curated set of wedding tasks in one go.',
+        placement: "bottom",
+      },
+      {
+        ...commonStepProps,
+        target: '[data-tour="checklist-stats"]',
+        title: "Progress at a glance",
+        content:
+          "See how many items are total, done and still remaining. The progress bar beneath shows your overall completion percentage.",
+      },
+      {
+        ...commonStepProps,
+        target: '[data-tour="checklist-filters"]',
+        title: "Filter by category",
+        content:
+          "Tap a category pill to focus on just that area — Venue, Catering, Attire, Photography and more. Only categories that have items show up here.",
+      },
+      {
+        ...commonStepProps,
+        target: '[data-tour="checklist-list"]',
+        title: "Tick items off",
+        content:
+          "Click the circle on any item to mark it done (or undo it). Use the pencil to edit details like due dates and notes, or the trash to remove it.",
       },
     ],
   },

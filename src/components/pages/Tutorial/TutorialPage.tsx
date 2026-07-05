@@ -11,6 +11,8 @@ import {
   QrcodeIcon,
   UserIcon,
   BriefcaseIcon,
+  PencilAltIcon,
+  CheckCircleIcon,
 } from "@heroicons/react/solid";
 import { TOURS, type TourIconKey } from "../../tour/tours";
 import { Card } from "../../molecules/Card";
@@ -28,13 +30,20 @@ const ICONS: Record<TourIconKey, React.FC<React.SVGProps<SVGSVGElement>>> = {
   checkin: QrcodeIcon,
   users: UserIcon,
   crew: BriefcaseIcon,
+  "rsvp-designer": PencilAltIcon,
+  checklist: CheckCircleIcon,
 };
 
 export default function TutorialPage() {
   const navigate = useNavigate();
 
-  const handleStart = (routePath: string) => {
-    navigate(`${routePath}?tour=1`);
+  const handleStart = (routePath: string, openInNewTab?: boolean) => {
+    const url = `${routePath}?tour=1`;
+    if (openInNewTab) {
+      window.open(url, "_blank");
+    } else {
+      navigate(url);
+    }
   };
 
   return (
@@ -71,7 +80,7 @@ export default function TutorialPage() {
                 <span>
                   {tour.steps.length} step{tour.steps.length === 1 ? "" : "s"}
                 </span>
-                <Button variant="primary" onClick={() => handleStart(tour.routePath)}>
+                <Button variant="primary" onClick={() => handleStart(tour.routePath, tour.openInNewTab)}>
                   Start tour
                 </Button>
               </div>
