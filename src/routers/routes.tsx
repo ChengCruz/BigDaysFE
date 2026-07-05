@@ -8,9 +8,8 @@ import RegisterPage from "../components/pages/Auth/RegisterPage";
 import VerifyEmailPage from "../components/pages/Auth/VerifyEmailPage";
 import ResetPasswordPage from "../components/pages/Auth/ResetPasswordPage";
 import ContactPage from "../components/pages/Auth/ContactPage";
-import StoryPage from "../components/pages/Public/Story/StoryPage";
+import FeaturesPage from "../components/pages/Public/Features/FeaturesPage";
 import GalleryPage from "../components/pages/Public/Gallery/GalleryPage";
-import PeoplePage from "../components/pages/Public/People/PeoplePage";
 import BlogPage from "../components/pages/Public/Blog/BlogPage";
 
 import PublicTemplate from "../components/templates/PublicTemplate";
@@ -85,7 +84,6 @@ import MemberDashboardPage from "../components/pages/Dashboard/MemberDashboardPa
 
 import RSVPPublicPage from "../components/pages/Public/RSVPPublic/RSVPPublicPage";
 import RsvpBySlugPage from "../components/pages/Public/RSVPPublic/RsvpBySlugPage";
-import EventPublicPage from "../components/pages/Public/EventsPublic/EventsPublicPage";
 import { EventFormModal } from "../components/molecules/EventFormModal";
 import { NewRsvpModal } from "../components/pages/RSVPs/NewRsvpModal";
 import { EditRsvpModal } from "../components/pages/RSVPs/EditRsvpModal";
@@ -133,12 +131,10 @@ export default function AppRoutes() {
         <Route path="/" element={<LandingPage />} />
 
         {/* public landing pages */}
-        <Route path="/events"  element={<EventPublicPage />} />
         <Route path="/rsvp"    element={<RSVPPublicPage />} />
-        <Route path="/story"   element={<StoryPage />} />
+        <Route path="/features" element={<FeaturesPage />} />
         <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/contact" element={<ContactPage />} />
-        <Route path="/people"  element={<PeoplePage />} />
         <Route path="/blog"    element={<BlogPage />} />
         {/* Guest self-service QR lookup */}
         <Route path="/qr/lookup/:eventId" element={<QrLookupPage />} />
