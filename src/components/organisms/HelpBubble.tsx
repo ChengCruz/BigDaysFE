@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import QuestionMarkCircleIcon from "@heroicons/react/solid/QuestionMarkCircleIcon";
 import { useTour } from "../tour/useTour";
 import { findTourForPath } from "../tour/tours";
+import { BrandWordmark } from "../atoms/BrandWordmark";
 
 const HINT_STORAGE_KEY = "mbd_help_bubble_hint_seen";
 
@@ -87,7 +88,7 @@ export function HelpBubble() {
             <div className="text-2xl flex-shrink-0" aria-hidden>👋</div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-text dark:text-white">
-                Welcome to MyBigDays!
+                Welcome to <BrandWordmark />!
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Need a hand? Tap this <span className="font-semibold text-primary">?</span> button anytime to take a tour or browse tutorials.

@@ -3,7 +3,7 @@ import { CalendarIcon } from "@heroicons/react/solid";
 import { Button } from "../atoms/Button";
 
 interface NoEventsStateProps {
-  title?: string;
+  title?: React.ReactNode;
   message?: string;
   showButton?: boolean;
   Icon?: React.FC<React.SVGProps<SVGSVGElement>>;
