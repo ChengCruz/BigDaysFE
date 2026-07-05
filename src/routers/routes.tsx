@@ -126,7 +126,7 @@ export default function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
-      {/* Dev/Staging only — blocked in prod via ResetPasswordPage internal guard */}
+      {/* Reached from the password-reset email deep-link (?email=&token=) in all envs */}
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* ─── PUBLIC ───────────────────────────────────────── */}
