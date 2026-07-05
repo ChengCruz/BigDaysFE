@@ -181,3 +181,8 @@ export const ChecklistEndpoints = {
   delete: (id: string) => `/Checklist/${id}`,
   seed: (eventGuid: string) => `/Checklist/Seed/${eventGuid}`,
 };
+
+export const ContactEndpoints = {
+  // Sends a support / bug-report email. Sender name & email resolved server-side from the JWT.
+  send: "/Contact/Send",
+};

@@ -146,13 +146,13 @@ export function HelpBubble() {
           </button>
           <button
             type="button"
-            disabled
-            className="w-full text-left px-4 py-3 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed flex items-center gap-2"
+            onClick={() => {
+              setOpen(false);
+              navigate("/app/contact");
+            }}
+            className="w-full text-left px-4 py-3 text-sm text-text dark:text-gray-200 hover:bg-primary/10 dark:hover:bg-white/10 transition-colors"
           >
-            <span className="flex-1">Contact support</span>
-            <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 px-1.5 py-0.5 rounded-full">
-              Soon
-            </span>
+            Contact support
           </button>
         </div>
       )}

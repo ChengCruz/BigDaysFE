@@ -33,9 +33,11 @@ function AppLayout() {
   }
 
   // When the user has zero events, show an inline onboarding state on every
-  // route except /app/events (where they can actually create one).
+  // route except /app/events (where they can actually create one) and
+  // /app/contact (support must stay reachable even before any event exists).
   const onEventsRoute = location.pathname.startsWith("/app/events");
-  const showEmptyState = mustChooseEvent && !onEventsRoute;
+  const onContactRoute = location.pathname.startsWith("/app/contact");
+  const showEmptyState = mustChooseEvent && !onEventsRoute && !onContactRoute;
 
   return (
     <TourProvider>
@@ -104,6 +106,7 @@ import { useAuth } from "../api/hooks/useAuth";
 import CrewPage from "../components/pages/Crew/CrewPage";
 import ChecklistPage from "../components/pages/Checklist/ChecklistPage";
 import TutorialPage from "../components/pages/Tutorial/TutorialPage";
+import ContactSupportPage from "../components/pages/Contact/ContactSupportPage";
 // …and other Public pages…
 
 export default function AppRoutes() {
@@ -214,6 +217,9 @@ export default function AppRoutes() {
 
         {/* TUTORIAL */}
         <Route path="tutorial" element={<TutorialPage />} />
+
+        {/* CONTACT / SUPPORT */}
+        <Route path="contact" element={<ContactSupportPage />} />
 
         {/* any other /app/* → back to dashboard */}
         <Route path="*" element={<Navigate to="/app/dashboard" replace />} />
