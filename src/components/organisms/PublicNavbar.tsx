@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { BrandLogo } from "../atoms/BrandLogo";
 
 const navLinks = [
-  { to: "/",        label: "HOME",    end: true },
-  { to: "/story",   label: "STORY",   end: false },
-  { to: "/people",  label: "PEOPLE",  end: false },
-  { to: "/contact", label: "CONTACT", end: false },
+  { to: "/",         label: "HOME",     end: true },
+  { to: "/features", label: "FEATURES", end: false },
+  { to: "/contact",  label: "CONTACT",  end: false },
 ];
 
 const navLinkStyle: React.CSSProperties = {
@@ -29,7 +29,7 @@ export function PublicNavbar() {
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
         borderBottom: '1px solid rgba(42, 34, 30, 0.08)',
-        padding: '1.25rem 2.5rem',
+        padding: '1.5rem 2.5rem',
       }}
     >
       <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -37,17 +37,9 @@ export function PublicNavbar() {
         {/* Brand */}
         <NavLink
           to="/"
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 300,
-            fontSize: '1.5rem',
-            letterSpacing: '0.15em',
-            color: '#2A221E',
-            fontStyle: 'italic',
-            textDecoration: 'none',
-          }}
+          style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}
         >
-          My<span style={{ color: '#B4543A' }}>·</span>Big<span style={{ color: '#B4543A' }}>·</span>Day
+          <BrandLogo height={70} tone="full" />
         </NavLink>
 
         {/* Desktop nav */}

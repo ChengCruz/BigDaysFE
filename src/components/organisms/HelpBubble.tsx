@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import QuestionMarkCircleIcon from "@heroicons/react/solid/QuestionMarkCircleIcon";
 import { useTour } from "../tour/useTour";
 import { findTourForPath } from "../tour/tours";
+import { BrandWordmark } from "../atoms/BrandWordmark";
 
 const HINT_STORAGE_KEY = "mbd_help_bubble_hint_seen";
 
@@ -87,7 +88,7 @@ export function HelpBubble() {
             <div className="text-2xl flex-shrink-0" aria-hidden>👋</div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-text dark:text-white">
-                Welcome to MyBigDays!
+                Welcome to <BrandWordmark />!
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Need a hand? Tap this <span className="font-semibold text-primary">?</span> button anytime to take a tour or browse tutorials.
@@ -145,13 +146,13 @@ export function HelpBubble() {
           </button>
           <button
             type="button"
-            disabled
-            className="w-full text-left px-4 py-3 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed flex items-center gap-2"
+            onClick={() => {
+              setOpen(false);
+              navigate("/app/contact");
+            }}
+            className="w-full text-left px-4 py-3 text-sm text-text dark:text-gray-200 hover:bg-primary/10 dark:hover:bg-white/10 transition-colors"
           >
-            <span className="flex-1">Contact support</span>
-            <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 px-1.5 py-0.5 rounded-full">
-              Soon
-            </span>
+            Contact support
           </button>
         </div>
       )}

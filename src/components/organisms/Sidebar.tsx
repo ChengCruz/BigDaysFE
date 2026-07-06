@@ -18,12 +18,12 @@ import {
   HomeIcon,
   ViewBoardsIcon,
   IdentificationIcon,
-  HeartIcon,
   QrcodeIcon,
   QuestionMarkCircleIcon,
   PhotographIcon,
 } from "@heroicons/react/solid";
 import { Chair, Blueprint } from "@phosphor-icons/react";
+import { BrandLogo } from "../atoms/BrandLogo";
 import { useEventContext } from "../../context/EventContext";
 import { useAuth } from "../../api/hooks/useAuth";
 import { getRoleLabel } from "../../utils/jwtUtils";
@@ -115,12 +115,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-secondary text-white grid place-items-center flex-shrink-0">
-                <HeartIcon className="h-5 w-5" />
-              </div>
-              {!collapsed && (
-                <span className="text-sm font-semibold tracking-tight">My Big Days</span>
-              )}
+              <BrandLogo height={collapsed ? 26 : 52} tone="full" />
             </div>
             <div className="flex items-center gap-1">
               <button

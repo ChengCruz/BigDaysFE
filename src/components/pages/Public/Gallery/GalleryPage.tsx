@@ -40,7 +40,7 @@ export default function GalleryPage() {
           <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: 'clamp(3rem, 8vw, 6.5rem)', lineHeight: 1.05, letterSpacing: '-0.02em', maxWidth: '20ch', margin: '0 auto 1.5rem' }}>
             A decade of <em style={{ color: '#B4543A' }}>gatherings.</em>
           </h1>
-          <p style={{ color: '#7A6B5D', fontSize: '1.25rem', maxWidth: '38rem', margin: '0 auto 3rem', lineHeight: 1.7 }}>
+          <p style={{ color: '#6B5D50', fontSize: '1.25rem', maxWidth: '38rem', margin: '0 auto 3rem', lineHeight: 1.7 }}>
             Each wedding in our archive is its own universe — specific, particular, unrepeatable.
           </p>
 

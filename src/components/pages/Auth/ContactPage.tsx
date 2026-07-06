@@ -19,7 +19,7 @@ const labelStyle: React.CSSProperties = {
   fontSize: '0.7rem',
   letterSpacing: '0.2em',
   textTransform: 'uppercase' as const,
-  color: '#7A6B5D',
+  color: '#6B5D50',
   marginBottom: '0.6rem',
 };
 
@@ -44,8 +44,8 @@ export default function ContactPage() {
           <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: 'clamp(3rem, 8vw, 6.5rem)', lineHeight: 1.05, letterSpacing: '-0.02em', maxWidth: '20ch', margin: '0 auto 1.5rem' }}>
             Let's begin a <em style={{ color: '#B4543A' }}>conversation.</em>
           </h1>
-          <p style={{ color: '#7A6B5D', fontSize: '1.25rem', maxWidth: '36rem', margin: '0 auto', lineHeight: 1.7 }}>
-            We read every message personally and aim to reply within two business days.
+          <p style={{ color: '#6B5D50', fontSize: '1.25rem', maxWidth: '36rem', margin: '0 auto', lineHeight: 1.7 }}>
+            Questions, feedback, or ideas — send them our way and we'll get back to you.
           </p>
         </div>
       </section>
@@ -64,14 +64,14 @@ export default function ContactPage() {
               <div style={{ textAlign: 'center', padding: '3rem 0' }}>
                 <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '4rem', color: '#B4543A', marginBottom: '1rem' }}>✦</div>
                 <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: '2.5rem', marginBottom: '1rem' }}>Thank you.</h2>
-                <p style={{ color: '#7A6B5D', fontSize: '1.1rem', lineHeight: 1.7 }}>We've received your message and will be in touch soon.</p>
+                <p style={{ color: '#6B5D50', fontSize: '1.1rem', lineHeight: 1.7 }}>We've received your message and will be in touch soon.</p>
               </div>
             ) : (
               <>
                 <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: '2.5rem', marginBottom: '0.75rem', letterSpacing: '-0.02em' }}>
                   Tell us about your <em style={{ color: '#B4543A' }}>day.</em>
                 </h2>
-                <p style={{ color: '#7A6B5D', marginBottom: '2.5rem', fontSize: '1.1rem', lineHeight: 1.6 }}>
+                <p style={{ color: '#6B5D50', marginBottom: '2.5rem', fontSize: '1.1rem', lineHeight: 1.6 }}>
                   The more you share, the more helpful we can be.
                 </p>
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
@@ -128,8 +128,7 @@ export default function ContactPage() {
           {/* Sidebar info */}
           <div>
             {[
-              { label: "Write Directly", big: "hello@mybigday.app", sub: "For new enquiries, press, and general questions." },
-              { label: "Response Time",  big: null,                  sub: "All enquiries receive a personal response within two business days. If you haven't heard back, check your spam folder." },
+              { label: "Write Directly", big: "hello@mybigday.app", sub: "For enquiries, feedback, and general questions." },
               { label: "Already a User?",big: null,                  sub: null, link: true },
             ].map((block, i) => (
               <div key={i} style={{ marginBottom: '3rem', paddingBottom: '3rem', borderBottom: i < 2 ? '1px solid #EDE4D3' : 'none' }}>
@@ -142,10 +141,10 @@ export default function ContactPage() {
                   </div>
                 )}
                 {block.sub && (
-                  <p style={{ color: '#7A6B5D', fontSize: '1.05rem', lineHeight: 1.6 }}>{block.sub}</p>
+                  <p style={{ color: '#6B5D50', fontSize: '1.05rem', lineHeight: 1.6 }}>{block.sub}</p>
                 )}
                 {block.link && (
-                  <p style={{ color: '#7A6B5D', fontSize: '1.05rem', lineHeight: 1.6 }}>
+                  <p style={{ color: '#6B5D50', fontSize: '1.05rem', lineHeight: 1.6 }}>
                     Use the{" "}
                     <a href="/login" style={{ color: '#B4543A', textDecoration: 'underline', textUnderlineOffset: '4px' }}>Login Portal</a>
                     {" "}to access your dashboard, guest list, and RSVP responses.
@@ -165,7 +164,7 @@ export default function ContactPage() {
             We read <em style={{ color: '#A9895A' }}>everything</em> you send us.
           </h2>
           <p style={{ maxWidth: '36rem', margin: '0 auto', color: 'rgba(250,246,239,0.8)', fontSize: '1.15rem', lineHeight: 1.7, fontFamily: 'var(--font-serif)' }}>
-            Not a bot. Not a template response. A real person reads every message and replies with genuine attention.
+            Every message helps shape where we take the product next.
           </p>
         </div>
       </section>

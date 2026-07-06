@@ -13,7 +13,7 @@ export default function CouplePage() {
           <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: 'clamp(3rem, 8vw, 6.5rem)', lineHeight: 1.05, letterSpacing: '-0.02em', maxWidth: '24ch', margin: '0 auto 1.5rem' }}>
             Two people, one <em style={{ color: '#B4543A' }}>perfect day.</em>
           </h1>
-          <p style={{ color: '#7A6B5D', fontSize: '1.25rem', maxWidth: '36rem', margin: '0 auto', lineHeight: 1.7 }}>
+          <p style={{ color: '#6B5D50', fontSize: '1.25rem', maxWidth: '36rem', margin: '0 auto', lineHeight: 1.7 }}>
             Every wedding begins with a story. This is yours to tell.
           </p>
         </div>
@@ -34,7 +34,7 @@ export default function CouplePage() {
             </div>
             <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: '1.75rem', marginBottom: '0.5rem' }}>The Bride</h3>
             <div style={{ fontFamily: 'var(--font-label)', fontSize: '0.7rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#B4543A', marginBottom: '1rem' }}>Partner One</div>
-            <p style={{ color: '#7A6B5D', fontSize: '1.05rem', lineHeight: 1.7 }}>
+            <p style={{ color: '#6B5D50', fontSize: '1.05rem', lineHeight: 1.7 }}>
               [Her story goes here — how you met, what she loves, what makes her laugh. The details that make her entirely herself.]
             </p>
           </div>
@@ -58,7 +58,7 @@ export default function CouplePage() {
             </div>
             <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: '1.75rem', marginBottom: '0.5rem' }}>The Groom</h3>
             <div style={{ fontFamily: 'var(--font-label)', fontSize: '0.7rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#B4543A', marginBottom: '1rem' }}>Partner Two</div>
-            <p style={{ color: '#7A6B5D', fontSize: '1.05rem', lineHeight: 1.7 }}>
+            <p style={{ color: '#6B5D50', fontSize: '1.05rem', lineHeight: 1.7 }}>
               [His story goes here — where he grew up, his favourite moments, the thing he said that made you say yes. The real version.]
             </p>
           </div>

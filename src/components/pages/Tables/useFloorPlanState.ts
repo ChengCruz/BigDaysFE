@@ -124,9 +124,15 @@ export function useFloorPlanState(
     []
   );
 
-  /** Ensure every API table has a floor item; add missing ones. */
+  /** Ensure every API table has a floor item; add missing ones.
+   *  @param placement — when exactly one table is being added, drop it centered
+   *    on this world-coord point (from a click-to-place) instead of the grid. */
   const syncTables = useCallback(
-    (apiTables: { id: string; capacity: number }[], defaultShape: string = "round") => {
+    (
+      apiTables: { id: string; capacity: number }[],
+      defaultShape: string = "round",
+      placement?: { x: number; y: number } | null
+    ) => {
       setFloorItems((prev) => {
         let changed = false;
         const capacityMap = new Map(apiTables.map((t) => [t.id, t.capacity]));
@@ -152,13 +158,14 @@ export function useFloorPlanState(
         const baseY = 60;
         const existingTables = patched.filter((i) => i.type === "table");
         const startIdx = existingTables.length;
+        const usePlacement = !!placement && missing.length === 1;
         const newItems: FloorItem[] = missing.map((t, idx) => {
           const dims = tableDimensions(t.capacity, defaultShape);
           return {
             id: t.id,
             type: "table" as const,
-            x: offsetX + ((startIdx + idx) % columns) * spacingX,
-            y: baseY + Math.floor((startIdx + idx) / columns) * spacingY,
+            x: usePlacement ? placement!.x - dims.width / 2 : offsetX + ((startIdx + idx) % columns) * spacingX,
+            y: usePlacement ? placement!.y - dims.height / 2 : baseY + Math.floor((startIdx + idx) / columns) * spacingY,
             ...dims,
             meta: { shape: defaultShape, capacity: t.capacity },
           };

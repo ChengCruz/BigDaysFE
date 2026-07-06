@@ -709,7 +709,7 @@ export function BlockEditor({
                 Replace first image
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   className="hidden"
                   onChange={(e) => e.target.files?.[0] && onReplaceImage(block.id, e.target.files[0])}
                 />
@@ -718,7 +718,7 @@ export function BlockEditor({
                 Add more images
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   multiple
                   className="hidden"
                   onChange={(e) => e.target.files && onAppendImages(block.id, e.target.files)}
@@ -797,7 +797,7 @@ export function BlockEditor({
                 + Upload background images
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   multiple
                   className="hidden"
                   onChange={(e) => e.target.files && onAddBackgroundImages(block.id, e.target.files)}
@@ -870,7 +870,7 @@ export function BlockEditor({
                   {block.sectionImage ? "Replace spotlight image" : "+ Set spotlight image"}
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp"
                     className="hidden"
                     onChange={(e) => e.target.files?.[0] && onSetSectionImage(block.id, e.target.files[0])}
                   />

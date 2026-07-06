@@ -21,6 +21,8 @@ interface ModalGuest {
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  /** Called after a new table is successfully created (not on edit or cancel). */
+  onCreated?: () => void;
   initial?: { id: string; name: string; capacity: number };
   guests?: ModalGuest[];
   /** When provided, Guests tab shows these unassigned guests with checkboxes for bulk-assign. */
@@ -34,6 +36,7 @@ interface Props {
 export const TableFormModal: React.FC<Props> = ({
   isOpen,
   onClose,
+  onCreated,
   initial,
   guests = [],
   unassignedGuests,
@@ -82,6 +85,7 @@ export const TableFormModal: React.FC<Props> = ({
         await updateTableInfo.mutateAsync(payload);
       } else {
         await createTable.mutateAsync(payload);
+        onCreated?.();
       }
       onClose();
     } catch (err: any) {
@@ -92,6 +96,7 @@ export const TableFormModal: React.FC<Props> = ({
             await updateTableInfo.mutateAsync(payload);
           } else {
             await createTable.mutateAsync(payload);
+            onCreated?.();
           }
           onClose();
           return;

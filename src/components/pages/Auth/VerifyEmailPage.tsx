@@ -22,7 +22,7 @@ const labelStyle: React.CSSProperties = {
   fontSize: '0.7rem',
   letterSpacing: '0.2em',
   textTransform: 'uppercase' as const,
-  color: '#7A6B5D',
+  color: '#6B5D50',
   marginBottom: '0.6rem',
 };
 
@@ -172,7 +172,7 @@ export default function VerifyEmailPage() {
             <em style={{ fontStyle: 'italic', color: '#B4543A' }}>email.</em>
           </h1>
 
-          <p style={{ color: '#7A6B5D', marginBottom: '2rem', fontSize: '1.1rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
+          <p style={{ color: '#6B5D50', marginBottom: '2rem', fontSize: '1.1rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
             {email
               ? <>Check <strong style={{ color: '#2A221E' }}>{email}</strong> for your verification code.</>
               : "Check your inbox for your verification code."}
@@ -205,7 +205,7 @@ export default function VerifyEmailPage() {
               style={{
                 width: '100%',
                 padding: '1.2rem',
-                background: verifyEmail.isPending || !token.trim() ? '#7A6B5D' : '#2A221E',
+                background: verifyEmail.isPending || !token.trim() ? '#6B5D50' : '#2A221E',
                 color: '#FAF6EF',
                 border: 'none',
                 fontFamily: 'var(--font-label)',
@@ -221,7 +221,7 @@ export default function VerifyEmailPage() {
               {verifyEmail.isPending ? "Verifying…" : "Verify Email →"}
             </button>
 
-            <div style={{ textAlign: 'center', color: '#7A6B5D', fontSize: '1rem', fontFamily: 'var(--font-serif)' }}>
+            <div style={{ textAlign: 'center', color: '#6B5D50', fontSize: '1rem', fontFamily: 'var(--font-serif)' }}>
               Already verified?{" "}
               <Link to="/login" style={{ color: '#B4543A', textDecoration: 'none', borderBottom: '1px solid #B4543A', paddingBottom: '1px' }}>
                 Sign in

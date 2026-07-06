@@ -4,6 +4,7 @@ import { useEventContext } from "../../../context/EventContext";
 import { useDashboardApi } from "../../../api/hooks/useDashboardApi";
 import { Button } from "../../atoms/Button";
 import { PageLoader } from "../../atoms/PageLoader";
+import { BrandWordmark } from "../../atoms/BrandWordmark";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import {
   CalendarIcon,
@@ -111,7 +112,7 @@ export default function MemberDashboardPage() {
     if (eventsLoading) return <PageLoader message="Loading dashboard..." />;
     return (
       <NoEventsState
-        title="Welcome to MyBigDays! ✨"
+        title={<>Welcome to <BrandWordmark /> ✨</>}
         message="Select an event from the sidebar to get started with your planning dashboard."
       />
     );

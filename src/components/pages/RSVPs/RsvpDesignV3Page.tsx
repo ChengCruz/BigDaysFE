@@ -26,6 +26,7 @@ import {
   removeCachedImage,
   cleanupExpiredImages,
 } from "../../../utils/designImageCache";
+import { resizeImageToWebp, validateImageFile, MAX_UPLOAD_MB } from "../../../utils/imageResize";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { PageLoader } from "../../atoms/PageLoader";
 import { BlockEditor } from "./designer/BlockEditor";
@@ -70,9 +71,6 @@ const CONTENT_BLOCKS: { type: RsvpBlock["type"]; icon: string; label: string; de
   { type: "headline",     icon: "Hₜ", label: "Headline",      desc: "Title & subtitle banner" },
   { type: "text",         icon: "¶",  label: "Text",          desc: "Body paragraph" },
   { type: "info",         icon: "ⓘ",  label: "Info badge",    desc: "Pill with label & value" },
-  { type: "guestDetails", icon: "👤", label: "Guest details", desc: "Name · phone · pax · remarks" },
-  { type: "formField",    icon: "✎",  label: "Form field",    desc: "Linked RSVP question" },
-  { type: "cta",          icon: "→",  label: "CTA button",    desc: "Call-to-action button" },
   { type: "image",        icon: "🖼", label: "Image",         desc: "Photo or gallery block" },
 ];
 
@@ -696,7 +694,6 @@ export default function RsvpDesignV3Page() {
   // ── V3 UI state ───────────────────────────────────────────────────────────
   const [leftTab, setLeftTab]       = useState<"blocks" | "layers">("blocks");
   const [rightTab, setRightTab]     = useState<"block" | "page">("block");
-  const [canvasMode, setCanvasMode] = useState<"mobile" | "tablet" | "desktop">("mobile");
   const [zoom, setZoom]             = useState(100);
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [blockSearch, setBlockSearch]     = useState("");
@@ -876,7 +873,6 @@ export default function RsvpDesignV3Page() {
   const addBlock = (type: RsvpBlock["type"]) => {
     pushSnapshot();
     dispatch({ type: "ADD_BLOCK", payload: createDefaultBlock(type) });
-    setLeftTab("layers");
     setRightTab("block");
   };
 
@@ -901,7 +897,6 @@ export default function RsvpDesignV3Page() {
     };
     const c: RsvpBlock = { id: uid(), type: "cta", label: "Submit RSVP", href: "#", align: "center", background: { images: [], overlay: 0.4 } };
     dispatch({ type: "ADD_BLOCKS", payload: [g, c] });
-    setLeftTab("layers");
     setRightTab("block");
   };
 
@@ -954,13 +949,35 @@ export default function RsvpDesignV3Page() {
   // ── Image operations ──────────────────────────────────────────────────────
   const toImageAsset = async (file: File) => {
     const id = uid();
-    const blobUrl = await saveImageToCache(id, file, eventId ?? "");
+    const prepared = await resizeImageToWebp(file);
+    const blobUrl = await saveImageToCache(id, prepared, eventId ?? "");
     return { id, src: blobUrl, alt: file.name };
   };
 
+  // Validates + caches a batch of picked images; toasts and skips any that aren't
+  // supported (GIF / non-image / oversize) instead of failing the whole batch.
+  const collectImageAssets = async (files: FileList) => {
+    const valid: File[] = [];
+    const rejected: string[] = [];
+    for (const file of Array.from(files)) {
+      const err = validateImageFile(file);
+      if (err) rejected.push(`"${file.name}" ${err}`);
+      else valid.push(file);
+    }
+    if (rejected.length === 1) toast.error(rejected[0]);
+    else if (rejected.length > 1) toast.error(`${rejected.length} files skipped — use JPG, PNG or WebP up to ${MAX_UPLOAD_MB}MB.`);
+    return Promise.all(valid.map(toImageAsset));
+  };
+
   const handleBackgroundUpload = async (file: File) => {
+    const isVideo = file.type.startsWith("video/");
+    if (!isVideo) {
+      const err = validateImageFile(file);
+      if (err) { toast.error(`"${file.name}" ${err}`); return; }
+    }
     const id = uid();
-    const blobUrl = await saveImageToCache(id, file, eventId ?? "");
+    const prepared = isVideo ? file : await resizeImageToWebp(file);
+    const blobUrl = await saveImageToCache(id, prepared, eventId ?? "");
     if (globalBackgroundAsset?.startsWith("https://")) {
       const fileName = globalBackgroundAsset.split("/").pop();
       if (fileName) deleteMedia({ fileName }).catch(() => {});
@@ -972,14 +989,16 @@ export default function RsvpDesignV3Page() {
 
 
   const handleImageUploadBlock = async (files: FileList) => {
-    const gallery = await Promise.all(Array.from(files).map(toImageAsset));
+    const gallery = await collectImageAssets(files);
+    if (!gallery.length) return;
     const block: RsvpBlock = { id: uid(), type: "image", images: gallery, activeImageId: gallery[0]?.id, caption: "Add a caption or blessing", height: "medium", background: { images: [], overlay: 0.4 } };
     pushSnapshot();
     dispatch({ type: "ADD_BLOCK", payload: block });
   };
 
   const addBackgroundImagesToBlock = async (blockId: string, files: FileList) => {
-    const gallery = await Promise.all(Array.from(files).map(toImageAsset));
+    const gallery = await collectImageAssets(files);
+    if (!gallery.length) return;
     pushSnapshot();
     dispatch({
       type: "SET_BLOCKS",
@@ -1009,6 +1028,8 @@ export default function RsvpDesignV3Page() {
     dispatch({ type: "SET_BLOCKS", payload: blocks.map((b) => b.id === blockId ? ({ ...b, background: { ...(b.background ?? { images: [] }), overlay } } as RsvpBlock) : b) });
 
   const setSectionImageForBlock = async (blockId: string, file: File) => {
+    const err = validateImageFile(file);
+    if (err) { toast.error(`"${file.name}" ${err}`); return; }
     const oldSI = blocks.find((b) => b.id === blockId)?.sectionImage;
     const asset = await toImageAsset(file);
     if (oldSI) {
@@ -1022,12 +1043,15 @@ export default function RsvpDesignV3Page() {
     dispatch({ type: "SET_BLOCKS", payload: blocks.map((b) => b.id === blockId ? { ...b, sectionImage: null } : b) });
 
   const replaceImageForBlock = async (blockId: string, file: File) => {
+    const err = validateImageFile(file);
+    if (err) { toast.error(`"${file.name}" ${err}`); return; }
     const asset = await toImageAsset(file);
     dispatch({ type: "SET_BLOCKS", payload: blocks.map((b) => b.id !== blockId || b.type !== "image" ? b : { ...b, images: [asset, ...b.images], activeImageId: asset.id }) });
   };
 
   const appendImagesToBlock = async (blockId: string, files: FileList) => {
-    const newAssets = await Promise.all(Array.from(files).map(toImageAsset));
+    const newAssets = await collectImageAssets(files);
+    if (!newAssets.length) return;
     dispatch({
       type: "SET_BLOCKS",
       payload: blocks.map((b) => {
@@ -1190,14 +1214,8 @@ export default function RsvpDesignV3Page() {
     contentWidth === "compact"  ? "max-w-sm"  :
     contentWidth === "standard" ? "max-w-lg"  :
     contentWidth === "wide"     ? "max-w-2xl" : "";
-  const canvasWidth = canvasMode === "mobile" ? 375
-    : canvasMode === "tablet" ? 768
-    : undefined;
-  const canvasClass = canvasMode === "mobile"
-    ? "w-[375px] rounded-[2.5rem] shadow-[0_8px_48px_0_rgba(0,0,0,0.15),0_0_0_6px_#9ca3af]"
-    : canvasMode === "tablet"
-    ? "w-[768px] rounded-[2rem] shadow-[0_8px_48px_0_rgba(0,0,0,0.15),0_0_0_6px_#9ca3af]"
-    : "w-full rounded-lg shadow-[0_4px_32px_rgba(0,0,0,0.22)]";
+  const canvasWidth = 430;
+  const canvasClass = "w-[430px] rounded-[2.5rem] shadow-[0_8px_48px_0_rgba(0,0,0,0.15),0_0_0_6px_#9ca3af]";
 
   const chevronSvg = (open: boolean) => (
     <svg aria-hidden width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -1211,7 +1229,7 @@ export default function RsvpDesignV3Page() {
     <div className="fixed inset-0 z-50 flex flex-col overflow-hidden" style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", background: "#f0f2f5" }}>
 
       {/* ═══ TOP TOOLBAR ═══ */}
-      <header className="flex items-center gap-2 px-4 shrink-0 bg-white border-b border-gray-200" style={{ height: 52, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", zIndex: 10 }}>
+      <header data-tour="designer-toolbar" className="flex items-center gap-2 px-4 shrink-0 bg-white border-b border-gray-200" style={{ height: 52, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", zIndex: 10 }}>
         <button
           onClick={() => window.close()}
           className="flex items-center justify-center w-7 h-7 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition shrink-0 mr-1"
@@ -1244,15 +1262,7 @@ export default function RsvpDesignV3Page() {
 
         <div className="w-px h-6 bg-gray-200 shrink-0" />
 
-        {/* Viewport toggle — now with tablet */}
-        <div className="flex items-center gap-0.5 bg-gray-100 rounded-md p-0.5">
-          {(["mobile", "tablet", "desktop"] as const).map((m) => (
-            <button key={m} onClick={() => setCanvasMode(m)} title={m}
-              className={`rounded px-2.5 py-1.5 text-xs font-medium transition-all ${canvasMode === m ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
-              {m === "mobile" ? "📱" : m === "tablet" ? "📟" : "🖥"}
-            </button>
-          ))}
-        </div>
+        <span className="text-xs text-gray-400 font-medium">📱 430 px</span>
 
         {/* Zoom */}
         <div className="flex items-center gap-1">
@@ -1323,7 +1333,7 @@ export default function RsvpDesignV3Page() {
         </div>
 
         {/* Save */}
-        <button onClick={handleSave} disabled={isSaving || isUploadingForSave || isLoadingDesign}
+        <button data-tour="designer-save" onClick={handleSave} disabled={isSaving || isUploadingForSave || isLoadingDesign}
           className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold border border-primary text-primary rounded-md hover:bg-primary/5 disabled:opacity-50 transition bg-white">
           {isSaving || isUploadingForSave ? <><Spinner />&nbsp;Saving...</> : "Save draft"}
         </button>
@@ -1339,7 +1349,7 @@ export default function RsvpDesignV3Page() {
       <div className="flex flex-1 overflow-hidden">
 
         {/* ─── LEFT PANEL ─── */}
-        <aside className={`flex flex-col overflow-hidden bg-white border-r border-gray-100 shrink-0 transition-all duration-200 ${leftCollapsed ? "w-0 border-r-0" : ""}`} style={leftCollapsed ? { width: 0 } : { width: 248 }}>
+        <aside data-tour="designer-left-panel" className={`flex flex-col overflow-hidden bg-white border-r border-gray-100 shrink-0 transition-all duration-200 ${leftCollapsed ? "w-0 border-r-0" : ""}`} style={leftCollapsed ? { width: 0 } : { width: 248 }}>
           {/* Tabs */}
           <div className="flex border-b border-gray-100 shrink-0">
             {(["blocks", "layers"] as const).map((tab) => (
@@ -1407,7 +1417,7 @@ export default function RsvpDesignV3Page() {
                         <p className="text-[13px] font-medium text-gray-500 group-hover:text-[#c0415a] leading-tight">Upload image</p>
                         <p className="text-[10px] text-gray-400">Adds an image block</p>
                       </div>
-                      <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files && handleImageUploadBlock(e.target.files)} />
+                      <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={(e) => e.target.files && handleImageUploadBlock(e.target.files)} />
                     </label>
                   </>
                 )}
@@ -1459,7 +1469,7 @@ export default function RsvpDesignV3Page() {
         </button>
 
         {/* ─── CANVAS ─── */}
-        <main className="flex-1 overflow-y-auto" style={{
+        <main data-tour="designer-canvas" className="flex-1 overflow-y-auto" style={{
           backgroundColor: previewBackdropColor || "#eaecf0",
           backgroundImage: previewBackdropImage ? `url(${previewBackdropImage})` : undefined,
           backgroundSize: "cover",
@@ -1476,8 +1486,7 @@ export default function RsvpDesignV3Page() {
                 {selectedBlock && <span className="text-primary font-semibold"> · editing <em className="not-italic">{BLOCK_LABEL[selectedBlock.type]}</em></span>}
               </p>
               <p className="text-[10px] text-gray-400 uppercase tracking-widest">
-                {canvasMode === "mobile" ? "📱 375 px" : canvasMode === "tablet" ? "📟 768 px" : "🖥 Desktop"}
-                {cwPx ? ` · content ${cwPx}px` : contentWidth === "full" ? " · content full" : ""}
+                📱 430 PX{cwPx ? ` · content ${cwPx}px` : contentWidth === "full" ? " · CONTENT FULL" : ""}
               </p>
             </div>
 
@@ -1548,7 +1557,7 @@ export default function RsvpDesignV3Page() {
         </main>
 
         {/* ─── RIGHT PANEL ─── */}
-        <aside className="flex flex-col overflow-hidden bg-white border-l border-gray-100 shrink-0" style={{ width: 360 }}>
+        <aside data-tour="designer-right-panel" className="flex flex-col overflow-hidden bg-white border-l border-gray-100 shrink-0" style={{ width: 360 }}>
           <div className="flex border-b border-gray-100 shrink-0">
             {(["block", "page"] as const).map((tab) => (
               <button key={tab} onClick={() => setRightTab(tab)}
@@ -1641,7 +1650,7 @@ export default function RsvpDesignV3Page() {
 
       {/* ═══ PREVIEW OVERLAY ═══ */}
       {showPreview && (
-        <div className="fixed inset-0 z-[100] overflow-auto py-8"
+        <div className="fixed inset-0 z-[100] overflow-y-auto overflow-x-hidden sm:py-8"
           style={{
             fontFamily: globalFontFamily || "Georgia, 'Times New Roman', serif",
             backgroundColor: previewBackdropColor || "#f3f4f6",
@@ -1654,8 +1663,7 @@ export default function RsvpDesignV3Page() {
             Close Preview
           </button>
           {/* Phone card frame */}
-          <div className="relative mx-auto w-full max-w-[375px] rounded-[2.5rem] shadow-2xl overflow-hidden"
-            style={{ boxShadow: "0 8px 48px 0 rgba(0,0,0,0.15), 0 0 0 6px #9ca3af" }}>
+          <div className="relative mx-auto w-full sm:max-w-[430px] sm:rounded-[2.5rem] sm:shadow-[0_8px_48px_0_rgba(0,0,0,0.15),0_0_0_6px_#9ca3af] overflow-hidden">
           {/* Mobile content — backgrounds scoped inside card frame */}
           <div className="relative w-full min-h-[600px] overflow-hidden"
             style={frameBg}>
@@ -1671,7 +1679,7 @@ export default function RsvpDesignV3Page() {
             )}
             {/* Blocks */}
             <div
-              className="relative z-10 mx-auto flex flex-col w-full max-w-[375px]"
+              className="relative z-10 mx-auto flex flex-col w-full max-w-[430px]"
               style={{
                 paddingLeft: blockMarginX,
                 paddingRight: blockMarginX,

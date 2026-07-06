@@ -34,7 +34,7 @@ const labelStyle: React.CSSProperties = {
   fontSize: '0.7rem',
   letterSpacing: '0.2em',
   textTransform: 'uppercase' as const,
-  color: '#7A6B5D',
+  color: '#6B5D50',
   marginBottom: '0.6rem',
 };
 
@@ -116,8 +116,19 @@ export default function LoginPage() {
     e.preventDefault();
     setForgotError(null);
     if (isDevOrStaging()) {
-      setForgotOpen(false);
-      nav(`/reset-password?email=${encodeURIComponent(forgotEmail)}`);
+      // Non-prod: ForgotPassword sends no email and returns the reset token in the
+      // response message. Fetch it and deep-link into the reset screen with the token
+      // pre-filled so the dev test path works now that the token is validated everywhere.
+      try {
+        const res = await forgotPassword.mutateAsync({ email: forgotEmail });
+        const devToken = /reset password:\s*(\S+)/i.exec(res.message ?? "")?.[1] ?? "";
+        setForgotOpen(false);
+        const q = new URLSearchParams({ email: forgotEmail });
+        if (devToken) q.set("token", devToken);
+        nav(`/reset-password?${q.toString()}`);
+      } catch (err: any) {
+        setForgotError(err.response?.data?.message || "Something went wrong. Please try again.");
+      }
       return;
     }
     try {
@@ -158,10 +169,10 @@ export default function LoginPage() {
         }}
         className="grid-cols-1 md:grid-cols-2"
       >
-        {/* ── Left panel: brand visual ── */}
+        {/* ── Left panel: brand showcase (cream) ── */}
         <div
           style={{
-            background: 'linear-gradient(135deg, #B4543A 0%, #5C1F1B 60%, #2A221E 100%)',
+            background: 'linear-gradient(160deg, #FBF7F0 0%, #F3E9DC 55%, #EADBC6 100%)',
             position: 'relative',
             overflow: 'hidden',
             display: 'flex',
@@ -171,40 +182,46 @@ export default function LoginPage() {
           }}
           className="hidden md:flex"
         >
-          {/* Botanical overlay */}
+          {/* Botanical overlay — gold line art on cream */}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 600 800"
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.2 }}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.5 }}
             aria-hidden
           >
-            <g fill="none" stroke="#FAF6EF" strokeWidth="1.2">
+            <g fill="none" stroke="#A9895A" strokeWidth="1.2">
               <path d="M150 780 Q160 600 180 450 Q200 280 190 120" />
               <path d="M175 520 Q140 500 115 470" />
               <path d="M180 470 Q215 450 240 420" />
               <path d="M175 400 Q145 385 120 355" />
               <path d="M180 350 Q215 330 240 300" />
-              <ellipse cx="115" cy="470" rx="10" ry="5" fill="#FAF6EF" opacity="0.5" />
-              <ellipse cx="240" cy="420" rx="10" ry="5" fill="#FAF6EF" opacity="0.5" />
-              <ellipse cx="120" cy="355" rx="10" ry="5" fill="#FAF6EF" opacity="0.5" />
-              <ellipse cx="240" cy="300" rx="10" ry="5" fill="#FAF6EF" opacity="0.5" />
+              <ellipse cx="115" cy="470" rx="10" ry="5" fill="#A9895A" opacity="0.4" />
+              <ellipse cx="240" cy="420" rx="10" ry="5" fill="#A9895A" opacity="0.4" />
+              <ellipse cx="120" cy="355" rx="10" ry="5" fill="#A9895A" opacity="0.4" />
+              <ellipse cx="240" cy="300" rx="10" ry="5" fill="#A9895A" opacity="0.4" />
               <path d="M450 780 Q445 650 460 530 Q475 410 470 270" />
               <path d="M460 580 Q495 560 520 530" />
               <path d="M455 500 Q420 485 395 455" />
-              <ellipse cx="520" cy="530" rx="10" ry="5" fill="#FAF6EF" opacity="0.5" />
-              <ellipse cx="395" cy="455" rx="10" ry="5" fill="#FAF6EF" opacity="0.5" />
+              <ellipse cx="520" cy="530" rx="10" ry="5" fill="#A9895A" opacity="0.4" />
+              <ellipse cx="395" cy="455" rx="10" ry="5" fill="#A9895A" opacity="0.4" />
             </g>
           </svg>
 
-          {/* Top: brand mark */}
+          {/* Top: brand mark — latest logo, sits naturally on the cream surface */}
           <div style={{ position: 'relative', zIndex: 2 }}>
-            <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 300, fontSize: '1.6rem', color: '#FAF6EF', letterSpacing: '0.1em' }}>
-              My<span style={{ color: '#A9895A' }}>·</span>Big<span style={{ color: '#A9895A' }}>·</span>Day
-            </span>
+            <Link to="/" aria-label="Go to homepage" style={{ display: 'inline-block' }}>
+              <img
+                src="/MYBigDay_logo_trimmed.png"
+                alt="My Big Day"
+                width={1399}
+                height={1486}
+                style={{ height: 168, width: 'auto', display: 'block' }}
+              />
+            </Link>
           </div>
 
           {/* Middle: headline */}
-          <div style={{ position: 'relative', zIndex: 2, color: '#FAF6EF' }}>
+          <div style={{ position: 'relative', zIndex: 2, color: '#2A221E' }}>
             <div style={{ fontFamily: 'var(--font-label)', fontSize: '0.7rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#A9895A', marginBottom: '1.5rem' }}>
               Client Portal
             </div>
@@ -215,14 +232,14 @@ export default function LoginPage() {
                 fontSize: 'clamp(2rem, 4vw, 3.5rem)',
                 lineHeight: 1.1,
                 marginBottom: '2rem',
-                color: '#FAF6EF',
+                color: '#2A221E',
                 letterSpacing: '-0.02em',
               }}
             >
               Your planning,<br />all in{" "}
-              <em style={{ fontStyle: 'italic', color: '#A9895A' }}>one place.</em>
+              <em style={{ fontStyle: 'italic', color: '#B4543A' }}>one place.</em>
             </h2>
-            <p style={{ color: 'rgba(250,246,239,0.75)', fontSize: '1.1rem', maxWidth: '28rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
+            <p style={{ color: '#6B5D50', fontSize: '1.1rem', maxWidth: '28rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
               Access your events, guest lists, seating charts, and RSVP responses — everything built together, whenever you need it.
             </p>
             <blockquote
@@ -233,7 +250,7 @@ export default function LoginPage() {
                 fontFamily: 'var(--font-display)',
                 fontStyle: 'italic',
                 fontSize: '1.1rem',
-                color: 'rgba(250,246,239,0.9)',
+                color: '#5C4A3E',
                 maxWidth: '26rem',
               }}
             >
@@ -255,7 +272,7 @@ export default function LoginPage() {
               fontSize: '0.65rem',
               letterSpacing: '0.25em',
               textTransform: 'uppercase',
-              color: 'rgba(250,246,239,0.5)',
+              color: '#6B5D50',
             }}
           >
             <span>Secure · Encrypted</span>
@@ -291,7 +308,7 @@ export default function LoginPage() {
               Sign <em style={{ fontStyle: 'italic', color: '#B4543A' }}>in.</em>
             </h1>
 
-            <p style={{ color: '#7A6B5D', marginBottom: '1.25rem', fontSize: '1.1rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
+            <p style={{ color: '#6B5D50', marginBottom: '1.25rem', fontSize: '1.1rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
               Enter your credentials to access your planning dashboard.
             </p>
 
@@ -322,7 +339,7 @@ export default function LoginPage() {
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     background: loginMode === mode ? '#FAF6EF' : 'transparent',
-                    color: loginMode === mode ? '#2A221E' : '#7A6B5D',
+                    color: loginMode === mode ? '#2A221E' : '#6B5D50',
                     boxShadow: loginMode === mode ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
                   }}
                 >
@@ -363,7 +380,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(v => !v)}
-                      style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', color: '#7A6B5D' }}
+                      style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', color: '#6B5D50' }}
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? <EyeOffIcon style={{ width: '1.1rem', height: '1.1rem' }} /> : <EyeIcon style={{ width: '1.1rem', height: '1.1rem' }} />}
@@ -400,7 +417,7 @@ export default function LoginPage() {
                   style={{
                     width: '100%',
                     padding: '1.2rem',
-                    background: loading ? '#7A6B5D' : '#2A221E',
+                    background: loading ? '#6B5D50' : '#2A221E',
                     color: '#FAF6EF',
                     border: 'none',
                     fontFamily: 'var(--font-label)',
@@ -416,7 +433,7 @@ export default function LoginPage() {
                   {loading ? "Signing in…" : "Enter the Portal →"}
                 </button>
 
-                <div style={{ textAlign: 'center', color: '#7A6B5D', fontSize: '1rem', fontFamily: 'var(--font-serif)' }}>
+                <div style={{ textAlign: 'center', color: '#6B5D50', fontSize: '1rem', fontFamily: 'var(--font-serif)' }}>
                   Don't have an account?{" "}
                   <Link to="/register" style={{ color: '#B4543A', textDecoration: 'none', borderBottom: '1px solid #B4543A', paddingBottom: '1px' }}>
                     Create Account
@@ -468,7 +485,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowCrewPin(v => !v)}
-                      style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', color: '#7A6B5D' }}
+                      style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', color: '#6B5D50' }}
                       aria-label={showCrewPin ? "Hide PIN" : "Show PIN"}
                     >
                       {showCrewPin ? <EyeOffIcon style={{ width: '1.1rem', height: '1.1rem' }} /> : <EyeIcon style={{ width: '1.1rem', height: '1.1rem' }} />}

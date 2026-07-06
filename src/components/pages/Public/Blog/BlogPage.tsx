@@ -50,7 +50,7 @@ export default function BlogPage() {
           <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: 'clamp(3rem, 8vw, 6.5rem)', lineHeight: 1.05, letterSpacing: '-0.02em', maxWidth: '20ch', margin: '0 auto 1.5rem' }}>
             Honest notes on <em style={{ color: '#B4543A' }}>planning well.</em>
           </h1>
-          <p style={{ color: '#7A6B5D', fontSize: '1.25rem', maxWidth: '38rem', margin: '0 auto', lineHeight: 1.7 }}>
+          <p style={{ color: '#6B5D50', fontSize: '1.25rem', maxWidth: '38rem', margin: '0 auto', lineHeight: 1.7 }}>
             Practical, considered writing for couples who want to plan thoughtfully — not just quickly.
           </p>
         </div>
@@ -76,7 +76,7 @@ export default function BlogPage() {
                 {/* Content */}
                 <div style={{ padding: '2rem 2.5rem 2.5rem' }}>
                   <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: '1.75rem', lineHeight: 1.2, marginBottom: '1rem', letterSpacing: '-0.02em' }}>{post.title}</h3>
-                  <p style={{ color: '#7A6B5D', fontSize: '1.05rem', lineHeight: 1.7, marginBottom: '1.5rem' }}>{post.excerpt}</p>
+                  <p style={{ color: '#6B5D50', fontSize: '1.05rem', lineHeight: 1.7, marginBottom: '1.5rem' }}>{post.excerpt}</p>
                   <div style={{ fontFamily: 'var(--font-label)', fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#B4543A' }}>
                     Read More →
                   </div>
@@ -90,14 +90,14 @@ export default function BlogPage() {
       {/* CTA */}
       <section style={{ background: '#F5EFE6', padding: '8rem 2.5rem', textAlign: 'center' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <div className="eyebrow" style={{ justifyContent: 'center', display: 'inline-flex', marginBottom: '1.5rem' }}>See More</div>
+          <div className="eyebrow" style={{ justifyContent: 'center', display: 'inline-flex', marginBottom: '1.5rem' }}>Stay in Touch</div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: 'clamp(2.25rem, 5vw, 4rem)', lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: '2rem' }}>
-            More writing lives on <em style={{ color: '#B4543A' }}>Instagram.</em>
+            Have something you'd love to <em style={{ color: '#B4543A' }}>read?</em>
           </h2>
-          <p style={{ color: '#7A6B5D', maxWidth: '32rem', margin: '0 auto 2.5rem', fontSize: '1.15rem', lineHeight: 1.7 }}>
-            Behind-the-scenes planning tips, feature updates, and the occasional story that didn't fit in a blog post.
+          <p style={{ color: '#6B5D50', maxWidth: '32rem', margin: '0 auto 2.5rem', fontSize: '1.15rem', lineHeight: 1.7 }}>
+            We're always writing about planning tips and product updates. Tell us what you'd like to see next.
           </p>
-          <button className="landing-btn landing-btn-outline" onClick={() => navigate('/contact')}>@mybigday →</button>
+          <button className="landing-btn landing-btn-outline" onClick={() => navigate('/contact')}>Get in Touch →</button>
         </div>
       </section>
 

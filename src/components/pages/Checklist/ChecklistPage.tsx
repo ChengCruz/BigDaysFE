@@ -123,7 +123,7 @@ export default function ChecklistPage() {
   return (
     <>
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+      <div data-tour="checklist-actions" className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
         <div>
           <h2 className="text-2xl font-semibold text-primary">Checklist</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -138,7 +138,7 @@ export default function ChecklistPage() {
 
       {/* Stats */}
       {total > 0 && (
-        <div className="grid grid-cols-3 gap-3 mb-5">
+        <div data-tour="checklist-stats" className="grid grid-cols-3 gap-3 mb-5">
           <StatsCard
             label="Total"
             value={total}
@@ -181,7 +181,7 @@ export default function ChecklistPage() {
 
       {/* Category filter tabs */}
       {total > 0 && filterTabs.length > 1 && (
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div data-tour="checklist-filters" className="flex flex-wrap gap-2 mb-4">
           {filterTabs.map((cat) => (
             <button
               key={cat}
@@ -223,7 +223,7 @@ export default function ChecklistPage() {
 
       {/* Item list */}
       {visibleItems.length > 0 && (
-        <div className="space-y-2">
+        <div data-tour="checklist-list" className="space-y-2">
           {visibleItems.map((item) => (
             <div
               key={item.id}

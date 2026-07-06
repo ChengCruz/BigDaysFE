@@ -29,7 +29,15 @@ function uid() {
   return `fp-${Date.now()}-${++idCounter}`;
 }
 
-type ToolMode = "select" | "round" | "rect" | "square";
+type ToolMode = "select" | "round" | "rect" | "square" | "deco" | "stage" | "danceFloor" | "wall" | "pillar" | "walkway";
+
+const DECO_EMOJIS: { emoji: string; label: string }[] = [
+  { emoji: "💡", label: "Pendant light" },
+  { emoji: "🌷", label: "Tulip" },
+  { emoji: "🌴", label: "Palm" },
+  { emoji: "🎈", label: "Balloon" },
+  { emoji: "🎊", label: "Confetti ball" },
+];
 
 export default function FloorPlanPage() {
   const { userRole } = useAuth();
@@ -59,6 +67,7 @@ export default function FloorPlanPage() {
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [multiPickMode, setMultiPickMode] = useState(false);
   const groupDragSnapshots = useRef<Map<string, { x: number; y: number }>>(new Map());
 
   const selectedId = selectedIds.size > 0 ? [...selectedIds][0] : null;
@@ -123,6 +132,10 @@ export default function FloorPlanPage() {
   const standardizeBtnRef = useRef<HTMLButtonElement | null>(null);
   const [standardizeAnchor, setStandardizeAnchor] = useState<{ top: number; left: number } | null>(null);
 
+  const [decoPickerOpen, setDecoPickerOpen] = useState(false);
+  const [pendingDecoEmoji, setPendingDecoEmoji] = useState<string | null>(null);
+  const decoWrapperRef = useRef<HTMLDivElement | null>(null);
+
   const openStandardize = useCallback(() => {
     const r = standardizeBtnRef.current?.getBoundingClientRect();
     if (r) {
@@ -131,18 +144,59 @@ export default function FloorPlanPage() {
     setStandardizeOpen(true);
   }, []);
 
+  const DECO_DEFAULTS: Record<string, { w: number; h: number }> = {
+    stage: { w: 280, h: 50 },
+    danceFloor: { w: 180, h: 160 },
+    pillar: { w: 45, h: 45 },
+    wall: { w: 80, h: 40 },
+    walkway: { w: 200, h: 40 },
+    deco: { w: 50, h: 70 },
+  };
+
+  const DECO_ICONS: Record<string, string> = {
+    stage: "🎭", danceFloor: "💃", wall: "🧱", pillar: "🔘", walkway: "—",
+  };
+
+  const activateDecoTool = useCallback((type: FloorItemType) => {
+    setToolMode(type as ToolMode);
+    const icon = DECO_ICONS[type] ?? "📍";
+    const name = type === "danceFloor" ? "Dance floor" : type.charAt(0).toUpperCase() + type.slice(1);
+    toast(`Click canvas to place ${name}`, { icon });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleDecoEmojiSelect = useCallback((emoji: string) => {
+    setPendingDecoEmoji(emoji);
+    setDecoPickerOpen(false);
+    setToolMode("deco");
+    toast(`Click canvas to place ${emoji}`, { icon: "📍" });
+  }, []);
+
+  useEffect(() => {
+    if (!decoPickerOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (decoWrapperRef.current && !decoWrapperRef.current.contains(e.target as Node)) {
+        setDecoPickerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [decoPickerOpen]);
+
   const snapSize = 40;
 
   const pendingPlacement = React.useRef<{ x: number; y: number; shape: string } | null>(null);
   const pendingShape = React.useRef<string | null>(null);
+  const pendingTablePos = React.useRef<{ x: number; y: number } | null>(null);
 
   // Sync API tables into floor items — wait for floor plan to settle first so the
   // hook's init (setFloorItems(apiFloorItems)) doesn't overwrite what we just synced.
   useEffect(() => {
     if (!floorPlanLoading && tables.length > 0) {
       const shape = pendingShape.current || "round";
-      syncTables(tables.map((t) => ({ id: t.id, capacity: t.capacity || 8 })), shape);
+      syncTables(tables.map((t) => ({ id: t.id, capacity: t.capacity || 8 })), shape, pendingTablePos.current);
       pendingShape.current = null;
+      pendingTablePos.current = null;
     }
   }, [tables, syncTables, floorPlanLoading]);
 
@@ -170,7 +224,7 @@ export default function FloorPlanPage() {
       setSelectedIds(new Set());
       return;
     }
-    if (addToSelection) {
+    if (addToSelection || multiPickMode) {
       setSelectedIds((prev) => {
         const next = new Set(prev);
         if (next.has(id)) next.delete(id);
@@ -180,7 +234,7 @@ export default function FloorPlanPage() {
     } else {
       setSelectedIds(new Set([id]));
     }
-  }, []);
+  }, [multiPickMode]);
 
   const handleGroupDragStart = useCallback(() => {
     const snaps = new Map<string, { x: number; y: number }>();
@@ -474,21 +528,49 @@ export default function FloorPlanPage() {
     updateItem(selectedId, { rotation: next });
   }, [selectedId, floorItems, updateItem]);
 
+  const TABLE_MODES = new Set<ToolMode>(["round", "rect", "square"]);
+
   const handleCanvasClick = useCallback(
     (x: number, y: number) => {
       if (toolMode === "select") return;
+      if (!TABLE_MODES.has(toolMode)) {
+        const d = DECO_DEFAULTS[toolMode] ?? { w: 100, h: 100 };
+        addItem({
+          id: uid(),
+          type: toolMode as FloorItemType,
+          x: x - d.w / 2,
+          y: y - d.h / 2,
+          width: d.w,
+          height: d.h,
+          ...(toolMode === "deco" ? { meta: { emoji: pendingDecoEmoji ?? "🌸" } } : {}),
+        });
+        const typeLabel: Record<string, string> = { danceFloor: "Dance floor", deco: "Decoration" };
+        toast.success(`${typeLabel[toolMode] ?? (toolMode.charAt(0).toUpperCase() + toolMode.slice(1))} placed`);
+        setToolMode("select");
+        if (toolMode === "deco") setPendingDecoEmoji(null);
+        return;
+      }
       pendingPlacement.current = { x, y, shape: toolMode };
       setEditTableId(null);
       setShowTableModal(true);
     },
-    [toolMode]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [toolMode, addItem, pendingDecoEmoji]
   );
+
+  // Fires only on a successful create (not on cancel), so the click position is
+  // captured for syncTables and a cancelled modal never leaves a stale position.
+  const handleTableCreated = useCallback(() => {
+    if (pendingPlacement.current) {
+      pendingShape.current = pendingPlacement.current.shape;
+      pendingTablePos.current = { x: pendingPlacement.current.x, y: pendingPlacement.current.y };
+    }
+  }, []);
 
   const handleTableModalClose = useCallback(() => {
     setShowTableModal(false);
     setEditTableId(null);
     if (pendingPlacement.current) {
-      pendingShape.current = pendingPlacement.current.shape;
       pendingPlacement.current = null;
       setToolMode("select");
     }
@@ -698,25 +780,45 @@ export default function FloorPlanPage() {
                 <div className={`w-4 h-4 rounded-sm border-2 ${toolMode === "square" ? "border-white/60" : "border-emerald-500/60"}`} />
               </button>
               <div className="w-px h-5 bg-gray-300/50 dark:bg-gray-600/50 mx-0.5" />
-              <button onClick={() => handleAddDecoration("stage")} className={toolBtn(false)} title="Add stage">
+              <button onClick={() => activateDecoTool("stage")} className={toolBtn(toolMode === "stage")} title="Add stage">
                 <span className="text-sm leading-none">🎭</span>
               </button>
-              <button onClick={() => handleAddDecoration("danceFloor")} className={toolBtn(false)} title="Add dance floor">
+              <button onClick={() => activateDecoTool("danceFloor")} className={toolBtn(toolMode === "danceFloor")} title="Add dance floor">
                 <span className="text-sm leading-none">💃</span>
               </button>
               <div className="w-px h-5 bg-gray-300/50 dark:bg-gray-600/50 mx-0.5" />
-              <button onClick={() => handleAddDecoration("wall")} className={toolBtn(false)} title="Add wall">
+              <button onClick={() => activateDecoTool("wall")} className={toolBtn(toolMode === "wall")} title="Add wall">
                 <div className="w-5 h-3.5 rounded-sm bg-gradient-to-br from-slate-400 to-slate-600" />
               </button>
-              <button onClick={() => handleAddDecoration("pillar")} className={toolBtn(false)} title="Add pillar">
+              <button onClick={() => activateDecoTool("pillar")} className={toolBtn(toolMode === "pillar")} title="Add pillar">
                 <div className="w-4 h-4 rounded-full bg-gradient-to-br from-stone-400 to-stone-600" />
               </button>
-              <button onClick={() => handleAddDecoration("walkway")} className={toolBtn(false)} title="Add walkway">
+              <button onClick={() => activateDecoTool("walkway")} className={toolBtn(toolMode === "walkway")} title="Add walkway">
                 <div className="w-6 h-3 rounded-sm bg-gradient-to-br from-red-800 to-red-950 border border-red-900/60" />
               </button>
-              <button onClick={() => handleAddDecoration("deco")} className={toolBtn(false)} title="Add decoration">
-                <span className="text-sm leading-none">🌸</span>
-              </button>
+              <div ref={decoWrapperRef} className="relative">
+                <button
+                  onClick={() => setDecoPickerOpen((o) => !o)}
+                  className={toolBtn(toolMode === "deco")}
+                  title="Add decoration"
+                >
+                  <span className="text-sm leading-none">{pendingDecoEmoji ?? "🌸"}</span>
+                </button>
+                {decoPickerOpen && (
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 z-50 flex gap-1 p-1.5 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 shadow-xl">
+                    {DECO_EMOJIS.map(({ emoji, label }) => (
+                      <button
+                        key={emoji}
+                        onClick={() => handleDecoEmojiSelect(emoji)}
+                        className={`p-1.5 rounded-lg text-lg leading-none transition hover:bg-gray-100 dark:hover:bg-slate-700 ${pendingDecoEmoji === emoji ? "ring-2 ring-primary bg-primary/10" : ""}`}
+                        title={label}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="w-px h-5 bg-gray-300/50 dark:bg-gray-600/50 mx-0.5" />
               <button onClick={handleAutoArrangeLayout} className={toolBtn(false)} title="Auto-arrange tables on canvas">
                 <span className="text-sm leading-none">✨</span>
@@ -737,6 +839,21 @@ export default function FloorPlanPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
               </svg>
               Standardize
+            </button>
+
+            <button
+              onClick={() => setMultiPickMode((m) => !m)}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition ${
+                multiPickMode
+                  ? "bg-primary text-white border-primary shadow-sm shadow-primary/25"
+                  : "bg-white dark:bg-slate-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:border-primary/40 hover:text-primary dark:hover:text-primary"
+              }`}
+              title="Pick + mode: click items one by one to add/remove from selection"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-3.5 w-3.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672Zm-7.518-.267A8.25 8.25 0 1 1 20.25 10.5M8.288 14.212A5.25 5.25 0 1 1 17.25 10.5" />
+              </svg>
+              Pick +
             </button>
           </>
         )}
@@ -917,6 +1034,7 @@ export default function FloorPlanPage() {
       <TableFormModal
         isOpen={showTableModal}
         onClose={handleTableModalClose}
+        onCreated={handleTableCreated}
         initial={editTable ? { id: editTable.id, name: editTable.name, capacity: editTable.capacity } : undefined}
         guests={editTable ? guests.filter((g) => g.tableId === editTable.id) : []}
       />

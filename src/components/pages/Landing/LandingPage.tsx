@@ -156,7 +156,6 @@ export default function LandingPage() {
             margin: '0 auto',
             width: '100%',
             display: 'grid',
-            gridTemplateColumns: 'clamp(1fr, 1.2fr, 1.2fr) clamp(1fr, 0.8fr, 0.8fr)',
             gap: '4rem',
             alignItems: 'center',
           }}
@@ -185,7 +184,7 @@ export default function LandingPage() {
             </h1>
             <p
               style={{
-                color: '#7A6B5D',
+                color: '#6B5D50',
                 fontSize: '1.25rem',
                 maxWidth: '30rem',
                 marginBottom: '3rem',
@@ -200,12 +199,6 @@ export default function LandingPage() {
                 onClick={() => navigate("/login")}
               >
                 Begin Your Story →
-              </button>
-              <button
-                className="landing-btn landing-btn-outline"
-                onClick={() => navigate("/events")}
-              >
-                View Demo
               </button>
             </div>
           </div>
@@ -257,7 +250,7 @@ export default function LandingPage() {
                   fontSize: '0.65rem',
                   letterSpacing: '0.3em',
                   textTransform: 'uppercase',
-                  color: '#7A6B5D',
+                  color: '#6B5D50',
                   marginBottom: '0.75rem',
                   display: 'flex',
                   alignItems: 'center',
@@ -277,7 +270,7 @@ export default function LandingPage() {
                     border: 'none',
                     borderBottom: '1px solid #EDE4D3',
                     background: 'transparent',
-                    color: '#7A6B5D',
+                    color: '#6B5D50',
                     outline: 'none',
                     cursor: 'pointer',
                   }}
@@ -305,7 +298,7 @@ export default function LandingPage() {
                         fontSize: '0.6rem',
                         letterSpacing: '0.2em',
                         textTransform: 'uppercase',
-                        color: '#7A6B5D',
+                        color: '#6B5D50',
                         display: 'block',
                         marginTop: '0.25rem',
                       }}
@@ -378,7 +371,7 @@ export default function LandingPage() {
                 <em style={{ fontStyle: 'italic', color: '#B4543A' }}>RSVP to final dance.</em>
               </h2>
             </div>
-            <p style={{ color: '#7A6B5D', fontSize: '1.2rem', maxWidth: '32rem', lineHeight: 1.7, fontFamily: 'var(--font-serif)' }}>
+            <p style={{ color: '#6B5D50', fontSize: '1.2rem', maxWidth: '32rem', lineHeight: 1.7, fontFamily: 'var(--font-serif)' }}>
               We handle every tool you need — whether you're just getting engaged or putting the finishing touches on your seating chart.
             </p>
           </div>
@@ -433,7 +426,7 @@ export default function LandingPage() {
                 >
                   {s.title}
                 </h3>
-                <p style={{ color: '#7A6B5D', fontSize: '1.05rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
+                <p style={{ color: '#6B5D50', fontSize: '1.05rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
                   {s.desc}
                 </p>
                 <div
@@ -548,142 +541,6 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════
-          PHILOSOPHY
-      ══════════════════════════════ */}
-      <section style={{ background: '#FAF6EF', padding: '8rem 2.5rem' }}>
-        <div
-          style={{ maxWidth: '1280px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6rem', alignItems: 'center' }}
-          className="grid-cols-1 md:grid-cols-2"
-        >
-          {/* Visual panel */}
-          <div
-            style={{
-              aspectRatio: '4/5',
-              background: 'radial-gradient(ellipse at 40% 40%, #f0d5b8 0%, #d4a574 40%, #B4543A 100%)',
-              overflow: 'hidden',
-              position: 'relative',
-            }}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontStyle: 'italic',
-                  fontWeight: 300,
-                  fontSize: '16rem',
-                  color: '#FAF6EF',
-                  opacity: 0.2,
-                  lineHeight: 1,
-                  userSelect: 'none',
-                }}
-              >
-                M
-              </span>
-            </div>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.3 }}
-              aria-hidden
-            >
-              <g fill="none" stroke="#5C1F1B" strokeWidth="1">
-                <circle cx="200" cy="250" r="180" />
-                <circle cx="200" cy="250" r="140" />
-                <circle cx="200" cy="250" r="100" />
-                <circle cx="200" cy="250" r="60" />
-                <path d="M200 70 L200 430 M20 250 L380 250 M70 120 L330 380 M330 120 L70 380" />
-              </g>
-            </svg>
-          </div>
-
-          {/* Content */}
-          <div>
-            <div className="eyebrow" style={{ marginBottom: '1.5rem' }}>Our Approach</div>
-            <h2
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 300,
-                fontSize: 'clamp(2.25rem, 5vw, 4rem)',
-                lineHeight: 1.05,
-                letterSpacing: '-0.02em',
-                marginBottom: '2rem',
-              }}
-            >
-              Built around your <em style={{ fontStyle: 'italic', color: '#B4543A' }}>story.</em>
-            </h2>
-            <p style={{ color: '#7A6B5D', fontSize: '1.2rem', marginBottom: '1.5rem', lineHeight: 1.7, fontFamily: 'var(--font-serif)' }}>
-              No two weddings are alike. Our platform adapts to your vision — your guest list, your timeline, your way of doing things.
-            </p>
-            <p style={{ color: '#7A6B5D', fontSize: '1.2rem', marginBottom: '2.5rem', lineHeight: 1.7, fontFamily: 'var(--font-serif)' }}>
-              Every tool is designed to feel effortless, so you can focus on the moments that matter, not the spreadsheets.
-            </p>
-            <blockquote
-              style={{
-                borderLeft: '2px solid #B4543A',
-                paddingLeft: '2rem',
-                margin: '2.5rem 0',
-                fontFamily: 'var(--font-display)',
-                fontStyle: 'italic',
-                fontSize: '1.75rem',
-                lineHeight: 1.4,
-                color: '#2A221E',
-                fontWeight: 300,
-              }}
-            >
-              "The most beautiful weddings are the ones that feel inevitable — as if this couple could have been organised no other way."
-            </blockquote>
-            <button className="landing-btn landing-btn-outline" onClick={() => navigate("/story")}>
-              Read Our Story →
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════
-          TESTIMONIAL
-      ══════════════════════════════ */}
-      <section style={{ background: '#5C1F1B', color: '#FAF6EF', padding: '8rem 2.5rem', textAlign: 'center' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <div
-            className="eyebrow"
-            style={{ color: '#A9895A', justifyContent: 'center', display: 'inline-flex', marginBottom: '2.5rem' }}
-          >
-            Kind Words
-          </div>
-          <p
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontStyle: 'italic',
-              fontWeight: 300,
-              fontSize: 'clamp(1.75rem, 4vw, 3rem)',
-              lineHeight: 1.3,
-              maxWidth: '50rem',
-              margin: '0 auto 3rem',
-            }}
-          >
-            "We had no idea planning could feel this calm. The RSVP page was so beautiful our guests thought we'd hired a designer, and the seating chart tool saved us three arguments."
-          </p>
-          <div
-            style={{
-              fontFamily: 'var(--font-label)',
-              fontSize: '0.75rem',
-              letterSpacing: '0.3em',
-              textTransform: 'uppercase',
-              color: '#A9895A',
-            }}
-          >
-            — Sarah &amp; James · London, 2025
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════
           CTA
       ══════════════════════════════ */}
       <section style={{ background: '#F5EFE6', padding: '8rem 2.5rem', textAlign: 'center' }}>
@@ -706,7 +563,7 @@ export default function LandingPage() {
           </h2>
           <p
             style={{
-              color: '#7A6B5D',
+              color: '#6B5D50',
               maxWidth: '32rem',
               margin: '0 auto 2.5rem',
               fontSize: '1.2rem',
@@ -719,9 +576,6 @@ export default function LandingPage() {
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <button className="landing-btn" onClick={() => navigate("/login")}>
               Start a New Event →
-            </button>
-            <button className="landing-btn landing-btn-outline" onClick={() => navigate("/events")}>
-              Explore a Demo
             </button>
           </div>
         </div>
