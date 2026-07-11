@@ -6,6 +6,8 @@ import { PasswordInput } from "../../molecules/PasswordInput";
 import { Button } from "../../atoms/Button";
 import { validatePassword } from "../../../utils/passwordValidation";
 import { useAuthApi } from "../../../api/hooks/useAuthApi";
+import TurnstileWidget from "../../molecules/TurnstileWidget";
+import { isTurnstileEnabled } from "../../../utils/turnstile";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -17,6 +19,9 @@ export default function RegisterPage() {
     confirmPassword: "",
   });
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  // Bumping this remounts the widget to obtain a fresh single-use token after a failed submit.
+  const [captchaNonce, setCaptchaNonce] = useState(0);
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));
@@ -38,14 +43,23 @@ export default function RegisterPage() {
       return;
     }
 
+    if (isTurnstileEnabled && !captchaToken) {
+      setError("Please complete the CAPTCHA below.");
+      return;
+    }
+
     try {
       await register.mutateAsync({
         fullName: formData.name,
         email: formData.email,
         password: formData.password,
+        captchaToken: captchaToken ?? undefined,
       });
       navigate("/verify-email", { state: { email: formData.email } });
     } catch (err: any) {
+      // Token is single-use — refresh the widget so the user can retry.
+      setCaptchaToken(null);
+      setCaptchaNonce((n) => n + 1);
       if (err.response?.status === 409) {
         setError("email_taken");
       } else {
@@ -125,10 +139,21 @@ export default function RegisterPage() {
         </div>
       )}
 
+      {isTurnstileEnabled && (
+        <div className="flex justify-center">
+          <TurnstileWidget
+            key={captchaNonce}
+            action="register"
+            onVerify={setCaptchaToken}
+            onExpire={() => setCaptchaToken(null)}
+          />
+        </div>
+      )}
+
       <Button
         type="submit"
         variant="primary"
-        disabled={register.isPending}
+        disabled={register.isPending || (isTurnstileEnabled && !captchaToken)}
         className="w-full"
       >
         {register.isPending ? "Creating Account…" : "Create Account"}
