@@ -368,6 +368,14 @@ export const TOURS: TourDefinition[] = [
     steps: [
       {
         ...commonStepProps,
+        target: '[data-tour="checkin-practice"]',
+        title: "New here? Practise first",
+        content:
+          "Tap Practice to rehearse check-in on demo guests — scan a demo QR code or check in from the list, exactly like the real thing but without touching your real guest list. Note: a demo guest you check in auto-resets to Pending after a few hours (that's on purpose, not a bug).",
+        placement: "bottom",
+      },
+      {
+        ...commonStepProps,
         target: '[data-tour="checkin-stats"]',
         title: "Live count",
         content:

@@ -3,6 +3,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import client from "../client";
 import { PublicRsvpEndpoints, RsvpDesignEndpoints } from "../endpoints";
+import { turnstileHeaders } from "../../utils/turnstile";
 import type { RsvpDesign, ApiRsvpDesign } from "../../types/rsvpDesign";
 import { mapToFrontendDesign } from "../../utils/rsvpDesignMapper";
 import { TYPE_KEY_MAP } from "../../utils/eventUtils";
@@ -104,6 +105,8 @@ export interface RsvpSubmitPayload {
   remarks?: string;
   /** Custom form field answers keyed by questionId */
   answers: Record<string, string | string[]>;
+  /** Cloudflare Turnstile token; sent as a header, not part of the body. */
+  captchaToken?: string;
 }
 
 /**
@@ -122,15 +125,19 @@ export function useSubmitPublicRsvp() {
       }));
 
       return client
-        .post(PublicRsvpEndpoints.submit(), {
-          eventId: payload.eventId,
-          guestName: payload.guestName,
-          noOfPax: payload.noOfPax,
-          phoneNo: payload.phoneNo ?? "",
-          remarks: payload.remarks ?? "",
-          createdBy: payload.guestName,
-          answers,
-        })
+        .post(
+          PublicRsvpEndpoints.submit(),
+          {
+            eventId: payload.eventId,
+            guestName: payload.guestName,
+            noOfPax: payload.noOfPax,
+            phoneNo: payload.phoneNo ?? "",
+            remarks: payload.remarks ?? "",
+            createdBy: payload.guestName,
+            answers,
+          },
+          { headers: turnstileHeaders(payload.captchaToken) },
+        )
         .then((r) => r.data);
     },
   });
