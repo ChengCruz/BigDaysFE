@@ -1,15 +1,21 @@
-name: Build and push compiled site
+name: Build and push production site
 
 on:
   push:
-    branches: [ master ]   # ✅ your repo uses master
+    branches: [master]
 
 permissions:
-  contents: write          # ✅ allow pushing branches
+  contents: write
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: production
+
     steps:
       - uses: actions/checkout@v6
         with:
@@ -29,12 +35,11 @@ jobs:
           VITE_API_BASE=${{ secrets.VITE_API_BASE }}
           VITE_API_KEY=${{ secrets.VITE_API_KEY }}
           VITE_API_AUTHOR=${{ secrets.VITE_API_AUTHOR }}
-          VITE_ENV=${{ secrets.VITE_ENV }}
-          VITE_TURNSTILE_SITE_KEY_STG=${{ secrets.VITE_TURNSTILE_SITE_KEY_STG }}
+          VITE_ENV=production
           VITE_TURNSTILE_SITE_KEY=${{ secrets.VITE_TURNSTILE_SITE_KEY }}
           EOF
 
-      - name: Build (Vite -> dist/)
+      - name: Build production site
         run: npm run build
 
       - name: Publish dist to build branch
