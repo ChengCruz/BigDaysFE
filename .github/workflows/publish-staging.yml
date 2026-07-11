@@ -17,7 +17,14 @@ jobs:
     environment: staging
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -37,10 +44,8 @@ jobs:
         run: npm run build
 
       - name: Publish dist to build-staging branch
-        uses: s0/git-publish-subdir-action@develop
         env:
-          REPO: self
-          BRANCH: build-staging
-          FOLDER: dist
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MESSAGE: "Staging build: ({sha}) {msg}"
+          PUBLISH_BRANCH: build-staging
+          PUBLISH_MESSAGE: "Staging build: ${{ github.sha }}"
+        run: bash .github/scripts/publish-dist.sh

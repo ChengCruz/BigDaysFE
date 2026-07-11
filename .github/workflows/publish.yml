@@ -11,7 +11,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -31,10 +38,8 @@ jobs:
         run: npm run build
 
       - name: Publish dist to build branch
-        uses: s0/git-publish-subdir-action@develop
         env:
-          REPO: self
-          BRANCH: build           # or deploy
-          FOLDER: dist
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MESSAGE: "Build: ({sha}) {msg}"
+          PUBLISH_BRANCH: build
+          PUBLISH_MESSAGE: "Production build: ${{ github.sha }}"
+        run: bash .github/scripts/publish-dist.sh
