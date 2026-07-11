@@ -176,7 +176,7 @@ export default function LandingPage() {
                 marginBottom: '2rem',
               }}
             >
-              <span style={{ display: 'block' }}>Your day,</span>
+              <span style={{ display: 'block' }}>Your day,STG</span>
               <span style={{ display: 'block' }}>
                 planned <em style={{ fontStyle: 'italic', color: '#B4543A' }}>with</em>
               </span>
