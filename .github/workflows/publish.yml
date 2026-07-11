@@ -23,6 +23,8 @@ jobs:
           VITE_API_KEY=${{ secrets.VITE_API_KEY }}
           VITE_API_AUTHOR=${{ secrets.VITE_API_AUTHOR }}
           VITE_ENV=${{ secrets.VITE_ENV }}
+          VITE_TURNSTILE_SITE_KEY_STG=${{ secrets.VITE_TURNSTILE_SITE_KEY_STG }}
+          VITE_TURNSTILE_SITE_KEY=${{ secrets.VITE_TURNSTILE_SITE_KEY }}
           EOF
 
       - name: Build (Vite -> dist/)
