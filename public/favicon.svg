@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Wedding planner</title>
+  <defs>
+    <linearGradient id="bg" x1="8" y1="5" x2="57" y2="61" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B96D82"/>
+      <stop offset="1" stop-color="#7E435E"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="17" fill="url(#bg)"/>
+  <circle cx="25" cy="35" r="13" fill="none" stroke="#FFF9F4" stroke-width="5"/>
+  <circle cx="39" cy="35" r="13" fill="none" stroke="#F3D999" stroke-width="5"/>
+  <path d="M32 20.5c-4.2-6.7-13.5-1.4-9 5.5 2.1 3.2 9 7.3 9 7.3s6.9-4.1 9-7.3c4.5-6.9-4.8-12.2-9-5.5Z" fill="#FFF9F4"/>
+</svg>
