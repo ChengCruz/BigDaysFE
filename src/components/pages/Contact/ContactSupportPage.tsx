@@ -6,6 +6,8 @@ import { useAuth } from "../../../api/hooks/useAuth";
 import { useUserByGuidApi } from "../../../api/hooks/useUsersApi";
 import { useEventContext } from "../../../context/EventContext";
 import { useSendSupportMessage } from "../../../api/hooks/useContactApi";
+import TurnstileWidget from "../../molecules/TurnstileWidget";
+import { isTurnstileEnabled } from "../../../utils/turnstile";
 
 const CATEGORIES = [
   "Bug Report",
@@ -35,6 +37,9 @@ export default function ContactSupportPage() {
   const [selectedEventId, setSelectedEventId] = useState<string>(eventId ?? "");
   const [category, setCategory] = useState<string>(CATEGORIES[0]);
   const [message, setMessage] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  // Bumping this remounts the widget to obtain a fresh single-use token after a failed submit.
+  const [captchaNonce, setCaptchaNonce] = useState(0);
 
   // Default the event selector to the active event once it resolves.
   useEffect(() => {
@@ -47,6 +52,10 @@ export default function ContactSupportPage() {
       toast.error("Please enter a message.");
       return;
     }
+    if (isTurnstileEnabled && !captchaToken) {
+      toast.error("Please complete the CAPTCHA below.");
+      return;
+    }
     const selectedEvent = events?.find((ev) => ev.id === selectedEventId);
     try {
       await sendMessage.mutateAsync({
@@ -54,10 +63,16 @@ export default function ContactSupportPage() {
         eventName: selectedEvent?.title,
         category,
         message: message.trim(),
+        captchaToken: captchaToken ?? undefined,
       });
       toast.success("Thanks! Your message has been sent — we'll be in touch.");
       setMessage("");
+      setCaptchaToken(null);
+      setCaptchaNonce((n) => n + 1);
     } catch {
+      // Token is single-use — refresh the widget so the user can retry.
+      setCaptchaToken(null);
+      setCaptchaNonce((n) => n + 1);
       toast.error("Couldn't send your message. Please try again in a moment.");
     }
   };
@@ -142,12 +157,27 @@ export default function ContactSupportPage() {
           />
         </div>
 
+        {isTurnstileEnabled && (
+          <div className="mt-4 flex justify-center">
+            <TurnstileWidget
+              key={captchaNonce}
+              action="contact"
+              onVerify={setCaptchaToken}
+              onExpire={() => setCaptchaToken(null)}
+            />
+          </div>
+        )}
+
         <div className="mt-6 flex items-center justify-end gap-3">
           <p className="mr-auto flex items-center gap-1.5 text-xs text-text/50 dark:text-white/40">
             <CheckCircleIcon className="h-4 w-4 text-primary/60" />
             Sent securely from your account.
           </p>
-          <Button type="submit" loading={sendMessage.isPending} disabled={!message.trim()}>
+          <Button
+            type="submit"
+            loading={sendMessage.isPending}
+            disabled={!message.trim() || (isTurnstileEnabled && !captchaToken)}
+          >
             Send Message
           </Button>
         </div>

@@ -3,16 +3,21 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { AuthEndpoints, CrewEndpoints } from "../endpoints";
 import { tokenStore, sessionHint, crewTokenStore, crewEventGuidStore } from "../../utils/tokenStore";
+import { turnstileHeaders } from "../../utils/turnstile";
 
 export interface LoginPayload {
   email: string;
   password: string;
+  /** Cloudflare Turnstile token; sent as a header, not part of the body. */
+  captchaToken?: string;
 }
 
 export interface RegisterPayload {
   email: string;
   fullName: string;
   password: string;
+  /** Cloudflare Turnstile token; sent as a header, not part of the body. */
+  captchaToken?: string;
 }
 
 export interface ForgotPasswordPayload {
@@ -51,8 +56,10 @@ export function useAuthApi() {
   const qc = useQueryClient();
 
   const login = useMutation<AuthResponse, Error, LoginPayload>({
-    mutationFn: (data: LoginPayload) =>
-      client.post<{ data: AuthResponse }>(AuthEndpoints.login, data).then(r => r.data.data),
+    mutationFn: ({ captchaToken, ...data }: LoginPayload) =>
+      client
+        .post<{ data: AuthResponse }>(AuthEndpoints.login, data, { headers: turnstileHeaders(captchaToken) })
+        .then(r => r.data.data),
     onSuccess: (data) => {
       tokenStore.set(data.accessToken);
       sessionHint.set();
@@ -61,8 +68,8 @@ export function useAuthApi() {
   });
 
   const register = useMutation<{ data: number; message: string; isSuccess: boolean }, Error, RegisterPayload>({
-    mutationFn: (data: RegisterPayload) =>
-      client.post(AuthEndpoints.register, data).then(r => r.data),
+    mutationFn: ({ captchaToken, ...data }: RegisterPayload) =>
+      client.post(AuthEndpoints.register, data, { headers: turnstileHeaders(captchaToken) }).then(r => r.data),
   });
 
   const forgotPassword = useMutation<{ data: boolean; message: string; isSuccess: boolean }, Error, ForgotPasswordPayload>({

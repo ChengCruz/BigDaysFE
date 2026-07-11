@@ -9,6 +9,8 @@ import { Button } from "../../atoms/Button";
 import { Modal } from "../../molecules/Modal";
 import { validatePassword } from "../../../utils/passwordValidation";
 import { isDevOrStaging } from "../../../utils/env";
+import TurnstileWidget from "../../molecules/TurnstileWidget";
+import { isTurnstileEnabled } from "../../../utils/turnstile";
 import toast from "react-hot-toast";
 import { EyeIcon, EyeOffIcon } from "@heroicons/react/solid";
 
@@ -54,6 +56,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  // Bumping this remounts the widget to obtain a fresh single-use token after a failed submit.
+  const [captchaNonce, setCaptchaNonce] = useState(0);
 
   const [crewCode, setCrewCode] = useState("");
   const [crewPin, setCrewPin] = useState("");
@@ -76,10 +81,17 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (isTurnstileEnabled && !captchaToken) {
+      setError("Please complete the CAPTCHA below.");
+      return;
+    }
     try {
-      await login({ email, password });
+      await login({ email, password, captchaToken: captchaToken ?? undefined });
       nav(from, { replace: true });
     } catch (err: any) {
+      // Token is single-use — refresh the widget so the user can retry.
+      setCaptchaToken(null);
+      setCaptchaNonce((n) => n + 1);
       const errorCode = err.response?.data?.errorCode;
       if (errorCode === "ACCOUNT_NOT_ACTIVE") {
         setError("account_not_active");
@@ -411,9 +423,20 @@ export default function LoginPage() {
                   )
                 )}
 
+                {isTurnstileEnabled && (
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <TurnstileWidget
+                      key={captchaNonce}
+                      action="login"
+                      onVerify={setCaptchaToken}
+                      onExpire={() => setCaptchaToken(null)}
+                    />
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || (isTurnstileEnabled && !captchaToken)}
                   style={{
                     width: '100%',
                     padding: '1.2rem',

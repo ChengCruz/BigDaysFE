@@ -4,6 +4,7 @@ import { Modal } from "../../molecules/Modal";
 import { FormField } from "../../molecules/FormField";
 import { Button } from "../../atoms/Button";
 import { useCreateCrew, useUpdateCrew, type CrewMember } from "../../../api/hooks/useCrewApi";
+import { CheckCircleIcon } from "@heroicons/react/solid";
 import toast from "react-hot-toast";
 
 interface CrewFormModalProps {
@@ -11,9 +12,42 @@ interface CrewFormModalProps {
   onClose: () => void;
   initialData?: CrewMember;
   eventId: string;
+  eventCode?: string;
+  eventName?: string;
 }
 
-export function CrewFormModal({ isOpen, onClose, initialData, eventId }: CrewFormModalProps) {
+function copyToClipboard(value: string, label: string) {
+  navigator.clipboard?.writeText(value).then(
+    () => toast.success(`${label} copied`),
+    () => toast.error("Could not copy")
+  );
+}
+
+function CredentialRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-gray-50 dark:bg-white/5">
+      <span className="text-xs font-medium text-text/50 dark:text-white/40 uppercase tracking-wide">
+        {label}
+      </span>
+      <div className="flex items-center gap-2">
+        <code className="font-mono text-sm font-semibold">{value}</code>
+        <button
+          type="button"
+          title={`Copy ${label}`}
+          onClick={() => copyToClipboard(value, label)}
+          className="p-1 rounded text-text/40 hover:text-primary dark:text-white/30 dark:hover:text-white transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+            <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+            <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function CrewFormModal({ isOpen, onClose, initialData, eventId, eventCode, eventName }: CrewFormModalProps) {
   const isEdit = !!initialData;
   const createCrew = useCreateCrew();
   const updateCrew = useUpdateCrew();
@@ -24,6 +58,7 @@ export function CrewFormModal({ isOpen, onClose, initialData, eventId }: CrewFor
   const [confirmPin, setConfirmPin] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [created, setCreated] = useState<{ name: string; crewCode: string; pin: string } | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -33,8 +68,21 @@ export function CrewFormModal({ isOpen, onClose, initialData, eventId }: CrewFor
       setConfirmPin("");
       setIsActive(initialData?.isActive ?? true);
       setError(null);
+      setCreated(null);
     }
   }, [isOpen, initialData]);
+
+  const handleCopyInvite = () => {
+    if (!created) return;
+    const loginUrl = `${window.location.origin}/login`;
+    const message = [
+      `You're crew for ${eventName ?? "the event"} — log in at ${loginUrl} (Staff tab):`,
+      `Crew ID: ${created.crewCode}`,
+      `PIN: ${created.pin}`,
+      `Event Code: ${eventCode ?? "—"}`,
+    ].join("\n");
+    copyToClipboard(message, "Invite message");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,16 +128,17 @@ export function CrewFormModal({ isOpen, onClose, initialData, eventId }: CrewFor
           ...(pin ? { pin } : {}),
         });
         toast.success(`${name} updated.`);
+        onClose();
       } else {
-        await createCrew.mutateAsync({
+        const result = await createCrew.mutateAsync({
           name: name.trim(),
           ...(crewCode.trim() ? { crewCode: crewCode.trim() } : {}),
           pin,
           eventId,
         });
-        toast.success(`${name} added to crew.`);
+        toast.success(`${result.name} added to crew.`);
+        setCreated({ name: result.name, crewCode: result.crewCode, pin });
       }
-      onClose();
     } catch (err: any) {
       setError(err.response?.data?.message || "Something went wrong. Please try again.");
     }
@@ -101,9 +150,34 @@ export function CrewFormModal({ isOpen, onClose, initialData, eventId }: CrewFor
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEdit ? "Edit Crew Member" : "Add Crew Member"}
+      title={created ? "Crew Member Added" : isEdit ? "Edit Crew Member" : "Add Crew Member"}
       className="max-w-md"
     >
+      {created ? (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+            <CheckCircleIcon className="h-5 w-5 flex-shrink-0" />
+            <p className="font-medium text-text dark:text-white">{created.name} is ready to sign in</p>
+          </div>
+          <p className="text-sm text-text/60 dark:text-white/50">
+            Send them these — they'll enter all three under the <span className="font-medium">Staff</span> tab
+            on the login page.
+          </p>
+          <div className="space-y-2">
+            <CredentialRow label="Crew ID" value={created.crewCode} />
+            <CredentialRow label="PIN" value={created.pin} />
+            <CredentialRow label="Event Code" value={eventCode ?? "—"} />
+          </div>
+          <div className="flex gap-3 pt-1">
+            <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
+              Done
+            </Button>
+            <Button type="button" variant="primary" onClick={handleCopyInvite} className="flex-1">
+              Copy Invite Message
+            </Button>
+          </div>
+        </div>
+      ) : (
       <form onSubmit={handleSubmit} className="space-y-4">
         <FormField
           label="Name"
@@ -194,6 +268,7 @@ export function CrewFormModal({ isOpen, onClose, initialData, eventId }: CrewFor
           </Button>
         </div>
       </form>
+      )}
     </Modal>
   );
 }

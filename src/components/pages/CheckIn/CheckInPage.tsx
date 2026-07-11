@@ -3,11 +3,19 @@ import { useCheckInScanApi, useForceCheckInApi, useQrListApi, useUndoCheckInApi 
 import { useGuestsApi } from "../../../api/hooks/useGuestsApi";
 import type { CheckInErrorCode, CheckInResult } from "../../../types/qr";
 import { Button } from "../../atoms/Button";
-import { QrcodeIcon, UserGroupIcon } from "@heroicons/react/solid";
+import { QrcodeIcon, UserGroupIcon, SparklesIcon } from "@heroicons/react/solid";
 import { useEventContext } from "../../../context/EventContext";
+import { useAuth } from "../../../api/hooks/useAuth";
 import { PageLoader } from "../../atoms/PageLoader";
 import { NoEventsState } from "../../molecules/NoEventsState";
+import { PracticeCheckInModal } from "../../molecules/PracticeCheckInModal";
 import toast from "react-hot-toast";
+
+// Backend role id for a Crew (Staff) login.
+const CREW_ROLE = 6;
+// Once-per-session flag so crew get nudged to practise right after they log in,
+// without re-popping the modal on every navigation back to Check-in.
+const CREW_PRACTICE_SEEN_KEY = "bigdays.practiceCheckIn.crewSeen";
 
 type ScanState =
   | { status: "idle" }
@@ -99,6 +107,7 @@ class CameraErrorBoundary extends Component<
 
 export default function CheckInPage() {
   const { eventId, eventsLoading } = useEventContext();
+  const { userRole } = useAuth();
   const scannerRef = useRef<{ stop: () => Promise<void> } | null>(null);
   const [scanState, setScanState] = useState<ScanState>({ status: "idle" });
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -110,6 +119,7 @@ export default function CheckInPage() {
   const [forceGuestId, setForceGuestId] = useState<string | null>(null);
   const [undoGuestId, setUndoGuestId] = useState<string | null>(null);
   const [undoRecentId, setUndoRecentId] = useState<string | null>(null);
+  const [practiceOpen, setPracticeOpen] = useState(false);
 
   const checkIn = useCheckInScanApi(eventId ?? "");
   const forceCheckIn = useForceCheckInApi(eventId ?? "");
@@ -121,6 +131,18 @@ export default function CheckInPage() {
   const resetTimer = useRef<number | null>(null);
   const checkInRef = useRef(checkIn.mutateAsync.bind(checkIn));
   useEffect(() => { checkInRef.current = checkIn.mutateAsync.bind(checkIn); });
+
+  // Crew land straight on Check-in after logging in — nudge them to rehearse on
+  // the practice sandbox once per session so they're confident before real
+  // guests arrive. They can reopen it anytime via the Practice button.
+  useEffect(() => {
+    if (userRole !== CREW_ROLE) return;
+    try {
+      if (sessionStorage.getItem(CREW_PRACTICE_SEEN_KEY)) return;
+      sessionStorage.setItem(CREW_PRACTICE_SEEN_KEY, "1");
+    } catch { /* sessionStorage unavailable — still show the nudge */ }
+    setPracticeOpen(true);
+  }, [userRole]);
 
   const tokenByGuestId = useMemo(() => {
     const m = new Map<string, (typeof qrTokens)[number]>();
@@ -303,9 +325,20 @@ export default function CheckInPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 flex flex-col gap-6">
-      <div data-tour="checkin-header">
-        <h1 className="text-3xl font-display font-semibold text-primary">Guest Check-in</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Scan QR codes or manually check in guests</p>
+      <div data-tour="checkin-header" className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-display font-semibold text-primary">Guest Check-in</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Scan QR codes or manually check in guests</p>
+        </div>
+        <Button
+          data-tour="checkin-practice"
+          variant="secondary"
+          className="flex-shrink-0 gap-1.5 whitespace-nowrap"
+          onClick={() => setPracticeOpen(true)}
+        >
+          <SparklesIcon className="h-4 w-4" />
+          Practice
+        </Button>
       </div>
 
       {/* Stats */}
@@ -518,6 +551,8 @@ export default function CheckInPage() {
           </ul>
         </div>
       )}
+
+      <PracticeCheckInModal isOpen={practiceOpen} onClose={() => setPracticeOpen(false)} />
     </div>
   );
 }
