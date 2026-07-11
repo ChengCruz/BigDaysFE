@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import client from "../client";
 import { ContactEndpoints } from "../endpoints";
+import { turnstileHeaders } from "../../utils/turnstile";
 
 export interface ContactSupportPayload {
   /** Optional event the message relates to. */
@@ -11,6 +12,8 @@ export interface ContactSupportPayload {
   category: string;
   /** Free-text message body. */
   message: string;
+  /** Cloudflare Turnstile token; sent as a header, not part of the body. */
+  captchaToken?: string;
 }
 
 /**
@@ -19,8 +22,8 @@ export interface ContactSupportPayload {
  */
 export function useSendSupportMessage() {
   return useMutation({
-    mutationFn: async (payload: ContactSupportPayload) => {
-      const res = await client.post(ContactEndpoints.send, payload);
+    mutationFn: async ({ captchaToken, ...payload }: ContactSupportPayload) => {
+      const res = await client.post(ContactEndpoints.send, payload, { headers: turnstileHeaders(captchaToken) });
       return res.data;
     },
   });

@@ -8,6 +8,8 @@ import type { RsvpDesign, RsvpBlock } from "../../../../types/rsvpDesign";
 import type { FormFieldConfig } from "../../../../api/hooks/useFormFieldsApi";
 import type { RsvpSubmitPayload } from "../../../../api/hooks/usePublicRsvpApi";
 import { Spinner } from "../../../atoms/Spinner";
+import TurnstileWidget from "../../../molecules/TurnstileWidget";
+import { isRsvpTurnstileEnabled, TURNSTILE_SITE_KEY_RSVP } from "../../../../utils/turnstile";
 
 interface Props {
   design: RsvpDesign;
@@ -280,10 +282,31 @@ export default function RsvpFormRenderer({
     return Object.keys(errs).length === 0;
   };
 
+  // ── CAPTCHA (Cloudflare Turnstile) ────────────────────────────────────
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  // Bumping this remounts the widget to obtain a fresh single-use token after a failed submit.
+  const [captchaNonce, setCaptchaNonce] = useState(0);
+  // Set when the widget can't load (e.g. guest network blocks Cloudflare) so we can
+  // show a fallback instead of leaving the guest with a silently-disabled button.
+  const [captchaError, setCaptchaError] = useState(false);
+
+  // The parent handles submit errors and keeps this component mounted on failure.
+  // Detect a finished-but-still-mounted attempt (isSubmitting true→false) and refresh
+  // the widget, since the token was consumed. On success the parent unmounts us.
+  const prevSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (prevSubmittingRef.current && !isSubmitting) {
+      setCaptchaToken(null);
+      setCaptchaNonce((n) => n + 1);
+    }
+    prevSubmittingRef.current = isSubmitting;
+  }, [isSubmitting]);
+
   // ── Submit ────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+    if (isRsvpTurnstileEnabled && !captchaToken) return;
     await onSubmit({
       eventId,
       guestName: guestName.trim(),
@@ -291,6 +314,7 @@ export default function RsvpFormRenderer({
       phoneNo: phoneNo.trim(),
       remarks: remarks.trim(),
       answers,
+      captchaToken: captchaToken ?? undefined,
     });
   };
 
@@ -873,11 +897,31 @@ export default function RsvpFormRenderer({
             </section>
           )}
 
+          {/* ── CAPTCHA ── */}
+          {isRsvpTurnstileEnabled && (
+            <div className="flex flex-col items-center gap-2 pt-2">
+              <TurnstileWidget
+                key={captchaNonce}
+                action="rsvp"
+                siteKey={TURNSTILE_SITE_KEY_RSVP}
+                onVerify={(t) => { setCaptchaToken(t); setCaptchaError(false); }}
+                onExpire={() => setCaptchaToken(null)}
+                onError={() => { setCaptchaToken(null); setCaptchaError(true); }}
+              />
+              {captchaError && (
+                <p className="text-center text-xs text-rose-400">
+                  Couldn't load the verification. Please refresh the page, or disable any
+                  ad/tracker blocker and try again.
+                </p>
+              )}
+            </div>
+          )}
+
           {/* ── Submit button ── */}
           <div className={`flex justify-center ${isFlush ? "py-8" : "pb-8"}`}>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (isRsvpTurnstileEnabled && !captchaToken)}
               className="flex min-w-[220px] items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-semibold shadow-xl transition hover:opacity-90 disabled:opacity-60"
               style={{
                 background: design.submitButtonColor ?? accentColor,
