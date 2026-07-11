@@ -43,7 +43,7 @@ export function useCreateCrew() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: CreateCrewPayload) =>
-      client.post(CrewEndpoints.create, payload).then(r => r.data),
+      client.post(CrewEndpoints.create, payload).then(r => r.data.data as CrewMember),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["crew"] }),
   });
 }

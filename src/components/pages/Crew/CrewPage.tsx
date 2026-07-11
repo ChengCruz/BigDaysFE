@@ -171,6 +171,8 @@ export default function CrewPage() {
         onClose={() => setModal({ open: false })}
         initialData={modal.crew}
         eventId={eventId}
+        eventCode={event?.eventCode}
+        eventName={event?.title}
       />
 
       {/* Delete confirmation */}
