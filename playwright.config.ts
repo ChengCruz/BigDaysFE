@@ -27,7 +27,12 @@ export default defineConfig({
   projects: [
     {
       name: 'desktop',
-      use: { ...devices['Desktop Chrome'], channel: 'msedge', viewport: { width: 1280, height: 720 } },
+      use: {
+        ...devices['Desktop Chrome'],
+        // GitHub Actions installs bundled Chromium; keep Edge for local runs.
+        channel: process.env.CI ? undefined : 'msedge',
+        viewport: { width: 1280, height: 720 },
+      },
     },
     {
       name: 'tablet',
