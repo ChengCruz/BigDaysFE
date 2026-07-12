@@ -38,6 +38,7 @@ jobs:
           VITE_ENV=staging
           VITE_TURNSTILE_SITE_KEY_STG=${{ secrets.VITE_TURNSTILE_SITE_KEY_STG }}
           VITE_TURNSTILE_SITE_KEY=${{ secrets.VITE_TURNSTILE_SITE_KEY_STG }}
+          VITE_GA_MEASUREMENT_ID=${{ vars.VITE_GA_MEASUREMENT_ID }}
           EOF
 
       - name: Build staging site
