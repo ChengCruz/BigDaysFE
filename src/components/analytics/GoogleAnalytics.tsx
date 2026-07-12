@@ -5,7 +5,7 @@ type GtagArguments = [command: string, ...args: unknown[]];
 
 declare global {
   interface Window {
-    dataLayer?: GtagArguments[];
+    dataLayer?: unknown[];
     gtag?: (...args: GtagArguments) => void;
   }
 }
@@ -37,9 +37,10 @@ function initializeGoogleAnalytics(id: string): void {
   window.dataLayer = window.dataLayer ?? [];
   window.gtag =
     window.gtag ??
-    ((...args: GtagArguments) => {
-      window.dataLayer?.push(args);
-    });
+    function gtag(..._args: GtagArguments) {
+      // Match Google's canonical snippet: gtag queues its arguments object.
+      window.dataLayer?.push(arguments);
+    };
 
   window.gtag("js", new Date());
   window.gtag("config", id, { send_page_view: false });
@@ -69,6 +70,8 @@ export function GoogleAnalytics() {
 
     initializeGoogleAnalytics(measurementId);
     window.gtag?.("event", "page_view", {
+      send_to: measurementId,
+      debug_mode: new URLSearchParams(window.location.search).get("ga_debug") === "1",
       page_title: document.title,
       page_location: `${window.location.origin}${pathname}`,
       page_path: pathname,
