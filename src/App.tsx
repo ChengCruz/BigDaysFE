@@ -3,6 +3,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthProvider";
 import { EventProvider } from "./context/EventContext";
 import Routes from "./routers/routes";
+import { GoogleAnalytics } from "./components/analytics/GoogleAnalytics";
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
       <AuthProvider>
         <EventProvider>
           <BrowserRouter>
+            <GoogleAnalytics />
             <Routes />
           </BrowserRouter>
         </EventProvider>
