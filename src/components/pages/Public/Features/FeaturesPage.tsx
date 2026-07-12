@@ -45,12 +45,6 @@ const features = [
   },
 ];
 
-const stats = [
-  { value: "1", label: "Platform for everything" },
-  { value: "0", label: "Guest logins required" },
-  { value: "24/7", label: "Real-time updates" },
-];
-
 // Real product screenshots — captured from the live app (see tests/showcase-capture.spec.ts)
 const showcase = [
   {
@@ -120,7 +114,7 @@ export default function FeaturesPage() {
       <section style={{ background: '#FAF6EF', padding: '8rem 2.5rem' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
           <div
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}
+            style={{ display: 'grid', gap: '2rem' }}
             className="grid-cols-1 md:grid-cols-3"
           >
             {features.map((f, i) => (
@@ -228,32 +222,6 @@ export default function FeaturesPage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Stats band */}
-      <section style={{ background: '#2A221E', padding: '6rem 2.5rem' }}>
-        <div
-          style={{ maxWidth: '1280px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem', textAlign: 'center' }}
-          className="grid-cols-1 md:grid-cols-3"
-        >
-          {stats.map((s, i) => (
-            <div
-              key={i}
-              style={{
-                padding: '2rem',
-                borderTop: '2px solid #B4543A',
-                borderRight: i < stats.length - 1 ? '1px solid rgba(250, 246, 239, 0.08)' : 'none',
-              }}
-            >
-              <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 300, fontSize: '4rem', color: '#B4543A', lineHeight: 1, marginBottom: '1rem' }}>
-                {s.value}
-              </div>
-              <div style={{ fontFamily: 'var(--font-label)', fontSize: '0.75rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(250, 246, 239, 0.6)' }}>
-                {s.label}
-              </div>
-            </div>
-          ))}
         </div>
       </section>
 

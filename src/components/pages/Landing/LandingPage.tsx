@@ -18,17 +18,6 @@ function getCountdown(target: string): Countdown {
   };
 }
 
-const marqueeItems = [
-  "RSVP Management",
-  "Guest Tracking",
-  "Seating Charts",
-  "Budget Planning",
-  "Custom Forms",
-  "QR Check-In",
-  "Vendor Notes",
-  "Timeline Builder",
-];
-
 const howItWorksSteps = [
   {
     num: "01",
@@ -127,8 +116,6 @@ export default function LandingPage() {
     { label: "sec",     value: countdown.seconds },
   ] as const;
 
-  const doubled = [...marqueeItems, ...marqueeItems];
-
   return (
     <div style={{ fontFamily: 'var(--font-serif)', color: '#2A221E', overflowX: 'hidden' }}>
 
@@ -136,9 +123,9 @@ export default function LandingPage() {
           HERO
       ══════════════════════════════ */}
       <section
+        className="px-6 md:px-10 pt-12 md:pt-40 pb-16 md:pb-24"
         style={{
           minHeight: '100vh',
-          padding: '10rem 2.5rem 6rem',
           display: 'flex',
           alignItems: 'center',
           background: `
@@ -314,46 +301,13 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════
-          MARQUEE
-      ══════════════════════════════ */}
-      <div
-        style={{
-          background: '#2A221E',
-          color: '#FAF6EF',
-          padding: '1.5rem 0',
-          overflow: 'hidden',
-          borderTop: '1px solid #B4543A',
-          borderBottom: '1px solid #B4543A',
-        }}
-      >
-        <div
-          className="animate-marquee"
-          style={{
-            display: 'flex',
-            gap: '3rem',
-            whiteSpace: 'nowrap',
-            fontFamily: 'var(--font-display)',
-            fontStyle: 'italic',
-            fontSize: '1.5rem',
-          }}
-        >
-          {doubled.map((item, i) => (
-            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '3rem' }}>
-              {item}
-              <span style={{ color: '#B4543A', fontStyle: 'normal', fontSize: '1rem' }}>✦</span>
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* ══════════════════════════════
           SERVICES
       ══════════════════════════════ */}
       <section style={{ background: '#F5EFE6', padding: '8rem 2.5rem' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
           {/* Header */}
           <div
-            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'end', marginBottom: '5rem' }}
+            style={{ display: 'grid', gap: '4rem', alignItems: 'end', marginBottom: '5rem' }}
             className="grid-cols-1 md:grid-cols-2"
           >
             <div>
@@ -378,7 +332,7 @@ export default function LandingPage() {
 
           {/* Cards */}
           <div
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}
+            style={{ display: 'grid', gap: '2rem' }}
             className="grid-cols-1 md:grid-cols-3"
           >
             {services.map((s, i) => (
@@ -483,7 +437,7 @@ export default function LandingPage() {
 
           {/* Steps */}
           <div
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}
+            style={{ display: 'grid' }}
             className="grid-cols-1 md:grid-cols-4"
           >
             {howItWorksSteps.map((s, i) => (
