@@ -4,6 +4,7 @@ import { AuthProvider } from "./context/AuthProvider";
 import { EventProvider } from "./context/EventContext";
 import Routes from "./routers/routes";
 import { GoogleAnalytics } from "./components/analytics/GoogleAnalytics";
+import ScrollToTop from "./components/ScrollToTop";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <EventProvider>
           <BrowserRouter>
             <GoogleAnalytics />
+            <ScrollToTop />
             <Routes />
           </BrowserRouter>
         </EventProvider>
