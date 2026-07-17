@@ -6,6 +6,7 @@ import { useAuthApi } from "../../../api/hooks/useAuthApi";
 import { FormField } from "../../molecules/FormField";
 import { PasswordInput } from "../../molecules/PasswordInput";
 import { Button } from "../../atoms/Button";
+import { BrandWordmark } from "../../atoms/BrandWordmark";
 import { Modal } from "../../molecules/Modal";
 import { validatePassword } from "../../../utils/passwordValidation";
 import { isDevOrStaging } from "../../../utils/env";
@@ -175,8 +176,7 @@ export default function LoginPage() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          height: '100vh',
+          minHeight: '100vh',
           overflow: 'hidden',
         }}
         className="grid-cols-1 md:grid-cols-2"
@@ -254,23 +254,6 @@ export default function LoginPage() {
             <p style={{ color: '#6B5D50', fontSize: '1.1rem', maxWidth: '28rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
               Access your events, guest lists, seating charts, and RSVP responses — everything built together, whenever you need it.
             </p>
-            <blockquote
-              style={{
-                borderLeft: '1px solid #A9895A',
-                paddingLeft: '1.25rem',
-                marginTop: '2rem',
-                fontFamily: 'var(--font-display)',
-                fontStyle: 'italic',
-                fontSize: '1.1rem',
-                color: '#5C4A3E',
-                maxWidth: '26rem',
-              }}
-            >
-              "I logged in the week of the wedding and realised how much had been quietly handled. Everything accounted for."
-              <span style={{ display: 'block', marginTop: '0.75rem', fontFamily: 'var(--font-label)', fontStyle: 'normal', fontSize: '0.65rem', letterSpacing: '0.25em', color: '#A9895A', textTransform: 'uppercase' }}>
-                — Sarah &amp; James · London, 2025
-              </span>
-            </blockquote>
           </div>
 
           {/* Bottom */}
@@ -287,8 +270,7 @@ export default function LoginPage() {
               color: '#6B5D50',
             }}
           >
-            <span>Secure · Encrypted</span>
-            <span>Est. 2024</span>
+            <span>Planned with love</span>
           </div>
         </div>
 
@@ -428,6 +410,7 @@ export default function LoginPage() {
                     <TurnstileWidget
                       key={captchaNonce}
                       action="login"
+                      theme="light"
                       onVerify={setCaptchaToken}
                       onExpire={() => setCaptchaToken(null)}
                     />
@@ -540,6 +523,23 @@ export default function LoginPage() {
               </form>
             )}
           </div>
+
+          {/* Mobile-only footer — brand context the desktop left panel already provides */}
+          <footer
+            className="md:hidden"
+            style={{
+              marginTop: '1.5rem',
+              paddingTop: '1.5rem',
+              paddingBottom: '0.5rem',
+              borderTop: '1px solid #EDE4D3',
+              textAlign: 'center',
+            }}
+          >
+            <BrandWordmark size="1.1rem" />
+            <div style={{ marginTop: '0.5rem', fontFamily: 'var(--font-label)', fontSize: '0.6rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#6B5D50' }}>
+              Planned with love · © {new Date().getFullYear()}
+            </div>
+          </footer>
         </div>
       </div>
 

@@ -38,10 +38,10 @@ export default function ContactPage() {
     <div style={{ fontFamily: 'var(--font-serif)', color: '#2A221E' }}>
 
       {/* Page hero */}
-      <section style={{ padding: '8rem 2.5rem 4rem', background: '#F5EFE6', textAlign: 'center' }}>
+      <section style={{ padding: '5.5rem 2.5rem 3.5rem', background: '#F5EFE6', textAlign: 'center' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
           <div className="eyebrow" style={{ justifyContent: 'center', display: 'inline-flex', marginBottom: '1.5rem' }}>Get in Touch</div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: 'clamp(3rem, 8vw, 6.5rem)', lineHeight: 1.05, letterSpacing: '-0.02em', maxWidth: '20ch', margin: '0 auto 1.5rem' }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: 'clamp(2.25rem, 4.5vw, 3.5rem)', lineHeight: 1.05, letterSpacing: '-0.02em', maxWidth: '20ch', margin: '0 auto 1.25rem' }}>
             Let's begin a <em style={{ color: '#B4543A' }}>conversation.</em>
           </h1>
           <p style={{ color: '#6B5D50', fontSize: '1.25rem', maxWidth: '36rem', margin: '0 auto', lineHeight: 1.7 }}>
@@ -53,7 +53,7 @@ export default function ContactPage() {
       {/* Contact grid */}
       <section style={{ background: '#FAF6EF', padding: '8rem 2.5rem' }}>
         <div
-          style={{ maxWidth: '1280px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: '5rem', alignItems: 'start' }}
+          style={{ maxWidth: '1280px', margin: '0 auto', display: 'grid', gap: '5rem', alignItems: 'start' }}
           className="grid-cols-1 md:grid-cols-[1.3fr_1fr]"
         >
           {/* Form */}
@@ -128,10 +128,9 @@ export default function ContactPage() {
           {/* Sidebar info */}
           <div>
             {[
-              { label: "Write Directly", big: "hello@mybigday.app", sub: "For enquiries, feedback, and general questions." },
-              { label: "Already a User?",big: null,                  sub: null, link: true },
-            ].map((block, i) => (
-              <div key={i} style={{ marginBottom: '3rem', paddingBottom: '3rem', borderBottom: i < 2 ? '1px solid #EDE4D3' : 'none' }}>
+              { label: "Already a User?", big: null, sub: null, link: true },
+            ].map((block, i, arr) => (
+              <div key={i} style={{ marginBottom: '3rem', paddingBottom: '3rem', borderBottom: i < arr.length - 1 ? '1px solid #EDE4D3' : 'none' }}>
                 <div style={{ fontFamily: 'var(--font-label)', fontSize: '0.7rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#B4543A', marginBottom: '1.5rem', fontWeight: 400 }}>
                   {block.label}
                 </div>
@@ -153,19 +152,6 @@ export default function ContactPage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Dark CTA */}
-      <section style={{ background: '#5C1F1B', color: '#FAF6EF', padding: '8rem 2.5rem', textAlign: 'center' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <div className="eyebrow" style={{ color: '#A9895A', justifyContent: 'center', display: 'inline-flex', marginBottom: '1.5rem' }}>A Final Note</div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: 'clamp(2.25rem, 5vw, 4rem)', lineHeight: 1.05, letterSpacing: '-0.02em', color: '#FAF6EF', maxWidth: '34rem', margin: '0 auto 2rem' }}>
-            We read <em style={{ color: '#A9895A' }}>everything</em> you send us.
-          </h2>
-          <p style={{ maxWidth: '36rem', margin: '0 auto', color: 'rgba(250,246,239,0.8)', fontSize: '1.15rem', lineHeight: 1.7, fontFamily: 'var(--font-serif)' }}>
-            Every message helps shape where we take the product next.
-          </p>
         </div>
       </section>
 

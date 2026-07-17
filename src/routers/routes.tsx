@@ -9,8 +9,6 @@ import VerifyEmailPage from "../components/pages/Auth/VerifyEmailPage";
 import ResetPasswordPage from "../components/pages/Auth/ResetPasswordPage";
 import ContactPage from "../components/pages/Auth/ContactPage";
 import FeaturesPage from "../components/pages/Public/Features/FeaturesPage";
-import GalleryPage from "../components/pages/Public/Gallery/GalleryPage";
-import BlogPage from "../components/pages/Public/Blog/BlogPage";
 
 import PublicTemplate from "../components/templates/PublicTemplate";
 import { Navbar } from "../components/organisms/Navbar";
@@ -136,9 +134,7 @@ export default function AppRoutes() {
         {/* public landing pages */}
         <Route path="/rsvp"    element={<RSVPPublicPage />} />
         <Route path="/features" element={<FeaturesPage />} />
-        <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/contact" element={<ContactPage />} />
-        <Route path="/blog"    element={<BlogPage />} />
         {/* Guest self-service QR lookup */}
         <Route path="/qr/lookup/:eventId" element={<QrLookupPage />} />
       </Route>
