@@ -29,21 +29,24 @@ const labelStyle: React.CSSProperties = {
 export default function VerifyEmailPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const email = (location.state as any)?.email as string | undefined;
+  const emailFromState = (location.state as any)?.email as string | undefined;
   const { verifyEmail } = useAuthApi();
-  const [token, setToken] = useState("");
+  const [email, setEmail] = useState(emailFromState ?? "");
+  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  const ready = email.trim().length > 0 && code.length === 6;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     try {
-      const result = await verifyEmail.mutateAsync({ token: token.trim() });
+      const result = await verifyEmail.mutateAsync({ email: email.trim(), code: code.trim() });
       if (result.isSuccess) {
         toast.success("Email verified! You can now sign in.");
         navigate("/login");
       } else {
-        setError("Invalid or expired verification code. Please check your email and try again.");
+        setError(result.message || "Invalid or expired verification code. Please check your email and try again.");
       }
     } catch (err: any) {
       setError(err.response?.data?.message || "Verification failed. Please try again.");
@@ -172,22 +175,40 @@ export default function VerifyEmailPage() {
           </h1>
 
           <p style={{ color: '#6B5D50', marginBottom: '2rem', fontSize: '1.1rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
-            {email
-              ? <>Check <strong style={{ color: '#2A221E' }}>{email}</strong> for your verification code.</>
-              : "Check your inbox for your verification code."}
+            {emailFromState
+              ? <>Check <strong style={{ color: '#2A221E' }}>{emailFromState}</strong> for your 6-digit verification code.</>
+              : "Enter your email and the 6-digit code we sent you."}
           </p>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>
+            {!emailFromState && (
+              <div>
+                <label style={labelStyle}>Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={e => { setEmail(e.target.value); setError(null); }}
+                  placeholder="you@example.com"
+                  style={inputStyle}
+                  autoComplete="email"
+                  onFocus={e => (e.target.style.borderBottomColor = '#B4543A')}
+                  onBlur={e => (e.target.style.borderBottomColor = '#EDE4D3')}
+                />
+              </div>
+            )}
             <div>
               <label style={labelStyle}>Verification Code</label>
               <input
                 type="text"
                 required
-                value={token}
-                onChange={e => { setToken(e.target.value); setError(null); }}
-                placeholder="Paste the code from your email"
-                style={inputStyle}
-                autoComplete="off"
+                value={code}
+                onChange={e => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(null); }}
+                placeholder="6-digit code"
+                style={{ ...inputStyle, letterSpacing: '0.35em', fontSize: '1.4rem' }}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
                 spellCheck={false}
                 onFocus={e => (e.target.style.borderBottomColor = '#B4543A')}
                 onBlur={e => (e.target.style.borderBottomColor = '#EDE4D3')}
@@ -200,22 +221,22 @@ export default function VerifyEmailPage() {
 
             <button
               type="submit"
-              disabled={verifyEmail.isPending || !token.trim()}
+              disabled={verifyEmail.isPending || !ready}
               style={{
                 width: '100%',
                 padding: '1.2rem',
-                background: verifyEmail.isPending || !token.trim() ? '#6B5D50' : '#2A221E',
+                background: verifyEmail.isPending || !ready ? '#6B5D50' : '#2A221E',
                 color: '#FAF6EF',
                 border: 'none',
                 fontFamily: 'var(--font-label)',
                 fontSize: '0.75rem',
                 letterSpacing: '0.3em',
                 textTransform: 'uppercase' as const,
-                cursor: verifyEmail.isPending || !token.trim() ? 'not-allowed' : 'pointer',
+                cursor: verifyEmail.isPending || !ready ? 'not-allowed' : 'pointer',
                 transition: 'background 0.3s ease',
               }}
-              onMouseEnter={e => { if (!verifyEmail.isPending && token.trim()) (e.currentTarget as HTMLElement).style.background = '#B4543A'; }}
-              onMouseLeave={e => { if (!verifyEmail.isPending && token.trim()) (e.currentTarget as HTMLElement).style.background = '#2A221E'; }}
+              onMouseEnter={e => { if (!verifyEmail.isPending && ready) (e.currentTarget as HTMLElement).style.background = '#B4543A'; }}
+              onMouseLeave={e => { if (!verifyEmail.isPending && ready) (e.currentTarget as HTMLElement).style.background = '#2A221E'; }}
             >
               {verifyEmail.isPending ? "Verifying…" : "Verify Email →"}
             </button>

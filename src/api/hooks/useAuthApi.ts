@@ -31,7 +31,8 @@ export interface ResetPasswordPayload {
 }
 
 export interface VerifyEmailPayload {
-  token: string;
+  email: string;
+  code: string;
 }
 
 export interface AuthResponse {
