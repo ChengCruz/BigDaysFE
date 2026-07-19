@@ -179,7 +179,7 @@ export default function LoginPage() {
           minHeight: '100vh',
           overflow: 'hidden',
         }}
-        className="grid-cols-1 md:grid-cols-2"
+        className="grid-cols-1 md:grid-cols-2 content-start md:content-stretch"
       >
         {/* ── Left panel: brand showcase (cream) ── */}
         <div
@@ -189,10 +189,8 @@ export default function LoginPage() {
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'space-between',
-            padding: '3rem',
           }}
-          className="hidden md:flex"
+          className="justify-start md:justify-between gap-8 md:gap-0 px-6 py-8 md:p-12"
         >
           {/* Botanical overlay — gold line art on cream */}
           <svg
@@ -227,7 +225,7 @@ export default function LoginPage() {
                 alt="My Big Day"
                 width={1399}
                 height={1486}
-                style={{ height: 168, width: 'auto', display: 'block' }}
+                className="block w-auto h-28 md:h-[168px]"
               />
             </Link>
           </div>
@@ -251,17 +249,17 @@ export default function LoginPage() {
               Your planning,<br />all in{" "}
               <em style={{ fontStyle: 'italic', color: '#B4543A' }}>one place.</em>
             </h2>
-            <p style={{ color: '#6B5D50', fontSize: '1.1rem', maxWidth: '28rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
+            <p className="hidden md:block" style={{ color: '#6B5D50', fontSize: '1.1rem', maxWidth: '28rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
               Access your events, guest lists, seating charts, and RSVP responses — everything built together, whenever you need it.
             </p>
           </div>
 
           {/* Bottom */}
           <div
+            className="hidden md:flex"
             style={{
               position: 'relative',
               zIndex: 2,
-              display: 'flex',
               justifyContent: 'space-between',
               fontFamily: 'var(--font-label)',
               fontSize: '0.65rem',
