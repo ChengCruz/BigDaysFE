@@ -9,6 +9,7 @@ import { FormField } from "../../molecules/FormField";
 import { Button } from "../../atoms/Button";
 import { validatePassword } from "../../../utils/passwordValidation";
 import { isDevOrStaging } from "../../../utils/env";
+import { apiErrorMessage } from "../../../utils/apiError";
 import toast from "react-hot-toast";
 
 export default function ResetPasswordPage() {
@@ -42,7 +43,7 @@ export default function ResetPasswordPage() {
       toast.success("Password reset! Please sign in with your new password.");
       navigate("/login", { replace: true });
     } catch (err: any) {
-      setError(err.response?.data?.message || "Invalid or expired token. Please try again.");
+      setError(apiErrorMessage(err, "Invalid or expired token. Please try again."));
     }
   };
 

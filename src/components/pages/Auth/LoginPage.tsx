@@ -10,6 +10,7 @@ import { BrandWordmark } from "../../atoms/BrandWordmark";
 import { Modal } from "../../molecules/Modal";
 import { validatePassword } from "../../../utils/passwordValidation";
 import { isDevOrStaging } from "../../../utils/env";
+import { apiErrorMessage } from "../../../utils/apiError";
 import TurnstileWidget from "../../molecules/TurnstileWidget";
 import { isTurnstileEnabled } from "../../../utils/turnstile";
 import toast from "react-hot-toast";
@@ -97,7 +98,7 @@ export default function LoginPage() {
       if (errorCode === "ACCOUNT_NOT_ACTIVE") {
         setError("account_not_active");
       } else {
-        setError(err.response?.data?.message || "Login failed");
+        setError(apiErrorMessage(err, "Login failed"));
       }
     }
   };
@@ -111,7 +112,7 @@ export default function LoginPage() {
       await crewLogin({ crewCode: crewCode.trim(), pin: crewPin, eventCode: crewEventCode.trim() });
       nav("/app/checkin", { replace: true });
     } catch (err: any) {
-      setError(err.response?.data?.message || "Invalid Crew ID, PIN, or Event ID.");
+      setError(apiErrorMessage(err, "Invalid Crew ID, PIN, or Event ID."));
     }
   };
 
@@ -135,12 +136,14 @@ export default function LoginPage() {
       try {
         const res = await forgotPassword.mutateAsync({ email: forgotEmail });
         const devToken = /reset password:\s*(\S+)/i.exec(res.message ?? "")?.[1] ?? "";
+        // No token in the response means this env emails it instead — fall through
+        // to the in-modal reset step rather than deep-linking with an empty token.
+        if (!devToken) { setForgotStep("reset"); return; }
         setForgotOpen(false);
-        const q = new URLSearchParams({ email: forgotEmail });
-        if (devToken) q.set("token", devToken);
+        const q = new URLSearchParams({ email: forgotEmail, token: devToken });
         nav(`/reset-password?${q.toString()}`);
       } catch (err: any) {
-        setForgotError(err.response?.data?.message || "Something went wrong. Please try again.");
+        setForgotError(apiErrorMessage(err, "Something went wrong. Please try again."));
       }
       return;
     }
@@ -148,7 +151,7 @@ export default function LoginPage() {
       await forgotPassword.mutateAsync({ email: forgotEmail });
       setForgotStep("reset");
     } catch (err: any) {
-      setForgotError(err.response?.data?.message || "Something went wrong. Please try again.");
+      setForgotError(apiErrorMessage(err, "Something went wrong. Please try again."));
     }
   };
 
@@ -166,7 +169,7 @@ export default function LoginPage() {
       toast.success("Password reset! Please sign in with your new password.");
       setForgotOpen(false);
     } catch (err: any) {
-      setForgotError(err.response?.data?.message || "Invalid or expired token. Please try again.");
+      setForgotError(apiErrorMessage(err, "Invalid or expired token. Please try again."));
     }
   };
 
