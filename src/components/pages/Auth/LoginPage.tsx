@@ -10,6 +10,7 @@ import { BrandWordmark } from "../../atoms/BrandWordmark";
 import { Modal } from "../../molecules/Modal";
 import { validatePassword } from "../../../utils/passwordValidation";
 import { isDevOrStaging } from "../../../utils/env";
+import { apiErrorMessage } from "../../../utils/apiError";
 import TurnstileWidget from "../../molecules/TurnstileWidget";
 import { isTurnstileEnabled } from "../../../utils/turnstile";
 import toast from "react-hot-toast";
@@ -97,7 +98,7 @@ export default function LoginPage() {
       if (errorCode === "ACCOUNT_NOT_ACTIVE") {
         setError("account_not_active");
       } else {
-        setError(err.response?.data?.message || "Login failed");
+        setError(apiErrorMessage(err, "Login failed"));
       }
     }
   };
@@ -111,7 +112,7 @@ export default function LoginPage() {
       await crewLogin({ crewCode: crewCode.trim(), pin: crewPin, eventCode: crewEventCode.trim() });
       nav("/app/checkin", { replace: true });
     } catch (err: any) {
-      setError(err.response?.data?.message || "Invalid Crew ID, PIN, or Event ID.");
+      setError(apiErrorMessage(err, "Invalid Crew ID, PIN, or Event ID."));
     }
   };
 
@@ -135,12 +136,14 @@ export default function LoginPage() {
       try {
         const res = await forgotPassword.mutateAsync({ email: forgotEmail });
         const devToken = /reset password:\s*(\S+)/i.exec(res.message ?? "")?.[1] ?? "";
+        // No token in the response means this env emails it instead — fall through
+        // to the in-modal reset step rather than deep-linking with an empty token.
+        if (!devToken) { setForgotStep("reset"); return; }
         setForgotOpen(false);
-        const q = new URLSearchParams({ email: forgotEmail });
-        if (devToken) q.set("token", devToken);
+        const q = new URLSearchParams({ email: forgotEmail, token: devToken });
         nav(`/reset-password?${q.toString()}`);
       } catch (err: any) {
-        setForgotError(err.response?.data?.message || "Something went wrong. Please try again.");
+        setForgotError(apiErrorMessage(err, "Something went wrong. Please try again."));
       }
       return;
     }
@@ -148,7 +151,7 @@ export default function LoginPage() {
       await forgotPassword.mutateAsync({ email: forgotEmail });
       setForgotStep("reset");
     } catch (err: any) {
-      setForgotError(err.response?.data?.message || "Something went wrong. Please try again.");
+      setForgotError(apiErrorMessage(err, "Something went wrong. Please try again."));
     }
   };
 
@@ -166,7 +169,7 @@ export default function LoginPage() {
       toast.success("Password reset! Please sign in with your new password.");
       setForgotOpen(false);
     } catch (err: any) {
-      setForgotError(err.response?.data?.message || "Invalid or expired token. Please try again.");
+      setForgotError(apiErrorMessage(err, "Invalid or expired token. Please try again."));
     }
   };
 
@@ -179,7 +182,7 @@ export default function LoginPage() {
           minHeight: '100vh',
           overflow: 'hidden',
         }}
-        className="grid-cols-1 md:grid-cols-2"
+        className="grid-cols-1 md:grid-cols-2 content-start md:content-stretch"
       >
         {/* ── Left panel: brand showcase (cream) ── */}
         <div
@@ -189,10 +192,8 @@ export default function LoginPage() {
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'space-between',
-            padding: '3rem',
           }}
-          className="hidden md:flex"
+          className="justify-start md:justify-between gap-8 md:gap-0 px-6 py-8 md:p-12"
         >
           {/* Botanical overlay — gold line art on cream */}
           <svg
@@ -227,7 +228,7 @@ export default function LoginPage() {
                 alt="My Big Day"
                 width={1399}
                 height={1486}
-                style={{ height: 168, width: 'auto', display: 'block' }}
+                className="block w-auto h-28 md:h-[168px]"
               />
             </Link>
           </div>
@@ -251,17 +252,17 @@ export default function LoginPage() {
               Your planning,<br />all in{" "}
               <em style={{ fontStyle: 'italic', color: '#B4543A' }}>one place.</em>
             </h2>
-            <p style={{ color: '#6B5D50', fontSize: '1.1rem', maxWidth: '28rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
+            <p className="hidden md:block" style={{ color: '#6B5D50', fontSize: '1.1rem', maxWidth: '28rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
               Access your events, guest lists, seating charts, and RSVP responses — everything built together, whenever you need it.
             </p>
           </div>
 
           {/* Bottom */}
           <div
+            className="hidden md:flex"
             style={{
               position: 'relative',
               zIndex: 2,
-              display: 'flex',
               justifyContent: 'space-between',
               fontFamily: 'var(--font-label)',
               fontSize: '0.65rem',
