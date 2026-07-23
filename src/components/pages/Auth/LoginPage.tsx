@@ -126,6 +126,14 @@ export default function LoginPage() {
     setForgotError(null);
   };
 
+  const handleUseDifferentEmail = () => {
+    // Re-requesting issues a fresh token, so drop the old one — leaving it in the
+    // field means the next submit fails with a confusing "invalid token".
+    setForgotStep("request");
+    setResetToken("");
+    setForgotError(null);
+  };
+
   const handleForgotRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     setForgotError(null);
@@ -395,14 +403,15 @@ export default function LoginPage() {
 
                 {error && (
                   error === "account_not_active" ? (
-                    <p style={{ color: '#B4543A', fontSize: '0.9rem', fontFamily: 'var(--font-serif)' }}>
-                      Your email isn't verified yet.{" "}
-                      <Link to="/verify-email" style={{ color: '#B4543A', borderBottom: '1px solid #B4543A', paddingBottom: '1px' }}>
+                    <p style={{ color: '#EF4444', fontSize: '0.9rem', fontFamily: 'var(--font-serif)' }}>
+                      Your email isn't verified yet.
+                      <br />
+                      <Link to="/verify-email" style={{ color: '#EF4444', borderBottom: '1px solid #EF4444', paddingBottom: '1px' }}>
                         Enter your verification code
                       </Link>
                     </p>
                   ) : (
-                    <p style={{ color: '#B4543A', fontSize: '0.9rem', fontFamily: 'var(--font-serif)' }}>{error}</p>
+                    <p style={{ color: '#EF4444', fontSize: '0.9rem', fontFamily: 'var(--font-serif)' }}>{error}</p>
                   )
                 )}
 
@@ -499,7 +508,7 @@ export default function LoginPage() {
                     </button>
                   </div>
                 </div>
-                {error && <p style={{ color: '#B4543A', fontSize: '0.9rem' }}>{error}</p>}
+                {error && <p style={{ color: '#EF4444', fontSize: '0.9rem' }}>{error}</p>}
                 <button
                   type="submit"
                   disabled={loading}
@@ -545,7 +554,7 @@ export default function LoginPage() {
       </div>
 
       {/* Forgot Password Modal (existing logic, preserved) */}
-      <Modal isOpen={forgotOpen} onClose={() => setForgotOpen(false)} title="Reset Password" className="max-w-sm">
+      <Modal isOpen={forgotOpen} onClose={() => setForgotOpen(false)} title="Reset Password" className="max-w-sm" showCloseButton>
         {forgotStep === "request" ? (
           <form onSubmit={handleForgotRequest} className="space-y-4">
             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -559,6 +568,12 @@ export default function LoginPage() {
                 {forgotPassword.isPending ? "Sending…" : "Send Reset Link"}
               </Button>
             </div>
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+              Don't have an account?{" "}
+              <Link to="/register" className="text-primary hover:underline" onClick={() => setForgotOpen(false)}>
+                Create one
+              </Link>
+            </p>
           </form>
         ) : (
           <form onSubmit={handleResetPassword} className="space-y-4">
@@ -569,11 +584,11 @@ export default function LoginPage() {
             <PasswordInput label="New Password" value={newPassword} onChange={e => setNewPassword(e.target.value)} showValidation showStrength required placeholder="Create a strong password" autoComplete="new-password" />
             <PasswordInput label="Confirm Password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} showValidation={false} showStrength={false} required placeholder="Re-enter your password" autoComplete="new-password" />
             {forgotError && <p className="text-red-500 text-sm whitespace-pre-line">{forgotError}</p>}
-            <div className="flex gap-3">
-              <Button type="button" variant="secondary" onClick={() => setForgotStep("request")} className="flex-1">Back</Button>
-              <Button type="submit" variant="primary" disabled={resetPassword.isPending} className="flex-1">
+            <div className="flex flex-col gap-2">
+              <Button type="submit" variant="primary" disabled={resetPassword.isPending} className="w-full">
                 {resetPassword.isPending ? "Resetting…" : "Reset Password"}
               </Button>
+              <Button type="button" variant="ghost" onClick={handleUseDifferentEmail} className="w-full">Use a different email</Button>
             </div>
           </form>
         )}

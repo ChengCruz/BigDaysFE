@@ -1,7 +1,30 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuthApi } from "../../../api/hooks/useAuthApi";
 import toast from "react-hot-toast";
+
+const VERIFIED_EMAILS_KEY = "mbd_verified_emails";
+
+function getVerifiedEmails(): string[] {
+  try {
+    const raw = localStorage.getItem(VERIFIED_EMAILS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function markEmailVerified(email: string) {
+  try {
+    const normalized = email.trim().toLowerCase();
+    const emails = getVerifiedEmails();
+    if (!emails.includes(normalized)) {
+      localStorage.setItem(VERIFIED_EMAILS_KEY, JSON.stringify([...emails, normalized].slice(-10)));
+    }
+  } catch {
+    // localStorage unavailable — worst case the form just shows again
+  }
+}
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -35,6 +58,18 @@ export default function VerifyEmailPage() {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  // Guards against: (1) browser back-button after a successful verify (handled by the
+  // `replace` navigation below) and (2) revisiting this route later, e.g. via the original
+  // email link, when this device already completed verification for that address.
+  const alreadyVerified = !!emailFromState && getVerifiedEmails().includes(emailFromState.trim().toLowerCase());
+
+  useEffect(() => {
+    if (alreadyVerified) {
+      toast.success("Your account is already verified — please sign in.");
+      navigate("/login", { replace: true });
+    }
+  }, [alreadyVerified, navigate]);
+
   const ready = email.trim().length > 0 && code.length === 6;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,8 +78,9 @@ export default function VerifyEmailPage() {
     try {
       const result = await verifyEmail.mutateAsync({ email: email.trim(), code: code.trim() });
       if (result.isSuccess) {
-        toast.success("Email verified! You can now sign in.");
-        navigate("/login");
+        markEmailVerified(email);
+        toast.success(result.message || "Email verified! You can now sign in.");
+        navigate("/login", { replace: true });
       } else {
         setError(result.message || "Invalid or expired verification code. Please check your email and try again.");
       }
@@ -52,6 +88,10 @@ export default function VerifyEmailPage() {
       setError(err.response?.data?.message || "Verification failed. Please try again.");
     }
   };
+
+  if (alreadyVerified) {
+    return null;
+  }
 
   return (
     <div
