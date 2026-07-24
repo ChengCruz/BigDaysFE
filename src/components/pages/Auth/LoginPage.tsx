@@ -7,6 +7,7 @@ import { FormField } from "../../molecules/FormField";
 import { PasswordInput } from "../../molecules/PasswordInput";
 import { Button } from "../../atoms/Button";
 import { BrandWordmark } from "../../atoms/BrandWordmark";
+import AuthBrandPanel from "./AuthBrandPanel";
 import { Modal } from "../../molecules/Modal";
 import { validatePassword } from "../../../utils/passwordValidation";
 import { isDevOrStaging } from "../../../utils/env";
@@ -17,7 +18,6 @@ import toast from "react-hot-toast";
 import { EyeIcon, EyeOffIcon } from "@heroicons/react/solid";
 
 type ForgotStep = "request" | "reset";
-type LoginMode = "admin" | "staff";
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -43,7 +43,7 @@ const labelStyle: React.CSSProperties = {
 };
 
 export default function LoginPage() {
-  const { login, crewLogin, loading, user } = useAuth();
+  const { login, loading, user } = useAuth();
   const { forgotPassword, resetPassword } = useAuthApi();
   const nav = useNavigate();
   const location = useLocation();
@@ -54,7 +54,6 @@ export default function LoginPage() {
   };
   const from = FULLSCREEN_FALLBACKS[rawFrom] ?? rawFrom;
 
-  const [loginMode, setLoginMode] = useState<LoginMode>("admin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -62,12 +61,7 @@ export default function LoginPage() {
   // Bumping this remounts the widget to obtain a fresh single-use token after a failed submit.
   const [captchaNonce, setCaptchaNonce] = useState(0);
 
-  const [crewCode, setCrewCode] = useState("");
-  const [crewPin, setCrewPin] = useState("");
-  const [crewEventCode, setCrewEventCode] = useState("");
-
   const [showPassword, setShowPassword] = useState(false);
-  const [showCrewPin, setShowCrewPin] = useState(false);
 
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotStep, setForgotStep] = useState<ForgotStep>("request");
@@ -100,19 +94,6 @@ export default function LoginPage() {
       } else {
         setError(apiErrorMessage(err, "Login failed"));
       }
-    }
-  };
-
-  const handleStaffSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (!crewCode.trim() || !crewPin) { setError("Crew ID and PIN are required."); return; }
-    if (!crewEventCode.trim()) { setError("Event Code is required."); return; }
-    try {
-      await crewLogin({ crewCode: crewCode.trim(), pin: crewPin, eventCode: crewEventCode.trim() });
-      nav("/app/checkin", { replace: true });
-    } catch (err: any) {
-      setError(apiErrorMessage(err, "Invalid Crew ID, PIN, or Event ID."));
     }
   };
 
@@ -193,95 +174,7 @@ export default function LoginPage() {
         className="grid-cols-1 md:grid-cols-2 content-start md:content-stretch"
       >
         {/* ── Left panel: brand showcase (cream) ── */}
-        <div
-          style={{
-            background: 'linear-gradient(160deg, #FBF7F0 0%, #F3E9DC 55%, #EADBC6 100%)',
-            position: 'relative',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-          className="justify-start md:justify-between gap-8 md:gap-0 px-6 py-8 md:p-12"
-        >
-          {/* Botanical overlay — gold line art on cream */}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 600 800"
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.5 }}
-            aria-hidden
-          >
-            <g fill="none" stroke="#A9895A" strokeWidth="1.2">
-              <path d="M150 780 Q160 600 180 450 Q200 280 190 120" />
-              <path d="M175 520 Q140 500 115 470" />
-              <path d="M180 470 Q215 450 240 420" />
-              <path d="M175 400 Q145 385 120 355" />
-              <path d="M180 350 Q215 330 240 300" />
-              <ellipse cx="115" cy="470" rx="10" ry="5" fill="#A9895A" opacity="0.4" />
-              <ellipse cx="240" cy="420" rx="10" ry="5" fill="#A9895A" opacity="0.4" />
-              <ellipse cx="120" cy="355" rx="10" ry="5" fill="#A9895A" opacity="0.4" />
-              <ellipse cx="240" cy="300" rx="10" ry="5" fill="#A9895A" opacity="0.4" />
-              <path d="M450 780 Q445 650 460 530 Q475 410 470 270" />
-              <path d="M460 580 Q495 560 520 530" />
-              <path d="M455 500 Q420 485 395 455" />
-              <ellipse cx="520" cy="530" rx="10" ry="5" fill="#A9895A" opacity="0.4" />
-              <ellipse cx="395" cy="455" rx="10" ry="5" fill="#A9895A" opacity="0.4" />
-            </g>
-          </svg>
-
-          {/* Top: brand mark — latest logo, sits naturally on the cream surface */}
-          <div style={{ position: 'relative', zIndex: 2 }}>
-            <Link to="/" aria-label="Go to homepage" style={{ display: 'inline-block' }}>
-              <img
-                src="/MYBigDay_logo_trimmed.png"
-                alt="My Big Day"
-                width={1399}
-                height={1486}
-                className="block w-auto h-28 md:h-[168px]"
-              />
-            </Link>
-          </div>
-
-          {/* Middle: headline */}
-          <div style={{ position: 'relative', zIndex: 2, color: '#2A221E' }}>
-            <div style={{ fontFamily: 'var(--font-label)', fontSize: '0.7rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#A9895A', marginBottom: '1.5rem' }}>
-              Client Portal
-            </div>
-            <h2
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 300,
-                fontSize: 'clamp(2rem, 4vw, 3.5rem)',
-                lineHeight: 1.1,
-                marginBottom: '2rem',
-                color: '#2A221E',
-                letterSpacing: '-0.02em',
-              }}
-            >
-              Your planning,<br />all in{" "}
-              <em style={{ fontStyle: 'italic', color: '#B4543A' }}>one place.</em>
-            </h2>
-            <p className="hidden md:block" style={{ color: '#6B5D50', fontSize: '1.1rem', maxWidth: '28rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
-              Access your events, guest lists, seating charts, and RSVP responses — everything built together, whenever you need it.
-            </p>
-          </div>
-
-          {/* Bottom */}
-          <div
-            className="hidden md:flex"
-            style={{
-              position: 'relative',
-              zIndex: 2,
-              justifyContent: 'space-between',
-              fontFamily: 'var(--font-label)',
-              fontSize: '0.65rem',
-              letterSpacing: '0.25em',
-              textTransform: 'uppercase',
-              color: '#6B5D50',
-            }}
-          >
-            <span>Planned with love</span>
-          </div>
-        </div>
+        <AuthBrandPanel />
 
         {/* ── Right panel: form ── */}
         <div
@@ -311,49 +204,12 @@ export default function LoginPage() {
               Sign <em style={{ fontStyle: 'italic', color: '#B4543A' }}>in.</em>
             </h1>
 
-            <p style={{ color: '#6B5D50', marginBottom: '1.25rem', fontSize: '1.1rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
-              Enter your credentials to access your planning dashboard.
+            <p style={{ color: '#6B5D50', marginBottom: '1.5rem', fontSize: '1.1rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
+              Sign in with the email and password you registered with to access your planning dashboard.
             </p>
 
-            {/* Mode toggle */}
-            <div
-              style={{
-                display: 'flex',
-                background: '#EDE4D3',
-                borderRadius: '2px',
-                padding: '3px',
-                gap: '3px',
-                marginBottom: '1.5rem',
-              }}
-            >
-              {(['admin', 'staff'] as LoginMode[]).map(mode => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => { setLoginMode(mode); setError(null); }}
-                  style={{
-                    flex: 1,
-                    padding: '0.6rem',
-                    fontFamily: 'var(--font-label)',
-                    fontSize: '0.7rem',
-                    letterSpacing: '0.2em',
-                    textTransform: 'uppercase' as const,
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    background: loginMode === mode ? '#FAF6EF' : 'transparent',
-                    color: loginMode === mode ? '#2A221E' : '#6B5D50',
-                    boxShadow: loginMode === mode ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                  }}
-                >
-                  {mode === 'admin' ? 'Admin' : 'Crew'}
-                </button>
-              ))}
-            </div>
-
             {/* Admin form */}
-            {loginMode === "admin" ? (
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>
                 <div>
                   <label style={labelStyle}>Email Address</label>
                   <input
@@ -455,83 +311,14 @@ export default function LoginPage() {
                     Create Account
                   </Link>
                 </div>
+
+                {/* Quiet crew entry point — kept off the public nav; crew normally arrive via the invite link */}
+                <div style={{ textAlign: 'center', marginTop: '0.25rem', paddingTop: '1.25rem', borderTop: '1px solid #EDE4D3', fontFamily: 'var(--font-label)', fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                  <Link to="/crew-login" style={{ color: '#6B5D50', textDecoration: 'none' }}>
+                    Checking in guests as event crew? <span style={{ color: '#B4543A' }}>Crew sign-in →</span>
+                  </Link>
+                </div>
               </form>
-            ) : (
-              /* Staff form */
-              <form onSubmit={handleStaffSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>
-                <div>
-                  <label style={labelStyle}>Event Code</label>
-                  <input
-                    type="text"
-                    required
-                    value={crewEventCode}
-                    onChange={e => setCrewEventCode(e.target.value)}
-                    placeholder="Event Code from your admin"
-                    style={inputStyle}
-                    onFocus={e => (e.target.style.borderBottomColor = '#B4543A')}
-                    onBlur={e => (e.target.style.borderBottomColor = '#EDE4D3')}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>Crew ID</label>
-                  <input
-                    type="text"
-                    required
-                    value={crewCode}
-                    onChange={e => setCrewCode(e.target.value)}
-                    placeholder="e.g. CR-001"
-                    style={inputStyle}
-                    onFocus={e => (e.target.style.borderBottomColor = '#B4543A')}
-                    onBlur={e => (e.target.style.borderBottomColor = '#EDE4D3')}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>PIN</label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type={showCrewPin ? "text" : "password"}
-                      required
-                      value={crewPin}
-                      onChange={e => { const v = e.target.value.replace(/\D/g, "").slice(0, 6); setCrewPin(v); }}
-                      placeholder="4–6 digit PIN"
-                      style={{ ...inputStyle, paddingRight: '2.5rem' }}
-                      onFocus={e => (e.target.style.borderBottomColor = '#B4543A')}
-                      onBlur={e => (e.target.style.borderBottomColor = '#EDE4D3')}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowCrewPin(v => !v)}
-                      style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', color: '#6B5D50' }}
-                      aria-label={showCrewPin ? "Hide PIN" : "Show PIN"}
-                    >
-                      {showCrewPin ? <EyeOffIcon style={{ width: '1.1rem', height: '1.1rem' }} /> : <EyeIcon style={{ width: '1.1rem', height: '1.1rem' }} />}
-                    </button>
-                  </div>
-                </div>
-                {error && <p style={{ color: '#EF4444', fontSize: '0.9rem' }}>{error}</p>}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    width: '100%',
-                    padding: '1.2rem',
-                    background: '#2A221E',
-                    color: '#FAF6EF',
-                    border: 'none',
-                    fontFamily: 'var(--font-label)',
-                    fontSize: '0.75rem',
-                    letterSpacing: '0.3em',
-                    textTransform: 'uppercase' as const,
-                    cursor: 'pointer',
-                    transition: 'background 0.3s ease',
-                  }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#B4543A'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#2A221E'}
-                >
-                  {loading ? "Signing in…" : "Sign In as Crew →"}
-                </button>
-              </form>
-            )}
           </div>
 
           {/* Mobile-only footer — brand context the desktop left panel already provides */}

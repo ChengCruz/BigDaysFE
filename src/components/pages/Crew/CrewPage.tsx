@@ -20,6 +20,30 @@ function formatDate(dateStr?: string) {
   return `${dd}/${mm}/${yyyy}`;
 }
 
+function copyToClipboard(value: string, label: string) {
+  if (!value) return;
+  navigator.clipboard?.writeText(value).then(
+    () => toast.success(`${label} copied`),
+    () => toast.error("Could not copy")
+  );
+}
+
+function CopyButton({ value, label }: { value: string; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={() => copyToClipboard(value, label)}
+      className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+        <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+        <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+      </svg>
+      Copy
+    </button>
+  );
+}
+
 export default function CrewPage() {
   const { eventId, event, eventsLoading } = useEventContext()!;
   const { data: crew = [], isLoading, isError } = useCrewListApi(eventId);
@@ -35,6 +59,8 @@ export default function CrewPage() {
   if (!eventId) return <NoEventsState title="No Events for Crew Management" message="Create your first event to start adding crew members." />;
   if (isLoading) return <PageLoader message="Loading crew..." />;
   if (isError) return <div className="text-red-500 p-4">Failed to load crew members.</div>;
+
+  const crewLoginUrl = `${window.location.origin}/crew-login`;
 
   const handleDelete = async () => {
     if (!deleteModal.crew) return;
@@ -64,35 +90,31 @@ export default function CrewPage() {
       </div>
 
       {/* Info banner */}
-      <div data-tour="crew-event-code" className="mb-6 px-4 py-3 bg-primary/5 border border-primary/20 rounded-xl text-sm text-primary space-y-1">
+      <div data-tour="crew-event-code" className="mb-6 px-4 py-3 bg-primary/5 border border-primary/20 rounded-xl text-sm text-primary space-y-2">
         <p>
-          Crew members sign in via the <span className="font-medium">Staff</span> tab on the
-          login page. They'll need their <span className="font-medium">Crew ID</span>,
-          <span className="font-medium"> PIN</span>, and the <span className="font-medium">Event Code</span> below.
+          Crew members sign in at the <span className="font-medium">crew sign-in page</span> with
+          their <span className="font-medium">Crew ID</span>, <span className="font-medium">PIN</span>,
+          and the <span className="font-medium">Event Code</span> below. Use{" "}
+          <span className="font-medium">Copy Invite Message</span> when adding crew to send all three at once.
+        </p>
+        <p className="flex flex-wrap items-center gap-2">
+          <span className="text-primary/70">Sign-in link:</span>
+          <a
+            href={crewLoginUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="font-mono text-xs bg-white/70 border border-primary/20 rounded px-1.5 py-0.5 break-all underline underline-offset-2"
+          >
+            {crewLoginUrl}
+          </a>
+          <CopyButton value={crewLoginUrl} label="Sign-in link" />
         </p>
         <p className="flex flex-wrap items-center gap-2">
           <span className="text-primary/70">Event Code:</span>
           <code className="font-mono text-xs bg-white/70 border border-primary/20 rounded px-1.5 py-0.5 break-all">
             {event?.eventCode ?? "—"}
           </code>
-          <button
-            type="button"
-            onClick={() => {
-              const code = event?.eventCode;
-              if (!code) return;
-              navigator.clipboard?.writeText(code).then(
-                () => toast.success("Event Code copied"),
-                () => toast.error("Could not copy")
-              );
-            }}
-            className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
-              <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-              <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
-            </svg>
-            Copy
-          </button>
+          <CopyButton value={event?.eventCode ?? ""} label="Event Code" />
         </p>
       </div>
 

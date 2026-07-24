@@ -453,7 +453,7 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="crew-event-code"]',
         title: "Event Code",
         content:
-          "Share this code with your crew along with their Crew ID and PIN. They sign in via the Staff tab on the login page.",
+          "Share this code with your crew along with their Crew ID and PIN. They sign in at the dedicated crew sign-in page (linked in the banner above).",
       },
       {
         ...commonStepProps,
