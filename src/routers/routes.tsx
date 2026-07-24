@@ -4,6 +4,7 @@ import { Routes, Route, Navigate, Outlet, useNavigate, useLocation } from "react
 
 import LandingPage from "../components/pages/Landing/LandingPage";
 import LoginPage from "../components/pages/Auth/LoginPage";
+import CrewLoginPage from "../components/pages/Auth/CrewLoginPage";
 import RegisterPage from "../components/pages/Auth/RegisterPage";
 import VerifyEmailPage from "../components/pages/Auth/VerifyEmailPage";
 import ResetPasswordPage from "../components/pages/Auth/ResetPasswordPage";
@@ -122,6 +123,8 @@ export default function AppRoutes() {
 
       {/* ─── AUTH (standalone, no navbar/footer) ─────────── */}
       <Route path="/login" element={<LoginPage />} />
+      {/* Dedicated crew (event-day staff) sign-in — shared via invite, kept out of the public nav */}
+      <Route path="/crew-login" element={<CrewLoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       {/* Reached from the password-reset email deep-link (?email=&token=) in all envs */}
