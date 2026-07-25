@@ -21,6 +21,7 @@ import {
   QrcodeIcon,
   QuestionMarkCircleIcon,
   PhotographIcon,
+  MailIcon,
 } from "@heroicons/react/solid";
 import { Chair, Blueprint } from "@phosphor-icons/react";
 import { BrandLogo } from "../atoms/BrandLogo";
@@ -52,6 +53,7 @@ const BASE_LINKS: SidebarLink[] = [
   { to: "/app/checklist", label: "Checklist", Icon: ClipboardCheckIcon },
   { to: "/app/users", label: "Users", Icon: UserIcon },
   { to: "/app/crew", label: "Crew", Icon: IdentificationIcon, sub: true },
+  { to: "/app/contact", label: "Contact Us", Icon: MailIcon },
 ];
 
 // Pages accessible to Staff (role 6) only
