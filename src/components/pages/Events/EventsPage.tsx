@@ -8,7 +8,7 @@ import {
 } from "../../../api/hooks/useEventsApi";
 import { EventFormModal } from "../../molecules/EventFormModal";
 import { Button } from "../../atoms/Button";
-import { Outlet, useNavigate, useSearchParams } from "react-router-dom";
+import { Outlet, useNavigate, useSearchParams } from "react-router";
 import { useEventContext } from "../../../context/EventContext";
 import { CheckCircleIcon, CheckIcon } from "@heroicons/react/solid";
 import { CalendarIcon, LocationMarkerIcon, ArchiveIcon, PencilIcon, XIcon, RefreshIcon, ArrowRightIcon, TemplateIcon, ClipboardListIcon, ExternalLinkIcon } from "@heroicons/react/solid";

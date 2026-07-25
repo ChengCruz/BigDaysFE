@@ -1,6 +1,6 @@
 // src/components/pages/Tables/TableSummary.tsx
 import { PageLoader } from "../../atoms/PageLoader";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { useTableApi } from "../../../api/hooks/useTablesApi";
 
 export function TableSummary() {

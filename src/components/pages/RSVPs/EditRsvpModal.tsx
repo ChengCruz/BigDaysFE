@@ -1,5 +1,5 @@
 // src/components/pages/Rsvps/EditRsvpModal.tsx
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import {
   useRsvpApi,
   useUpdateRsvp,

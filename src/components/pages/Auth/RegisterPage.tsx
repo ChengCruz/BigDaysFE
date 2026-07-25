@@ -1,6 +1,6 @@
 // src/components/pages/Auth/RegisterPage.tsx
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import {
   validatePassword,
   getPasswordStrength,

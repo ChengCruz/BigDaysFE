@@ -1,6 +1,6 @@
 import { useTableApi } from "../../../api/hooks/useTablesApi";
 import { PageLoader } from "../../atoms/PageLoader";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 
 export function TablePrintView() {
   const { tableId } = useParams<{ tableId: string }>();

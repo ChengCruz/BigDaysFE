@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router";
 
 import { FullPagePreview, type RsvpBlock } from "./RsvpDesignPage";
 import { Button } from "../../atoms/Button";

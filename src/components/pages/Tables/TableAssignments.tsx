@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { PageLoader } from "../../atoms/PageLoader";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { useEventContext } from "../../../context/EventContext";
 import { useGuestsApi } from "../../../api/hooks/useGuestsApi";
 import {

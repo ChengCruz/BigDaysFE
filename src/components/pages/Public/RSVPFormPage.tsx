@@ -1,7 +1,7 @@
 // src/components/pages/Public/RSVPFormPage.tsx
 import { PageLoader } from "../../atoms/PageLoader";
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import { useFormFields, type FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
 import { useMutation } from "@tanstack/react-query";
 import client from "../../../api/client";

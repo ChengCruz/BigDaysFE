@@ -1,6 +1,6 @@
 // src/components/pages/Users/UserDetail.tsx
 import { PageLoader } from "../../atoms/PageLoader";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router";
 import { useUserByGuidApi } from "../../../api/hooks/useUsersApi";
 import { PencilIcon } from "@heroicons/react/solid";
 

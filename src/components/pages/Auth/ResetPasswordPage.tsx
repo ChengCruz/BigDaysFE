@@ -2,7 +2,7 @@
 // Production reset-password screen. Reached from the email CTA deep-link
 // {{AppUrl}}/reset-password?email=<urlencoded>&token=<code>.
 import React, { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 import { useAuthApi } from "../../../api/hooks/useAuthApi";
 import { PasswordInput } from "../../molecules/PasswordInput";
 import { FormField } from "../../molecules/FormField";

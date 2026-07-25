@@ -1,6 +1,6 @@
 // src/components/ScrollToTop.tsx
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 
 /**
  * Scrolls the window back to the top on every route change (Home, Features,

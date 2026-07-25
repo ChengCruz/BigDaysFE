@@ -1,6 +1,6 @@
 // src/components/pages/Auth/LoginPage.tsx
 import React, { useState } from "react";
-import { useLocation, useNavigate, Link, Navigate } from "react-router-dom";
+import { useLocation, useNavigate, Link, Navigate } from "react-router";
 import { useAuth } from "../../../api/hooks/useAuth";
 import { useAuthApi } from "../../../api/hooks/useAuthApi";
 import { FormField } from "../../molecules/FormField";

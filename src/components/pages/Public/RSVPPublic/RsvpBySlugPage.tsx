@@ -6,7 +6,7 @@
 // 3. On submit, posts answers to the public RSVP API.
 // 4. Shows RsvpSuccessScreen after a successful submission.
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import toast from "react-hot-toast";
 import { Spinner } from "../../../atoms/Spinner";
 import { useEventBySlug } from "../../../../api/hooks/useEventBySlugApi";

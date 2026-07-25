@@ -1,5 +1,5 @@
 // src/components/pages/Rsvps/NewRsvpModal.tsx
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import {
   useCreateRsvp,
   type CreateRsvpInput,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router";
 import { useAuthApi } from "../../../api/hooks/useAuthApi";
 import toast from "react-hot-toast";
 

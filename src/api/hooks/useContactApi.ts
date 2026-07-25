@@ -3,13 +3,17 @@ import client from "../client";
 import { ContactEndpoints } from "../endpoints";
 import { turnstileHeaders } from "../../utils/turnstile";
 
+export type ContactType = "Bug Report" | "Feedback" | "Other";
+
 export interface ContactSupportPayload {
-  /** Optional event the message relates to. */
-  eventGuid?: string;
-  /** Event name for the email body (server also has the guid). */
-  eventName?: string;
-  /** Category, e.g. "Bug Report", "Feature Request". */
-  category: string;
+  /** What the message is about. "Bug Report" also carries a `module`. */
+  type: ContactType;
+  /** Which app area the bug is in — sent for "Bug Report" only. */
+  module?: string;
+  /** Sender's display name. The login email is resolved server-side from the JWT. */
+  name: string;
+  /** Optional contact phone number. */
+  phone?: string;
   /** Free-text message body. */
   message: string;
   /** Cloudflare Turnstile token; sent as a header, not part of the body. */
@@ -17,13 +21,16 @@ export interface ContactSupportPayload {
 }
 
 /**
- * Send a support / bug-report message. The backend resolves the sender's name and
- * email from the authenticated user, so those are not part of the payload.
+ * Send a Contact Us message. The backend resolves the sender's email from the
+ * authenticated user (JWT) and emails it to the support inboxes — nothing is
+ * persisted to the database.
  */
 export function useSendSupportMessage() {
   return useMutation({
     mutationFn: async ({ captchaToken, ...payload }: ContactSupportPayload) => {
-      const res = await client.post(ContactEndpoints.send, payload, { headers: turnstileHeaders(captchaToken) });
+      const res = await client.post(ContactEndpoints.send, payload, {
+        headers: turnstileHeaders(captchaToken),
+      });
       return res.data;
     },
   });
