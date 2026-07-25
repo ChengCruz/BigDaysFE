@@ -1,7 +1,7 @@
 // src/components/organisms/Sidebar.tsx
 import React from "react";
 import pkg from "../../../package.json";
-import { NavLink } from "react-router-dom";
+import { NavLink } from "react-router";
 import XIcon from "@heroicons/react/outline/XIcon";
 import ChevronLeftIcon from "@heroicons/react/outline/ChevronLeftIcon";
 import ChevronRightIcon from "@heroicons/react/outline/ChevronRightIcon";

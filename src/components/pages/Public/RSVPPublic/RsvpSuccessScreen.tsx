@@ -1,5 +1,5 @@
 // src/components/pages/Public/RSVPPublic/RsvpSuccessScreen.tsx
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import type { RsvpDesign } from "../../../../types/rsvpDesign";
 
 interface Props {

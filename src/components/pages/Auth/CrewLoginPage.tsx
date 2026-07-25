@@ -2,7 +2,7 @@
 // Dedicated crew (event-day staff) sign-in. Reached via the invite message /
 // Crew page link the organiser shares — deliberately kept out of the public nav.
 import React, { useState } from "react";
-import { useNavigate, Link, Navigate } from "react-router-dom";
+import { useNavigate, Link, Navigate } from "react-router";
 import { useAuth } from "../../../api/hooks/useAuth";
 import { apiErrorMessage } from "../../../utils/apiError";
 import AuthBrandPanel from "./AuthBrandPanel";

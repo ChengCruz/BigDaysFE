@@ -1,6 +1,6 @@
 // src/components/templates/AuthTemplate.tsx
 import type { ReactNode } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet } from "react-router";
 
 export default function AuthTemplate({ children }: { children?: ReactNode }) {
   return (

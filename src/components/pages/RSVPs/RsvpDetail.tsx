@@ -1,6 +1,6 @@
 // src/components/pages/RSVPs/RsvpDetail.tsx
 import { PageLoader } from "../../atoms/PageLoader";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router";
 import { useRsvpApi } from "../../../api/hooks/useRsvpsApi";
 
 export default function RsvpDetail() {

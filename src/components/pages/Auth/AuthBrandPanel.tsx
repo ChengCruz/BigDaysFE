@@ -1,7 +1,7 @@
 // src/components/pages/Auth/AuthBrandPanel.tsx
 // Shared branded left panel for the auth pages (/login and /crew-login).
 // Purely presentational — keeps the two pages visually consistent.
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 export default function AuthBrandPanel() {
   return (

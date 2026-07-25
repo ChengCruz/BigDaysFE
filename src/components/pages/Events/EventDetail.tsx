@@ -1,6 +1,6 @@
 // src/components/pages/Events/EventDetail.tsx
 import { PageLoader } from "../../atoms/PageLoader";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link } from "react-router";
 import { useEventApi } from "../../../api/hooks/useEventsApi";
 import { useState } from "react";
 import { Button } from "../../atoms/Button";

@@ -1,7 +1,7 @@
 // src/components/pages/Seating/SeatingDetail.tsx
 import { PageLoader } from "../../atoms/PageLoader";
 
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router";
 import { useSeatApi } from "../../../api/hooks/useSeatingApi";
 import { PencilIcon } from "@heroicons/react/solid";
 
