@@ -1,19 +1,34 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MailIcon, CheckCircleIcon } from "@heroicons/react/solid";
 import toast from "react-hot-toast";
 import { Button } from "../../atoms/Button";
 import { useAuth } from "../../../api/hooks/useAuth";
 import { useUserByGuidApi } from "../../../api/hooks/useUsersApi";
-import { useEventContext } from "../../../context/EventContext";
-import { useSendSupportMessage } from "../../../api/hooks/useContactApi";
+import { useSendSupportMessage, type ContactType } from "../../../api/hooks/useContactApi";
 import TurnstileWidget from "../../molecules/TurnstileWidget";
 import { isTurnstileEnabled } from "../../../utils/turnstile";
 
-const CATEGORIES = [
-  "Bug Report",
-  "Feature Request",
-  "Billing / Payment",
-  "Question",
+const TYPES: { value: ContactType; label: string }[] = [
+  { value: "Bug Report", label: "Bug Report" },
+  { value: "Feedback", label: "Feedback" },
+  { value: "Other", label: "Other" },
+];
+
+// App areas a bug can be reported against — mirrors the sidebar sections.
+const MODULES = [
+  "Dashboard",
+  "Events",
+  "RSVP Card Designer",
+  "RSVP Questions",
+  "RSVPs",
+  "Guests",
+  "Tables",
+  "Floor Plan",
+  "Wallet",
+  "Check-in",
+  "Checklist",
+  "Users",
+  "Crew",
   "Other",
 ] as const;
 
@@ -28,26 +43,40 @@ const labelClass = "block text-xs font-semibold text-text/60 dark:text-white/50 
 export default function ContactSupportPage() {
   const { user, userGuid } = useAuth();
   const { data: profile } = useUserByGuidApi(userGuid ?? "");
-  const { events, eventId, eventsLoading } = useEventContext();
   const sendMessage = useSendSupportMessage();
 
-  const name = profile?.fullName ?? user?.email ?? "";
   const email = user?.email ?? "";
 
-  const [selectedEventId, setSelectedEventId] = useState<string>(eventId ?? "");
-  const [category, setCategory] = useState<string>(CATEGORIES[0]);
+  const [type, setType] = useState<ContactType>("Bug Report");
+  const [module, setModule] = useState("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   // Bumping this remounts the widget to obtain a fresh single-use token after a failed submit.
   const [captchaNonce, setCaptchaNonce] = useState(0);
 
-  // Default the event selector to the active event once it resolves.
+  const isBug = type === "Bug Report";
+
+  // Prefill the name once from the profile, but leave it editable afterwards.
+  const namePrefilled = useRef(false);
   useEffect(() => {
-    if (eventId && !selectedEventId) setSelectedEventId(eventId);
-  }, [eventId, selectedEventId]);
+    if (!namePrefilled.current && profile?.fullName) {
+      setName(profile.fullName);
+      namePrefilled.current = true;
+    }
+  }, [profile?.fullName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) {
+      toast.error("Please enter your name.");
+      return;
+    }
+    if (isBug && !module) {
+      toast.error("Please select which module the bug is in.");
+      return;
+    }
     if (!message.trim()) {
       toast.error("Please enter a message.");
       return;
@@ -56,12 +85,12 @@ export default function ContactSupportPage() {
       toast.error("Please complete the CAPTCHA below.");
       return;
     }
-    const selectedEvent = events?.find((ev) => ev.id === selectedEventId);
     try {
       await sendMessage.mutateAsync({
-        eventGuid: selectedEventId || undefined,
-        eventName: selectedEvent?.title,
-        category,
+        type,
+        module: isBug ? module : undefined,
+        name: name.trim(),
+        phone: phone.trim() || undefined,
         message: message.trim(),
         captchaToken: captchaToken ?? undefined,
       });
@@ -88,7 +117,7 @@ export default function ContactSupportPage() {
           <div>
             <h1 className="text-xl font-bold text-text dark:text-white">Contact Us</h1>
             <p className="text-sm text-text/60 dark:text-white/50">
-              Found a bug or have feedback? Send us a message and we'll get back to you.
+              Report a bug, share feedback, or ask us anything — we'll get back to you.
             </p>
           </div>
         </div>
@@ -102,7 +131,14 @@ export default function ContactSupportPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelClass}>Your Name</label>
-            <input type="text" value={name} readOnly className={readOnlyClass} />
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="Your name"
+              className={fieldClass}
+            />
           </div>
           <div>
             <label className={labelClass}>Email</label>
@@ -112,38 +148,52 @@ export default function ContactSupportPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
           <div>
-            <label className={labelClass}>Event</label>
-            <select
-              value={selectedEventId}
-              onChange={(e) => setSelectedEventId(e.target.value)}
+            <label className={labelClass}>
+              Phone <span className="font-normal text-text/40 dark:text-white/30">(optional)</span>
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="e.g. +60 12-345 6789"
               className={fieldClass}
-              disabled={eventsLoading}
-            >
-              <option value="">
-                {eventsLoading ? "Loading events…" : "— No specific event —"}
-              </option>
-              {events?.map((ev) => (
-                <option key={ev.id} value={ev.id}>
-                  {ev.title}
-                </option>
-              ))}
-            </select>
+            />
           </div>
           <div>
-            <label className={labelClass}>Category</label>
+            <label className={labelClass}>What's this about?</label>
             <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              value={type}
+              onChange={(e) => setType(e.target.value as ContactType)}
               className={fieldClass}
             >
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              {TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
                 </option>
               ))}
             </select>
           </div>
         </div>
+
+        {/* Module picker — bug reports only */}
+        {isBug && (
+          <div className="mt-4">
+            <label className={labelClass}>Which module?</label>
+            <select
+              value={module}
+              onChange={(e) => setModule(e.target.value)}
+              required
+              className={fieldClass}
+            >
+              <option value="">— Select a module —</option>
+              {MODULES.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="mt-4">
           <label className={labelClass}>Message</label>
@@ -152,7 +202,11 @@ export default function ContactSupportPage() {
             onChange={(e) => setMessage(e.target.value)}
             required
             rows={6}
-            placeholder="Describe the bug or share your feedback. If it's a bug, tell us what you did and what you expected to happen."
+            placeholder={
+              isBug
+                ? "Describe the bug — what you did, what you expected, and what actually happened."
+                : "Share your feedback or let us know how we can help."
+            }
             className={`${fieldClass} resize-y min-h-[140px] leading-relaxed`}
           />
         </div>
@@ -176,7 +230,7 @@ export default function ContactSupportPage() {
           <Button
             type="submit"
             loading={sendMessage.isPending}
-            disabled={!message.trim() || (isTurnstileEnabled && !captchaToken)}
+            disabled={!message.trim() || !name.trim() || (isTurnstileEnabled && !captchaToken)}
           >
             Send Message
           </Button>
