@@ -31,6 +31,22 @@ const BRAND_JWT =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLWd1aWQtMDAwMSIsImVtYWlsIjoiYWRtaW5AYmlnZGF5c21hbmFnZXIuY29tIiwicm9sZSI6IkFkbWluIiwiZXhwIjo5OTk5OTk5OTk5fQ.fakesig';
 const BRAND_USER = { ...MOCK_USER, email: 'admin@bigdaysmanager.com' };
 
+/** The event shown in every capture. helpers.MOCK_EVENT is deliberately
+ *  generic ("Test Wedding" at "Test Venue") because assertions depend on it —
+ *  these are marketing shots, so the navbar and page headers need a real-
+ *  looking celebration instead. Names match the RSVP design headline below and
+ *  the venue matches the "Venue Deposit" vendor in TRANSACTIONS. */
+const SHOWCASE_EVENT = {
+  ...MOCK_EVENT,
+  eventName: 'Sarah & James Wedding',
+  eventDate: '2026-12-01',
+  eventTime: '18:00:00',
+  eventLocation: 'Grand Ballroom, Kuala Lumpur',
+  eventDescription: 'An evening celebration with family and closest friends',
+  noOfTable: 7, // matches the seven tables in FLOOR_ITEMS
+  title: 'Sarah & James Wedding',
+};
+
 /** Log in as the branded admin and land on /app/events with event context set.
  *  Mirrors helpers.gotoAuthenticated but returns a token carrying the branded
  *  email so the sidebar reads admin@bigdaysmanager.com. */
@@ -48,6 +64,11 @@ async function loginBranded(page: Page) {
     }
     if (/\/User\//i.test(url) && method === 'GET') {
       return route.fulfill({ status: 200, json: { isSuccess: true, data: BRAND_USER } });
+    }
+    // Every capture shows the event switcher in the navbar, so the showcase
+    // event has to replace MOCK_EVENT for all of them, not just the RSVP shot.
+    if (/\/event\//i.test(url) && method === 'GET' && !/\/event\/eventRsvp\//i.test(url)) {
+      return route.fulfill({ status: 200, json: { isSuccess: true, data: [SHOWCASE_EVENT] } });
     }
     return route.fallback();
   });
@@ -70,7 +91,7 @@ async function hideHelpHint(page: Page) {
 
 // ── Enriched mock data ──────────────────────────────────────────────────────
 
-const EVENT_WITH_SLUG = { ...MOCK_EVENT, slug: 'test-wedding' };
+const EVENT_WITH_SLUG = { ...SHOWCASE_EVENT, slug: 'sarah-and-james' };
 
 /** A fuller RSVP design: hero headline over a dark theme + event details, an
  *  attendance toggle, a guest-details card and a CTA — enough to look real. */
