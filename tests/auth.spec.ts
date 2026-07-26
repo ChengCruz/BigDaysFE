@@ -121,3 +121,58 @@ test.describe('Register', () => {
     await expect(page).toHaveURL(/\/login/);
   });
 });
+
+// ── Verify Email ──────────────────────────────────────────────────────────────
+
+test.describe('Verify Email — resend code', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockApi(page);
+    // Reached directly (no router state), so the page renders its own email field.
+    await page.goto('/verify-email');
+    await page.waitForLoadState('networkidle');
+  });
+
+  test('renders the resend control alongside the code field', async ({ page }) => {
+    await expect(page.locator('input[placeholder="6-digit code"]')).toBeVisible();
+    await expect(page.locator('button:has-text("Resend code")')).toBeVisible();
+  });
+
+  test('resend is disabled until an email is entered', async ({ page }) => {
+    await expect(page.locator('button:has-text("Resend code")')).toBeDisabled();
+    await page.fill('input[type="email"]', 'pending@test.com');
+    await expect(page.locator('button:has-text("Resend code")')).toBeEnabled();
+  });
+
+  test('posts the email and swaps the link for a countdown', async ({ page }) => {
+    await page.fill('input[type="email"]', 'pending@test.com');
+
+    const [request] = await Promise.all([
+      page.waitForRequest(r => /ResendVerificationCode/i.test(r.url())),
+      page.click('button:has-text("Resend code")'),
+    ]);
+
+    expect(request.method()).toBe('POST');
+    expect(request.postDataJSON()).toEqual({ email: 'pending@test.com' });
+    await expect(page.locator('text=/Resend in \\d+s/')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('button:has-text("Resend code")')).toHaveCount(0);
+  });
+
+  test('clears a stale code, since resending invalidates it', async ({ page }) => {
+    await page.fill('input[type="email"]', 'pending@test.com');
+    await page.fill('input[placeholder="6-digit code"]', '123456');
+    await page.click('button:has-text("Resend code")');
+    await expect(page.locator('input[placeholder="6-digit code"]')).toHaveValue('', { timeout: 3000 });
+  });
+
+  test('does not submit the verify form', async ({ page }) => {
+    await page.fill('input[type="email"]', 'pending@test.com');
+    let verifyCalled = false;
+    page.on('request', r => { if (/\/User\/VerifyEmail/i.test(r.url())) verifyCalled = true; });
+
+    await page.click('button:has-text("Resend code")');
+    await expect(page.locator('text=/Resend in \\d+s/')).toBeVisible({ timeout: 3000 });
+
+    expect(verifyCalled).toBe(false);
+    await expect(page).toHaveURL(/\/verify-email/);
+  });
+});

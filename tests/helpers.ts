@@ -215,6 +215,18 @@ export async function mockApi(page: Page) {
         json: { isSuccess: true, message: 'Registered successfully' },
       });
     }
+    if (/\/User\/VerifyEmail/i.test(url)) {
+      return route.fulfill({
+        status: 200,
+        json: { isSuccess: true, data: true, message: 'Email verified. Your account is now active.' },
+      });
+    }
+    if (/\/User\/ResendVerificationCode/i.test(url)) {
+      return route.fulfill({
+        status: 200,
+        json: { isSuccess: true, data: true, message: 'If this email is awaiting verification, a new code has been sent.' },
+      });
+    }
     if (/\/User\/Refresh/i.test(url)) {
       return route.fulfill({
         status: 200,

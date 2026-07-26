@@ -5,6 +5,9 @@ import toast from "react-hot-toast";
 
 const VERIFIED_EMAILS_KEY = "mbd_verified_emails";
 
+/** Matches the backend resend cooldown — a second request inside this window is a silent no-op. */
+const RESEND_COOLDOWN_SECONDS = 60;
+
 function getVerifiedEmails(): string[] {
   try {
     const raw = localStorage.getItem(VERIFIED_EMAILS_KEY);
@@ -53,10 +56,11 @@ export default function VerifyEmailPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const emailFromState = (location.state as any)?.email as string | undefined;
-  const { verifyEmail } = useAuthApi();
+  const { verifyEmail, resendVerificationCode } = useAuthApi();
   const [email, setEmail] = useState(emailFromState ?? "");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
 
   // Guards against: (1) browser back-button after a successful verify (handled by the
   // `replace` navigation below) and (2) revisiting this route later, e.g. via the original
@@ -70,7 +74,33 @@ export default function VerifyEmailPage() {
     }
   }, [alreadyVerified, navigate]);
 
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
+
   const ready = email.trim().length > 0 && code.length === 6;
+  const canResend = email.trim().length > 0 && cooldown === 0 && !resendVerificationCode.isPending;
+
+  const handleResend = async () => {
+    if (!canResend) return;
+    setError(null);
+    try {
+      const result = await resendVerificationCode.mutateAsync({ email: email.trim() });
+      if (!result.isSuccess) {
+        setError(result.message || "Could not resend the code. Please try again.");
+        return;
+      }
+      // A new code invalidates whatever was typed, so clear the field rather than let a
+      // stale code sit there looking valid.
+      setCode("");
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+      toast.success(result.message || "A new verification code is on its way. Check your inbox.");
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Could not resend the code. Please try again.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -280,6 +310,31 @@ export default function VerifyEmailPage() {
             >
               {verifyEmail.isPending ? "Verifying…" : "Verify Email →"}
             </button>
+
+            <div style={{ textAlign: 'center', color: '#6B5D50', fontSize: '1rem', fontFamily: 'var(--font-serif)' }}>
+              Didn&apos;t get the email?{" "}
+              {cooldown > 0 ? (
+                <span style={{ color: '#6B5D50' }}>Resend in {cooldown}s</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={!canResend}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    font: 'inherit',
+                    color: canResend ? '#B4543A' : '#6B5D50',
+                    borderBottom: `1px solid ${canResend ? '#B4543A' : '#6B5D50'}`,
+                    paddingBottom: '1px',
+                    cursor: canResend ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  {resendVerificationCode.isPending ? "Sending…" : "Resend code"}
+                </button>
+              )}
+            </div>
 
             <div style={{ textAlign: 'center', color: '#6B5D50', fontSize: '1rem', fontFamily: 'var(--font-serif)' }}>
               Already verified?{" "}
