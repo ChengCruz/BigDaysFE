@@ -14,6 +14,7 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useEventContext } from "../../../context/EventContext";
+import { formatEventTime } from "../../../utils/eventUtils";
 import type { Event } from "../../../api/hooks/useEventsApi";
 import { useFormFields, type FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
 import { useRsvpDesign, useSaveRsvpDesign, usePublishRsvpDesign, useGenerateShareToken } from "../../../api/hooks/useRsvpDesignApi";
@@ -482,7 +483,9 @@ function renderSectionContent(
         ? (() => { try { return new Date(rawDate).toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); } catch { return rawDate; } })()
         : "Date TBC";
       const rawTime = event?.raw?.eventTime ?? "";
-      const formattedTime = rawTime || "Time TBC";
+      // The date above is formatted for guests, so the time must be too —
+      // printing rawTime verbatim showed invitees "18:00:00".
+      const formattedTime = formatEventTime(rawDate, rawTime) || "Time TBC";
       const location = event?.location ?? event?.raw?.eventLocation ?? "Venue TBC";
 
       const cards = [
