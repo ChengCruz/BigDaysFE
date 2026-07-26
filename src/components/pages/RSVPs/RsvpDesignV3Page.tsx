@@ -709,6 +709,8 @@ export default function RsvpDesignV3Page() {
   const [linkCopied, setLinkCopied]       = useState(false);
   const [showSharePanel, setShowSharePanel] = useState(false);
   const globalBgCacheIdRef = useRef<string | null>(null);
+  const copyResetRef = useRef<number | null>(null);
+  useEffect(() => () => { if (copyResetRef.current) window.clearTimeout(copyResetRef.current); }, []);
 
   const availableQuestions = useMemo<FormFieldConfig[]>(
     () => serverFormFields.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
@@ -765,14 +767,10 @@ export default function RsvpDesignV3Page() {
       if (savedDesign.blockMarginX !== undefined) patch.blockMarginX = savedDesign.blockMarginX;
       if (savedDesign.blockMarginY !== undefined) patch.blockMarginY = savedDesign.blockMarginY;
       if (savedDesign.version !== undefined) patch.version = savedDesign.version;
+      // The mapper resolves previewBackdropLabel (the only field the backend keeps)
+      // back into image + color, so both arrive already populated here.
       if (savedDesign.previewBackdropColor) patch.previewBackdropColor = savedDesign.previewBackdropColor;
-      if (savedDesign.previewBackdropLabel !== undefined) {
-        const match = BACKDROP_OPTIONS.find((o) => o.label === savedDesign.previewBackdropLabel);
-        if (match) {
-          patch.previewBackdropImage = match.value;
-          patch.previewBackdropColor = match.value === "" ? "#ffffff" : "#f3f4f6";
-        }
-      } else if (savedDesign.previewBackdropImage && !isBlob(savedDesign.previewBackdropImage)) {
+      if (savedDesign.previewBackdropImage && !isBlob(savedDesign.previewBackdropImage)) {
         patch.previewBackdropImage = savedDesign.previewBackdropImage;
       }
       dispatch({ type: "LOAD_DESIGN", payload: patch });
@@ -1063,8 +1061,12 @@ export default function RsvpDesignV3Page() {
   };
 
   // ── Save ──────────────────────────────────────────────────────────────────
-  const handleSave = async (): Promise<boolean> => {
-    if (!eventId) return false;
+  // Resolves to the version number the server assigned to this save, or null if
+  // it failed. Callers must use the returned value rather than reading `version`
+  // or `saveResponse` — those are render-closure state and are still stale on the
+  // line after `await handleSave()`.
+  const handleSave = async (): Promise<number | null> => {
+    if (!eventId) return null;
     setIsUploadingForSave(true);
     try {
       const allBlobAssets: { id: string }[] = [];
@@ -1130,24 +1132,36 @@ export default function RsvpDesignV3Page() {
         previewBackdropLabel: BACKDROP_OPTIONS.find((o) => o.value === previewBackdropImage)?.label,
         flowPreset: "serene",
       };
-      await saveDesignAsync({ design: currentDesign, isPublished: false, isDraft: true, shareToken, publicLink });
+      const response = await saveDesignAsync({ design: currentDesign, isPublished: false, isDraft: true, shareToken, publicLink });
 
       await Promise.all(uploadedCacheIds.map((id) => removeCachedImage(id).catch(() => {})));
       if (uploadedBgCacheId) { await removeCachedImage(uploadedBgCacheId).catch(() => {}); globalBgCacheIdRef.current = null; }
-      return true;
+
+      // The API can answer 200 with an unsuccessful envelope, so treat a missing
+      // version as a failed save rather than reporting success.
+      const savedVersion = response?.data?.version;
+      if (typeof savedVersion !== "number") {
+        toast.error(response?.message || "Design saved but the server returned no version. Please try again.");
+        return null;
+      }
+      dispatch({ type: "SET_VERSION", payload: savedVersion });
+      return savedVersion;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save design. Please try again.");
-      return false;
+      return null;
     } finally {
       setIsUploadingForSave(false);
     }
   };
 
-  // ── Guest link generation ───────────────────────────────────────────────────
-  // Prefer the slug URL (/rsvp/:slug) which is a public endpoint that always
-  // reflects the latest saved design. Fall back to a share-token URL only when
-  // the event has no slug. See .claude/todo/rsvp-v3-preview-public-sync.md.
-  const generateGuestLink = async () => {
+  // ── Guest link ──────────────────────────────────────────────────────────────
+  // The guest link is the event's slug URL (/rsvp/:slug) — a permanent public
+  // endpoint that always reflects the latest saved design. There is nothing to
+  // rotate or regenerate, so this only derives and reveals it.
+  // The share-token branch below is a fallback for slug-less events only; note
+  // the backend's share-token route is currently declared private and therefore
+  // unrouted, so it will 404. See .claude/todo/rsvp-v3-preview-public-sync.md.
+  const openGuestLink = async () => {
     if (event?.slug) {
       const link = `${window.location.origin}/rsvp/${event.slug}`;
       setPublicLink(link);
@@ -1178,18 +1192,17 @@ export default function RsvpDesignV3Page() {
     await navigator.clipboard.writeText(publicLink);
     setLinkCopied(true);
     toast.success("Link copied to clipboard!");
+    // Revert to "Copy" so the button keeps reading as a repeatable action.
+    if (copyResetRef.current) window.clearTimeout(copyResetRef.current);
+    copyResetRef.current = window.setTimeout(() => setLinkCopied(false), 2000);
   };
 
-  // ── Save & Publish (save first, then publish) ──────────────────────────────
+  // ── Save & Publish (one action: save, then publish that exact version) ─────
   const handleSaveAndPublish = async () => {
-    const saved = await handleSave();
-    if (!saved) return;
-    // After save, version is updated via the useEffect. Use the version from the save response.
-    const ver = saveResponse?.data?.version ?? version;
-    if (!ver && ver !== 0) {
-      toast.error("Save first to get a version before publishing.");
-      return;
-    }
+    // Publish the version this save just produced. Reading `version` state here
+    // instead would be stale on a first-ever save and wrongly report "save first".
+    const ver = await handleSave();
+    if (ver === null) return; // handleSave already surfaced the reason
     try {
       await publishDesignAsync({ version: ver });
       setIsPublished(true);
@@ -1273,22 +1286,22 @@ export default function RsvpDesignV3Page() {
 
         <div className="w-px h-6 bg-gray-200 shrink-0" />
 
-        {/* Status badge — reflects server-owned publish flag, not just same-session Publish.
-            "Published vN" means the current version is live on the share-token endpoint (when implemented).
-            "Draft vN" means only the slug URL (/rsvp/:slug) will show the latest edits. */}
+        {/* Status badge — reflects the server-owned publish flag, not just same-session Publish.
+            The guest page serves the latest PUBLISHED version, so a draft stays private
+            until Save & Publish. */}
         {isLoadingDesign && <span className="flex items-center gap-1.5 text-xs text-gray-400"><Spinner /> Loading...</span>}
         {!isLoadingDesign && isPublished && !isSaving && !isUploadingForSave && (
           <span
-            title="This version is published. Share-token and slug links both serve this design."
+            title="Published — this is the version your guests see at the RSVP link."
             className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
             Published{version !== undefined ? ` v${version}` : ""}
           </span>
         )}
         {!isLoadingDesign && !isPublished && (isSaveSuccess || version !== undefined) && !isSaveError && !isSaving && !isUploadingForSave && (
           <span
-            title="Draft saved. Only the slug link (/rsvp/:slug) shows these edits — click Save & Publish to make the share-token preview live."
+            title="Draft saved — guests still see your last published version. Click Save & Publish to make these edits live."
             className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-            Draft{version !== undefined ? ` v${version}` : ""} · slug-only
+            Draft{version !== undefined ? ` v${version}` : ""} · not live
           </span>
         )}
         {!isLoadingDesign && ((!isSaveSuccess && version === undefined) || isSaveError) && !isSaving && !isUploadingForSave && (
@@ -1303,7 +1316,7 @@ export default function RsvpDesignV3Page() {
 
         {/* Share link */}
         <div className="relative">
-          <button onClick={() => publicLink ? setShowSharePanel((v) => !v) : generateGuestLink()} disabled={isGeneratingLink}
+          <button onClick={() => publicLink ? setShowSharePanel((v) => !v) : openGuestLink()} disabled={isGeneratingLink}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-md text-gray-600 hover:border-emerald-400 hover:text-emerald-600 transition bg-white disabled:opacity-50">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
             {isGeneratingLink ? "Generating..." : publicLink ? "Guest Link" : "Get Link"}
@@ -1315,7 +1328,7 @@ export default function RsvpDesignV3Page() {
                 <p className="text-xs font-semibold text-gray-700">Guest RSVP Link</p>
                 <button onClick={() => setShowSharePanel(false)} className="text-gray-400 hover:text-gray-600 text-sm">✕</button>
               </div>
-              <p className="text-[11px] text-gray-400 mb-2">Share this link with your guests so they can fill in the RSVP form.</p>
+              <p className="text-[11px] text-gray-400 mb-2">Share this link with your guests so they can fill in the RSVP form. It's permanent and always shows your latest saved design.</p>
               <div className="flex gap-1.5">
                 <input readOnly value={publicLink} className="flex-1 min-w-0 text-[11px] px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-gray-600 font-mono truncate focus:outline-none" />
                 <button onClick={copyGuestLink}
@@ -1324,9 +1337,9 @@ export default function RsvpDesignV3Page() {
                 </button>
               </div>
               <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-                <button onClick={() => { generateGuestLink(); }} className="text-[11px] text-gray-400 hover:text-gray-600 underline">
-                  Generate new link
-                </button>
+                <a href={publicLink} target="_blank" rel="noreferrer" className="text-[11px] text-gray-400 hover:text-gray-600 underline">
+                  Open as guest ↗
+                </a>
               </div>
             </div>
           )}
@@ -1643,7 +1656,7 @@ export default function RsvpDesignV3Page() {
               : isPublished
                 ? `Published${version !== undefined ? ` v${version}` : ""}`
                 : version !== undefined || isSaveSuccess
-                  ? `Draft${version !== undefined ? ` v${version}` : ""} · slug link only`
+                  ? `Draft${version !== undefined ? ` v${version}` : ""} · not live`
                   : "Unsaved changes"}
         </span>
       </footer>
