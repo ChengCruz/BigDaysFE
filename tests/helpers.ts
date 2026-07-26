@@ -54,6 +54,8 @@ export const MOCK_USER_LIST = [
 // toEvent maps: eventGuid→id, eventName→title, eventDate→date, eventLocation→location
 export const MOCK_EVENT = {
   eventGuid: MOCK_EVENT_GUID,
+  // Owned by MOCK_USER (the admin) — renders the "Mine" badge in admin views
+  userGuid: MOCK_USER.userGuid,
   eventName: 'Test Wedding',
   eventDate: '2026-12-01',
   eventTime: '10:00:00',
@@ -69,6 +71,8 @@ export const MOCK_EVENT = {
 export const MOCK_EVENT_2_GUID = '22222222-2222-2222-2222-222222222222';
 export const MOCK_EVENT_2 = {
   eventGuid: MOCK_EVENT_2_GUID,
+  // Owned by MOCK_MEMBER_USER — admins should see "Member User" attributed to it
+  userGuid: MOCK_MEMBER_USER.userGuid,
   eventName: 'Second Member Birthday',
   eventDate: '2026-08-15',
   eventTime: '18:00:00',

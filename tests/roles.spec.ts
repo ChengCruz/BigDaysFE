@@ -129,6 +129,74 @@ test.describe('Events page — Admin sees all member events', () => {
   test('shows member 2 event location', async ({ page }) => {
     await expect(page.getByText(MOCK_EVENT_2.eventLocation)).toBeVisible();
   });
+
+  test('attributes member 2 event to its owner', async ({ page }) => {
+    const card = page.locator('li', { hasText: MOCK_EVENT_2.eventName }).first();
+    await expect(card.getByText(MOCK_MEMBER_USER.fullName)).toBeVisible();
+  });
+
+  test('badges the admin own event as Mine', async ({ page }) => {
+    const card = page.locator('li', { hasText: MOCK_EVENT.eventName }).first();
+    await expect(card.getByText('Mine', { exact: true })).toBeVisible();
+  });
+
+  test('does not badge another members event as Mine', async ({ page }) => {
+    const card = page.locator('li', { hasText: MOCK_EVENT_2.eventName }).first();
+    await expect(card.getByText('Mine', { exact: true })).toHaveCount(0);
+  });
+
+  test('filters the list by owner name', async ({ page }) => {
+    // Scope to the card list — the active event also appears in the switcher
+    // trigger and the "Active event" banner, neither of which is filtered.
+    const list = page.locator('[data-tour="events-list"]');
+    await page.fill('input[type="search"]', MOCK_MEMBER_USER.fullName);
+    await expect(list.getByRole('heading', { name: MOCK_EVENT_2.eventName })).toBeVisible();
+    await expect(list.getByRole('heading', { name: MOCK_EVENT.eventName })).toHaveCount(0);
+  });
+});
+
+// ── Event switcher — owner attribution for admins ─────────────────────────────
+
+test.describe('Event switcher — Admin owner attribution', () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoAuthenticated(page, '/app/events');
+    await mockApiMultipleEvents(page); // LIFO — runs before base mockApi handler
+    await page.goto('/app/events');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: /active event|pick one/i }).click();
+  });
+
+  test('shows the owner name on another members event', async ({ page }) => {
+    const option = page.getByRole('option', { name: new RegExp(MOCK_EVENT_2.eventName, 'i') });
+    await expect(option.getByText(MOCK_MEMBER_USER.fullName)).toBeVisible();
+  });
+
+  test('badges the admin own event as Mine', async ({ page }) => {
+    const option = page.getByRole('option', { name: new RegExp(MOCK_EVENT.eventName, 'i') });
+    await expect(option.getByText('Mine', { exact: true })).toBeVisible();
+  });
+
+  test('searching by owner name narrows the list', async ({ page }) => {
+    await page.fill('input[placeholder="Search events..."]', MOCK_MEMBER_USER.fullName);
+    await expect(page.getByRole('option', { name: new RegExp(MOCK_EVENT_2.eventName, 'i') })).toBeVisible();
+    await expect(page.getByRole('option', { name: new RegExp(MOCK_EVENT.eventName, 'i') })).toHaveCount(0);
+  });
+});
+
+// ── Event switcher — members see no owner attribution ─────────────────────────
+
+test.describe('Event switcher — Member sees no owner attribution', () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoAuthenticatedAsMember(page, '/app/events');
+  });
+
+  test('does not show owner names on event cards', async ({ page }) => {
+    await expect(page.getByText(MOCK_USER.fullName)).toHaveCount(0);
+  });
+
+  test('does not show the Mine badge', async ({ page }) => {
+    await expect(page.getByText('Mine', { exact: true })).toHaveCount(0);
+  });
 });
 
 // ── Events — Member sees only their own event ─────────────────────────────────
