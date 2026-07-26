@@ -98,7 +98,16 @@ export default function RsvpBySlugPage() {
 
   // ── Success ──────────────────────────────────────────────────────────
   if (submitted) {
-    return <RsvpSuccessScreen guestName={submittedName} design={template.design} slug={slug!} />;
+    return (
+      <RsvpSuccessScreen
+        guestName={submittedName}
+        design={template.design}
+        onBack={() => {
+          setSubmitted(false);
+          setSubmittedName("");
+        }}
+      />
+    );
   }
 
   // ── RSVP form ────────────────────────────────────────────────────────
