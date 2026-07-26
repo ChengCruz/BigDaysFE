@@ -321,6 +321,36 @@ export default function RsvpFormRenderer({
   // ── Shared input style (matches V3 designer) ─────────────────────────
   const inputCls = "w-full rounded-xl px-4 py-3 text-[13px] bg-transparent outline-none placeholder:opacity-40";
 
+  // ── The design's own submit button ────────────────────────────────────
+  // A cta block with no external link ("#" is the designer's default) *is* the
+  // submit button the host laid out. Wire that block to the form instead of
+  // rendering a dead button plus a second auto-appended one below it.
+  const submitCtaId = useMemo(
+    () => blocks.find((b) => b.type === "cta" && (!b.href || b.href === "#"))?.id ?? null,
+    [blocks]
+  );
+
+  const submitDisabled = isSubmitting || (isRsvpTurnstileEnabled && !captchaToken);
+
+  const captchaSection = isRsvpTurnstileEnabled ? (
+    <div className="flex flex-col items-center gap-2 pt-2">
+      <TurnstileWidget
+        key={captchaNonce}
+        action="rsvp"
+        siteKey={TURNSTILE_SITE_KEY_RSVP}
+        onVerify={(t) => { setCaptchaToken(t); setCaptchaError(false); }}
+        onExpire={() => setCaptchaToken(null)}
+        onError={() => { setCaptchaToken(null); setCaptchaError(true); }}
+      />
+      {captchaError && (
+        <p className="text-center text-xs text-rose-400">
+          Couldn't load the verification. Please refresh the page, or disable any
+          ad/tracker blocker and try again.
+        </p>
+      )}
+    </div>
+  ) : null;
+
   // ── Render a single design block ──────────────────────────────────────
   const renderBlock = (block: RsvpBlock): React.ReactNode => {
     const bgImages = block.background?.images ?? [];
@@ -617,35 +647,47 @@ export default function RsvpFormRenderer({
         </div>
       );
     } else if (block.type === "cta") {
+      // This block submits the form when it has no external link (see submitCtaId).
+      const isSubmitCta = block.id === submitCtaId;
+      const alignCls =
+        block.align === "center" ? "justify-center" : block.align === "right" ? "justify-end" : "justify-start";
       inner = (
-        <div className={`px-8 py-8 flex ${block.align === "center" ? "justify-center" : block.align === "right" ? "justify-end" : "justify-start"}`}>
-          {block.href && block.href !== "#" ? (
-            <a
-              href={block.href}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-full px-10 py-3.5 text-sm font-semibold transition-shadow hover:opacity-90"
-              style={{
-                background: block.ctaColor ?? accentColor,
-                color: block.ctaTextColor ?? "#fff",
-                boxShadow: `0 4px 14px ${block.ctaColor ?? accentColor}44`,
-              }}
-            >
-              {block.label}
-            </a>
-          ) : (
-            <button
-              type="button"
-              className="rounded-full px-10 py-3.5 text-sm font-semibold transition-shadow hover:opacity-90"
-              style={{
-                background: block.ctaColor ?? accentColor,
-                color: block.ctaTextColor ?? "#fff",
-                boxShadow: `0 4px 14px ${block.ctaColor ?? accentColor}44`,
-              }}
-            >
-              {block.label}
-            </button>
-          )}
+        <div className="px-8 py-8 space-y-4">
+          {/* The captcha belongs directly above whichever button submits */}
+          {isSubmitCta && captchaSection}
+          <div className={`flex ${alignCls}`}>
+            {block.href && block.href !== "#" ? (
+              <a
+                href={block.href}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full px-10 py-3.5 text-sm font-semibold transition-shadow hover:opacity-90"
+                style={{
+                  background: block.ctaColor ?? accentColor,
+                  color: block.ctaTextColor ?? "#fff",
+                  boxShadow: `0 4px 14px ${block.ctaColor ?? accentColor}44`,
+                }}
+              >
+                {block.label}
+              </a>
+            ) : (
+              <button
+                type={isSubmitCta ? "submit" : "button"}
+                disabled={isSubmitCta && submitDisabled}
+                className="flex items-center justify-center gap-2 rounded-full px-10 py-3.5 text-sm font-semibold transition-shadow hover:opacity-90 disabled:opacity-60"
+                style={{
+                  background: block.ctaColor ?? accentColor,
+                  color: block.ctaTextColor ?? "#fff",
+                  boxShadow: `0 4px 14px ${block.ctaColor ?? accentColor}44`,
+                }}
+              >
+                {isSubmitCta && isSubmitting && <Spinner />}
+                {isSubmitCta && isSubmitting
+                  ? "Submitting..."
+                  : block.label || design.submitButtonLabel || "Submit RSVP"}
+              </button>
+            )}
+          </div>
         </div>
       );
     } else if (block.type === "image") {
@@ -897,42 +939,29 @@ export default function RsvpFormRenderer({
             </section>
           )}
 
-          {/* ── CAPTCHA ── */}
-          {isRsvpTurnstileEnabled && (
-            <div className="flex flex-col items-center gap-2 pt-2">
-              <TurnstileWidget
-                key={captchaNonce}
-                action="rsvp"
-                siteKey={TURNSTILE_SITE_KEY_RSVP}
-                onVerify={(t) => { setCaptchaToken(t); setCaptchaError(false); }}
-                onExpire={() => setCaptchaToken(null)}
-                onError={() => { setCaptchaToken(null); setCaptchaError(true); }}
-              />
-              {captchaError && (
-                <p className="text-center text-xs text-rose-400">
-                  Couldn't load the verification. Please refresh the page, or disable any
-                  ad/tracker blocker and try again.
-                </p>
-              )}
-            </div>
-          )}
+          {/* ── CAPTCHA + submit — only when the design has no submit cta block
+                 of its own, otherwise both render inline at that block ── */}
+          {!submitCtaId && (
+            <>
+              {captchaSection}
 
-          {/* ── Submit button ── */}
-          <div className={`flex justify-center ${isFlush ? "py-8" : "pb-8"}`}>
-            <button
-              type="submit"
-              disabled={isSubmitting || (isRsvpTurnstileEnabled && !captchaToken)}
-              className="flex min-w-[220px] items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-semibold shadow-xl transition hover:opacity-90 disabled:opacity-60"
-              style={{
-                background: design.submitButtonColor ?? accentColor,
-                color: design.submitButtonTextColor ?? "#0f172a",
-                boxShadow: `0 4px 14px ${design.submitButtonColor ?? accentColor}44`,
-              }}
-            >
-              {isSubmitting && <Spinner />}
-              {isSubmitting ? "Submitting..." : (design.submitButtonLabel || "Submit RSVP")}
-            </button>
-          </div>
+              <div className={`flex justify-center ${isFlush ? "py-8" : "pb-8"}`}>
+                <button
+                  type="submit"
+                  disabled={submitDisabled}
+                  className="flex min-w-[220px] items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-semibold shadow-xl transition hover:opacity-90 disabled:opacity-60"
+                  style={{
+                    background: design.submitButtonColor ?? accentColor,
+                    color: design.submitButtonTextColor ?? "#0f172a",
+                    boxShadow: `0 4px 14px ${design.submitButtonColor ?? accentColor}44`,
+                  }}
+                >
+                  {isSubmitting && <Spinner />}
+                  {isSubmitting ? "Submitting..." : (design.submitButtonLabel || "Submit RSVP")}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </form>
       </div>{/* end phone frame */}

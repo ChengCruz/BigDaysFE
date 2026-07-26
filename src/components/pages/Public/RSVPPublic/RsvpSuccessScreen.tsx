@@ -1,16 +1,15 @@
 // src/components/pages/Public/RSVPPublic/RsvpSuccessScreen.tsx
-import { useNavigate } from "react-router";
 import type { RsvpDesign } from "../../../../types/rsvpDesign";
 
 interface Props {
   guestName: string;
   design: RsvpDesign;
-  slug: string;
+  /** Returns the guest to a fresh RSVP form. */
+  onBack: () => void;
 }
 
-export default function RsvpSuccessScreen({ guestName, design, slug }: Props) {
+export default function RsvpSuccessScreen({ guestName, design, onBack }: Props) {
   const accentColor = design.accentColor ?? "#f97316";
-  const navigate = useNavigate();
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-950 flex items-center justify-center px-4 text-white">
@@ -87,7 +86,7 @@ export default function RsvpSuccessScreen({ guestName, design, slug }: Props) {
         </p>
 
         <button
-          onClick={() => navigate(`/rsvp/${slug}`)}
+          onClick={onBack}
           className="mt-2 text-sm underline underline-offset-4 text-white/50 hover:text-white/80 transition-colors"
         >
           Back to RSVP page
