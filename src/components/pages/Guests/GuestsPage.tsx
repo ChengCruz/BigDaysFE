@@ -2,7 +2,7 @@
 import { PageLoader } from "../../atoms/PageLoader";
 import { ErrorState } from "../../atoms/ErrorState";
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { UserGroupIcon, UserIcon, CheckCircleIcon, XIcon, PencilIcon, LightBulbIcon } from "@heroicons/react/solid";
 import { Chair, DotsThree } from "@phosphor-icons/react";
 import { useAuth } from "../../../api/hooks/useAuth";

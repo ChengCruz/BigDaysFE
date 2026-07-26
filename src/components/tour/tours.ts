@@ -192,7 +192,7 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="designer-save"]',
         title: "Save & publish",
         content:
-          '"Save draft" preserves your work and updates the slug link (/rsvp/:slug). "Save & Publish" also updates the share-token link — use this when you\'re ready to send invites.',
+          '"Save draft" keeps your work private — guests still see your last published version. "Save & Publish" saves and pushes it live to your guest link in one step.',
         placement: "bottom",
       },
     ],
@@ -453,7 +453,7 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="crew-event-code"]',
         title: "Event Code",
         content:
-          "Share this code with your crew along with their Crew ID and PIN. They sign in via the Staff tab on the login page.",
+          "Share this code with your crew along with their Crew ID and PIN. They sign in at the dedicated crew sign-in page (linked in the banner above).",
       },
       {
         ...commonStepProps,

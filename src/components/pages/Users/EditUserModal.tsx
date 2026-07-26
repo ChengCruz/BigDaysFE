@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router";
 import { Spinner } from "../../atoms/Spinner";
 import { UserFormModal } from "../../molecules/UserFormModal";
 import { useUserByGuidApi } from "../../../api/hooks/useUsersApi";

@@ -1,7 +1,33 @@
-import React, { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router";
 import { useAuthApi } from "../../../api/hooks/useAuthApi";
 import toast from "react-hot-toast";
+
+const VERIFIED_EMAILS_KEY = "mbd_verified_emails";
+
+/** Matches the backend resend cooldown — a second request inside this window is a silent no-op. */
+const RESEND_COOLDOWN_SECONDS = 60;
+
+function getVerifiedEmails(): string[] {
+  try {
+    const raw = localStorage.getItem(VERIFIED_EMAILS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function markEmailVerified(email: string) {
+  try {
+    const normalized = email.trim().toLowerCase();
+    const emails = getVerifiedEmails();
+    if (!emails.includes(normalized)) {
+      localStorage.setItem(VERIFIED_EMAILS_KEY, JSON.stringify([...emails, normalized].slice(-10)));
+    }
+  } catch {
+    // localStorage unavailable — worst case the form just shows again
+  }
+}
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -29,26 +55,73 @@ const labelStyle: React.CSSProperties = {
 export default function VerifyEmailPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const email = (location.state as any)?.email as string | undefined;
-  const { verifyEmail } = useAuthApi();
-  const [token, setToken] = useState("");
+  const emailFromState = (location.state as any)?.email as string | undefined;
+  const { verifyEmail, resendVerificationCode } = useAuthApi();
+  const [email, setEmail] = useState(emailFromState ?? "");
+  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+
+  // Guards against: (1) browser back-button after a successful verify (handled by the
+  // `replace` navigation below) and (2) revisiting this route later, e.g. via the original
+  // email link, when this device already completed verification for that address.
+  const alreadyVerified = !!emailFromState && getVerifiedEmails().includes(emailFromState.trim().toLowerCase());
+
+  useEffect(() => {
+    if (alreadyVerified) {
+      toast.success("Your account is already verified — please sign in.");
+      navigate("/login", { replace: true });
+    }
+  }, [alreadyVerified, navigate]);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
+
+  const ready = email.trim().length > 0 && code.length === 6;
+  const canResend = email.trim().length > 0 && cooldown === 0 && !resendVerificationCode.isPending;
+
+  const handleResend = async () => {
+    if (!canResend) return;
+    setError(null);
+    try {
+      const result = await resendVerificationCode.mutateAsync({ email: email.trim() });
+      if (!result.isSuccess) {
+        setError(result.message || "Could not resend the code. Please try again.");
+        return;
+      }
+      // A new code invalidates whatever was typed, so clear the field rather than let a
+      // stale code sit there looking valid.
+      setCode("");
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+      toast.success(result.message || "A new verification code is on its way. Check your inbox.");
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Could not resend the code. Please try again.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     try {
-      const result = await verifyEmail.mutateAsync({ token: token.trim() });
+      const result = await verifyEmail.mutateAsync({ email: email.trim(), code: code.trim() });
       if (result.isSuccess) {
-        toast.success("Email verified! You can now sign in.");
-        navigate("/login");
+        markEmailVerified(email);
+        toast.success(result.message || "Email verified! You can now sign in.");
+        navigate("/login", { replace: true });
       } else {
-        setError("Invalid or expired verification code. Please check your email and try again.");
+        setError(result.message || "Invalid or expired verification code. Please check your email and try again.");
       }
     } catch (err: any) {
       setError(err.response?.data?.message || "Verification failed. Please try again.");
     }
   };
+
+  if (alreadyVerified) {
+    return null;
+  }
 
   return (
     <div
@@ -172,22 +245,40 @@ export default function VerifyEmailPage() {
           </h1>
 
           <p style={{ color: '#6B5D50', marginBottom: '2rem', fontSize: '1.1rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
-            {email
-              ? <>Check <strong style={{ color: '#2A221E' }}>{email}</strong> for your verification code.</>
-              : "Check your inbox for your verification code."}
+            {emailFromState
+              ? <>Check <strong style={{ color: '#2A221E' }}>{emailFromState}</strong> for your 6-digit verification code.</>
+              : "Enter your email and the 6-digit code we sent you."}
           </p>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>
+            {!emailFromState && (
+              <div>
+                <label style={labelStyle}>Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={e => { setEmail(e.target.value); setError(null); }}
+                  placeholder="you@example.com"
+                  style={inputStyle}
+                  autoComplete="email"
+                  onFocus={e => (e.target.style.borderBottomColor = '#B4543A')}
+                  onBlur={e => (e.target.style.borderBottomColor = '#EDE4D3')}
+                />
+              </div>
+            )}
             <div>
               <label style={labelStyle}>Verification Code</label>
               <input
                 type="text"
                 required
-                value={token}
-                onChange={e => { setToken(e.target.value); setError(null); }}
-                placeholder="Paste the code from your email"
-                style={inputStyle}
-                autoComplete="off"
+                value={code}
+                onChange={e => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(null); }}
+                placeholder="6-digit code"
+                style={{ ...inputStyle, letterSpacing: '0.35em', fontSize: '1.4rem' }}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
                 spellCheck={false}
                 onFocus={e => (e.target.style.borderBottomColor = '#B4543A')}
                 onBlur={e => (e.target.style.borderBottomColor = '#EDE4D3')}
@@ -200,25 +291,50 @@ export default function VerifyEmailPage() {
 
             <button
               type="submit"
-              disabled={verifyEmail.isPending || !token.trim()}
+              disabled={verifyEmail.isPending || !ready}
               style={{
                 width: '100%',
                 padding: '1.2rem',
-                background: verifyEmail.isPending || !token.trim() ? '#6B5D50' : '#2A221E',
+                background: verifyEmail.isPending || !ready ? '#6B5D50' : '#2A221E',
                 color: '#FAF6EF',
                 border: 'none',
                 fontFamily: 'var(--font-label)',
                 fontSize: '0.75rem',
                 letterSpacing: '0.3em',
                 textTransform: 'uppercase' as const,
-                cursor: verifyEmail.isPending || !token.trim() ? 'not-allowed' : 'pointer',
+                cursor: verifyEmail.isPending || !ready ? 'not-allowed' : 'pointer',
                 transition: 'background 0.3s ease',
               }}
-              onMouseEnter={e => { if (!verifyEmail.isPending && token.trim()) (e.currentTarget as HTMLElement).style.background = '#B4543A'; }}
-              onMouseLeave={e => { if (!verifyEmail.isPending && token.trim()) (e.currentTarget as HTMLElement).style.background = '#2A221E'; }}
+              onMouseEnter={e => { if (!verifyEmail.isPending && ready) (e.currentTarget as HTMLElement).style.background = '#B4543A'; }}
+              onMouseLeave={e => { if (!verifyEmail.isPending && ready) (e.currentTarget as HTMLElement).style.background = '#2A221E'; }}
             >
               {verifyEmail.isPending ? "Verifying…" : "Verify Email →"}
             </button>
+
+            <div style={{ textAlign: 'center', color: '#6B5D50', fontSize: '1rem', fontFamily: 'var(--font-serif)' }}>
+              Didn&apos;t get the email?{" "}
+              {cooldown > 0 ? (
+                <span style={{ color: '#6B5D50' }}>Resend in {cooldown}s</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={!canResend}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    font: 'inherit',
+                    color: canResend ? '#B4543A' : '#6B5D50',
+                    borderBottom: `1px solid ${canResend ? '#B4543A' : '#6B5D50'}`,
+                    paddingBottom: '1px',
+                    cursor: canResend ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  {resendVerificationCode.isPending ? "Sending…" : "Resend code"}
+                </button>
+              )}
+            </div>
 
             <div style={{ textAlign: 'center', color: '#6B5D50', fontSize: '1rem', fontFamily: 'var(--font-serif)' }}>
               Already verified?{" "}

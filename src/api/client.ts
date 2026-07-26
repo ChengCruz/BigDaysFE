@@ -4,6 +4,9 @@ import { tokenStore } from "../utils/tokenStore";
 import { decodeJwt } from "../utils/jwtUtils";
 import { AuthEndpoints } from "./endpoints";
 
+/** Author sent on calls made before login, when there is no JWT to derive one from. */
+const ANONYMOUS_AUTHOR = "anonymous";
+
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_BASE, // e.g. "https://api.mybigday.com"
   headers: { "Content-Type": "application/json" },
@@ -21,10 +24,12 @@ client.interceptors.request.use(cfg => {
   }
   const apiKey = import.meta.env.VITE_API_KEY;
   if (apiKey) cfg.headers!["apiKey"] = apiKey;
-  // Fall back to env var author only when not logged in
+  // Fall back to env var author only when not logged in. The BE's
+  // HeaderValidatorMiddleware rejects any request without an `author` header —
+  // including [AllowAnonymous] endpoints like ForgotPassword — so never leave it
+  // unset just because the env var is missing or empty.
   if (!cfg.headers!["author"]) {
-    const envAuthor = import.meta.env.VITE_API_AUTHOR;
-    if (envAuthor) cfg.headers!["author"] = envAuthor;
+    cfg.headers!["author"] = import.meta.env.VITE_API_AUTHOR || ANONYMOUS_AUTHOR;
   }
   return cfg;
 });

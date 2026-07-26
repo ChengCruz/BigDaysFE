@@ -1,11 +1,11 @@
 /**
  * RSVP Designer V3 — /app/rsvps/designer-v3
  *
- * Covers the edit → save draft → public slug flow that was broken before
- * .claude/todo/rsvp-v3-preview-public-sync.md was addressed:
- *   - Draft badge shows the server-owned version and "slug-only" hint.
+ * Covers the edit → save draft → publish → public slug flow:
+ *   - Draft badge shows the server-owned version and a "not live" hint.
  *   - Guest Link panel points at /rsvp/:slug (not /rsvp/submit/:token).
- *   - Public slug endpoint returns the latest saved design.
+ *   - Save & Publish works on a never-saved design in a single click.
+ *   - The slug endpoint serves the PUBLISHED design; a later draft doesn't leak.
  */
 import { test, expect, type Route } from '@playwright/test';
 import {
@@ -15,6 +15,10 @@ import {
 } from './helpers';
 
 const SLUG = 'test-wedding';
+
+/** Status text appears in both the toolbar and the footer; scope assertions to the toolbar. */
+const TOOLBAR = (page: Parameters<typeof gotoAuthenticated>[0]) =>
+  page.locator('[data-tour="designer-toolbar"]');
 
 const EVENT_WITH_SLUG = { ...MOCK_EVENT, slug: SLUG };
 
@@ -72,6 +76,11 @@ function buildDesign(version: number, headlineTitle: string, isPublished = false
  *   - a real event with slug
  *   - a design with a known version + headline
  *   - a save POST that increments the version and echoes an updated headline
+ *   - a publish PUT that promotes the current draft to the live version
+ *
+ * Mirrors the backend's publish gating: the slug endpoint serves the latest
+ * published version, falling back to the latest draft only when nothing has
+ * ever been published.
  *
  * Playwright checks routes in reverse registration order (LIFO), so call this
  * AFTER gotoAuthenticated (which registers the generic mockApi handler first).
@@ -83,6 +92,9 @@ async function mockDesignerV3(
   // Versions progress in memory across the test: 3 (loaded) → 4 (after save)
   let currentVersion = 3;
   let currentHeadline = opts.initialHeadline;
+  let saveCount = 0;
+  // What guests see. Null until the organiser publishes for the first time.
+  let live: { version: number; headline: string } | null = null;
 
   await page.route('**/__mock_api__/**', async (route: Route) => {
     const url = route.request().url();
@@ -102,17 +114,21 @@ async function mockDesignerV3(
       });
     }
 
-    // RSVP design GET
+    // RSVP design GET — the designer always loads the newest version (the draft)
     if (/\/RsvpDesign\/[^/]+\/design$/i.test(url) && method === 'GET') {
       return route.fulfill({
         status: 200,
-        json: { isSuccess: true, data: buildDesign(currentVersion, currentHeadline) },
+        json: {
+          isSuccess: true,
+          data: buildDesign(currentVersion, currentHeadline, live?.version === currentVersion),
+        },
       });
     }
-    // RSVP design POST (save draft) — bumps version, persists updated headline
+    // RSVP design POST (save draft) — bumps version, persists a distinct headline
     if (/\/RsvpDesign\/[^/]+\/design$/i.test(url) && method === 'POST') {
       currentVersion += 1;
-      currentHeadline = opts.updatedHeadline;
+      saveCount += 1;
+      currentHeadline = saveCount === 1 ? opts.updatedHeadline : `${opts.updatedHeadline}-${saveCount}`;
       return route.fulfill({
         status: 200,
         json: {
@@ -121,15 +137,23 @@ async function mockDesignerV3(
         },
       });
     }
-    // Public slug fetch — should return the latest saved design
+    // Publish PUT — promotes the current draft to the version guests see
+    if (/\/RsvpDesign\/[^/]+\/design\/\d+\/publish$/i.test(url) && method === 'PUT') {
+      live = { version: currentVersion, headline: currentHeadline };
+      return route.fulfill({ status: 200, json: { isSuccess: true, data: true } });
+    }
+    // Public slug fetch — serves the published design, else the latest draft.
+    // Shape matches the backend's EventRsvpTemplateDto: { event, rsvpDesign, questions }.
     if (/\/event\/eventRsvp\/slug\//i.test(url) && method === 'GET') {
+      const served = live ?? { version: currentVersion, headline: currentHeadline };
       return route.fulfill({
         status: 200,
         json: {
           isSuccess: true,
           data: {
-            ...EVENT_WITH_SLUG,
-            rsvpDesign: buildDesign(currentVersion, currentHeadline),
+            event: EVENT_WITH_SLUG,
+            rsvpDesign: buildDesign(served.version, served.headline, live !== null),
+            questions: [],
           },
         },
       });
@@ -140,7 +164,7 @@ async function mockDesignerV3(
 }
 
 test.describe('RSVP Designer V3 — save draft + public slug link', () => {
-  test('shows "Draft vN · slug-only" badge and a slug-based Guest Link', async ({ page }) => {
+  test('shows "Draft vN · not live" badge and a slug-based Guest Link', async ({ page }) => {
     // Authenticate first (registers generic mockApi), THEN overlay V3-specific
     // routes (LIFO-last wins), THEN navigate to the designer.
     await gotoAuthenticated(page, '/app/events');
@@ -151,8 +175,9 @@ test.describe('RSVP Designer V3 — save draft + public slug link', () => {
     await page.goto('/app/rsvps/designer-v3');
     await page.waitForLoadState('networkidle');
 
-    // Draft badge reflects server-owned version (isPublished=false → draft)
-    await expect(page.locator('text=/Draft v\\d+ · slug-only/')).toBeVisible({ timeout: 10_000 });
+    // Draft badge reflects server-owned version (isPublished=false → draft).
+    // Scoped to the toolbar — the footer mirrors the same status text.
+    await expect(TOOLBAR(page).getByText(/Draft v\d+ · not live/)).toBeVisible({ timeout: 10_000 });
 
     // Guest Link panel opens with a slug-based URL (not /rsvp/submit/:token)
     await page.getByRole('button', { name: /Get Link|Guest Link/ }).click();
@@ -163,7 +188,7 @@ test.describe('RSVP Designer V3 — save draft + public slug link', () => {
     expect(value).not.toMatch(/\/rsvp\/submit\//);
   });
 
-  test('public slug endpoint returns the latest saved design', async ({ page }) => {
+  test('Save & Publish pushes the design live in a single click', async ({ page }) => {
     // Authenticate first (registers generic mockApi), THEN overlay V3-specific
     // routes (LIFO-last wins), THEN navigate to the designer.
     await gotoAuthenticated(page, '/app/events');
@@ -174,16 +199,39 @@ test.describe('RSVP Designer V3 — save draft + public slug link', () => {
     await page.goto('/app/rsvps/designer-v3');
     await page.waitForLoadState('networkidle');
 
-    // Save draft via the toolbar button — mock bumps version + swaps headline
-    await page.getByRole('button', { name: /Save draft/ }).click();
-    await expect(page.locator('text=/Draft v4/')).toBeVisible({ timeout: 10_000 });
+    // One click — no "save first" error, no second click needed. Publish must use
+    // the version the save just returned, not stale component state.
+    await page.getByRole('button', { name: /Save & Publish/ }).click();
+    await expect(TOOLBAR(page).getByText(/Published v4/)).toBeVisible({ timeout: 10_000 });
 
-    // Fetch the public slug endpoint directly: it must serve the updated design
-    const res = await page.request.get(
-      `${page.url().split('/app/')[0]}/__mock_api__/event/eventRsvp/slug/${SLUG}`
-    );
-    expect(res.ok()).toBeTruthy();
-    const body = await res.json();
-    expect(body?.data?.rsvpDesign?.design?.blocks?.[0]?.title).toBe('SECOND-EDIT-SHOULD-APPEAR');
+    // The guest page now renders the design that was just published
+    await page.goto(`/rsvp/${SLUG}`);
+    await expect(page.getByText('SECOND-EDIT-SHOULD-APPEAR')).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('a draft saved after publishing does not leak to the guest page', async ({ page }) => {
+    await gotoAuthenticated(page, '/app/events');
+    await mockDesignerV3(page, {
+      initialHeadline: 'Initial headline',
+      updatedHeadline: 'PUBLISHED-COPY',
+    });
+    await page.goto('/app/rsvps/designer-v3');
+    await page.waitForLoadState('networkidle');
+
+    // Publish v4, then keep editing and save a v5 draft
+    await page.getByRole('button', { name: /Save & Publish/ }).click();
+    await expect(TOOLBAR(page).getByText(/Published v4/)).toBeVisible({ timeout: 10_000 });
+
+    // The publish toast renders top-center, over the toolbar — clear it so the
+    // next click lands on the button rather than the toast.
+    await page.locator('[data-rht-toaster]').evaluate((el) => el.remove());
+
+    await page.getByRole('button', { name: /Save draft/ }).click();
+    await expect(TOOLBAR(page).getByText(/Draft v5 · not live/)).toBeVisible({ timeout: 10_000 });
+
+    // Guests still see the published v4 — the unpublished v5 edits stay private
+    await page.goto(`/rsvp/${SLUG}`);
+    await expect(page.getByText('PUBLISHED-COPY', { exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('PUBLISHED-COPY-2')).toHaveCount(0);
   });
 });

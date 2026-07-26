@@ -1,6 +1,6 @@
 // designer/DesignToolbar.tsx
 // Top toolbar: event info, save/preview controls, and shareable link section.
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Button } from "../../../atoms/Button";
 import { Spinner } from "../../../atoms/Spinner";
 

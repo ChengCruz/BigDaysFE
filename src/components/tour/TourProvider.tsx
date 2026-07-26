@@ -1,5 +1,5 @@
 import { createContext, useCallback, useEffect, useState, type ReactNode } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 import { Joyride, STATUS, type EventHandler } from "react-joyride";
 import { getTourByRoute, findTourForPath, type TourDefinition } from "./tours";
 

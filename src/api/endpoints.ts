@@ -8,6 +8,7 @@ export const AuthEndpoints = {
   me: "/auth/me",
   register: "/User/Create",
   verifyEmail: "/User/VerifyEmail",
+  resendVerificationCode: "/User/ResendVerificationCode",
   forgotPassword: "/User/ForgotPassword",
   resetPassword: "/User/ResetForgotPassword",
 };

@@ -1,5 +1,5 @@
 // src/components/pages/Tables/TableDetail.tsx
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet } from "react-router";
 export default function TableDetail() {
 
   return (

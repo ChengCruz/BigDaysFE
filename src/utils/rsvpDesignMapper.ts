@@ -11,6 +11,7 @@ import type {
   ApiBlockBackground,
   ApiOverlay,
 } from "../types/rsvpDesign";
+import { resolveBackdropLabel } from "./rsvpBackdrops";
 
 /**
  * Transform Frontend block to Backend block format
@@ -461,6 +462,10 @@ export function mapToFrontendDesign(
     publicLink: null,    // Public link is generated client-side
     formFieldConfigs: design.formFieldConfigs,
     previewBackdropLabel: design.theme.previewBackdropLabel,
+    // The backend only persists the label (its theme DTO has no image/color field),
+    // so resolve it back to a renderable asset here. Without this the public guest
+    // page reads previewBackdropImage/Color as undefined and renders a flat grey.
+    ...(resolveBackdropLabel(design.theme.previewBackdropLabel) ?? {}),
   };
 }
 

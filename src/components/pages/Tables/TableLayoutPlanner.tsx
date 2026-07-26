@@ -5,7 +5,7 @@ import {
   useTableApi,
   useUpdateTableLayout,
 } from "../../../api/hooks/useTablesApi";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { useEventContext } from "../../../context/EventContext";
 
 export function TableLayoutPlanner() {

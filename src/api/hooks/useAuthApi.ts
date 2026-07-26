@@ -31,7 +31,12 @@ export interface ResetPasswordPayload {
 }
 
 export interface VerifyEmailPayload {
-  token: string;
+  email: string;
+  code: string;
+}
+
+export interface ResendVerificationCodePayload {
+  email: string;
 }
 
 export interface AuthResponse {
@@ -87,6 +92,13 @@ export function useAuthApi() {
       client.post(AuthEndpoints.verifyEmail, data).then(r => r.data),
   });
 
+  // Issues a fresh code and invalidates the previous one. The backend answers the same way
+  // whether or not the address is pending, so the response can never confirm an account exists.
+  const resendVerificationCode = useMutation<{ data: boolean; message: string; isSuccess: boolean }, Error, ResendVerificationCodePayload>({
+    mutationFn: (data: ResendVerificationCodePayload) =>
+      client.post(AuthEndpoints.resendVerificationCode, data).then(r => r.data),
+  });
+
   const logout = useMutation<LogoutResponse, Error, void>({
     mutationFn: () =>
       client.post<LogoutResponse>(AuthEndpoints.logout).then(r => r.data),
@@ -100,7 +112,7 @@ export function useAuthApi() {
     },
   });
 
-  return { login, register, logout, forgotPassword, resetPassword, verifyEmail };
+  return { login, register, logout, forgotPassword, resetPassword, verifyEmail, resendVerificationCode };
 }
 
 export function useCrewLogin() {

@@ -1,30 +1,9 @@
 // designer/GlobalSettingsPanel.tsx
 // Global design settings: background, accent color, overlay, music, submit button.
 import React, { useEffect } from "react";
+import { BACKDROP_OPTIONS, backdropColorFor } from "../../../../utils/rsvpBackdrops";
 
-export const BACKDROP_OPTIONS: { label: string; value: string }[] = [
-  { label: "None",              value: "" },
-  { label: "Misty Mountains",   value: "/backgrounds/bg-01-misty-mountains.png" },
-  { label: "Sumi Mountains",    value: "/backgrounds/bg-01b-sumi-mountains.png" },
-  { label: "Sunset Mountains",  value: "/backgrounds/bg-01c-sunset-mountains.png" },
-  { label: "Silk Ribbons",      value: "/backgrounds/bg-02-silk-ribbons.png" },
-  { label: "Blush Ribbons",     value: "/backgrounds/bg-02b-blush-ribbons.png" },
-  { label: "Dusty Blue Ribbons",value: "/backgrounds/bg-02c-dustyblue-ribbons.png" },
-  { label: "Garden",            value: "/backgrounds/bg-03-garden-bottom.png" },
-  { label: "Lavender Field",    value: "/backgrounds/bg-03b-lavender-field.png" },
-  { label: "Wildflower Peach",  value: "/backgrounds/bg-03c-wildflower-peach.png" },
-  { label: "Ocean Horizon",     value: "/backgrounds/bg-04-ocean-horizon.png" },
-  { label: "Tropical Water",    value: "/backgrounds/bg-04b-tropical-water.png" },
-  { label: "Golden Hour Coast", value: "/backgrounds/bg-04c-goldenhour-coast.png" },
-  { label: "Herbarium",         value: "/backgrounds/bg-05-herbarium.png" },
-  { label: "Pressed Flowers",   value: "/backgrounds/bg-05b-pressed-flowers.png" },
-  { label: "Eucalyptus",        value: "/backgrounds/bg-05c-eucalyptus.png" },
-  { label: "Celestial Midnight",value: "/backgrounds/bg-06-celestial-midnight.png" },
-  { label: "Celestial Plum",    value: "/backgrounds/bg-06b-celestial-plum.png" },
-  { label: "Celestial Emerald", value: "/backgrounds/bg-06c-celestial-emerald.png" },
-  { label: "Minimal Gold",      value: "/backgrounds/bg-06-minimal-gold.png" },
-  { label: "Rose Gold Arch",    value: "/backgrounds/bg-06c-rosegold-arch.png" },
-];
+export { BACKDROP_OPTIONS };
 
 type ContentWidth = "compact" | "standard" | "wide" | "full";
 
@@ -343,7 +322,11 @@ export function GlobalSettingsPanel({
         {/* ── Preview backdrop ── */}
         <div className="space-y-3">
           <SectionTitle>Preview backdrop</SectionTitle>
-          <p className="text-xs text-gray-400">Shown outside the mobile frame in preview only — not visible to guests.</p>
+          <p className="text-xs text-gray-400">
+            Shown around the phone frame — in this preview and on the guest page when
+            viewed on a desktop. Guests on a phone see the design full-width, so the
+            backdrop isn't visible to them.
+          </p>
           <div className="grid grid-cols-3 gap-1.5">
             {BACKDROP_OPTIONS.map((opt) => {
               const selected = previewBackdropImage === opt.value;
@@ -354,7 +337,7 @@ export function GlobalSettingsPanel({
                   title={opt.label}
                   onClick={() => onChange({
                     previewBackdropImage: opt.value,
-                    previewBackdropColor: opt.value === "" ? "#ffffff" : "#f3f4f6",
+                    previewBackdropColor: backdropColorFor(opt.value),
                   })}
                   className={`relative rounded-lg overflow-hidden border-2 transition-all ${
                     selected
@@ -369,7 +352,13 @@ export function GlobalSettingsPanel({
                       <span className="text-[9px] text-gray-400 font-medium">None</span>
                     </div>
                   ) : (
-                    <img src={opt.value} alt={opt.label} className="w-full h-full object-cover" />
+                    <img
+                      src={opt.thumb}
+                      alt={opt.label}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                    />
                   )}
                   {selected && opt.value !== "" && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/20">

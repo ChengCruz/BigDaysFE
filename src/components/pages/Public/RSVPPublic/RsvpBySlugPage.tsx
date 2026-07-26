@@ -6,7 +6,7 @@
 // 3. On submit, posts answers to the public RSVP API.
 // 4. Shows RsvpSuccessScreen after a successful submission.
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import toast from "react-hot-toast";
 import { Spinner } from "../../../atoms/Spinner";
 import { useEventBySlug } from "../../../../api/hooks/useEventBySlugApi";
@@ -98,7 +98,16 @@ export default function RsvpBySlugPage() {
 
   // ── Success ──────────────────────────────────────────────────────────
   if (submitted) {
-    return <RsvpSuccessScreen guestName={submittedName} design={template.design} slug={slug!} />;
+    return (
+      <RsvpSuccessScreen
+        guestName={submittedName}
+        design={template.design}
+        onBack={() => {
+          setSubmitted(false);
+          setSubmittedName("");
+        }}
+      />
+    );
   }
 
   // ── RSVP form ────────────────────────────────────────────────────────

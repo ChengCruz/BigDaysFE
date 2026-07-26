@@ -1,6 +1,6 @@
 // src/components/pages/Tables/EditTableModal.tsx
 import { Spinner } from "../../atoms/Spinner";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router";
 import { useEventApi } from "../../../api/hooks/useEventsApi";
 import { EventFormModal } from "../../molecules/EventFormModal";
 
