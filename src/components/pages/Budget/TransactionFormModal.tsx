@@ -1,4 +1,4 @@
-// src/components/pages/Wallet/TransactionFormModal.tsx
+// src/components/pages/Budget/TransactionFormModal.tsx
 import React, { useState, useEffect } from "react";
 import { Modal } from "../../molecules/Modal";
 import { Button } from "../../atoms/Button";

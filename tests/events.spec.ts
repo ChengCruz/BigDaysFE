@@ -301,9 +301,9 @@ test.describe('Events — Navigation persists across pages', () => {
     await expect(page).toHaveURL(/\/app\/guests/);
   });
 
-  test('navigating to Wallet via sidebar works from events page', async ({ page }) => {
-    await page.click('a[title="Wallet"]');
+  test('navigating to Budget via sidebar works from events page', async ({ page }) => {
+    await page.click('a[title="Budget"]');
     await page.waitForLoadState('networkidle');
-    await expect(page).toHaveURL(/\/app\/wallet/);
+    await expect(page).toHaveURL(/\/app\/budget/);
   });
 });

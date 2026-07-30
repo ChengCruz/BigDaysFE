@@ -154,9 +154,9 @@ test.describe('Dashboard — quick actions navigation', () => {
     await expect(page).toHaveURL(/\/app\/tables/);
   });
 
-  test('"Add Expense" navigates to /app/wallet', async ({ page }) => {
+  test('"Add Expense" navigates to /app/budget', async ({ page }) => {
     await page.locator('button:has-text("Add Expense")').click();
-    await expect(page).toHaveURL(/\/app\/wallet/);
+    await expect(page).toHaveURL(/\/app\/budget/);
   });
 });
 
@@ -170,9 +170,9 @@ test.describe('Dashboard — stat card navigation', () => {
     await expect(page).toHaveURL(/\/app\/rsvps/);
   });
 
-  test('"Manage Budget" navigates to /app/wallet', async ({ page }) => {
+  test('"Manage Budget" navigates to /app/budget', async ({ page }) => {
     await page.locator('button:has-text("Manage Budget")').click();
-    await expect(page).toHaveURL(/\/app\/wallet/);
+    await expect(page).toHaveURL(/\/app\/budget/);
   });
 
   test('"Manage Tables" navigates to /app/tables', async ({ page }) => {

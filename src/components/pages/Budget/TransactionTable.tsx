@@ -1,23 +1,23 @@
-// src/components/pages/Wallet/TransactionTable.tsx
+// src/components/pages/Budget/TransactionTable.tsx
 import React, { useState, useMemo } from "react";
 import type { Transaction } from "../../../types/transaction";
 import { TransactionType, PaymentStatus } from "../../../types/transaction";
 import { CATEGORY_CONFIG, getAllCategories, getCategoryConfig } from "../../../utils/categoryConfig";
 import { formatAmount, getTransactionTypeLabel } from "../../../utils/transactionUtils";
-import type { Wallet } from "../../../types/wallet";
-import { CURRENCY_CONFIG } from "../../../types/wallet";
+import type { Budget } from "../../../types/budget";
+import { CURRENCY_CONFIG } from "../../../types/budget";
 import { useDeleteTransaction } from "../../../api/hooks/useTransactionApi";
 import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal";
 import { PencilIcon, TrashIcon } from "@heroicons/react/outline";
 
 interface TransactionTableProps {
-  wallet: Wallet;
+  budget: Budget;
   transactions: Transaction[];
   onEditTransaction: (transaction: Transaction) => void;
 }
 
 export const TransactionTable: React.FC<TransactionTableProps> = ({
-  wallet,
+  budget,
   transactions,
   onEditTransaction,
 }) => {
@@ -31,7 +31,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
   }>({ open: false, transaction: null });
 
   const deleteTransaction = useDeleteTransaction();
-  const currencySymbol = CURRENCY_CONFIG[wallet.currency].symbol;
+  const currencySymbol = CURRENCY_CONFIG[budget.currency].symbol;
 
   // Filter and search transactions
   const filteredTransactions = useMemo(() => {
@@ -225,7 +225,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
 
       {/* Transaction Table */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-lg overflow-hidden">
-        <div data-tour="wallet-transactions" className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-800 flex items-center justify-between">
+        <div data-tour="budget-transactions" className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-lg">📋</span>
             <h3 className="font-semibold text-slate-800 dark:text-white">Transaction History</h3>

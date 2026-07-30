@@ -75,9 +75,9 @@ test.describe('Dashboard pages layout', () => {
     await expect(page).toHaveScreenshot('guests.png', { fullPage: true });
   });
 
-  test('wallet page renders correctly', async ({ page }) => {
-    await page.goto('/app/wallet');
+  test('budget page renders correctly', async ({ page }) => {
+    await page.goto('/app/budget');
     await page.waitForLoadState('networkidle');
-    await expect(page).toHaveScreenshot('wallet.png', { fullPage: true });
+    await expect(page).toHaveScreenshot('budget.png', { fullPage: true });
   });
 });

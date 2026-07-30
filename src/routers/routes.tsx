@@ -79,7 +79,7 @@ import UsersPage from "../components/pages/Users/UsersPage";
 // import UserFormModal from "../components/molecules/UserFormModal";
 import EditUserModal from "../components/pages/Users/EditUserModal";
 
-import WalletPage from "../components/pages/Wallet/WalletPage";
+import BudgetPage from "../components/pages/Budget/BudgetPage";
 
 import MemberDashboardPage from "../components/pages/Dashboard/MemberDashboardPage";
 
@@ -211,8 +211,8 @@ export default function AppRoutes() {
         {/* CHECK-IN */}
         <Route path="checkin" element={<CheckInPage />} />
 
-        {/* WALLET */}
-        <Route path="wallet" element={<WalletPage />} />
+        {/* BUDGET */}
+        <Route path="budget" element={<BudgetPage />} />
 
         {/* TUTORIAL */}
         <Route path="tutorial" element={<TutorialPage />} />

@@ -32,7 +32,7 @@ test.describe('Sidebar — Admin role', () => {
   });
 
   const visibleLinks = [
-    'Dashboard', 'Events', 'RSVPs', 'Guests', 'Tables', 'Wallet', 'Check-in', 'Users', 'Crew',
+    'Dashboard', 'Events', 'RSVPs', 'Guests', 'Tables', 'Budget', 'Check-in', 'Users', 'Crew',
   ];
 
   for (const label of visibleLinks) {
@@ -58,7 +58,7 @@ test.describe('Sidebar — Member role', () => {
   });
 
   const visibleLinks = [
-    'Dashboard', 'Events', 'RSVPs', 'Guests', 'Tables', 'Wallet', 'Check-in', 'Users', 'Crew',
+    'Dashboard', 'Events', 'RSVPs', 'Guests', 'Tables', 'Budget', 'Check-in', 'Users', 'Crew',
   ];
 
   for (const label of visibleLinks) {
@@ -84,7 +84,7 @@ test.describe('Sidebar — Staff role', () => {
   });
 
   const visibleLinks = ['Check-in', 'Guests', 'Tables'];
-  const hiddenLinks = ['Dashboard', 'Events', 'RSVPs', 'Wallet', 'Users', 'Crew'];
+  const hiddenLinks = ['Dashboard', 'Events', 'RSVPs', 'Budget', 'Users', 'Crew'];
 
   for (const label of visibleLinks) {
     test(`shows "${label}" nav link`, async ({ page }) => {

@@ -1,40 +1,40 @@
-// src/components/pages/Wallet/WalletPage.tsx
+// src/components/pages/Budget/BudgetPage.tsx
 import { useState, useContext } from "react";
 import { PageLoader } from "../../atoms/PageLoader";
 import { Button } from "../../atoms/Button";
 import { useEventContext } from "../../../context/EventContext";
 import { AuthContext } from "../../../context/AuthProvider";
-import { useWalletsApi } from "../../../api/hooks/useWalletApi";
+import { useBudgetsApi } from "../../../api/hooks/useBudgetApi";
 import { useTransactionsApi } from "../../../api/hooks/useTransactionApi";
-import { SetupWalletModal } from "./SetupWalletModal";
+import { SetupBudgetModal } from "./SetupBudgetModal";
 import { TransactionFormModal } from "./TransactionFormModal";
 import { ExportReportModal } from "./ExportReportModal";
-import { WalletSummaryCards } from "./WalletSummaryCards";
+import { BudgetSummaryCards } from "./BudgetSummaryCards";
 import { CategoryBreakdown } from "./CategoryBreakdown";
 import { TransactionTable } from "./TransactionTable";
 import type { Transaction } from "../../../types/transaction";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { ErrorState } from "../../atoms/ErrorState";
 
-export default function WalletPage() {
+export default function BudgetPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────
   const { eventId, eventsLoading } = useEventContext()!;
   const { user } = useContext(AuthContext);
 
-  // Fetch wallet data
+  // Fetch budget data
   const {
-    data: wallet,
-    isLoading: walletLoading,
-    isError: walletError,
-  } = useWalletsApi(eventId ?? "");
+    data: budget,
+    isLoading: budgetLoading,
+    isError: budgetError,
+  } = useBudgetsApi(eventId ?? "");
 
-  // Fetch transactions (only if wallet exists)
+  // Fetch transactions (only if budget exists)
   const {
     data: transactions = [],
-  } = useTransactionsApi(wallet?.walletGuid ?? "", eventId ?? "");
+  } = useTransactionsApi(budget?.walletGuid ?? "", eventId ?? "");
 
   // Modal states
-  const [setupWalletModal, setSetupWalletModal] = useState<{ open: boolean; editMode: boolean }>({
+  const [setupBudgetModal, setSetupBudgetModal] = useState<{ open: boolean; editMode: boolean }>({
     open: false,
     editMode: false,
   });
@@ -52,13 +52,13 @@ export default function WalletPage() {
   if (eventsLoading) return <PageLoader message="Loading..." />;
   if (!eventId) return <NoEventsState title="No Events for Budget Tracking" message="Create your first event to start managing your budget and tracking expenses." />;
 
-  // Handle wallet setup/edit
-  const handleOpenSetupWallet = (editMode: boolean = false) => {
-    setSetupWalletModal({ open: true, editMode });
+  // Handle budget setup/edit
+  const handleOpenSetupBudget = (editMode: boolean = false) => {
+    setSetupBudgetModal({ open: true, editMode });
   };
 
-  const handleCloseSetupWallet = () => {
-    setSetupWalletModal({ open: false, editMode: false });
+  const handleCloseSetupBudget = () => {
+    setSetupBudgetModal({ open: false, editMode: false });
   };
 
   // Handle transaction add/edit
@@ -75,17 +75,17 @@ export default function WalletPage() {
   };
 
   // Loading state
-  if (walletLoading) {
-    return <PageLoader message="Loading wallet..." />;
+  if (budgetLoading) {
+    return <PageLoader message="Loading budget..." />;
   }
 
   // Error state
-  if (walletError) {
-    return <ErrorState message="Failed to load wallet data." onRetry={() => window.location.reload()} />;
+  if (budgetError) {
+    return <ErrorState message="Failed to load budget data." onRetry={() => window.location.reload()} />;
   }
 
-  // No wallet - show setup prompt
-  if (!wallet) {
+  // No budget - show setup prompt
+  if (!budget) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center max-w-md">
@@ -93,13 +93,13 @@ export default function WalletPage() {
             💰
           </div>
           <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">
-            Setup Your Wallet
+            Setup Your Budget
           </h2>
           <p className="text-gray-500 dark:text-gray-400 mb-6">
-            Get started by setting up your event wallet to track expenses and manage your budget.
+            Get started by setting up your event budget to track expenses and manage your spending.
           </p>
           <Button
-            onClick={() => handleOpenSetupWallet(false)}
+            onClick={() => handleOpenSetupBudget(false)}
             variant="primary"
             className="bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/25"
           >
@@ -117,36 +117,36 @@ export default function WalletPage() {
                 d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"
               />
             </svg>
-            Setup Wallet
+            Setup Budget
           </Button>
         </div>
 
-        {/* Setup Wallet Modal */}
-        <SetupWalletModal
-          isOpen={setupWalletModal.open}
-          onClose={handleCloseSetupWallet}
+        {/* Setup Budget Modal */}
+        <SetupBudgetModal
+          isOpen={setupBudgetModal.open}
+          onClose={handleCloseSetupBudget}
           eventGuid={eventId!}
           userId={user?.id ?? ""}
-          wallet={null}
+          budget={null}
         />
       </div>
     );
   }
 
-  // Main wallet view
+  // Main budget view
   return (
     <>
       {/* Page Title & Actions */}
-      <div data-tour="wallet-header" className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+      <div data-tour="budget-header" className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-display font-semibold text-primary">
-            Wallet & Budget
+            Budget
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Track your event expenses and manage your budget
           </p>
         </div>
-        <div data-tour="wallet-actions" className="flex flex-wrap gap-2">
+        <div data-tour="budget-actions" className="flex flex-wrap gap-2">
           <Button
             variant="secondary"
             className="flex items-center gap-2"
@@ -169,7 +169,7 @@ export default function WalletPage() {
             Export
           </Button>
           <Button
-            onClick={() => handleOpenSetupWallet(true)}
+            onClick={() => handleOpenSetupBudget(true)}
             className="bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/25 flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors"
           >
             <svg
@@ -186,7 +186,7 @@ export default function WalletPage() {
                 d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"
               />
             </svg>
-            Setup Wallet
+            Setup Budget
           </Button>
           <Button
             onClick={handleAddTransaction}
@@ -208,38 +208,38 @@ export default function WalletPage() {
         </div>
       </div>
 
-      {/* Wallet Summary Cards */}
-      <div data-tour="wallet-summary">
-        <WalletSummaryCards
-          wallet={wallet}
+      {/* Budget Summary Cards */}
+      <div data-tour="budget-summary">
+        <BudgetSummaryCards
+          budget={budget}
           transactions={transactions}
-          onEditBudget={() => handleOpenSetupWallet(true)}
+          onEditBudget={() => handleOpenSetupBudget(true)}
         />
       </div>
 
       {/* Category Breakdown */}
-      <CategoryBreakdown wallet={wallet} transactions={transactions} />
+      <CategoryBreakdown budget={budget} transactions={transactions} />
 
       {/* Transaction Table */}
       <TransactionTable
-        wallet={wallet}
+        budget={budget}
         transactions={transactions}
         onEditTransaction={handleEditTransaction}
       />
 
       {/* Modals */}
-      <SetupWalletModal
-        isOpen={setupWalletModal.open}
-        onClose={handleCloseSetupWallet}
+      <SetupBudgetModal
+        isOpen={setupBudgetModal.open}
+        onClose={handleCloseSetupBudget}
         eventGuid={eventId!}
         userId={user?.id || "todo"}
-        wallet={setupWalletModal.editMode ? wallet : null}
+        budget={setupBudgetModal.editMode ? budget : null}
       />
 
       <TransactionFormModal
         isOpen={transactionModal.open}
         onClose={handleCloseTransactionModal}
-        walletGuid={wallet.walletGuid}
+        walletGuid={budget.walletGuid}
         eventGuid={eventId!}
         transaction={transactionModal.transaction}
       />
@@ -248,7 +248,7 @@ export default function WalletPage() {
         isOpen={exportModal}
         onClose={() => setExportModal(false)}
         transactions={transactions}
-        wallet={wallet}
+        budget={budget}
       />
     </>
   );

@@ -1,47 +1,47 @@
-// src/components/pages/Wallet/SetupWalletModal.tsx
+// src/components/pages/Budget/SetupBudgetModal.tsx
 import React, { useState, useEffect } from "react";
 import { Modal } from "../../molecules/Modal";
 import { Button } from "../../atoms/Button";
-import { Currency, CURRENCY_CONFIG } from "../../../types/wallet";
-import { useCreateWallet, useUpdateWallet } from "../../../api/hooks/useWalletApi";
-import type { Wallet } from "../../../types/wallet";
+import { Currency, CURRENCY_CONFIG } from "../../../types/budget";
+import { useCreateBudget, useUpdateBudget } from "../../../api/hooks/useBudgetApi";
+import type { Budget } from "../../../types/budget";
 
-interface SetupWalletModalProps {
+interface SetupBudgetModalProps {
   isOpen: boolean;
   onClose: () => void;
   eventGuid: string;
   userId: string;
-  wallet?: Wallet | null; // If provided, edit mode
+  budget?: Budget | null; // If provided, edit mode
 }
 
-export const SetupWalletModal: React.FC<SetupWalletModalProps> = ({
+export const SetupBudgetModal: React.FC<SetupBudgetModalProps> = ({
   isOpen,
   onClose,
   eventGuid,
   userId,
-  wallet,
+  budget,
 }) => {
   const [currency, setCurrency] = useState<Currency>(Currency.MYR);
   const [totalBudget, setTotalBudget] = useState<string>("");
   const [errors, setErrors] = useState<{ currency?: string; budget?: string }>({});
 
-  const createWallet = useCreateWallet();
-  const updateWallet = useUpdateWallet();
+  const createBudget = useCreateBudget();
+  const updateBudget = useUpdateBudget();
 
-  const isEditMode = Boolean(wallet);
+  const isEditMode = Boolean(budget);
 
-  // Load existing wallet data in edit mode
+  // Load existing budget data in edit mode
   useEffect(() => {
-    if (wallet) {
-      setCurrency(wallet.currency as Currency);
-      setTotalBudget(wallet.totalBudget?.toString() || "");
+    if (budget) {
+      setCurrency(budget.currency as Currency);
+      setTotalBudget(budget.totalBudget?.toString() || "");
     } else {
       // Reset for create mode
       setCurrency(Currency.MYR);
       setTotalBudget("");
     }
     setErrors({});
-  }, [wallet, isOpen]);
+  }, [budget, isOpen]);
 
   const validate = (): boolean => {
     const newErrors: { currency?: string; budget?: string } = {};
@@ -69,34 +69,34 @@ export const SetupWalletModal: React.FC<SetupWalletModalProps> = ({
     const budgetValue = totalBudget ? parseFloat(totalBudget) : undefined;
 
     try {
-      if (isEditMode && wallet) {
-        console.log("Updating wallet:", { eventGuid, walletGuid: wallet.walletGuid, userId, currency, totalBudget: budgetValue });
-        await updateWallet.mutateAsync({
+      if (isEditMode && budget) {
+        console.log("Updating budget:", { eventGuid, walletGuid: budget.walletGuid, userId, currency, totalBudget: budgetValue });
+        await updateBudget.mutateAsync({
           eventGuid,
-          walletGuid: wallet.walletGuid,
+          walletGuid: budget.walletGuid,
           userId,
           currency,
           totalBudget: budgetValue,
         });
       } else {
-        console.log("Creating wallet:", { eventGuid, userId, currency, totalBudget: budgetValue });
-        const result = await createWallet.mutateAsync({
+        console.log("Creating budget:", { eventGuid, userId, currency, totalBudget: budgetValue });
+        const result = await createBudget.mutateAsync({
           eventGuid,
           userId,
           currency,
           totalBudget: budgetValue,
         });
-        console.log("Wallet created successfully:", result);
+        console.log("Budget created successfully:", result);
       }
       onClose();
     } catch (error) {
-      console.error("Failed to save wallet:", error);
-      alert("Failed to save wallet: " + (error as Error).message);
+      console.error("Failed to save budget:", error);
+      alert("Failed to save budget: " + (error as Error).message);
     }
   };
 
   const handleClose = () => {
-    if (!createWallet.isPending && !updateWallet.isPending) {
+    if (!createBudget.isPending && !updateBudget.isPending) {
       onClose();
     }
   };
@@ -114,13 +114,13 @@ export const SetupWalletModal: React.FC<SetupWalletModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title={isEditMode ? "Update Wallet" : "Setup Wallet"}
+      title={isEditMode ? "Update Budget" : "Setup Budget"}
       className="max-w-md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <p className="text-sm text-gray-500 dark:text-gray-400">
           {isEditMode
-            ? "Update your wallet configuration"
+            ? "Update your budget configuration"
             : "Configure your event budget and currency"}
         </p>
 
@@ -197,7 +197,7 @@ export const SetupWalletModal: React.FC<SetupWalletModalProps> = ({
             type="button"
             variant="secondary"
             onClick={handleClose}
-            disabled={createWallet.isPending || updateWallet.isPending}
+            disabled={createBudget.isPending || updateBudget.isPending}
             className="flex-1"
           >
             Cancel
@@ -205,16 +205,16 @@ export const SetupWalletModal: React.FC<SetupWalletModalProps> = ({
           <Button
             type="submit"
             variant="primary"
-            loading={createWallet.isPending || updateWallet.isPending}
+            loading={createBudget.isPending || updateBudget.isPending}
             className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/25"
           >
-            {isEditMode ? "Update Wallet" : "Create Wallet"}
+            {isEditMode ? "Update Budget" : "Create Budget"}
           </Button>
         </div>
 
-        {(createWallet.isError || updateWallet.isError) && (
+        {(createBudget.isError || updateBudget.isError) && (
           <p className="text-red-500 text-sm text-center mt-2">
-            Failed to save wallet. Please try again.
+            Failed to save budget. Please try again.
           </p>
         )}
       </form>

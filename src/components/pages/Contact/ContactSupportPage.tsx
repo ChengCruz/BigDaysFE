@@ -24,7 +24,7 @@ const MODULES = [
   "Guests",
   "Tables",
   "Floor Plan",
-  "Wallet",
+  "Budget",
   "Check-in",
   "Checklist",
   "Users",

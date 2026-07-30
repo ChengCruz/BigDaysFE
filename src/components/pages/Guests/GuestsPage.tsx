@@ -14,7 +14,7 @@ import {
 } from "../../../api/hooks/useGuestsApi";
 import { useTablesApi } from "../../../api/hooks/useTablesApi";
 import { useQrListApi, useGenerateQrApi, useRevokeQrApi } from "../../../api/hooks/useQrApi";
-import { useWalletsApi } from "../../../api/hooks/useWalletApi";
+import { useBudgetsApi } from "../../../api/hooks/useBudgetApi";
 import { useTransactionsApi } from "../../../api/hooks/useTransactionApi";
 import { Button } from "../../atoms/Button";
 import { Dropdown, DropdownItem } from "../../atoms/Dropdown";
@@ -30,8 +30,8 @@ import { GuestHelpModal } from "../../molecules/GuestHelpModal";
 import QrStatusBadge from "../../molecules/QrStatusBadge";
 import QrImageModal from "../../molecules/QrImageModal";
 import type { QrToken, QrStatus } from "../../../types/qr";
-import { CURRENCY_CONFIG } from "../../../types/wallet";
-import type { Currency } from "../../../types/wallet";
+import { CURRENCY_CONFIG } from "../../../types/budget";
+import type { Currency } from "../../../types/budget";
 
 export default function GuestsPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
@@ -44,8 +44,8 @@ export default function GuestsPage() {
   const assignGuestToTable = useAssignGuestToTable(eventId!);
   const unassignGuestFromTable = useUnassignGuestFromTable(eventId!);
   const { data: qrTokens = [] } = useQrListApi(eventId!);
-  const { data: wallet } = useWalletsApi(eventId!);
-  const { data: transactions = [] } = useTransactionsApi(wallet?.walletGuid ?? "", eventId!);
+  const { data: budget } = useBudgetsApi(eventId!);
+  const { data: transactions = [] } = useTransactionsApi(budget?.walletGuid ?? "", eventId!);
   const generateQr = useGenerateQrApi();
   const revokeQr = useRevokeQrApi();
 
@@ -72,7 +72,7 @@ export default function GuestsPage() {
   });
   const [helpModalOpen, setHelpModalOpen] = useState(false);
 
-  // Gift map: guestCode → amount (joined from wallet transactions)
+  // Gift map: guestCode → amount (joined from budget transactions)
   const giftMap = useMemo(() => {
     const map = new Map<string, number>();
     transactions
@@ -83,8 +83,8 @@ export default function GuestsPage() {
     return map;
   }, [transactions]);
 
-  const currencySymbol = wallet
-    ? (CURRENCY_CONFIG[wallet.currency as Currency]?.symbol ?? wallet.currency)
+  const currencySymbol = budget
+    ? (CURRENCY_CONFIG[budget.currency as Currency]?.symbol ?? budget.currency)
     : "";
 
   // Calculate statistics
@@ -431,7 +431,7 @@ export default function GuestsPage() {
                   </div>
 
                   {/* Gift Display */}
-                  {wallet && (
+                  {budget && (
                     <div className={`mt-2 px-3 py-2 rounded-lg flex items-center gap-2 ${
                       giftMap.get(guest.guestCode ?? "") != null
                         ? "bg-emerald-100 dark:bg-emerald-900/30"
@@ -453,7 +453,7 @@ export default function GuestsPage() {
                 {!isReadOnly && (() => {
                   const qrToken = qrMap.get(guest.guestId ?? guest.id);
                   const qrStatus = getQrStatus(qrToken);
-                  const hasOverflow = !!wallet || qrStatus === "Generated" || qrStatus === "CheckedIn";
+                  const hasOverflow = !!budget || qrStatus === "Generated" || qrStatus === "CheckedIn";
                   return (
                     <div className="mt-4 flex items-center gap-2">
                       {/* Primary: Edit */}
@@ -515,7 +515,7 @@ export default function GuestsPage() {
                             </button>
                           }
                         >
-                          {wallet && (
+                          {budget && (
                             <DropdownItem
                               onClick={() =>
                                 setGiftModal({

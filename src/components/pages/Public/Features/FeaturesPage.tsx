@@ -64,9 +64,9 @@ const showcase = [
     points: ["Round, long & square tables", "Add a stage, dance floor & décor", "Drag guests onto their tables"],
   },
   {
-    category: "Budget & Wallet",
-    img: "/showcase/wallet.png",
-    alt: "The wallet dashboard showing total budget, spending by category and a transaction history",
+    category: "Budget",
+    img: "/showcase/budget.png",
+    alt: "The budget dashboard showing total budget, spending by category and a transaction history",
     title: <>Keep the budget <em style={{ color: '#B4543A' }}>under control</em></>,
     desc: "See where every ringgit goes at a glance. Track spending by category, flag pending payments, and never blow past your budget.",
     points: ["Live budget vs. spend", "Spending broken down by category", "Payment status on every expense"],

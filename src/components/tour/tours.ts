@@ -11,7 +11,7 @@ export type TourIconKey =
   | "guests"
   | "tables"
   | "floorplan"
-  | "wallet"
+  | "budget"
   | "checkin"
   | "users"
   | "crew"
@@ -90,7 +90,7 @@ export const TOURS: TourDefinition[] = [
     routePath: "/app/events",
     title: "Events",
     description:
-      "Create, edit and archive your events. The 'active' event drives everything else — RSVPs, guests, tables and wallet.",
+      "Create, edit and archive your events. The 'active' event drives everything else — RSVPs, guests, tables and budget.",
     icon: "calendar",
     steps: [
       {
@@ -329,29 +329,29 @@ export const TOURS: TourDefinition[] = [
     ],
   },
   {
-    routePath: "/app/wallet",
-    title: "Wallet",
+    routePath: "/app/budget",
+    title: "Budget",
     description:
       "Track your event budget and expenses. Add transactions, categorise them and export reports.",
-    icon: "wallet",
+    icon: "budget",
     steps: [
       {
         ...commonStepProps,
-        target: '[data-tour="wallet-actions"]',
+        target: '[data-tour="budget-actions"]',
         title: "Setup, add and export",
         content:
-          "Set up your wallet once, then add transactions as you spend. Export reports anytime.",
+          "Set up your budget once, then add transactions as you spend. Export reports anytime.",
       },
       {
         ...commonStepProps,
-        target: '[data-tour="wallet-summary"]',
+        target: '[data-tour="budget-summary"]',
         title: "Budget summary",
         content:
           "See your total budget, total spent, remaining balance and budget health all in one row.",
       },
       {
         ...commonStepProps,
-        target: '[data-tour="wallet-transactions"]',
+        target: '[data-tour="budget-transactions"]',
         title: "Transactions",
         content:
           "Every spend is listed here. Click any row to edit, or use the filters above to drill in by category, type or status.",

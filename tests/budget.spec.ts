@@ -1,22 +1,22 @@
 /**
- * Wallet tests — Read, CRUD Transactions, Setup Wallet, Summary Cards,
+ * Budget tests — Read, CRUD Transactions, Setup Budget, Summary Cards,
  * Table Filters, Export Report, and edge states.
  */
 import { test, expect } from '@playwright/test';
-import { gotoAuthenticated, mockApi, setMockAuth, MOCK_WALLET, MOCK_TRANSACTION } from './helpers';
+import { gotoAuthenticated, mockApi, setMockAuth, MOCK_BUDGET, MOCK_TRANSACTION } from './helpers';
 
-// ── Wallet page load ──────────────────────────────────────────────────────────
+// ── Budget page load ──────────────────────────────────────────────────────────
 
-test.describe('Wallet — Read', () => {
+test.describe('Budget — Read', () => {
   test.beforeEach(async ({ page }) => {
-    await gotoAuthenticated(page, '/app/wallet');
+    await gotoAuthenticated(page, '/app/budget');
   });
 
-  test('shows "Wallet & Budget" heading', async ({ page }) => {
-    await expect(page.locator('text=Wallet & Budget')).toBeVisible();
+  test('shows "Budget" heading', async ({ page }) => {
+    await expect(page.locator('text=Budget')).toBeVisible();
   });
 
-  test('"Add Transaction" button is visible when wallet exists', async ({ page }) => {
+  test('"Add Transaction" button is visible when budget exists', async ({ page }) => {
     await expect(page.locator('button:has-text("Add Transaction")')).toBeVisible();
   });
 
@@ -25,9 +25,9 @@ test.describe('Wallet — Read', () => {
   });
 });
 
-// ── Setup Wallet Modal — Create ───────────────────────────────────────────────
+// ── Setup Budget Modal — Create ───────────────────────────────────────────────
 
-test.describe('Wallet — Setup Wallet Modal (create)', () => {
+test.describe('Budget — Setup Budget Modal (create)', () => {
   test.beforeEach(async ({ page }) => {
     await mockApi(page);
     await page.route('**/__mock_api__/**', async route => {
@@ -40,14 +40,14 @@ test.describe('Wallet — Setup Wallet Modal (create)', () => {
     await setMockAuth(page);
     await page.goto('/app/events');
     await page.waitForLoadState('networkidle');
-    await page.goto('/app/wallet');
+    await page.goto('/app/budget');
     await page.waitForLoadState('networkidle');
-    await page.click('button:has-text("Setup Wallet")');
-    await expect(page.locator('text=Setup Wallet').first()).toBeVisible({ timeout: 3000 });
+    await page.click('button:has-text("Setup Budget")');
+    await expect(page.locator('text=Setup Budget').first()).toBeVisible({ timeout: 3000 });
   });
 
-  test('modal opens with "Setup Wallet" title', async ({ page }) => {
-    await expect(page.locator('text=Setup Wallet').first()).toBeVisible();
+  test('modal opens with "Setup Budget" title', async ({ page }) => {
+    await expect(page.locator('text=Setup Budget').first()).toBeVisible();
   });
 
   test('currency select is present and defaults to MYR', async ({ page }) => {
@@ -62,19 +62,19 @@ test.describe('Wallet — Setup Wallet Modal (create)', () => {
 
   test('Cancel button closes the modal', async ({ page }) => {
     await page.click('button:has-text("Cancel")');
-    await expect(page.locator('text=Setup Wallet').nth(1)).not.toBeVisible({ timeout: 3000 });
+    await expect(page.locator('text=Setup Budget').nth(1)).not.toBeVisible({ timeout: 3000 });
   });
 
   test('validation — shows error when budget is negative', async ({ page }) => {
     await page.fill('input[placeholder="50000"]', '-100');
-    await page.click('button:has-text("Create Wallet")');
+    await page.click('button:has-text("Create Budget")');
     await expect(page.locator('text=Budget must be a positive number')).toBeVisible({ timeout: 3000 });
   });
 
   test('submits with valid currency and budget → modal closes', async ({ page }) => {
     await page.fill('input[placeholder="50000"]', '50000');
-    await page.click('button:has-text("Create Wallet")');
-    await expect(page.locator('text=Create Wallet')).not.toBeVisible({ timeout: 5000 });
+    await page.click('button:has-text("Create Budget")');
+    await expect(page.locator('text=Create Budget')).not.toBeVisible({ timeout: 5000 });
   });
 
   test('suggested budget allocation section is visible', async ({ page }) => {
@@ -82,34 +82,34 @@ test.describe('Wallet — Setup Wallet Modal (create)', () => {
   });
 });
 
-// ── Setup Wallet Modal — Edit ─────────────────────────────────────────────────
+// ── Setup Budget Modal — Edit ─────────────────────────────────────────────────
 
-test.describe('Wallet — Setup Wallet Modal (edit)', () => {
+test.describe('Budget — Setup Budget Modal (edit)', () => {
   test.beforeEach(async ({ page }) => {
-    await gotoAuthenticated(page, '/app/wallet');
-    await page.click('button:has-text("Setup Wallet")');
-    await expect(page.locator('text=Update Wallet')).toBeVisible({ timeout: 3000 });
+    await gotoAuthenticated(page, '/app/budget');
+    await page.click('button:has-text("Setup Budget")');
+    await expect(page.locator('text=Update Budget')).toBeVisible({ timeout: 3000 });
   });
 
-  test('modal opens with "Update Wallet" title', async ({ page }) => {
-    await expect(page.locator('text=Update Wallet')).toBeVisible();
+  test('modal opens with "Update Budget" title', async ({ page }) => {
+    await expect(page.locator('text=Update Budget')).toBeVisible();
   });
 
-  test('"Update Wallet" submit button is present', async ({ page }) => {
-    await expect(page.locator('button:has-text("Update Wallet")')).toBeVisible();
+  test('"Update Budget" submit button is present', async ({ page }) => {
+    await expect(page.locator('button:has-text("Update Budget")')).toBeVisible();
   });
 
   test('submits update → modal closes', async ({ page }) => {
-    await page.click('button:has-text("Update Wallet")');
-    await expect(page.locator('text=Update Wallet')).not.toBeVisible({ timeout: 5000 });
+    await page.click('button:has-text("Update Budget")');
+    await expect(page.locator('text=Update Budget')).not.toBeVisible({ timeout: 5000 });
   });
 });
 
 // ── Add Transaction ───────────────────────────────────────────────────────────
 
-test.describe('Wallet — Create Transaction', () => {
+test.describe('Budget — Create Transaction', () => {
   test.beforeEach(async ({ page }) => {
-    await gotoAuthenticated(page, '/app/wallet');
+    await gotoAuthenticated(page, '/app/budget');
     await page.click('button:has-text("Add Transaction")');
     await expect(page.locator('text=Add Transaction')).toBeVisible({ timeout: 3000 });
   });
@@ -191,9 +191,9 @@ test.describe('Wallet — Create Transaction', () => {
 
 // ── Edit Transaction ──────────────────────────────────────────────────────────
 
-test.describe('Wallet — Edit Transaction', () => {
+test.describe('Budget — Edit Transaction', () => {
   test.beforeEach(async ({ page }) => {
-    await gotoAuthenticated(page, '/app/wallet');
+    await gotoAuthenticated(page, '/app/budget');
   });
 
   test('edit button opens modal with "Edit Transaction" title', async ({ page }) => {
@@ -215,9 +215,9 @@ test.describe('Wallet — Edit Transaction', () => {
 
 // ── Delete Transaction ────────────────────────────────────────────────────────
 
-test.describe('Wallet — Delete Transaction', () => {
+test.describe('Budget — Delete Transaction', () => {
   test.beforeEach(async ({ page }) => {
-    await gotoAuthenticated(page, '/app/wallet');
+    await gotoAuthenticated(page, '/app/budget');
   });
 
   test('delete button triggers confirmation modal', async ({ page }) => {
@@ -259,9 +259,9 @@ test.describe('Wallet — Delete Transaction', () => {
 
 // ── Summary Cards ─────────────────────────────────────────────────────────────
 
-test.describe('Wallet — Summary Cards', () => {
+test.describe('Budget — Summary Cards', () => {
   test.beforeEach(async ({ page }) => {
-    await gotoAuthenticated(page, '/app/wallet');
+    await gotoAuthenticated(page, '/app/budget');
   });
 
   test('"Total Budget" card is visible', async ({ page }) => {
@@ -280,11 +280,11 @@ test.describe('Wallet — Summary Cards', () => {
     await expect(page.locator('text=Pending Payments')).toBeVisible();
   });
 
-  test('currency badge shows wallet currency (MYR)', async ({ page }) => {
-    await expect(page.locator(`text=${MOCK_WALLET.currency}`).first()).toBeVisible();
+  test('currency badge shows budget currency (MYR)', async ({ page }) => {
+    await expect(page.locator(`text=${MOCK_BUDGET.currency}`).first()).toBeVisible();
   });
 
-  test('Total Budget value matches MOCK_WALLET.totalBudget (RM 50,000.00)', async ({ page }) => {
+  test('Total Budget value matches MOCK_BUDGET.totalBudget (RM 50,000.00)', async ({ page }) => {
     await expect(page.locator('text=/RM\\s*50[,.]?000/').first()).toBeVisible();
   });
 
@@ -308,17 +308,17 @@ test.describe('Wallet — Summary Cards', () => {
     await expect(page.locator('text=Grand Ballroom').first()).toBeVisible();
   });
 
-  test('clicking "edit budget" opens Update Wallet modal', async ({ page }) => {
+  test('clicking "edit budget" opens Update Budget modal', async ({ page }) => {
     await page.locator('button:has-text("edit")').first().click();
-    await expect(page.locator('text=Update Wallet')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('text=Update Budget')).toBeVisible({ timeout: 3000 });
   });
 });
 
 // ── Transaction Table Filters ─────────────────────────────────────────────────
 
-test.describe('Wallet — Transaction Table Filters', () => {
+test.describe('Budget — Transaction Table Filters', () => {
   test.beforeEach(async ({ page }) => {
-    await gotoAuthenticated(page, '/app/wallet');
+    await gotoAuthenticated(page, '/app/budget');
   });
 
   test('"Transaction History" heading is visible', async ({ page }) => {
@@ -363,9 +363,9 @@ test.describe('Wallet — Transaction Table Filters', () => {
 
 // ── Export Report ─────────────────────────────────────────────────────────────
 
-test.describe('Wallet — Export Report', () => {
+test.describe('Budget — Export Report', () => {
   test.beforeEach(async ({ page }) => {
-    await gotoAuthenticated(page, '/app/wallet');
+    await gotoAuthenticated(page, '/app/budget');
   });
 
   test('"Export Report" button is visible', async ({ page }) => {
@@ -383,7 +383,7 @@ test.describe('Wallet — Export Report', () => {
 
 // ── No Events State ───────────────────────────────────────────────────────────
 
-test.describe('Wallet — No Events State', () => {
+test.describe('Budget — No Events State', () => {
   test('shows no-events message when no event exists', async ({ page }) => {
     await mockApi(page);
     await page.route('**/__mock_api__/**', async route => {
@@ -395,7 +395,7 @@ test.describe('Wallet — No Events State', () => {
     await page.goto('/login');
     await setMockAuth(page, '');
     await page.evaluate(() => localStorage.removeItem('eventId'));
-    await page.goto('/app/wallet');
+    await page.goto('/app/budget');
     await page.waitForLoadState('networkidle');
 
     await expect(page.locator('text=No Events Yet')).toBeVisible({ timeout: 5000 });
@@ -404,7 +404,7 @@ test.describe('Wallet — No Events State', () => {
 
 // ── Error State ───────────────────────────────────────────────────────────────
 
-test.describe('Wallet — Error State', () => {
+test.describe('Budget — Error State', () => {
   test.beforeEach(async ({ page }) => {
     await mockApi(page);
     await page.route('**/__mock_api__/**', async route => {
@@ -417,12 +417,12 @@ test.describe('Wallet — Error State', () => {
     await setMockAuth(page);
     await page.goto('/app/events');
     await page.waitForLoadState('networkidle');
-    await page.goto('/app/wallet');
+    await page.goto('/app/budget');
     await page.waitForLoadState('networkidle');
   });
 
-  test('shows error message when wallet API fails', async ({ page }) => {
-    await expect(page.locator('text=Failed to load wallet data')).toBeVisible({ timeout: 5000 });
+  test('shows error message when budget API fails', async ({ page }) => {
+    await expect(page.locator('text=Failed to load budget data')).toBeVisible({ timeout: 5000 });
   });
 
   test('"Try Again" button is visible in error state', async ({ page }) => {

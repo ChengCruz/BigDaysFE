@@ -48,7 +48,7 @@ const BASE_LINKS: SidebarLink[] = [
   { to: "/app/guests", label: "Guests", Icon: UserGroupIcon, sub: true },
   { to: "/app/tables/v3", label: "Tables", Icon: Chair, end: true },
   { to: "/app/tables/floorplan", label: "Floor Plan", Icon: Blueprint, sub: true },
-  { to: "/app/wallet", label: "Wallet", Icon: CurrencyDollarIcon },
+  { to: "/app/budget", label: "Budget", Icon: CurrencyDollarIcon },
   { to: "/app/checkin", label: "Check-in", Icon: QrcodeIcon, end: true },
   { to: "/app/checklist", label: "Checklist", Icon: ClipboardCheckIcon },
   { to: "/app/users", label: "Users", Icon: UserIcon },

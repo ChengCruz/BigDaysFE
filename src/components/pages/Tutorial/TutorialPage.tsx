@@ -26,7 +26,7 @@ const ICONS: Record<TourIconKey, React.FC<React.SVGProps<SVGSVGElement>>> = {
   guests: UserGroupIcon,
   tables: ViewBoardsIcon,
   floorplan: TemplateIcon,
-  wallet: CurrencyDollarIcon,
+  budget: CurrencyDollarIcon,
   checkin: QrcodeIcon,
   users: UserIcon,
   crew: BriefcaseIcon,

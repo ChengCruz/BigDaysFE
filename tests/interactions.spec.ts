@@ -1,6 +1,6 @@
 /**
  * General navigation & interaction tests.
- * Auth, Events, Wallet, Users CRUD tests are in their own spec files.
+ * Auth, Events, Budget, Users CRUD tests are in their own spec files.
  */
 import { test, expect } from '@playwright/test';
 import { gotoAuthenticated } from './helpers';
@@ -25,9 +25,9 @@ test.describe('Dashboard navigation — sidebar links', () => {
     await expect(page).toHaveURL(/\/app\/rsvps/);
   });
 
-  test('navigates to Wallet page', async ({ page }) => {
-    await page.click('a[title="Wallet"]');
-    await expect(page).toHaveURL(/\/app\/wallet/);
+  test('navigates to Budget page', async ({ page }) => {
+    await page.click('a[title="Budget"]');
+    await expect(page).toHaveURL(/\/app\/budget/);
   });
 
   test('navigates to Tables page', async ({ page }) => {

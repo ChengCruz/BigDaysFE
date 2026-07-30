@@ -266,7 +266,7 @@ export default function MemberDashboardPage() {
             ></div>
           </div>
           <button
-            onClick={() => navigate("/app/wallet")}
+            onClick={() => navigate("/app/budget")}
             className="flex items-center gap-2 text-xs text-primary hover:text-button transition"
           >
             <CashIcon className="h-4 w-4" />
@@ -353,7 +353,7 @@ export default function MemberDashboardPage() {
               <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Arrange Seats</span>
             </button>
             <button
-              onClick={() => navigate("/app/wallet")}
+              onClick={() => navigate("/app/budget")}
               className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-button/5 to-primary/10 border border-button/15 hover:border-button/30 hover:shadow-md transition group"
             >
               <div className="h-10 w-10 rounded-xl bg-button/10 group-hover:bg-button/20 grid place-items-center transition">

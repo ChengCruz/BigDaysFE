@@ -7,7 +7,7 @@
  * Run just this file:
  *   npx playwright test showcase-capture --project=desktop
  *
- * Output: public/showcase/{rsvp,floorplan,wallet,guests}.png
+ * Output: public/showcase/{rsvp,floorplan,budget,guests}.png
  */
 import { test, type Route, type Page } from '@playwright/test';
 import {
@@ -15,8 +15,8 @@ import {
   MOCK_USER,
   MOCK_EVENT,
   MOCK_EVENT_GUID,
-  MOCK_WALLET,
-  MOCK_WALLET_GUID,
+  MOCK_BUDGET,
+  MOCK_BUDGET_GUID,
 } from './helpers';
 
 const OUT = 'public/showcase';
@@ -195,7 +195,7 @@ function txn(id: number, name: string, amount: number, category: string, status:
   return {
     transactionId: id,
     transactionGuid: `txn-${id}`,
-    walletGuid: MOCK_WALLET_GUID,
+    walletGuid: MOCK_BUDGET_GUID,
     transactionName: name,
     amount,
     transactionDate: date,
@@ -277,17 +277,17 @@ test('capture — Floor plan', async ({ page }) => {
   await page.screenshot({ path: `${OUT}/floorplan.png` });
 });
 
-test('capture — Wallet', async ({ page }) => {
+test('capture — Budget', async ({ page }) => {
   await loginBranded(page);
   await hideHelpHint(page);
   await page.route('**/__mock_api__/**', async (route: Route) => {
     const url = route.request().url();
     const method = route.request().method();
     if (/\/Wallet\//i.test(url) && method === 'GET') {
-      // useWalletsApi expects an ARRAY and maps backend `budget` → `totalBudget`.
+      // useBudgetsApi expects an ARRAY and maps backend `budget` → `totalBudget`.
       return route.fulfill({
         status: 200,
-        json: { isSuccess: true, data: [{ ...MOCK_WALLET, budget: 50000, totalSpent: 35730, remainingBudget: 14270 }] },
+        json: { isSuccess: true, data: [{ ...MOCK_BUDGET, budget: 50000, totalSpent: 35730, remainingBudget: 14270 }] },
       });
     }
     if (/\/Transaction\//i.test(url) && method === 'GET') {
@@ -295,10 +295,10 @@ test('capture — Wallet', async ({ page }) => {
     }
     return route.fallback();
   });
-  await page.goto('/app/wallet');
+  await page.goto('/app/budget');
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(1500);
-  await page.screenshot({ path: `${OUT}/wallet.png` });
+  await page.screenshot({ path: `${OUT}/budget.png` });
 });
 
 test('capture — Guests', async ({ page }) => {
