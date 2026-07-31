@@ -12,6 +12,11 @@ import type {
   ApiOverlay,
 } from "../types/rsvpDesign";
 import { resolveBackdropLabel } from "./rsvpBackdrops";
+import {
+  contentWidthFromLayoutPx,
+  contentWidthToLayoutPx,
+  normalizeContentWidth,
+} from "./rsvpContentWidths";
 
 /**
  * Transform Frontend block to Backend block format
@@ -362,9 +367,9 @@ export function mapToBackendPayload(
       },
       layout: {
         // Encode contentWidth as layout.width so the backend preserves it
-        // (backend theme DTO doesn't persist contentWidth/layoutStyle/fontFamily)
-        // 384 = compact, 512 = standard, 672 = wide, 0 = full
-        width: ({ compact: 384, standard: 512, wide: 672, full: 0 } as Record<string, number>)[frontendDesign.contentWidth ?? "full"] ?? 0,
+        // (backend theme DTO doesn't persist contentWidth/layoutStyle/fontFamily).
+        // The number IS the device viewport width — 360 / 393 / 440.
+        width: contentWidthToLayoutPx(frontendDesign.contentWidth),
         // Encode layoutStyle (1s digit) + blockMarginX (100s) + blockMarginY (10000s) so
         // values survive even if the backend strips unknown theme fields.
         // E.g. layout=flush, marginX=12, marginY=24 → 1 + 12*100 + 24*10000 = 241201
@@ -417,14 +422,9 @@ export function mapToFrontendDesign(
 
   const eventGuid = 'eventGuid' in backendPayload ? (backendPayload as ApiRsvpDesign).eventGuid : undefined;
 
-  // Decode contentWidth from layout.width fallback (backend theme DTO doesn't persist it)
-  // 384 = compact, 512 = standard, 672 = wide, 0/undefined = full
-  const layoutWidth = design.layout?.width;
-  const contentWidthFromLayout: "compact" | "standard" | "wide" | "full" | undefined =
-    layoutWidth === 384 ? "compact" :
-    layoutWidth === 512 ? "standard" :
-    layoutWidth === 672 ? "wide" :
-    (layoutWidth === 0 || !layoutWidth) ? "full" : undefined;
+  // Decode contentWidth from layout.width fallback (backend theme DTO doesn't
+  // persist it). Handles both current device widths and the legacy numbers.
+  const contentWidthFromLayout = contentWidthFromLayoutPx(design.layout?.width);
 
   // Decode packed layout.maxHeight:
   //   1s digit = layoutStyle (0=cards, 1=flush)
@@ -452,7 +452,13 @@ export function mapToFrontendDesign(
     submitButtonLabel: design.theme.submitButtonLabel,
     globalFontFamily: design.theme.fontFamily ?? undefined,
     layoutStyle: (design.theme.layoutStyle as "cards" | "flush") ?? (design.layoutStyle as "cards" | "flush") ?? layoutStyleFromLayout ?? undefined,
-    contentWidth: (design.theme.contentWidth as "compact" | "standard" | "wide" | "full") ?? (design.contentWidth as "compact" | "standard" | "wide" | "full") ?? contentWidthFromLayout ?? undefined,
+    // Normalised so the retired "full" from old designs lands on the default
+    // rather than reaching a renderer that no longer supports edge-to-edge.
+    contentWidth: normalizeContentWidth(
+      (design.theme.contentWidth as string | undefined) ??
+        (design.contentWidth as string | undefined) ??
+        contentWidthFromLayout
+    ),
     blockMarginX: design.theme.blockMarginX ?? (blockMarginXFromLayout || undefined),
     blockMarginY: design.theme.blockMarginY ?? (blockMarginYFromLayout || undefined),
     eventGuid,           // Preserved so the guest page can fetch form fields

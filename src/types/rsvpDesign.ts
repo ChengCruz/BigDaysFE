@@ -145,8 +145,14 @@ export interface RsvpDesign {
   /** Layout style: "cards" (V1/V2 default) renders blocks in rounded cards with gaps.
    *  "flush" (V3) renders blocks as full-width sections edge-to-edge. */
   layoutStyle?: "cards" | "flush";
-  /** Content width of the guest page: controls max-width of the form container.
-   *  "compact" ≈ phone (24rem), "standard" (32rem), "wide" (42rem), "full" (no limit). */
+  /** Width of the guest page's invitation card — a REAL PHONE VIEWPORT.
+   *  "compact" = 360px (Android), "standard" = 393px (iPhone 15/16, default),
+   *  "wide" = 440px (iPhone Pro Max). Pixel values and labels live in
+   *  utils/rsvpContentWidths — read them from there, never re-hardcode.
+   *
+   *  "full" (edge-to-edge) is RETIRED: accepted on read for old designs, coerced
+   *  to the default by normalizeContentWidth, and not selectable. Do not
+   *  reintroduce it — see utils/rsvpContentWidths for why. */
   contentWidth?: "compact" | "standard" | "wide" | "full";
   /** Horizontal inset (px) applied to the content column in canvas/preview/public.
    *  0 = edge-to-edge (default). Useful for giving blocks breathing room against the page background. */
