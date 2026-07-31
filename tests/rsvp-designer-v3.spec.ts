@@ -234,4 +234,42 @@ test.describe('RSVP Designer V3 — save draft + public slug link', () => {
     await expect(page.getByText('PUBLISHED-COPY', { exact: true })).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText('PUBLISHED-COPY-2')).toHaveCount(0);
   });
+
+  /**
+   * The card is sized to a phone viewport, but the cap MUST be desktop-only.
+   * Without the `sm:` prefix on max-width the cap also applies on a handset, so a
+   * 440px phone would render a 393px column with dead space either side — the
+   * opposite of mirroring the device. Guards that regression from both ends.
+   *
+   * The fixture's `layout.width: 0` is the retired "full" encoding, so this also
+   * covers an old edge-to-edge design migrating onto the 393 default.
+   */
+  test('guest card caps to the device width on desktop and stays fluid on a phone', async ({ page }) => {
+    await gotoAuthenticated(page, '/app/events');
+    await mockDesignerV3(page, {
+      initialHeadline: 'WIDTH-CHECK',
+      updatedHeadline: 'unused',
+    });
+
+    await page.goto(`/rsvp/${SLUG}`);
+    await expect(page.getByText('WIDTH-CHECK', { exact: true })).toBeVisible({ timeout: 10_000 });
+
+    const card = page.getByTestId('rsvp-card');
+
+    // Desktop — capped to the default 393px device width, centred on the backdrop
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await expect(card).toHaveCSS('max-width', '393px');
+    expect((await card.boundingBox())!.width).toBe(393);
+
+    // Rounded corners kept, grey bezel ring (#9ca3af = rgb(156,163,175)) gone.
+    // Checked here, at a width where the sm: shadow actually applies.
+    await expect(card).toHaveCSS('border-radius', '40px');
+    const shadow = await card.evaluate((el) => getComputedStyle(el).boxShadow);
+    expect(shadow).not.toContain('156, 163, 175');
+
+    // A 440px handset is below the sm: breakpoint, so it uses all 440px
+    await page.setViewportSize({ width: 440, height: 956 });
+    await expect(card).toHaveCSS('max-width', 'none');
+    expect((await card.boundingBox())!.width).toBe(440);
+  });
 });
