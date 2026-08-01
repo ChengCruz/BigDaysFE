@@ -79,6 +79,15 @@ import RsvpSharePreviewPage from "../components/pages/RSVPs/RsvpSharePreviewPage
 import GuestsPage from "../components/pages/Guests/GuestsPage";
 import GuestCheckInPrintView from "../components/pages/Guests/GuestCheckInPrintView";
 
+/**
+ * Home: couple mode answers "what do we do next?", planner mode keeps the
+ * six-panel dashboard. Same route either way.
+ */
+function HomeRoute() {
+  const { mode } = useUiMode();
+  return mode === "couple" ? <CoupleHomePage /> : <MemberDashboardPage />;
+}
+
 import TablesPage from "../components/pages/Tables/TablesPage";
 import TablesPageV3 from "../components/pages/Tables/TablesPageV3";
 // import TableDetail from "../components/pages/Tables/TableDetail";
@@ -94,6 +103,7 @@ import EditUserModal from "../components/pages/Users/EditUserModal";
 import BudgetPage from "../components/pages/Budget/BudgetPage";
 
 import MemberDashboardPage from "../components/pages/Dashboard/MemberDashboardPage";
+import CoupleHomePage from "../components/pages/Dashboard/CoupleHomePage";
 
 import RSVPPublicPage from "../components/pages/Public/RSVPPublic/RSVPPublicPage";
 import RsvpBySlugPage from "../components/pages/Public/RSVPPublic/RsvpBySlugPage";
@@ -158,8 +168,8 @@ export default function AppRoutes() {
       <Route path="/app" element={<RequireAuth><AppLayout /></RequireAuth>}>
         <Route index element={<Navigate to="dashboard" replace />} />
 
-        {/* DASHBOARD */}
-        <Route path="dashboard" element={<MemberDashboardPage />} />
+        {/* DASHBOARD — body varies by UI mode, route does not */}
+        <Route path="dashboard" element={<HomeRoute />} />
 
         {/* EVENTS */}
         <Route path="events" element={<Outlet />}>

@@ -44,11 +44,22 @@ export type ApiRecentActivity = {
   icon: string;
 };
 
+export type ApiChecklistStats = {
+  totalItems: number;
+  completedItems: number;
+  remainingItems: number;
+  /** Already rounded to 1dp server-side, and 0 when totalItems is 0. */
+  percentComplete: number;
+};
+
 export type ApiDashboardSummary = {
   eventStats: ApiEventStats;
   rsvpStats: ApiRsvpStats;
   tableStats: ApiTableStats;
   budgetStats: ApiBudgetStats;
+  /** Optional: added to DashboardSummaryDto after this client shipped, so a
+   *  frontend deployed ahead of the backend still parses the response. */
+  checklistStats?: ApiChecklistStats;
   recentActivity: ApiRecentActivity[];
 };
 
@@ -96,11 +107,19 @@ export type RecentActivity = {
   icon: string;
 };
 
+export type ChecklistStats = {
+  totalItems: number;
+  completedItems: number;
+  remainingItems: number;
+  percentComplete: number;
+};
+
 export type DashboardSummary = {
   eventStats: EventStats;
   rsvpStats: RsvpStats;
   tableStats: TableStats;
   budgetStats: BudgetStats;
+  checklistStats: ChecklistStats;
   recentActivity: RecentActivity[];
 };
 
@@ -144,6 +163,15 @@ export function toDashboardSummary(api: ApiDashboardSummary): DashboardSummary {
       remainingAmount: api.budgetStats.remainingAmount,
       spentPercentage: api.budgetStats.spentPercentage,
       status: budgetStatusMap[api.budgetStats.status] || 'under_budget',
+    },
+    // Zeroed rather than left undefined when the backend predates the field, so
+    // consumers only ever branch on totalItems === 0 — which is also the normal
+    // "no checklist seeded yet" case.
+    checklistStats: {
+      totalItems: api.checklistStats?.totalItems ?? 0,
+      completedItems: api.checklistStats?.completedItems ?? 0,
+      remainingItems: api.checklistStats?.remainingItems ?? 0,
+      percentComplete: api.checklistStats?.percentComplete ?? 0,
     },
     recentActivity: api.recentActivity.map((activity) => ({
       activityType: activity.activityType,
