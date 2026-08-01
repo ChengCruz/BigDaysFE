@@ -17,6 +17,24 @@ export function formatEventDate(dateStr?: string | null): string {
 }
 
 /**
+ * Whole days from today until the event date.
+ *
+ * Negative when the event has passed, 0 on the day itself, null when there is
+ * no usable date. Uses the same YYYY-MM-DD slicing as formatEventDate above —
+ * parsing the raw API string directly would land a day early in GMT+8. "Today"
+ * is the user's local calendar day, also anchored to UTC midnight so the
+ * subtraction compares like with like.
+ */
+export function daysUntilEvent(dateStr?: string | null): number | null {
+  if (!dateStr) return null;
+  const target = new Date(`${dateStr.slice(0, 10)}T00:00:00Z`);
+  if (isNaN(target.getTime())) return null;
+  const now = new Date();
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((target.getTime() - today) / 86_400_000);
+}
+
+/**
  * Formats an event time string (HH:MM) as a 12-hour AM/PM string.
  *
  * NOTE: Event time is stored in the DB as local time (GMT+8) — no UTC conversion

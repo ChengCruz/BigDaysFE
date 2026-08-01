@@ -15,6 +15,7 @@ import PublicTemplate from "../components/templates/PublicTemplate";
 import { Navbar } from "../components/organisms/Navbar";
 import { Sidebar } from "../components/organisms/Sidebar";
 import { HelpBubble } from "../components/organisms/HelpBubble";
+import { ExportBackupReminder } from "../components/organisms/ExportBackupReminder";
 import { TourProvider } from "../components/tour/TourProvider";
 import { NoEventsState } from "../components/molecules/NoEventsState";
 import { useEventContext } from "../context/EventContext";
@@ -50,6 +51,9 @@ function AppLayout() {
         </div>
         <HelpBubble />
       </div>
+      {/* Nudges the user to take an offline copy of their guest list as the
+          big day approaches. Skipped until they actually have an event. */}
+      {!showEmptyState && <ExportBackupReminder />}
     </TourProvider>
   );
 }
