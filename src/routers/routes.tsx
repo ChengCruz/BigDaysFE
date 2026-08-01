@@ -126,6 +126,15 @@ function BigDayRoute() {
   return mode === "couple" && userRole !== 6 ? <CoupleBigDayPage /> : <CheckInPage />;
 }
 
+/**
+ * RSVP questions: couple mode is step 1 of the guest flow ("What to ask") and
+ * speaks in answers rather than field types. Same route, same API contract.
+ */
+function FormFieldsRoute() {
+  const { mode } = useUiMode();
+  return mode === "couple" ? <CoupleQuestionsPage /> : <FormFieldsPage />;
+}
+
 import TablesPage from "../components/pages/Tables/TablesPage";
 import TablesPageV3 from "../components/pages/Tables/TablesPageV3";
 import CoupleSeatingPage from "../components/pages/Tables/CoupleSeatingPage";
@@ -153,6 +162,7 @@ import { EditRsvpModal } from "../components/pages/RSVPs/EditRsvpModal";
 import { TableFormModal } from "../components/molecules/TableFormModal";
 import { UserFormModal } from "../components/molecules/UserFormModal";
 import FormFieldsPage from "../components/pages/Events/FormFieldsPage";
+import CoupleQuestionsPage from "../components/pages/Events/CoupleQuestionsPage";
 import { TableAssignments } from "../components/pages/Tables/TableAssignments";
 import TableDetail from "../components/pages/Tables/TableDetail";
 import { TableLayoutPlanner } from "../components/pages/Tables/TableLayoutPlanner";
@@ -220,11 +230,11 @@ export default function AppRoutes() {
             element={<EventFormModal isOpen onClose={() => navigate(-1)} />}
           />
           <Route path=":id/edit" element={<EditEventModal />} />
-          <Route path=":id/form-fields" element={<FormFieldsPage />} />
+          <Route path=":id/form-fields" element={<FormFieldsRoute />} />
         </Route>
 
         {/* RSVP QUESTIONS (sidebar sub-link, uses current event from context) */}
-        <Route path="form-fields" element={<FormFieldsPage />} />
+        <Route path="form-fields" element={<FormFieldsRoute />} />
 
         {/* RSVPs (no :eventId in the URL) */}
         <Route path="rsvps" element={<Outlet />}>
