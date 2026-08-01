@@ -66,6 +66,7 @@ import RsvpSharePreviewPage from "../components/pages/RSVPs/RsvpSharePreviewPage
 // import EditRsvpModal from "../components/pages/RSVPs/EditRsvpModal";
 
 import GuestsPage from "../components/pages/Guests/GuestsPage";
+import GuestCheckInPrintView from "../components/pages/Guests/GuestCheckInPrintView";
 
 import TablesPage from "../components/pages/Tables/TablesPage";
 import TablesPageV3 from "../components/pages/Tables/TablesPageV3";
@@ -172,7 +173,10 @@ export default function AppRoutes() {
         </Route>
 
         {/* GUESTS */}
-        <Route path="guests" element={<GuestsPage />} />
+        <Route path="guests" element={<Outlet />}>
+          <Route index element={<GuestsPage />} />
+          <Route path="print" element={<GuestCheckInPrintView />} />
+        </Route>
 
         {/* ─── TABLES ─────────────────────────────────────────── */}
 <Route path="tables" element={<Outlet/>}>

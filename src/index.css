@@ -225,3 +225,27 @@
   .fp-no-print { display: none !important; }
   .floor-canvas [data-floor-item] > div { outline: none !important; }
 }
+
+/* 7. Printable sheets (guest check-in list) — piggybacks on the
+      `body * { visibility: hidden }` rule in section 6, revealing only the
+      sheet. Without this a print from anywhere but the floor plan is blank. */
+@media print {
+  .print-sheet,
+  .print-sheet * { visibility: visible; }
+  .print-sheet {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+  .print-sheet tr { break-inside: avoid; }
+  .print-hide { display: none !important; }
+}

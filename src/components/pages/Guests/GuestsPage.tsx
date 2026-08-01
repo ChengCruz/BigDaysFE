@@ -270,6 +270,7 @@ export default function GuestsPage() {
           <Dropdown trigger={<Button variant="secondary">Export ▾</Button>}>
             <DropdownItem onClick={handleExportXlsx}>Export as XLSX</DropdownItem>
             <DropdownItem onClick={handleExportCsv}>Export as CSV</DropdownItem>
+            <DropdownItem onClick={() => navigate("/app/guests/print")}>Print check-in sheet</DropdownItem>
           </Dropdown>
           <Button variant="primary" onClick={() => navigate("/app/checkin")}>
             Check-in
