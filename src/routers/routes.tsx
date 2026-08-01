@@ -99,8 +99,15 @@ function HomeRoute() {
   return mode === "couple" ? <CoupleHomePage /> : <MemberDashboardPage />;
 }
 
+/** Seating: couple mode taps to assign, planner mode keeps the operational grid. */
+function SeatingRoute() {
+  const { mode } = useUiMode();
+  return mode === "couple" ? <CoupleSeatingPage /> : <TablesPageV3 />;
+}
+
 import TablesPage from "../components/pages/Tables/TablesPage";
 import TablesPageV3 from "../components/pages/Tables/TablesPageV3";
+import CoupleSeatingPage from "../components/pages/Tables/CoupleSeatingPage";
 // import TableDetail from "../components/pages/Tables/TableDetail";
 // import TableFormModal from "../components/molecules/TableFormModal";
 import EditTableModal from "../components/pages/Tables/EditTableModal";
@@ -213,7 +220,8 @@ export default function AppRoutes() {
         {/* ─── TABLES ─────────────────────────────────────────── */}
 <Route path="tables" element={<Outlet/>}>
   <Route index element={<TablesPage />} />
-  <Route path="v3" element={<TablesPageV3 />} />
+  {/* Body varies by UI mode, route does not */}
+  <Route path="v3" element={<SeatingRoute />} />
   <Route path="floorplan" element={<FloorPlanPage />} />
   <Route path="new" element={
     <TableFormModal isOpen onClose={() => navigate(-1)} />
