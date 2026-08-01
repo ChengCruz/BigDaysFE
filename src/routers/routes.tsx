@@ -77,7 +77,18 @@ import RsvpSharePreviewPage from "../components/pages/RSVPs/RsvpSharePreviewPage
 // import EditRsvpModal from "../components/pages/RSVPs/EditRsvpModal";
 
 import GuestsPage from "../components/pages/Guests/GuestsPage";
+import CoupleGuestsPage from "../components/pages/Guests/CoupleGuestsPage";
 import GuestCheckInPrintView from "../components/pages/Guests/GuestCheckInPrintView";
+
+/**
+ * Guests is the first page with a per-mode body: couple mode shows RSVPs and
+ * Guests merged into one list, planner mode keeps the operational grid. Same
+ * route either way. See docs/COUPLE_MODE.md.
+ */
+function GuestsRoute() {
+  const { mode } = useUiMode();
+  return mode === "couple" ? <CoupleGuestsPage /> : <GuestsPage />;
+}
 
 /**
  * Home: couple mode answers "what do we do next?", planner mode keeps the
@@ -193,9 +204,9 @@ export default function AppRoutes() {
           <Route path=":id/edit" element={<EditRsvpModal />} />
         </Route>
 
-        {/* GUESTS */}
+        {/* GUESTS — body varies by UI mode, route does not */}
         <Route path="guests" element={<Outlet />}>
-          <Route index element={<GuestsPage />} />
+          <Route index element={<GuestsRoute />} />
           <Route path="print" element={<GuestCheckInPrintView />} />
         </Route>
 
