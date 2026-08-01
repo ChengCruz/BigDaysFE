@@ -22,11 +22,13 @@ import {
   QuestionMarkCircleIcon,
   PhotographIcon,
   MailIcon,
+  HeartIcon,
 } from "@heroicons/react/solid";
 import { Chair, Blueprint } from "@phosphor-icons/react";
 import { BrandLogo } from "../atoms/BrandLogo";
 import { useEventContext } from "../../context/EventContext";
 import { useAuth } from "../../api/hooks/useAuth";
+import { useUiMode } from "../../context/UiModeContext";
 import { getRoleLabel } from "../../utils/jwtUtils";
 
 interface SidebarLink {
@@ -67,7 +69,13 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { eventId } = useEventContext();
   const { user, userRole, logout } = useAuth();
+  const { defaultMode, override, setMode } = useUiMode();
   const displayRole = userRole != null ? getRoleLabel(userRole) : null;
+
+  // A Member landed here by choosing planner view, or any role that has
+  // explicitly set a mode before. Planner-native accounts that never opted in
+  // see no change at all.
+  const canUseCoupleMode = defaultMode === "couple" || override !== null;
 
   const links = BASE_LINKS.map(l =>
     l.label === "RSVP Questions" && eventId
@@ -207,8 +215,25 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </nav>
           </div>
 
-          {/* Footer: user profile + logout + version */}
+          {/* Footer: back to couple view + user profile + logout + version */}
           <div className="border-t border-primary/10 dark:border-white/10 p-3">
+            {/* Only shown to someone who can actually use couple mode, so a
+                planner-native account never sees it. Without this there is no
+                way back — the couple shell's account menu is the only other
+                place the mode can be changed. */}
+            {canUseCoupleMode && (
+              <button
+                onClick={() => setMode("couple")}
+                title="Switch to simple view"
+                className={`w-full flex items-center gap-3 ${
+                  collapsed ? "justify-center px-2" : "px-3"
+                } py-2 mb-1 rounded-lg text-sm text-text/70 hover:bg-primary/5 hover:text-text
+                  dark:text-white/60 dark:hover:bg-white/5 dark:hover:text-white transition-colors`}
+              >
+                <HeartIcon className="h-5 w-5 flex-shrink-0 text-primary" />
+                {!collapsed && <span>Switch to simple view</span>}
+              </button>
+            )}
             {!collapsed ? (
               <div className="flex items-center gap-3 px-2 py-2">
                 <div className="h-8 w-8 rounded-full bg-primary/10 dark:bg-white/10 grid place-items-center flex-shrink-0">

@@ -32,6 +32,8 @@ import QrImageModal from "../../molecules/QrImageModal";
 import type { QrToken, QrStatus } from "../../../types/qr";
 import { CURRENCY_CONFIG } from "../../../types/budget";
 import type { Currency } from "../../../types/budget";
+import { buildGuestRows } from "../../../utils/guestExport";
+import { downloadCsv, downloadXlsx } from "../../../utils/exportUtils";
 
 export default function GuestsPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
@@ -161,6 +163,13 @@ export default function GuestsPage() {
     });
   };
 
+  // Exports every guest, not the filtered view — this is a backup, and a
+  // partial one is worse than useless.
+  const exportRows = () => buildGuestRows({ guests, tables, giftMap, currencySymbol });
+
+  const handleExportXlsx = () => downloadXlsx(exportRows(), `guests-event-${eventId}.xlsx`, "Guests");
+  const handleExportCsv = () => downloadCsv(exportRows(), `guests-event-${eventId}.csv`);
+
   const confirmRevoke = () => {
     if (!revokeConfirm) return;
     revokeQr.mutate({ token: revokeConfirm.token, eventId: eventId! }, {
@@ -256,6 +265,13 @@ export default function GuestsPage() {
               {generateQr.isPending ? "Generating..." : "Generate QR"}
             </Button>
           )}
+          {/* Export stays available to crew — reading and printing the list is
+              exactly what they need at the door. */}
+          <Dropdown trigger={<Button variant="secondary">Export ▾</Button>}>
+            <DropdownItem onClick={handleExportXlsx}>Export as XLSX</DropdownItem>
+            <DropdownItem onClick={handleExportCsv}>Export as CSV</DropdownItem>
+            <DropdownItem onClick={() => navigate("/app/guests/print")}>Print check-in sheet</DropdownItem>
+          </Dropdown>
           <Button variant="primary" onClick={() => navigate("/app/checkin")}>
             Check-in
           </Button>

@@ -187,6 +187,12 @@ export const MOCK_DASHBOARD = {
     spentPercentage: 25,
     status: 0, // 0 = under_budget
   },
+  checklistStats: {
+    totalItems: 15,
+    completedItems: 9,
+    remainingItems: 6,
+    percentComplete: 60, // rounded to 1dp server-side
+  },
   recentActivity: [
     {
       activityType: 'rsvp',

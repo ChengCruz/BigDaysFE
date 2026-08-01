@@ -1,6 +1,7 @@
 import { BrowserRouter } from "react-router";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthProvider";
+import { UiModeProvider } from "./context/UiModeContext";
 import { EventProvider } from "./context/EventContext";
 import Routes from "./routers/routes";
 import { GoogleAnalytics } from "./components/analytics/GoogleAnalytics";
@@ -10,13 +11,16 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <EventProvider>
-          <BrowserRouter>
-            <GoogleAnalytics />
-            <ScrollToTop />
-            <Routes />
-          </BrowserRouter>
-        </EventProvider>
+        {/* Inside AuthProvider — the default mode is derived from the user's role. */}
+        <UiModeProvider>
+          <EventProvider>
+            <BrowserRouter>
+              <GoogleAnalytics />
+              <ScrollToTop />
+              <Routes />
+            </BrowserRouter>
+          </EventProvider>
+        </UiModeProvider>
       </AuthProvider>
     </ThemeProvider>
   );

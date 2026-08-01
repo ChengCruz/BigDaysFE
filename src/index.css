@@ -26,6 +26,46 @@
   --color-muted-warm:     #6B5D50;
   --color-gold:           #A9895A;
 
+  /* ── Couple-mode section hues (see docs/COUPLE_MODE.md) ──
+     Each of the five couple-mode sections owns one hue, carried from the nav
+     into that section's pages. Tuned to sit alongside the Rose palette. */
+  --color-sect-home:    oklch(0.65 0.13 15);   /* dusty rose — matches primary */
+  --color-sect-guests:  oklch(0.58 0.10 150);  /* sage */
+  --color-sect-seating: oklch(0.66 0.11 70);   /* champagne */
+  --color-sect-money:   oklch(0.55 0.16 10);   /* deep rose — matches button */
+  --color-sect-bigday:  oklch(0.60 0.13 330);  /* orchid */
+
+  /* ── Neutral ramp ──
+     Overrides Tailwind's stock `gray`, which is a cold blue-grey (hue 261) and
+     reads as dissonant against the warm ivory `--color-background`. Same
+     lightness at every step as the stock ramp, so nothing shifts weight or
+     contrast — this is a hue correction only. Chroma peaks mid-ramp and tapers
+     at the dark end to keep 800-950 neutral rather than brown.
+     Re-declared under `:root.slate` below, where the ground is cool again. */
+  --color-gray-50:  oklch(98.5% 0.004 42);
+  --color-gray-100: oklch(96.7% 0.007 42);
+  --color-gray-200: oklch(92.8% 0.011 42);
+  --color-gray-300: oklch(87.2% 0.016 42);
+  --color-gray-400: oklch(70.7% 0.024 42);
+  --color-gray-500: oklch(55.1% 0.026 42);
+  --color-gray-600: oklch(44.6% 0.026 42);
+  --color-gray-700: oklch(37.3% 0.024 42);
+  --color-gray-800: oklch(27.8% 0.020 42);
+  --color-gray-900: oklch(21.0% 0.016 42);
+  --color-gray-950: oklch(13.0% 0.012 42);
+
+  /* ── Shadows ──
+     Tinted with `--color-text` (rose-brown) instead of Tailwind's neutral
+     black, so shadows sit *on* the warm ground rather than on top of it.
+     Geometry is Tailwind's stock scale, unchanged. */
+  --shadow-2xs: 0 1px rgb(47 28 28 / 0.05);
+  --shadow-xs:  0 1px 2px 0 rgb(47 28 28 / 0.05);
+  --shadow-sm:  0 1px 3px 0 rgb(47 28 28 / 0.10), 0 1px 2px -1px rgb(47 28 28 / 0.10);
+  --shadow-md:  0 4px 6px -1px rgb(47 28 28 / 0.10), 0 2px 4px -2px rgb(47 28 28 / 0.10);
+  --shadow-lg:  0 10px 15px -3px rgb(47 28 28 / 0.10), 0 4px 6px -4px rgb(47 28 28 / 0.10);
+  --shadow-xl:  0 20px 25px -5px rgb(47 28 28 / 0.10), 0 8px 10px -6px rgb(47 28 28 / 0.10);
+  --shadow-2xl: 0 25px 50px -12px rgb(47 28 28 / 0.25);
+
   /* ── Landing fonts ── */
   --font-display: 'Fraunces', 'Cormorant Garamond', serif;
   --font-serif:   'Cormorant Garamond', Georgia, serif;
@@ -41,6 +81,36 @@
   --color-background: oklch(0.985 0.005 240); /* Cool off-white for pages */
   --color-text:       oklch(0.22 0.03 250);  /* Charcoal navy */
   --color-button:     oklch(0.42 0.10 250);  /* Deep navy for CTA buttons */
+
+  /* Couple-mode section hues, cooled to sit alongside the Slate palette */
+  --color-sect-home:    oklch(0.50 0.07 245); /* slate blue — matches primary */
+  --color-sect-guests:  oklch(0.54 0.08 175); /* teal */
+  --color-sect-seating: oklch(0.62 0.07 65);  /* steel bronze */
+  --color-sect-money:   oklch(0.42 0.10 250); /* deep navy — matches button */
+  --color-sect-bigday:  oklch(0.54 0.09 300); /* muted violet */
+
+  /* Neutral ramp returned to cool — Slate's ground is a cool off-white, so the
+     warm ramp in @theme would fight it. Lightness matches @theme step for step. */
+  --color-gray-50:  oklch(98.5% 0.002 250);
+  --color-gray-100: oklch(96.7% 0.003 250);
+  --color-gray-200: oklch(92.8% 0.006 250);
+  --color-gray-300: oklch(87.2% 0.010 250);
+  --color-gray-400: oklch(70.7% 0.022 250);
+  --color-gray-500: oklch(55.1% 0.027 250);
+  --color-gray-600: oklch(44.6% 0.030 250);
+  --color-gray-700: oklch(37.3% 0.034 250);
+  --color-gray-800: oklch(27.8% 0.033 250);
+  --color-gray-900: oklch(21.0% 0.034 250);
+  --color-gray-950: oklch(13.0% 0.028 250);
+
+  /* Shadows tinted with Slate's charcoal-navy text colour. */
+  --shadow-2xs: 0 1px rgb(16 28 40 / 0.05);
+  --shadow-xs:  0 1px 2px 0 rgb(16 28 40 / 0.05);
+  --shadow-sm:  0 1px 3px 0 rgb(16 28 40 / 0.10), 0 1px 2px -1px rgb(16 28 40 / 0.10);
+  --shadow-md:  0 4px 6px -1px rgb(16 28 40 / 0.10), 0 2px 4px -2px rgb(16 28 40 / 0.10);
+  --shadow-lg:  0 10px 15px -3px rgb(16 28 40 / 0.10), 0 4px 6px -4px rgb(16 28 40 / 0.10);
+  --shadow-xl:  0 20px 25px -5px rgb(16 28 40 / 0.10), 0 8px 10px -6px rgb(16 28 40 / 0.10);
+  --shadow-2xl: 0 25px 50px -12px rgb(16 28 40 / 0.25);
 }
 
 /* 4. Now pull in Tailwind’s generated components & utilities */
@@ -154,4 +224,28 @@
   }
   .fp-no-print { display: none !important; }
   .floor-canvas [data-floor-item] > div { outline: none !important; }
+}
+
+/* 7. Printable sheets (guest check-in list) — piggybacks on the
+      `body * { visibility: hidden }` rule in section 6, revealing only the
+      sheet. Without this a print from anywhere but the floor plan is blank. */
+@media print {
+  .print-sheet,
+  .print-sheet * { visibility: visible; }
+  .print-sheet {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+  .print-sheet tr { break-inside: avoid; }
+  .print-hide { display: none !important; }
 }
