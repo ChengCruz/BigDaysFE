@@ -2,7 +2,6 @@
 import { PageLoader } from "../../atoms/PageLoader";
 import { ErrorState } from "../../atoms/ErrorState";
 import React, { useState } from "react";
-import { saveAs } from "file-saver";
 import { ClipboardListIcon, UserGroupIcon, PencilIcon, TrashIcon } from "@heroicons/react/solid";
 import {
   useRsvpsApi,
@@ -25,6 +24,8 @@ import { useAuth } from "../../../api/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { StatsCard } from "../../atoms/StatsCard";
+import { buildRsvpRows } from "../../../utils/rsvpExport";
+import { downloadCsv, downloadXlsx } from "../../../utils/exportUtils";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -81,50 +82,10 @@ export default function RsvpsPage() {
     { total: 0, pax: 0 }
   );
 
-  const buildRsvpRows = () => {
-    const tableMap = new Map(tables.map((t) => [t.id, t.name]));
-    const guestCodeMap = new Map<string, string>();
-    for (const g of guests) {
-      if (g.rsvpId && g.guestCode) guestCodeMap.set(g.rsvpId, g.guestCode);
-    }
-    return rsvps.map((r, idx) => {
-      const row: Record<string, unknown> = {
-        "No.": idx + 1,
-        "Guest Code": guestCodeMap.get(r.rsvpId ?? r.id) ?? "",
-        "Guest Name": r.guestName,
-        "No. of Pax": r.noOfPax ?? "",
-        "Table": r.tableId ? (tableMap.get(r.tableId) ?? "") : "",
-      };
-      for (const field of formFields) {
-        const answer = (r.answers ?? []).find((a) => a.questionId === field.questionId);
-        const key = field.label || field.questionId;
-        if (key) row[key] = answer?.text ?? "";
-      }
-      return row;
-    });
-  };
+  const exportRows = () => buildRsvpRows({ rsvps, guests, tables, formFields });
 
-  const handleExportXlsx = async () => {
-    const XLSX = await import("xlsx");
-    const rows = buildRsvpRows();
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "RSVPs");
-    saveAs(new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })]), `rsvps-event-${eventId}.xlsx`);
-  };
-
-  const handleExportCsv = () => {
-    const rows = buildRsvpRows();
-    if (rows.length === 0) return;
-    const headers = Object.keys(rows[0]);
-    const escape = (v: unknown) => {
-      const s = String(v ?? "");
-      return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
-    };
-    let csv = headers.map(escape).join(",") + "\n";
-    rows.forEach((row) => { csv += headers.map((h) => escape(row[h])).join(",") + "\n"; });
-    saveAs(new Blob(["﻿", csv], { type: "text/csv;charset=utf-8;" }), `rsvps-event-${eventId}.csv`);
-  };
+  const handleExportXlsx = () => downloadXlsx(exportRows(), `rsvps-event-${eventId}.xlsx`, "RSVPs");
+  const handleExportCsv = () => downloadCsv(exportRows(), `rsvps-event-${eventId}.csv`);
 
   const renderAnswers = (answers: AnswerItem[]) =>
     answers
