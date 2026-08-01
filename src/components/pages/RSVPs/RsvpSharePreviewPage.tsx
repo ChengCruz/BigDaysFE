@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 
-import { FullPagePreview, type RsvpBlock } from "./RsvpDesignPage";
+import { FullPagePreview } from "./FullPagePreview";
+import type { RsvpBlock } from "../../../types/rsvpDesign";
 import { Button } from "../../atoms/Button";
 import { Spinner } from "../../atoms/Spinner";
 import client from "../../../api/client";
@@ -12,6 +13,7 @@ import {
 } from "../../../api/endpoints";
 import type { ApiRsvpDesign } from "../../../types/rsvpDesign";
 import { mapToFrontendDesign } from "../../../utils/rsvpDesignMapper";
+import type { StoredContentWidth } from "../../../utils/rsvpContentWidths";
 
 type PreviewData = {
   eventTitle?: string;
@@ -21,7 +23,8 @@ type PreviewData = {
   backgroundType: "color" | "image" | "video";
   overlay: number;
   accentColor: string;
-  contentWidth?: "compact" | "standard" | "wide" | "full";
+  /** Old designs may still carry the retired "full"; normalised on render. */
+  contentWidth?: StoredContentWidth;
 };
 
 function toPreview(apiDesign: ApiRsvpDesign): PreviewData | null {
