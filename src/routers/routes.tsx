@@ -111,6 +111,21 @@ function BudgetRoute() {
   return mode === "couple" ? <CoupleBudgetPage /> : <BudgetPage />;
 }
 
+/**
+ * Big Day: couple mode puts the day-of helper list above the scanner, because
+ * the tab already claims /app/crew (see coupleSections.ts) and nothing else in
+ * couple mode links there. Planner mode gets the bare scanner.
+ *
+ * Crew (role 6) is excluded explicitly: a crew member signing in on a browser
+ * that already has `uiMode=couple` in localStorage would otherwise be offered
+ * the helper-management list. Helpers don't manage helpers.
+ */
+function BigDayRoute() {
+  const { mode } = useUiMode();
+  const { userRole } = useAuth();
+  return mode === "couple" && userRole !== 6 ? <CoupleBigDayPage /> : <CheckInPage />;
+}
+
 import TablesPage from "../components/pages/Tables/TablesPage";
 import TablesPageV3 from "../components/pages/Tables/TablesPageV3";
 import CoupleSeatingPage from "../components/pages/Tables/CoupleSeatingPage";
@@ -146,6 +161,7 @@ import { TableSummary } from "../components/pages/Tables/TableSummary";
 import FloorPlanPage from "../components/pages/Tables/FloorPlanPage";
 import TablesFullscreenPage from "../components/pages/Tables/TablesFullscreenPage";
 import CheckInPage from "../components/pages/CheckIn/CheckInPage";
+import CoupleBigDayPage from "../components/pages/CheckIn/CoupleBigDayPage";
 import QrLookupPage from "../components/pages/Public/QrLookup/QrLookupPage";
 import RequireAuth from "../components/RequireAuth";
 import { useAuth } from "../api/hooks/useAuth";
@@ -259,8 +275,8 @@ export default function AppRoutes() {
         {/* CHECKLIST */}
         <Route path="checklist" element={<ChecklistPage />} />
 
-        {/* CHECK-IN */}
-        <Route path="checkin" element={<CheckInPage />} />
+        {/* CHECK-IN — body varies by UI mode, route does not */}
+        <Route path="checkin" element={<BigDayRoute />} />
 
         {/* BUDGET */}
         {/* Body varies by UI mode, route does not */}
