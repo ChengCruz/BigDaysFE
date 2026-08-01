@@ -1,5 +1,4 @@
 // src/routers/AppRoutes.tsx
-import React from "react";
 import { Routes, Route, Navigate, Outlet, useNavigate, useLocation } from "react-router";
 
 import LandingPage from "../components/pages/Landing/LandingPage";
@@ -12,20 +11,21 @@ import ContactPage from "../components/pages/Auth/ContactPage";
 import FeaturesPage from "../components/pages/Public/Features/FeaturesPage";
 
 import PublicTemplate from "../components/templates/PublicTemplate";
-import { Navbar } from "../components/organisms/Navbar";
-import { Sidebar } from "../components/organisms/Sidebar";
+import { CoupleShell } from "../components/organisms/CoupleShell";
+import { PlannerShell } from "../components/organisms/PlannerShell";
 import { HelpBubble } from "../components/organisms/HelpBubble";
 import { ExportBackupReminder } from "../components/organisms/ExportBackupReminder";
 import { TourProvider } from "../components/tour/TourProvider";
 import { NoEventsState } from "../components/molecules/NoEventsState";
 import { useEventContext } from "../context/EventContext";
+import { useUiMode } from "../context/UiModeContext";
 
 const CREW_ALLOWED_PATHS = ["/app/checkin", "/app/guests", "/app/tables"];
 
 function AppLayout() {
-  const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const { mustChooseEvent } = useEventContext();
   const { userRole } = useAuth();
+  const { mode } = useUiMode();
   const location = useLocation();
 
   if (userRole === 6 && !CREW_ALLOWED_PATHS.some(p => location.pathname.startsWith(p))) {
@@ -39,18 +39,25 @@ function AppLayout() {
   const onContactRoute = location.pathname.startsWith("/app/contact");
   const showEmptyState = mustChooseEvent && !onEventsRoute && !onContactRoute;
 
+  // Both shells render the same content — only the chrome around it differs, so
+  // no page component is duplicated. Role picks the default mode; the account
+  // menu can override it. See docs/COUPLE_MODE.md.
+  const Shell = mode === "couple" ? CoupleShell : PlannerShell;
+
   return (
     <TourProvider>
-      <div className="flex h-screen bg-background dark:bg-slate-950 text-text">
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <div className="flex flex-col flex-1 min-w-0">
-          <Navbar onMenuToggle={() => setSidebarOpen(o => !o)} />
-          <main className="flex-1 p-6 overflow-auto">
-            {showEmptyState ? <NoEventsState /> : <Outlet />}
-          </main>
-        </div>
-        <HelpBubble />
-      </div>
+      <Shell>{showEmptyState ? <NoEventsState /> : <Outlet />}</Shell>
+      {/* Planner only. Two reasons, both real:
+          1. Couple mode swaps in Couple* page components on the SAME paths
+             (see the mode checks below), but none of them carry `data-tour`
+             attributes — so findTourForPath() matches a tour by route and then
+             Joyride has nothing to anchor to. Guests, Seating and Money would
+             offer a tour with 0 of its steps mountable.
+          2. `fixed bottom-6 right-6` lands the bubble on top of CoupleShell's
+             mobile tab bar, covering the "Big Day" tab.
+          Couples still reach support via "Get help" in the account menu.
+          Re-enable once couple-specific tours exist — see docs/COUPLE_MODE.md. */}
+      {mode === "planner" && <HelpBubble />}
       {/* Nudges the user to take an offline copy of their guest list as the
           big day approaches. Skipped until they actually have an event. */}
       {!showEmptyState && <ExportBackupReminder />}
