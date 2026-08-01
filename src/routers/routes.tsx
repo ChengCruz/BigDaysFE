@@ -105,6 +105,12 @@ function SeatingRoute() {
   return mode === "couple" ? <CoupleSeatingPage /> : <TablesPageV3 />;
 }
 
+/** Money: couple mode leads with what's owed and overdue. */
+function BudgetRoute() {
+  const { mode } = useUiMode();
+  return mode === "couple" ? <CoupleBudgetPage /> : <BudgetPage />;
+}
+
 import TablesPage from "../components/pages/Tables/TablesPage";
 import TablesPageV3 from "../components/pages/Tables/TablesPageV3";
 import CoupleSeatingPage from "../components/pages/Tables/CoupleSeatingPage";
@@ -119,6 +125,7 @@ import UsersPage from "../components/pages/Users/UsersPage";
 import EditUserModal from "../components/pages/Users/EditUserModal";
 
 import BudgetPage from "../components/pages/Budget/BudgetPage";
+import CoupleBudgetPage from "../components/pages/Budget/CoupleBudgetPage";
 
 import MemberDashboardPage from "../components/pages/Dashboard/MemberDashboardPage";
 import CoupleHomePage from "../components/pages/Dashboard/CoupleHomePage";
@@ -256,7 +263,8 @@ export default function AppRoutes() {
         <Route path="checkin" element={<CheckInPage />} />
 
         {/* BUDGET */}
-        <Route path="budget" element={<BudgetPage />} />
+        {/* Body varies by UI mode, route does not */}
+        <Route path="budget" element={<BudgetRoute />} />
 
         {/* TUTORIAL */}
         <Route path="tutorial" element={<TutorialPage />} />
