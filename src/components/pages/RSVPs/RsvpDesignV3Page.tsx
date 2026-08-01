@@ -14,6 +14,7 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useEventContext } from "../../../context/EventContext";
+import { formatEventTime } from "../../../utils/eventUtils";
 import type { Event } from "../../../api/hooks/useEventsApi";
 import { useFormFields, type FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
 import { useRsvpDesign, useSaveRsvpDesign, usePublishRsvpDesign, useGenerateShareToken } from "../../../api/hooks/useRsvpDesignApi";
@@ -27,6 +28,15 @@ import {
   cleanupExpiredImages,
 } from "../../../utils/designImageCache";
 import { resizeImageToWebp, validateImageFile, MAX_UPLOAD_MB } from "../../../utils/imageResize";
+import {
+  CONTENT_WIDTHS,
+  CONTENT_WIDTH_ORDER,
+  DEFAULT_CONTENT_WIDTH,
+  contentWidthOption,
+  normalizeContentWidth,
+  type ContentWidthKey,
+} from "../../../utils/rsvpContentWidths";
+import { DEFAULT_BACKDROP_COLOR } from "../../../utils/rsvpBackdrops";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { PageLoader } from "../../atoms/PageLoader";
 import { BlockEditor } from "./designer/BlockEditor";
@@ -101,7 +111,7 @@ interface DesignState {
   submitButtonTextColor: string;
   submitButtonLabel: string;
   globalFontFamily: string;
-  contentWidth: "compact" | "standard" | "wide" | "full";
+  contentWidth: ContentWidthKey;
   blockMarginX: number;
   blockMarginY: number;
   version: number | undefined;
@@ -127,12 +137,12 @@ const initialState: DesignState = {
   submitButtonTextColor: "",
   submitButtonLabel: "",
   globalFontFamily: "",
-  contentWidth: "full",
+  contentWidth: DEFAULT_CONTENT_WIDTH,
   blockMarginX: 0,
   blockMarginY: 0,
   version: undefined,
   isDesignLoaded: false,
-  previewBackdropColor: "#ffffff",
+  previewBackdropColor: DEFAULT_BACKDROP_COLOR,
   previewBackdropImage: "",
 };
 
@@ -482,7 +492,9 @@ function renderSectionContent(
         ? (() => { try { return new Date(rawDate).toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); } catch { return rawDate; } })()
         : "Date TBC";
       const rawTime = event?.raw?.eventTime ?? "";
-      const formattedTime = rawTime || "Time TBC";
+      // The date above is formatted for guests, so the time must be too —
+      // printing rawTime verbatim showed invitees "18:00:00".
+      const formattedTime = formatEventTime(rawDate, rawTime) || "Time TBC";
       const location = event?.location ?? event?.raw?.eventLocation ?? "Venue TBC";
 
       const cards = [
@@ -763,7 +775,8 @@ export default function RsvpDesignV3Page() {
       if (savedDesign.submitButtonTextColor) patch.submitButtonTextColor = savedDesign.submitButtonTextColor;
       if (savedDesign.submitButtonLabel)  patch.submitButtonLabel = savedDesign.submitButtonLabel;
       if (savedDesign.globalFontFamily)   patch.globalFontFamily = savedDesign.globalFontFamily;
-      if (savedDesign.contentWidth)       patch.contentWidth = savedDesign.contentWidth;
+      // Normalised because old designs may carry the retired "full".
+      if (savedDesign.contentWidth)       patch.contentWidth = normalizeContentWidth(savedDesign.contentWidth);
       if (savedDesign.blockMarginX !== undefined) patch.blockMarginX = savedDesign.blockMarginX;
       if (savedDesign.blockMarginY !== undefined) patch.blockMarginY = savedDesign.blockMarginY;
       if (savedDesign.version !== undefined) patch.version = savedDesign.version;
@@ -1121,7 +1134,9 @@ export default function RsvpDesignV3Page() {
         submitButtonLabel: submitButtonLabel || undefined,
         globalFontFamily: globalFontFamily || undefined,
         layoutStyle: "flush" as const,
-        contentWidth: "full",
+        // Was hardcoded to the retired "full", which silently discarded whatever
+        // width the couple picked and persisted a value we no longer support.
+        contentWidth,
         blockMarginX,
         blockMarginY,
         formFieldConfigs: availableQuestions,
@@ -1219,16 +1234,12 @@ export default function RsvpDesignV3Page() {
   const frameBg: React.CSSProperties = globalBackgroundType === "color" ? { background: globalBackgroundColor } : { background: "linear-gradient(to bottom, #0f172a, #020617)" };
   const globalIsLight = globalBackgroundType === "color" && isLightColor(globalBackgroundColor);
 
-  // Device-frame sizing (canvas mode = what device we're previewing on).
-  // contentWidth is applied as an inner mx-auto max-w-* — mirroring preview/public exactly.
-  const contentWidthPx: Record<string, number> = { compact: 384, standard: 512, wide: 672 };
-  const cwPx = contentWidthPx[contentWidth];
-  const contentMaxClass =
-    contentWidth === "compact"  ? "max-w-sm"  :
-    contentWidth === "standard" ? "max-w-lg"  :
-    contentWidth === "wide"     ? "max-w-2xl" : "";
-  const canvasWidth = 430;
-  const canvasClass = "w-[430px] rounded-[2.5rem] shadow-[0_8px_48px_0_rgba(0,0,0,0.15),0_0_0_6px_#9ca3af]";
+  // The canvas IS the device: its width is the selected phone viewport, so the
+  // couple composes against exactly what a guest will hold. No inner cap — the
+  // card edge is the viewport edge, mirroring preview/public.
+  const widthOption = contentWidthOption(contentWidth);
+  // No grey bezel ring here either — rounded corners only. See rsvpContentWidths.
+  const canvasClass = "rounded-[2.5rem] shadow-[0_22px_64px_-14px_rgba(15,23,42,0.45)]";
 
   const chevronSvg = (open: boolean) => (
     <svg aria-hidden width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -1275,7 +1286,27 @@ export default function RsvpDesignV3Page() {
 
         <div className="w-px h-6 bg-gray-200 shrink-0" />
 
-        <span className="text-xs text-gray-400 font-medium">📱 430 px</span>
+        {/* Device switcher — the canvas, preview and guest page all follow this.
+            Previously a hardcoded "430 px" label that lied about the real width. */}
+        <div className="flex items-center gap-0.5" role="group" aria-label="Preview device width">
+          {CONTENT_WIDTH_ORDER.map((key) => {
+            const opt = CONTENT_WIDTHS[key];
+            const active = normalizeContentWidth(contentWidth) === key;
+            return (
+              <button
+                key={key}
+                onClick={() => dispatch({ type: "SET_GLOBAL", payload: { contentWidth: key } })}
+                aria-pressed={active}
+                title={`${opt.device} — ${opt.px}px · ${opt.hint}`}
+                className={`px-2 py-1 text-[11px] font-medium rounded-md transition ${
+                  active ? "bg-primary/10 text-primary" : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                }`}
+              >
+                {opt.px}
+              </button>
+            );
+          })}
+        </div>
 
         {/* Zoom */}
         <div className="flex items-center gap-1">
@@ -1493,19 +1524,20 @@ export default function RsvpDesignV3Page() {
             style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top center", transition: "transform 0.2s ease" }}>
 
             {/* Canvas breadcrumb */}
-            <div className="w-full max-w-2xl mb-3 flex items-center justify-between">
-              <p className="text-[11px] text-gray-500">
+            {/* Width matches the card so the labels sit over it, not floating wide of it */}
+            <div className="mb-3 flex items-center justify-between gap-3" style={{ width: widthOption.px }}>
+              <p className="text-[11px] text-gray-500 min-w-0 truncate">
                 <span className="font-semibold text-gray-700">{blocks.length}</span> {blocks.length === 1 ? "block" : "blocks"}
                 {selectedBlock && <span className="text-primary font-semibold"> · editing <em className="not-italic">{BLOCK_LABEL[selectedBlock.type]}</em></span>}
               </p>
-              <p className="text-[10px] text-gray-400 uppercase tracking-widest">
-                📱 430 PX{cwPx ? ` · content ${cwPx}px` : contentWidth === "full" ? " · CONTENT FULL" : ""}
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest whitespace-nowrap shrink-0">
+                📱 {widthOption.px} PX · {widthOption.device}
               </p>
             </div>
 
-            {/* Device frame — size = viewport. contentWidth applied on inner wrapper so canvas matches preview/public exactly. */}
+            {/* Invitation card — width = the selected device viewport. */}
             <div className={`relative transition-all duration-300 overflow-hidden ${canvasClass}`}
-              style={{ ...frameBg, minHeight: 700, fontFamily: globalFontFamily || "Georgia, 'Times New Roman', serif" }}
+              style={{ ...frameBg, width: widthOption.px, minHeight: 700, fontFamily: globalFontFamily || "Georgia, 'Times New Roman', serif" }}
               onClick={(e) => { if (e.currentTarget === e.target) dispatch({ type: "SELECT", payload: null }); }}>
 
               {/* Global background image/video layer */}
@@ -1519,9 +1551,9 @@ export default function RsvpDesignV3Page() {
                 <div className="absolute inset-0 pointer-events-none" style={{ background: `rgba(15,23,42,${globalOverlay})` }} />
               )}
 
-              {/* Blocks — mx-auto + max-w matches preview/public. Device frame = viewport, inner wrapper = content column */}
+              {/* Blocks — no inner cap; the card edge is the viewport edge, same as preview/public */}
               <div
-                className={`relative z-10 mx-auto flex flex-col ${contentMaxClass}`}
+                className="relative z-10 mx-auto flex flex-col w-full"
                 style={{
                   paddingLeft: blockMarginX,
                   paddingRight: blockMarginX,
@@ -1675,8 +1707,9 @@ export default function RsvpDesignV3Page() {
             className="fixed top-4 right-4 z-[101] flex items-center gap-1.5 rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm hover:bg-black/80 transition">
             Close Preview
           </button>
-          {/* Phone card frame */}
-          <div className="relative mx-auto w-full sm:max-w-[430px] sm:rounded-[2.5rem] sm:shadow-[0_8px_48px_0_rgba(0,0,0,0.15),0_0_0_6px_#9ca3af] overflow-hidden">
+          {/* Invitation card — device width on desktop, full-bleed on a real phone.
+              Matches RsvpFormRenderer exactly so preview == guest page. */}
+          <div className={`relative mx-auto w-full ${widthOption.cardClass} sm:rounded-[2.5rem] sm:shadow-[0_22px_64px_-14px_rgba(15,23,42,0.45)] overflow-hidden`}>
           {/* Mobile content — backgrounds scoped inside card frame */}
           <div className="relative w-full min-h-[600px] overflow-hidden"
             style={frameBg}>
@@ -1692,7 +1725,7 @@ export default function RsvpDesignV3Page() {
             )}
             {/* Blocks */}
             <div
-              className="relative z-10 mx-auto flex flex-col w-full max-w-[430px]"
+              className="relative z-10 mx-auto flex flex-col w-full"
               style={{
                 paddingLeft: blockMarginX,
                 paddingRight: blockMarginX,

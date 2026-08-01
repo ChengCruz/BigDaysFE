@@ -11,7 +11,7 @@ export const MOCK_JWT_MEMBER = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ
 export const MOCK_JWT_STAFF = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLWd1aWQtMDAwMyIsImVtYWlsIjoic3RhZmZAdGVzdC5jb20iLCJyb2xlIjoiU3RhZmYiLCJleHAiOjk5OTk5OTk5OTl9.fakesig';
 
 export const MOCK_EVENT_GUID = '11111111-1111-1111-1111-111111111111';
-export const MOCK_WALLET_GUID = 'aaaa-bbbb-cccc-dddd';
+export const MOCK_BUDGET_GUID = 'aaaa-bbbb-cccc-dddd';
 export const MOCK_SHARE_TOKEN = 'testtoken123';
 
 // Field names match what UsersPage/UserFormModal renders (fullName, createdDate, lastUpdated, role as number)
@@ -54,6 +54,8 @@ export const MOCK_USER_LIST = [
 // toEvent maps: eventGuid→id, eventName→title, eventDate→date, eventLocation→location
 export const MOCK_EVENT = {
   eventGuid: MOCK_EVENT_GUID,
+  // Owned by MOCK_USER (the admin) — renders the "Mine" badge in admin views
+  userGuid: MOCK_USER.userGuid,
   eventName: 'Test Wedding',
   eventDate: '2026-12-01',
   eventTime: '10:00:00',
@@ -69,6 +71,8 @@ export const MOCK_EVENT = {
 export const MOCK_EVENT_2_GUID = '22222222-2222-2222-2222-222222222222';
 export const MOCK_EVENT_2 = {
   eventGuid: MOCK_EVENT_2_GUID,
+  // Owned by MOCK_MEMBER_USER — admins should see "Member User" attributed to it
+  userGuid: MOCK_MEMBER_USER.userGuid,
   eventName: 'Second Member Birthday',
   eventDate: '2026-08-15',
   eventTime: '18:00:00',
@@ -79,9 +83,9 @@ export const MOCK_EVENT_2 = {
   title: 'Second Member Birthday',
 };
 
-export const MOCK_WALLET = {
+export const MOCK_BUDGET = {
   walletId: 1,
-  walletGuid: MOCK_WALLET_GUID,
+  walletGuid: MOCK_BUDGET_GUID,
   eventGuid: MOCK_EVENT_GUID,
   totalBudget: 50000,
   totalSpent: 12500,
@@ -93,7 +97,7 @@ export const MOCK_WALLET = {
 export const MOCK_TRANSACTION = {
   transactionId: 1,
   transactionGuid: 'txn-guid-0001',
-  walletGuid: MOCK_WALLET_GUID,
+  walletGuid: MOCK_BUDGET_GUID,
   transactionName: 'Venue Deposit',
   amount: 5000,
   transactionDate: '2026-06-01',
@@ -182,6 +186,12 @@ export const MOCK_DASHBOARD = {
     remainingAmount: 37500,
     spentPercentage: 25,
     status: 0, // 0 = under_budget
+  },
+  checklistStats: {
+    totalItems: 15,
+    completedItems: 9,
+    remainingItems: 6,
+    percentComplete: 60, // rounded to 1dp server-side
   },
   recentActivity: [
     {
@@ -336,17 +346,17 @@ export async function mockApi(page: Page) {
       });
     }
 
-    // ── Wallet ────────────────────────────────────────────────────────────────
+    // ── Budget (backend routes are still under /Wallet) ─────────────────────────
     if (/\/Wallet\/Setup/i.test(url) && method === 'POST') {
       return route.fulfill({
         status: 200,
-        json: { isSuccess: true, data: MOCK_WALLET },
+        json: { isSuccess: true, data: MOCK_BUDGET },
       });
     }
     if (/\/Wallet\//i.test(url) && method === 'GET') {
       return route.fulfill({
         status: 200,
-        json: { isSuccess: true, data: MOCK_WALLET },
+        json: { isSuccess: true, data: MOCK_BUDGET },
       });
     }
 

@@ -84,7 +84,8 @@ export const UsersEndpoints = {
   updateRole: (id: number) => `/User/UpdateRole?id=${id}`,
 };
 
-export const WalletEndpoints = {
+// Backend routes are still under /Wallet — the backend entity hasn't been renamed.
+export const BudgetEndpoints = {
   getByEvent: (eventGuid: string) => `/Wallet/GetWalletByEvent/${eventGuid}`,
   getByGuid: (walletGuid: string, eventGuid: string) => `/Wallet/${walletGuid}?eventGuid=${eventGuid}`,
   create: "/Wallet/Create",
@@ -95,7 +96,7 @@ export const WalletEndpoints = {
 };
 
 export const TransactionEndpoints = {
-  getByWallet: (walletGuid: string, eventGuid: string) =>
+  getByBudget: (walletGuid: string, eventGuid: string) =>
     `/Transaction/${walletGuid}/transactions?eventGuid=${eventGuid}`,
   getById: (transactionId: string, eventGuid: string) =>
     `/Transaction/${transactionId}?eventGuid=${eventGuid}`,

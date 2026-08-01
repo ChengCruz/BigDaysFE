@@ -19,6 +19,8 @@ export interface Event {
   eventCode?: string;
   rsvpDueDate?: string | null;
   isExpired?: boolean;
+  /** GUID of the owning user — used by admins to tell whose event this is. */
+  ownerGuid?: string;
   raw?: ApiEvent;
 }
 
@@ -35,6 +37,7 @@ function toEvent(e: ApiEvent): Event {
     eventCode: e.eventCode,
     rsvpDueDate: e.rsvpDueDate,
     isExpired: e.isExpired,
+    ownerGuid: e.userGuid,
     raw: e,
   };
 }

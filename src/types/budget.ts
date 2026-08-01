@@ -1,4 +1,7 @@
-// src/types/wallet.ts
+// src/types/budget.ts
+// NOTE: The backend entity is still named "Wallet" (see MyBigDays_Mono), so `walletGuid`
+// fields below are kept as-is to match the wire contract — only the frontend-facing
+// names (Budget, BudgetApiResponse, etc.) are renamed.
 
 export const Currency = {
   MYR: 'MYR',
@@ -16,7 +19,7 @@ export const CURRENCY_CONFIG: Record<Currency, { flag: string; label: string; sy
 };
 
 // Backend API Response Type (raw from backend)
-export interface WalletApiResponse {
+export interface BudgetApiResponse {
   walletGuid: string;
   eventGuid: string;
   userId: string;
@@ -30,7 +33,7 @@ export interface WalletApiResponse {
 }
 
 // Frontend Type (normalized)
-export interface Wallet {
+export interface Budget {
   walletGuid: string;
   eventGuid: string;
   userId: string;
@@ -44,14 +47,14 @@ export interface Wallet {
 }
 
 // API Request Types
-export interface CreateWalletRequest {
+export interface CreateBudgetRequest {
   eventGuid: string;
   userId: string;
   currency: string;
   budget?: number; // Backend expects 'budget' field name
 }
 
-export interface UpdateWalletRequest {
+export interface UpdateBudgetRequest {
   eventGuid: string;
   walletGuid: string;
   userId: string;
@@ -59,18 +62,18 @@ export interface UpdateWalletRequest {
   budget?: number; // Backend expects 'budget' field name
 }
 
-export interface DeleteWalletRequest {
+export interface DeleteBudgetRequest {
   eventGuid: string;
   walletGuid: string;
   userId: string;
 }
 
-// Frontend types for wallet operations
-export interface WalletWithBudget extends Wallet {
+// Frontend types for budget operations
+export interface BudgetWithAmount extends Budget {
   totalBudget: number;
 }
 
-export interface WalletStatistics {
+export interface BudgetStatistics {
   totalBudget: number;
   currentSpending: number;
   remainingBudget: number;

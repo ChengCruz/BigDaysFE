@@ -10,6 +10,8 @@ import type { RsvpSubmitPayload } from "../../../../api/hooks/usePublicRsvpApi";
 import { Spinner } from "../../../atoms/Spinner";
 import TurnstileWidget from "../../../molecules/TurnstileWidget";
 import { isRsvpTurnstileEnabled, TURNSTILE_SITE_KEY_RSVP } from "../../../../utils/turnstile";
+import { contentWidthClass } from "../../../../utils/rsvpContentWidths";
+import { DEFAULT_BACKDROP_COLOR } from "../../../../utils/rsvpBackdrops";
 
 interface Props {
   design: RsvpDesign;
@@ -106,26 +108,21 @@ export default function RsvpFormRenderer({
     accentColor,
     globalMusicUrl,
     layoutStyle,
-    contentWidth = "full",
+    contentWidth,
     blockMarginX = 0,
     blockMarginY = 0,
     previewBackdropImage,
     previewBackdropColor,
   } = design;
 
-  const backdropColor = previewBackdropColor || "#f3f4f6";
+  const backdropColor = previewBackdropColor || DEFAULT_BACKDROP_COLOR;
 
   // V3 designs save layoutStyle:"flush"; default to flush when unset
   const isFlush = layoutStyle !== "cards";
 
-  // Content width mapping
-  const widthClass: Record<string, string> = {
-    compact:  "max-w-sm",   // 384px
-    standard: "max-w-lg",   // 512px
-    wide:     "max-w-2xl",  // 672px
-    full:     "",            // no limit
-  };
-  const maxWidthCls = widthClass[contentWidth] ?? "";
+  // Device viewport width, applied to the card as a DESKTOP-ONLY cap so a wider
+  // handset still uses its full width. See utils/rsvpContentWidths.
+  const maxWidthCls = contentWidthClass(contentWidth);
 
   // Adaptive color scheme — matches V3 designer canvas
   const globalIsLight = globalBackgroundType === "color" && isLightColor(globalBackgroundColor);
@@ -804,9 +801,12 @@ export default function RsvpFormRenderer({
         fontFamily: design.globalFontFamily || "Georgia, 'Times New Roman', serif",
       }}
     >
-      {/* Phone frame — 375px on desktop, full-width on real mobile */}
+      {/* Invitation card — sized to a real phone viewport on desktop, full-bleed
+          on an actual phone. Deliberately NO grey bezel ring: the rounded corners
+          read as a printed card, the ring read as a device mock. */}
       <div
-        className="relative mx-auto w-full sm:max-w-[430px] overflow-hidden text-white sm:rounded-[2.5rem] sm:shadow-[0_8px_48px_0_rgba(0,0,0,0.15),0_0_0_6px_#9ca3af]"
+        data-testid="rsvp-card"
+        className={`relative mx-auto w-full ${maxWidthCls} overflow-hidden text-white sm:rounded-[2.5rem] sm:shadow-[0_22px_64px_-14px_rgba(15,23,42,0.45)]`}
         style={{
           minHeight: "100vh",
         }}
@@ -864,7 +864,7 @@ export default function RsvpFormRenderer({
       <form onSubmit={handleSubmit} noValidate>
         <div
           className={`relative mx-auto flex flex-col ${
-            isFlush ? maxWidthCls : `${maxWidthCls || "max-w-3xl"} gap-6 px-4 py-12`
+            isFlush ? "" : "max-w-3xl gap-6 px-4 py-12"
           }`}
           style={
             isFlush

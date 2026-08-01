@@ -14,16 +14,16 @@ import {
 } from "../../utils/transactionUtils";
 
 /**
- * Fetch all transactions for a wallet (list query pattern)
+ * Fetch all transactions for a budget (list query pattern)
  * Automatically parses extended fields from remarks
  */
-export function useTransactionsApi(walletId: string, eventId: string) {
+export function useTransactionsApi(budgetId: string, eventId: string) {
   return useQuery<Transaction[]>({
-    queryKey: ["transactions", walletId],
+    queryKey: ["transactions", budgetId],
     queryFn: async () => {
       try {
         const response = await client.get(
-          TransactionEndpoints.getByWallet(walletId, eventId)
+          TransactionEndpoints.getByBudget(budgetId, eventId)
         );
         
         // Handle wrapped response format
@@ -45,7 +45,7 @@ export function useTransactionsApi(walletId: string, eventId: string) {
         throw error;
       }
     },
-    enabled: Boolean(walletId) && Boolean(eventId),
+    enabled: Boolean(budgetId) && Boolean(eventId),
     staleTime: 2 * 60_000, // Cache for 2 minutes
   });
 }
@@ -104,7 +104,7 @@ export function useCreateTransaction() {
           queryKey: ["transactions", variables.walletGuid],
         });
         queryClient.invalidateQueries({
-          queryKey: ["wallet", variables.eventGuid],
+          queryKey: ["budget", variables.eventGuid],
         });
       }
     },
@@ -122,9 +122,9 @@ export function useUpdateTransaction() {
     mutationFn: async (transactionData) => {
       // Serialize transaction with extended fields
       const payload = serializeTransactionForUpdate(transactionData);
-      
+
       const response = await client.post(TransactionEndpoints.update, payload);
-      
+
       return response.data?.data ?? response.data;
     },
     onSuccess: (_, variables) => {
@@ -137,7 +137,7 @@ export function useUpdateTransaction() {
           queryKey: ["transaction", variables.transactionGuid],
         });
         queryClient.invalidateQueries({
-          queryKey: ["wallet", variables.eventGuid],
+          queryKey: ["budget", variables.eventGuid],
         });
       }
     },
@@ -164,7 +164,7 @@ export function useDeleteTransaction() {
         queryKey: ["transaction", variables.transactionGuid],
       });
       queryClient.invalidateQueries({
-        queryKey: ["wallet", variables.eventGuid],
+        queryKey: ["budget", variables.eventGuid],
       });
     },
   });
@@ -174,7 +174,7 @@ export function useDeleteTransaction() {
  * @deprecated Use useTransactionsApi instead
  * Backward compatibility alias
  */
-export const useTransactionsByWallet = useTransactionsApi;
+export const useTransactionsByBudget = useTransactionsApi;
 
 /**
  * @deprecated Use useTransactionApi instead

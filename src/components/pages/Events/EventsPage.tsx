@@ -11,8 +11,9 @@ import { Button } from "../../atoms/Button";
 import { Outlet, useNavigate, useSearchParams } from "react-router";
 import { useEventContext } from "../../../context/EventContext";
 import { CheckCircleIcon, CheckIcon } from "@heroicons/react/solid";
-import { CalendarIcon, LocationMarkerIcon, ArchiveIcon, PencilIcon, XIcon, RefreshIcon, ArrowRightIcon, TemplateIcon, ClipboardListIcon, ExternalLinkIcon } from "@heroicons/react/solid";
+import { CalendarIcon, LocationMarkerIcon, ArchiveIcon, PencilIcon, XIcon, RefreshIcon, ArrowRightIcon, TemplateIcon, ClipboardListIcon, ExternalLinkIcon, UserIcon } from "@heroicons/react/solid";
 import { StatsCard } from "../../atoms/StatsCard";
+import { useEventOwners } from "../../../api/hooks/useEventOwners";
 import { formatEventDate, formatEventTime } from "../../../utils/eventUtils";
 
 export default function EventsPage() {
@@ -31,6 +32,7 @@ export default function EventsPage() {
   const updateSlug = useUpdateEventSlug();
   const [editingSlugId, setEditingSlugId] = useState<string | null>(null);
   const [slugInput, setSlugInput] = useState("");
+  const { showOwner, isMine, ownerName } = useEventOwners();
 
   useEffect(() => {
     const wantsNew = searchParams.get("new") === "1";
@@ -64,9 +66,16 @@ export default function EventsPage() {
 
   const filteredEvents = useMemo(() => {
     const term = search.toLowerCase();
-    const list = events.filter((ev) =>
-      ev.title.toLowerCase().includes(term) || ev.location?.toLowerCase().includes(term)
-    );
+    const list = events.filter((ev) => {
+      if (!term) return true;
+      // Admins scan a system-wide list, so let them search by owner too.
+      const owner = showOwner ? ownerName(ev.ownerGuid)?.toLowerCase() : null;
+      return (
+        ev.title.toLowerCase().includes(term) ||
+        Boolean(ev.location?.toLowerCase().includes(term)) ||
+        Boolean(owner?.includes(term))
+      );
+    });
 
     return list.sort((a, b) => {
       if (sortBy === "name") return a.title.localeCompare(b.title);
@@ -74,7 +83,7 @@ export default function EventsPage() {
       const bDate = new Date(b.date).getTime();
       return sortBy === "upcoming" ? aDate - bDate : bDate - aDate;
     });
-  }, [events, search, sortBy]);
+  }, [events, search, sortBy, showOwner, ownerName]);
 
   const activeCount = events.filter((ev) => !ev.raw?.isDeleted).length;
   const archivedCount = events.filter((ev) => ev.raw?.isDeleted).length;
@@ -214,7 +223,7 @@ export default function EventsPage() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or location"
+              placeholder={showOwner ? "Search by name, location or owner" : "Search by name or location"}
               className="w-full border border-primary/20 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
             <select
@@ -240,6 +249,8 @@ export default function EventsPage() {
             {filteredEvents.map((ev) => {
               const isActive = eventId === ev.id;
               const isArchived = Boolean(ev?.raw?.isDeleted);
+              const owner = showOwner ? ownerName(ev.ownerGuid) : null;
+              const mine = showOwner && isMine(ev.ownerGuid);
 
               return (
                 <li
@@ -255,6 +266,11 @@ export default function EventsPage() {
                       {isActive && (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                           <CheckCircleIcon className="w-4 h-4" /> Active
+                        </span>
+                      )}
+                      {mine && (
+                        <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                          Mine
                         </span>
                       )}
                       {isArchived && (
@@ -278,6 +294,12 @@ export default function EventsPage() {
                         <LocationMarkerIcon className="w-4 h-4" />
                         {ev.location || "Add a venue"}
                       </span>
+                      {owner && (
+                        <span className="inline-flex items-center gap-1">
+                          <UserIcon className="w-4 h-4" />
+                          {owner}
+                        </span>
+                      )}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 min-h-[1.25rem]">
                       {ev.description ?? ""}

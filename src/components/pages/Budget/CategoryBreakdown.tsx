@@ -1,14 +1,14 @@
-// src/components/pages/Wallet/CategoryBreakdown.tsx
+// src/components/pages/Budget/CategoryBreakdown.tsx
 import React from "react";
 import type { Transaction } from "../../../types/transaction";
 import { TransactionType, TransactionCategory } from "../../../types/transaction";
 import { getCategoryConfig } from "../../../utils/categoryConfig";
 import { formatAmount } from "../../../utils/transactionUtils";
-import type { Wallet } from "../../../types/wallet";
-import { CURRENCY_CONFIG } from "../../../types/wallet";
+import type { Budget } from "../../../types/budget";
+import { CURRENCY_CONFIG } from "../../../types/budget";
 
 interface CategoryBreakdownProps {
-  wallet: Wallet;
+  budget: Budget;
   transactions: Transaction[];
 }
 
@@ -20,10 +20,10 @@ interface CategoryData {
 }
 
 export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({
-  wallet,
+  budget,
   transactions,
 }) => {
-  const currencySymbol = CURRENCY_CONFIG[wallet.currency].symbol;
+  const currencySymbol = CURRENCY_CONFIG[budget.currency].symbol;
 
   // Calculate total spending (debit only)
   const totalSpending = transactions

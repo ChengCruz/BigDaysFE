@@ -1,23 +1,23 @@
-// src/components/pages/Wallet/WalletSummaryCards.tsx
+// src/components/pages/Budget/BudgetSummaryCards.tsx
 import React from "react";
-import type { Wallet } from "../../../types/wallet";
+import type { Budget } from "../../../types/budget";
 import type { Transaction } from "../../../types/transaction";
 import { TransactionType, PaymentStatus } from "../../../types/transaction";
-import { CURRENCY_CONFIG } from "../../../types/wallet";
+import { CURRENCY_CONFIG } from "../../../types/budget";
 import { formatAmount } from "../../../utils/transactionUtils";
 
-interface WalletSummaryCardsProps {
-  wallet: Wallet;
+interface BudgetSummaryCardsProps {
+  budget: Budget;
   transactions: Transaction[];
   onEditBudget: () => void;
 }
 
-export const WalletSummaryCards: React.FC<WalletSummaryCardsProps> = ({
-  wallet,
+export const BudgetSummaryCards: React.FC<BudgetSummaryCardsProps> = ({
+  budget,
   transactions,
   onEditBudget,
 }) => {
-  const currencySymbol = CURRENCY_CONFIG[wallet.currency].symbol;
+  const currencySymbol = CURRENCY_CONFIG[budget.currency].symbol;
 
   // Calculate current spending (sum of all debit transactions)
   const currentSpending = transactions
@@ -42,7 +42,7 @@ export const WalletSummaryCards: React.FC<WalletSummaryCardsProps> = ({
   ).length;
 
   // Calculate remaining budget
-  const totalBudget = wallet.totalBudget || 0;
+  const totalBudget = budget.totalBudget || 0;
   const remainingBudget = totalBudget - currentSpending;
   const budgetPercentageUsed =
     totalBudget > 0 ? (currentSpending / totalBudget) * 100 : 0;
@@ -69,7 +69,7 @@ export const WalletSummaryCards: React.FC<WalletSummaryCardsProps> = ({
             </svg>
           </div>
           <span className="text-xs px-2 py-1 rounded-full bg-white/20 font-medium">
-            {wallet.currency}
+            {budget.currency}
           </span>
         </div>
         <p className="text-sm text-white/80 font-medium">Total Budget</p>
