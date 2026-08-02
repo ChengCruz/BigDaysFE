@@ -57,7 +57,10 @@ export function useRsvpsApi(eventId: string) {
         id: r.rsvpGuid ?? r.id ?? r.rsvpId ?? r._id,
         rsvpId: r.rsvpGuid ?? r.rsvpId ?? r.id,
         rsvpGuid: r.rsvpGuid ?? undefined,
-        eventId: r.eventId,
+        // Same rule as the id above: RsvpDetailDto carries an int EventId next to
+        // the Guid, and every RSVP write (Create/Update/Delete) identifies the
+        // event by Guid. Capture the Guid so the int can never reach a payload.
+        eventId: r.eventGuid,
         guestName: r.guestName ?? r.name ?? "",
         noOfPax: r.noOfPax !== undefined && r.noOfPax !== null ? r.noOfPax : 1,
         name: r.name,

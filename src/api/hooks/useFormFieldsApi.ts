@@ -48,7 +48,11 @@ export function useFormFields(eventId?: string, options?: { enabled?: boolean })
         // comparisons with select onChange values (always strings) work correctly.
         questionId: String(r.questionId ?? r.id ?? ""),
         id: String(r.questionId ?? r.id ?? ""),
-        eventId: r.eventId,
+        // QuestionDto carries BOTH an int eventId and a Guid eventGuid. Capture the
+        // Guid only: every question write identifies the event by Guid (eventGuid on
+        // create/update, eventId-carrying-a-Guid on the toggles), so an int riding
+        // along on the config is a 400 waiting for someone to spread it into a payload.
+        eventGuid: r.eventGuid,
         label: r.label ?? r.text ?? r.name ?? "",
         name: r.name ?? (r.label ?? r.text ?? "").toLowerCase().replace(/\s+/g, "_"),
         text: r.text ?? r.label ?? "",

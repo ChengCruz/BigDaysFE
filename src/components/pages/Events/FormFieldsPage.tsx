@@ -1,4 +1,14 @@
 // src/components/pages/Events/FormFieldsPage.tsx
+//
+// Planner-mode question builder. Couple mode renders CoupleQuestionsPage from the
+// same route against the same hooks — see routes.tsx:FormFieldsRoute.
+//
+// Every write here goes through runWrite() because the question endpoints report
+// refusals inside a HTTP 200 envelope rather than as a 4xx (utils/apiEnvelope):
+// POST /question/Update answers `statusCode: 422` when the question already has
+// answers, and the toggles do the same when the save writes no rows. Calling
+// mutate() and closing the modal on a resolved promise showed a success the
+// backend never granted.
 import { PageLoader } from "../../atoms/PageLoader";
 import { useMemo, useState } from "react";
 import {
@@ -19,6 +29,7 @@ import { NoEventsState } from "../../molecules/NoEventsState";
 import { useEventContext } from "../../../context/EventContext";
 import { QuestionTemplateModal } from "../../molecules/QuestionTemplateModal";
 import type { QuestionTemplate } from "../../../utils/formFieldTemplates";
+import { envelopeError } from "../../../utils/apiEnvelope";
 
 export default function FormFieldsPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
@@ -37,6 +48,7 @@ export default function FormFieldsPage() {
 
   const [templateModal, setTemplateModal] = useState(false);
   const [isAddingTemplates, setIsAddingTemplates] = useState(false);
+  const [banner, setBanner] = useState<string | null>(null);
 
   const [editWarning, setEditWarning] = useState<{
     open: boolean;
@@ -64,18 +76,40 @@ export default function FormFieldsPage() {
     [fieldsRaw]
   );
 
+  /**
+   * Single funnel for every question write. A resolved mutation is not proof the
+   * write landed — the refusal may be inside the envelope — so the result is
+   * checked before the caller reports success. Returns false when it failed.
+   */
+  async function runWrite(write: () => Promise<unknown>, fallback: string): Promise<boolean> {
+    setBanner(null);
+    try {
+      const err = envelopeError(await write());
+      if (err) setBanner(err);
+      return !err;
+    } catch {
+      setBanner(fallback);
+      return false;
+    }
+  }
+
   async function handleAddTemplates(selected: QuestionTemplate[]) {
     if (!eventId) return;
     setIsAddingTemplates(true);
     for (const tpl of selected) {
-      await createField.mutateAsync({
-        text: tpl.text,
-        type: tpl.type,
-        isRequired: tpl.isRequired,
-        options: tpl.options ?? "",
-        order: tpl.order,
-        eventGuid: eventId,
-      });
+      const ok = await runWrite(
+        () =>
+          createField.mutateAsync({
+            text: tpl.text,
+            type: tpl.type,
+            isRequired: tpl.isRequired,
+            options: tpl.options ?? "",
+            order: tpl.order,
+            eventGuid: eventId,
+          }),
+        "We couldn’t add those fields. Please try again."
+      );
+      if (!ok) break;
     }
     setIsAddingTemplates(false);
     setTemplateModal(false);
@@ -98,6 +132,16 @@ export default function FormFieldsPage() {
           <Button onClick={() => setModal({ open: true })} className="whitespace-nowrap">+ New Field</Button>
         </div>
       </div>
+
+      {/* Surfaces the 200-with-the-refusal-inside case described at the top of the file. */}
+      {banner && (
+        <div
+          role="alert"
+          className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-700/40 dark:bg-amber-900/20 dark:text-amber-200"
+        >
+          {banner}
+        </div>
+      )}
 
       {fields.length === 0 ? (
         <div data-tour="formfields-list" className="text-center text-gray-500 py-10 bg-white dark:bg-gray-800 rounded-lg shadow">
@@ -209,8 +253,12 @@ export default function FormFieldsPage() {
         confirmLabel="Activate"
         onCancel={() => setActivateWarning({ open: false })}
         onConfirm={() => {
-          activateField.mutate({ questionId: activateWarning.field!.questionId!, eventId: eventId! });
+          const field = activateWarning.field!;
           setActivateWarning({ open: false });
+          void runWrite(
+            () => activateField.mutateAsync({ questionId: field.questionId!, eventId: eventId! }),
+            "We couldn’t reactivate that field. Please try again."
+          );
         }}
       >
         <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -227,8 +275,12 @@ export default function FormFieldsPage() {
         confirmLabel="Deactivate"
         onCancel={() => setDeactivateWarning({ open: false })}
         onConfirm={() => {
-          deactivateField.mutate({ questionId: deactivateWarning.field!.questionId!, eventId: eventId! });
+          const field = deactivateWarning.field!;
           setDeactivateWarning({ open: false });
+          void runWrite(
+            () => deactivateField.mutateAsync({ questionId: field.questionId!, eventId: eventId! }),
+            "We couldn’t deactivate that field. Please try again."
+          );
         }}
       >
         <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -245,8 +297,12 @@ export default function FormFieldsPage() {
         confirmLabel="Delete Permanently"
         onCancel={() => setDeleteWarning({ open: false })}
         onConfirm={() => {
-          deleteField.mutate({ questionId: deleteWarning.field!.questionId!, eventId: eventId! });
+          const field = deleteWarning.field!;
           setDeleteWarning({ open: false });
+          void runWrite(
+            () => deleteField.mutateAsync({ questionId: field.questionId!, eventId: eventId! }),
+            "We couldn’t delete that field. Please try again."
+          );
         }}
       >
         <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -279,10 +335,12 @@ export default function FormFieldsPage() {
                 }
               : undefined
           }
-          onSave={(dto) => {
+          onSave={async (dto) => {
             if (!eventId) return;
 
-            // Build the payload the API expects (QuestionDto shape)
+            // Build the payload the API expects (QuestionDto shape). Every field,
+            // every time — Update is a full replace, so an omitted one is wiped to
+            // its CLR default.
             const payload: QuestionPayload = {
               text: dto.text ?? "",
               type: dto.type,
@@ -292,18 +350,17 @@ export default function FormFieldsPage() {
               eventGuid: eventId,
             };
 
-            if (modal.initial?.questionId) {
-              // update expects an id; map from questionId
-              updateField.mutate({
-                ...payload,
-                questionId: modal.initial.questionId.toString(),
-              });
-            } else {
-              // create
-              createField.mutate(payload);
-            }
-
+            const editingId = modal.initial?.questionId;
             setModal({ open: false });
+
+            await runWrite(
+              () =>
+                editingId
+                  ? // update expects an id; map from questionId
+                    updateField.mutateAsync({ ...payload, questionId: editingId.toString() })
+                  : createField.mutateAsync(payload),
+              "We couldn’t save that field. Please try again."
+            );
           }}
         />
       )}
