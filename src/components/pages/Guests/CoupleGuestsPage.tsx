@@ -71,7 +71,7 @@ interface Party {
   key: string;
   name: string;
   phoneNo?: string;
-  /** People this party is bringing. */
+  /** Seats this party takes — the guest included, not a plus-one count. */
   pax: number;
   remarks?: string;
   /** Absent for guest rows that were added without going through an RSVP. */
@@ -88,7 +88,7 @@ type Filter = "all" | "coming" | "needsSeat" | "notComing";
 const FILTERS: { key: Filter; label: string }[] = [
   { key: "all", label: "Everyone" },
   { key: "coming", label: "Coming" },
-  { key: "needsSeat", label: "Needs a seat" },
+  { key: "needsSeat", label: "No table yet" },
   { key: "notComing", label: "Can’t come" },
 ];
 
@@ -122,7 +122,7 @@ function StatusPill({ party }: { party: Party }) {
         </span>
       );
     default:
-      return <span className={`${base} bg-sect-home/15 text-sect-home`}>Needs a seat</span>;
+      return <span className={`${base} bg-sect-home/15 text-sect-home`}>No table yet</span>;
   }
 }
 
@@ -205,7 +205,10 @@ export default function CoupleGuestsPage() {
     }
 
     const fromRsvps: Party[] = rsvps.map((r) => {
-      const rid = r.rsvpId ?? r.id;
+      // Guest.rsvpId holds the RSVP's *Guid*, not its int RsvpId — the list
+      // endpoint returns both (RsvpDetailDto.RsvpId is an int, RsvpGuid is the
+      // Guid), so joining on rsvpId misses every row and doubles the list.
+      const rid = r.rsvpGuid ?? r.rsvpId ?? r.id;
       const guest = guestByRsvp.get(rid);
       guestByRsvp.delete(rid);
       const pax = r.noOfPax ?? guest?.pax ?? 0;
@@ -382,15 +385,20 @@ export default function CoupleGuestsPage() {
           size="sm"
           icon={<UserGroupIcon className="h-4 w-4" />}
         />
+        {/* "Replies" and "No table yet" are party counts, matching planner's
+            "Total Guests" and "Unassigned". This one is a pax sum, so the
+            label has to say so — planner writes "(pax)", couple says people. */}
         <StatsCard
-          label="Coming"
+          label="People coming"
           value={stats.coming}
           variant="success"
           size="sm"
           icon={<CheckCircleIcon className="h-4 w-4" />}
         />
+        {/* A party count, like planner's "Unassigned" — not the seating page's
+            "Seats needed", which sums pax. Different names on purpose. */}
         <StatsCard
-          label="Need a seat"
+          label="No table yet"
           value={stats.needsSeat}
           variant="warning"
           size="sm"
@@ -470,9 +478,12 @@ export default function CoupleGuestsPage() {
                       {party.name}
                     </span>
                     <span className="block text-[12.5px] text-text/55">
+                      {/* `pax` is the whole party, the guest included — so it
+                          is a seat count, not a plus-one count. "Bringing 1"
+                          read as "them plus one". Matches the seating page. */}
                       {party.state === "notComing"
                         ? "Not coming"
-                        : `Bringing ${party.pax}`}
+                        : `${party.pax} seat${party.pax === 1 ? "" : "s"}`}
                       {party.phoneNo ? ` · ${party.phoneNo}` : ""}
                     </span>
                   </span>
@@ -499,7 +510,7 @@ export default function CoupleGuestsPage() {
                             : "bg-sect-home/15 text-sect-home"
                         }`}
                       >
-                        {party.table ?? "No seat yet"}
+                        {party.table ?? "No table yet"}
                       </span>
                       {guestKey && <QrStatusBadge status={qrStatusOf(qrMap.get(guestKey))} />}
                       {party.guest?.guestCode && (

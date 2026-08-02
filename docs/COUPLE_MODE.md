@@ -610,8 +610,10 @@ sits `md:`-only. Covered by `tests/couple-home.spec.ts`.
 ## Open questions
 
 1. **Party-as-row is now settled** — the backend leaves no alternative. But it means
-   the row count is *replies*, not head count. The stats row labels them separately
-   ("Replies" vs "Coming") to avoid that confusion.
+   the row count is *replies*, not head count. Every label now carries its unit so
+   the two can never be read as the same number: row counts are "Replies" and
+   "No table yet", pax sums are "People coming", "Seats taken/needed/free". See the
+   counting-convention table in `CLAUDE.md`.
 2. **Deletion in couple mode** is intentionally absent — removal goes through the RSVP
    module, which also soft-deletes the Guest row and unseats the party. Couple mode
    points at planner view. Acceptable, or should deleting a party be allowed inline?

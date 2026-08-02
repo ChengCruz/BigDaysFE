@@ -50,9 +50,13 @@ export function useRsvpsApi(eventId: string) {
         : [];
 
       return arr.map((r: any) => ({
-        id: r.id ?? r.rsvpId ?? r.rsvpGuid ?? r._id,
-        rsvpId: r.rsvpId ?? r.id,
-        rsvpGuid: r.rsvpGuid ?? r.rsvpGuid ?? undefined,
+        // The RsvpGuid is the identity everywhere — writes take it, and
+        // Guest.rsvpId holds it. RsvpDetailDto also carries an int RsvpId, but
+        // nothing consumes it, and letting it win here silently broke every
+        // rsvp↔guest join. Both fields resolve to the Guid on purpose.
+        id: r.rsvpGuid ?? r.id ?? r.rsvpId ?? r._id,
+        rsvpId: r.rsvpGuid ?? r.rsvpId ?? r.id,
+        rsvpGuid: r.rsvpGuid ?? undefined,
         eventId: r.eventId,
         guestName: r.guestName ?? r.name ?? "",
         noOfPax: r.noOfPax !== undefined && r.noOfPax !== null ? r.noOfPax : 1,

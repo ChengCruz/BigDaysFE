@@ -452,8 +452,10 @@ export default function CoupleHomePage() {
           size="sm"
         />
         <StatsCard label="People coming" value={r.totalGuestsConfirmed} variant="success" size="sm" />
+        {/* `unassignedGuests` is a guest-row count in the backend, so this is a
+            party count — same label and units as the guests page. */}
         <StatsCard
-          label="Need a seat"
+          label="No table yet"
           value={t.unassignedGuests}
           variant={t.unassignedGuests > 0 ? "warning" : "success"}
           size="sm"

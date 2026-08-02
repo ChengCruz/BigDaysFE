@@ -165,7 +165,7 @@ export default function CoupleSeatingPage() {
 
   const handleUnseat = (guest: Guest) => {
     unassignGuest.mutate(guest.guestId ?? guest.id, {
-      onSuccess: () => toast.success(`${guest.guestName || guest.name} needs a seat again`),
+      onSuccess: () => toast.success(`${guest.guestName || guest.name} has no table again`),
       onError: () => toast.error("Failed to unassign guest from table"),
     });
   };
@@ -228,9 +228,12 @@ export default function CoupleSeatingPage() {
         </NavLink>
       </div>
 
+      {/* All three are pax sums, so every label says "seats" — couple mode's
+          word for planner's "(pax)" suffix. The guests page's "No table yet"
+          counts parties, so this one cannot borrow that wording. */}
       <div className="grid grid-cols-3 gap-3">
-        <StatsCard label="Seated" value={stats.seated} variant="success" size="sm" />
-        <StatsCard label="Need a seat" value={stats.waiting} variant="warning" size="sm" />
+        <StatsCard label="Seats taken" value={stats.seated} variant="success" size="sm" />
+        <StatsCard label="Seats needed" value={stats.waiting} variant="warning" size="sm" />
         <StatsCard label="Seats free" value={stats.free} variant="primary" size="sm" />
       </div>
 
@@ -247,8 +250,9 @@ export default function CoupleSeatingPage() {
                 : `${skippedParties.length} parties couldn’t be seated`}
             </p>
             <p className="mb-3 text-[13px] text-white/90">
-              {biggestSkipped.guestName || biggestSkipped.name} is bringing {paxOf(biggestSkipped)},
-              and the roomiest table ({roomiest.name}) has {Math.max(freeSeats(roomiest), 0)} seat
+              {biggestSkipped.guestName || biggestSkipped.name} needs {paxOf(biggestSkipped)} seat
+              {paxOf(biggestSkipped) === 1 ? "" : "s"}, and the roomiest table ({roomiest.name}) has{" "}
+              {Math.max(freeSeats(roomiest), 0)} seat
               {freeSeats(roomiest) === 1 ? "" : "s"} left. A party has to sit together.
             </p>
             <div className="flex flex-wrap gap-2">
@@ -305,8 +309,10 @@ export default function CoupleSeatingPage() {
         <div className="overflow-hidden rounded-2xl border border-primary/10 bg-white">
           <div className="flex items-center justify-between gap-3 border-b border-primary/10 px-4 py-3">
             <p className="text-sm text-text/70">
+              {/* A row count, so it must not say "seats" — the card above it
+                  reads "Seats needed" and sums pax. */}
               <span className="text-[15px] font-bold text-text">{unseated.length}</span>{" "}
-              still need{unseated.length === 1 ? "s" : ""} a seat
+              still ha{unseated.length === 1 ? "s" : "ve"} no table
             </p>
             {!isReadOnly && (
               <Button
@@ -341,7 +347,7 @@ export default function CoupleSeatingPage() {
                       {g.guestName || g.name}
                     </span>
                     <span className="block text-[12.5px] text-text/55">
-                      Bringing {paxOf(g)}
+                      {paxOf(g)} {paxOf(g) === 1 ? "seat" : "seats"}
                     </span>
                   </span>
                   {!isReadOnly && (
