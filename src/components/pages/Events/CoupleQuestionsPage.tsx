@@ -45,6 +45,7 @@ import { NoEventsState } from "../../molecules/NoEventsState";
 import { QuestionTemplateModal } from "../../molecules/QuestionTemplateModal";
 import type { QuestionTemplate } from "../../../utils/formFieldTemplates";
 import { useEventContext } from "../../../context/EventContext";
+import { envelopeError } from "../../../utils/apiEnvelope";
 
 /** Planner mode says "Short Text"; a couple is choosing how a guest answers. */
 const ANSWER_LABELS: Record<string, string> = {
@@ -60,20 +61,6 @@ const ANSWER_LABELS: Record<string, string> = {
 
 function answerLabel(f: FormFieldConfig): string {
   return ANSWER_LABELS[f.typeKey as string] ?? "Short answer";
-}
-
-/**
- * The backend answers 200-with-a-failure-code-inside rather than a 4xx, so a
- * resolved promise is not proof the write landed. Returns the message to show,
- * or null when the envelope really did succeed.
- */
-export function envelopeError(res: unknown): string | null {
-  if (!res || typeof res !== "object") return null;
-  const env = res as { isSuccess?: boolean; statusCode?: unknown; message?: string };
-  const code = Number(env.statusCode);
-  const failed = env.isSuccess === false || (Number.isFinite(code) && code >= 400);
-  if (!failed) return null;
-  return env.message?.trim() || "That didn’t save. Please try again.";
 }
 
 export default function CoupleQuestionsPage() {

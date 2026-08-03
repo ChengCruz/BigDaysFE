@@ -1,4 +1,5 @@
 import type { Page, Route } from '@playwright/test';
+import { RELEASES } from '../src/components/whatsNew/releases';
 
 // ── Shared mock data ──────────────────────────────────────────────────────────
 
@@ -15,12 +16,15 @@ export const MOCK_BUDGET_GUID = 'aaaa-bbbb-cccc-dddd';
 export const MOCK_SHARE_TOKEN = 'testtoken123';
 
 // Field names match what UsersPage/UserFormModal renders (fullName, createdDate, lastUpdated, role as number)
+// isActive mirrors the BE's UserDto — it is the only account-status signal the API sends,
+// and UsersPage renders it as the Active/Inactive badge.
 export const MOCK_USER = {
   userId: 'u1',
   userGuid: 'user-guid-0001',
   fullName: 'Admin User',
   email: 'admin@test.com',
   role: 2, // Admin
+  isActive: true,
   createdDate: '2026-01-01T00:00:00',
   lastUpdated: '2026-01-01T00:00:00',
 };
@@ -31,6 +35,7 @@ export const MOCK_MEMBER_USER = {
   fullName: 'Member User',
   email: 'member@test.com',
   role: 3, // Member
+  isActive: true,
   createdDate: '2026-01-02T00:00:00',
   lastUpdated: '2026-01-02T00:00:00',
 };
@@ -41,13 +46,28 @@ export const MOCK_STAFF_USER = {
   fullName: 'Staff User',
   email: 'staff@test.com',
   role: 6, // Staff
+  isActive: true,
   createdDate: '2026-01-03T00:00:00',
   lastUpdated: '2026-01-03T00:00:00',
+};
+
+// Never signed in — either they never verified their email or an admin deactivated them.
+// Kept out of the login helpers so only the admin list has to deal with it.
+export const MOCK_INACTIVE_USER = {
+  userId: 'u4',
+  userGuid: 'user-guid-0004',
+  fullName: 'Inactive User',
+  email: 'inactive@test.com',
+  role: 3, // Member
+  isActive: false,
+  createdDate: '2026-01-04T00:00:00',
+  lastUpdated: '2026-01-04T00:00:00',
 };
 
 export const MOCK_USER_LIST = [
   MOCK_USER,
   MOCK_MEMBER_USER,
+  MOCK_INACTIVE_USER,
 ];
 
 // Field names match ApiEvent shape expected by toEvent() in useEventsApi.ts
@@ -483,6 +503,35 @@ export async function mockApiLoginFail(page: Page) {
   });
 }
 
+// ── What's New announcement ───────────────────────────────────────────────────
+
+/** Opt back in to the announcement — see silenceWhatsNew. */
+export const WHATS_NEW_OPT_IN_KEY = 'e2e.whatsNew';
+
+/**
+ * Stop the "What's new" modal from covering the page under test.
+ *
+ * It fires on a first-ever login by design (src/utils/whatsNew.ts), which for a
+ * fresh browser context means *every* test — so every authenticated entry point
+ * below silences it by marking each release read.
+ *
+ * A spec that actually wants the modal registers an init script setting
+ * WHATS_NEW_OPT_IN_KEY before calling these helpers; init scripts run in
+ * registration order, so the flag is already set when this one checks it.
+ */
+async function silenceWhatsNew(page: Page) {
+  await page.addInitScript(
+    ({ ids, optInKey }) => {
+      if (localStorage.getItem(optInKey) === 'on') return;
+      localStorage.setItem(
+        'bigdays.whatsNew.v1',
+        JSON.stringify({ firstSeenAt: 0, seen: ids })
+      );
+    },
+    { ids: RELEASES.map((r) => r.id), optInKey: WHATS_NEW_OPT_IN_KEY }
+  );
+}
+
 /** Set the session hint flag so AuthProvider attempts silent token refresh on startup. */
 export async function setMockAuth(page: Page, eventGuid = MOCK_EVENT_GUID) {
   await page.evaluate(
@@ -497,6 +546,7 @@ export async function setMockAuth(page: Page, eventGuid = MOCK_EVENT_GUID) {
 /** Navigate to a page as Admin (role 2 — sees admin user list view). */
 export async function gotoAuthenticated(page: Page, path: string) {
   await mockApi(page);
+  await silenceWhatsNew(page);
   await page.goto('/login');
   await page.waitForLoadState('domcontentloaded');
   await page.fill('input[type="email"]', MOCK_USER.email);
@@ -535,6 +585,7 @@ export async function mockApiMultipleEvents(page: Page) {
 /** Navigate to a page as Member (role 3 — sees non-admin profile + change password view). */
 export async function gotoAuthenticatedAsMember(page: Page, path: string) {
   await mockApi(page);
+  await silenceWhatsNew(page);
   // Override auth/user responses for member role (LIFO — this handler runs first)
   await page.route('**/__mock_api__/**', async (route: Route) => {
     const url = route.request().url();
@@ -582,6 +633,7 @@ export async function gotoAuthenticatedAsMember(page: Page, path: string) {
 /** Navigate to a page as Staff (role 6 — sidebar restricted to checkin/guests/tables). */
 export async function gotoAuthenticatedAsStaff(page: Page, path: string) {
   await mockApi(page);
+  await silenceWhatsNew(page);
   // Override auth/user responses for staff role (LIFO — this handler runs first)
   await page.route('**/__mock_api__/**', async (route: Route) => {
     const url = route.request().url();

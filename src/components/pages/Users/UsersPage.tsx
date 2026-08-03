@@ -23,6 +23,27 @@ function formatDate(dateStr?: string) {
   return `${dd}/${mm}/${yyyy}`;
 }
 
+/**
+ * Deliberately says "Active", not "Verified". The backend has no email-verified column —
+ * verifying flips `IsActive`, and the Deactivate button on this page flips the same bit —
+ * so an inactive row is "never verified their email" *or* "an admin switched them off",
+ * and nothing on the wire tells the two apart. Same pill as CrewPage's status column.
+ */
+function AccountStatusBadge({ isActive }: { isActive?: boolean }) {
+  if (isActive === undefined) return null;
+  return (
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+        isActive
+          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+          : "bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-white/40"
+      }`}
+    >
+      {isActive ? "Active" : "Inactive"}
+    </span>
+  );
+}
+
 export default function UsersPage() {
   const { userGuid, userRole } = useAuth();
 
@@ -295,11 +316,14 @@ export default function UsersPage() {
                 <div>
                   <p className="text-lg font-medium">{u.fullName}</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">{u.email}</p>
-                  {u.role !== undefined && (
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                      {getRoleLabel(u.role)}
-                    </p>
-                  )}
+                  <div className="flex items-center gap-2 mt-1">
+                    {u.role !== undefined && (
+                      <span className="text-xs text-gray-500 dark:text-gray-500">
+                        {getRoleLabel(u.role)}
+                      </span>
+                    )}
+                    <AccountStatusBadge isActive={u.isActive} />
+                  </div>
                 </div>
                 <div className="space-x-2">
                   <Button

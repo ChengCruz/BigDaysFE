@@ -19,6 +19,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   QuestionMarkCircleIcon,
+  SparklesIcon,
   SwitchHorizontalIcon,
   UserCircleIcon,
 } from "@heroicons/react/solid";
@@ -29,6 +30,7 @@ import { COUPLE_SECTIONS, sectionForPath } from "./coupleSections";
 import { useAuth } from "../../api/hooks/useAuth";
 import { useTheme } from "../../context/ThemeContext";
 import { useUiMode } from "../../context/UiModeContext";
+import { hasUnseenRelease } from "../../utils/whatsNew";
 
 function initialsFor(email?: string): string {
   if (!email) return "··";
@@ -41,7 +43,7 @@ function initialsFor(email?: string): string {
 /**
  * Secondary destinations. Deliberately NOT tabs — a couple visits these rarely.
  *
- * Both are app-level and event-independent. `/app/users` is the signed-in user's
+ * All are app-level and event-independent. `/app/users` is the signed-in user's
  * own profile and password, plus an admin-only list — it is an account page, not
  * a "share access" page, so it is labelled accordingly.
  *
@@ -51,6 +53,7 @@ function initialsFor(email?: string): string {
  * reached from CoupleBigDayPage instead. See docs/COUPLE_MODE.md.
  */
 const SECONDARY = [
+  { to: "/app/whats-new", label: "What's new", Icon: SparklesIcon },
   { to: "/app/contact", label: "Get help", Icon: QuestionMarkCircleIcon },
   { to: "/app/users", label: "Your account", Icon: UserCircleIcon },
 ];
@@ -61,6 +64,10 @@ export function CoupleShell({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const { palette, toggle: togglePalette } = useTheme();
   const { setMode } = useUiMode();
+
+  // Re-read on every navigation (this component re-renders on location change),
+  // which is when visiting the page should clear the dot.
+  const hasUnseenNews = hasUnseenRelease();
 
   const [collapsed, setCollapsed] = React.useState(false);
   const active = sectionForPath(pathname);
@@ -140,6 +147,14 @@ export function CoupleShell({ children }: { children: ReactNode }) {
             >
               <Icon className="h-5 w-5 flex-shrink-0" />
               {!collapsed && <span>{label}</span>}
+              {/* Unread marker. Sits on the icon when collapsed, since the
+                  label it would otherwise follow isn't rendered. */}
+              {to === "/app/whats-new" && hasUnseenNews && (
+                <span
+                  className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"
+                  aria-label="New updates"
+                />
+              )}
             </NavLink>
           ))}
 
@@ -202,6 +217,10 @@ export function CoupleShell({ children }: { children: ReactNode }) {
               Get help
             </DropdownItem>
             <DropdownItem onClick={() => navigate("/app/users")}>Your account</DropdownItem>
+            {/* Mobile has no rail, so this is the only way to the release notes there. */}
+            <DropdownItem onClick={() => navigate("/app/whats-new")} className="md:hidden">
+              What's new{hasUnseenNews ? " ·" : ""}
+            </DropdownItem>
             <DropdownItem onClick={togglePalette}>
               Colours — {palette === "rose" ? "Rose" : "Slate"}
             </DropdownItem>

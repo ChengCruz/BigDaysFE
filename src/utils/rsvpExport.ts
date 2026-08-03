@@ -27,19 +27,24 @@ export function buildRsvpRows({
   formFields,
 }: RsvpExportInput): ExportRow[] {
   const tableMap = new Map(tables.map((t) => [t.id, t.name]));
-  // Guest codes live on the guest record, not the RSVP, so join them back in.
-  const guestCodeMap = new Map<string, string>();
+  // Guest codes and seats live on the guest record, not the RSVP, so join them
+  // back in. Guest.rsvpId holds the RSVP's *Guid* — RsvpDetailDto.RsvpId is an
+  // int, so keying this map on rsvpId would never match and blank the columns.
+  const guestByRsvp = new Map<string, Guest>();
   for (const g of guests) {
-    if (g.rsvpId && g.guestCode) guestCodeMap.set(g.rsvpId, g.guestCode);
+    if (g.rsvpId) guestByRsvp.set(g.rsvpId, g);
   }
 
   return rsvps.map((r, idx) => {
+    const guest = guestByRsvp.get(r.rsvpGuid ?? r.rsvpId ?? r.id);
+    // The RSVP DTO carries no table — the seat is on the guest row.
+    const tableId = guest?.tableId ?? r.tableId;
     const row: ExportRow = {
       "No.": idx + 1,
-      "Guest Code": guestCodeMap.get(r.rsvpId ?? r.id) ?? "",
+      "Guest Code": guest?.guestCode ?? "",
       "Guest Name": r.guestName,
       "No. of Pax": r.noOfPax ?? "",
-      "Table": r.tableId ? (tableMap.get(r.tableId) ?? "") : "",
+      "Table": tableId ? (tableMap.get(tableId) ?? "") : "",
     };
     for (const field of formFields) {
       const answer = (r.answers ?? []).find((a) => a.questionId === field.questionId);

@@ -262,14 +262,14 @@ export default function CoupleHomePage() {
 
   const toneClasses: Record<NextAction["tone"], { card: string; chip: string; cta: string }> = {
     primary: {
-      card: "bg-primary text-white shadow-md",
-      chip: "bg-white/20",
-      cta: "border-white/55 hover:border-white hover:bg-white/15",
+      card: "border border-primary/15 bg-white text-text shadow-sm",
+      chip: "bg-primary/12 text-primary",
+      cta: "border-primary/30 text-primary hover:border-primary hover:bg-primary/8",
     },
     amber: {
-      card: "bg-amber-500 text-white shadow-md",
-      chip: "bg-white/20",
-      cta: "border-white/55 hover:border-white hover:bg-white/15",
+      card: "border border-amber-500/25 bg-amber-50 text-text shadow-sm",
+      chip: "bg-amber-500/15 text-amber-600",
+      cta: "border-amber-500/40 text-amber-700 hover:border-amber-500 hover:bg-amber-500/10",
     },
     calm: {
       card: "border border-primary/10 bg-accent/40 text-text",
@@ -359,31 +359,17 @@ export default function CoupleHomePage() {
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-[15px] font-bold">{next.title}</p>
-            <p className={`text-[13px] ${next.tone === "calm" ? "text-text/65" : "text-white/90"}`}>
-              {next.body}
-            </p>
+            <p className="text-[13px] text-text/65">{next.body}</p>
 
             {next.meter && next.meter.total > 0 && (
               <div className="mt-3">
-                <div
-                  className={`h-2 w-full overflow-hidden rounded-full ${
-                    next.tone === "calm" ? "bg-primary/10" : "bg-white/25"
-                  }`}
-                >
+                <div className="h-2 w-full overflow-hidden rounded-full bg-primary/10">
                   <div
-                    className={`h-full rounded-full transition-all ${
-                      next.tone === "calm" ? "bg-sect-seating" : "bg-white"
-                    }`}
+                    className="h-full rounded-full bg-sect-seating transition-all"
                     style={{ width: `${Math.round((next.meter.done / next.meter.total) * 100)}%` }}
                   />
                 </div>
-                <p
-                  className={`mt-1.5 text-[12px] ${
-                    next.tone === "calm" ? "text-text/55" : "text-white/85"
-                  }`}
-                >
-                  {next.meter.caption}
-                </p>
+                <p className="mt-1.5 text-[12px] text-text/55">{next.meter.caption}</p>
               </div>
             )}
 
@@ -452,8 +438,10 @@ export default function CoupleHomePage() {
           size="sm"
         />
         <StatsCard label="People coming" value={r.totalGuestsConfirmed} variant="success" size="sm" />
+        {/* `unassignedGuests` is a guest-row count in the backend, so this is a
+            party count — same label and units as the guests page. */}
         <StatsCard
-          label="Need a seat"
+          label="No table yet"
           value={t.unassignedGuests}
           variant={t.unassignedGuests > 0 ? "warning" : "success"}
           size="sm"

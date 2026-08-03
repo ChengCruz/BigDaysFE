@@ -205,7 +205,8 @@ export function useEventRsvpInternal(eventId?: string) {
       return questions.map((q: any) => ({
         questionId: String(q.questionId ?? q.id ?? ""),
         id: String(q.questionId ?? q.id ?? ""),
-        eventId: q.eventId,
+        // The Guid, never the int eventId beside it — see useFormFieldsApi.
+        eventGuid: q.eventGuid,
         label: q.label ?? q.text ?? q.name ?? "",
         name: q.name ?? (q.label ?? q.text ?? "").toLowerCase().replace(/\s+/g, "_"),
         text: q.text ?? q.label ?? "",
