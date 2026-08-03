@@ -15,12 +15,15 @@ export const MOCK_BUDGET_GUID = 'aaaa-bbbb-cccc-dddd';
 export const MOCK_SHARE_TOKEN = 'testtoken123';
 
 // Field names match what UsersPage/UserFormModal renders (fullName, createdDate, lastUpdated, role as number)
+// isActive mirrors the BE's UserDto — it is the only account-status signal the API sends,
+// and UsersPage renders it as the Active/Inactive badge.
 export const MOCK_USER = {
   userId: 'u1',
   userGuid: 'user-guid-0001',
   fullName: 'Admin User',
   email: 'admin@test.com',
   role: 2, // Admin
+  isActive: true,
   createdDate: '2026-01-01T00:00:00',
   lastUpdated: '2026-01-01T00:00:00',
 };
@@ -31,6 +34,7 @@ export const MOCK_MEMBER_USER = {
   fullName: 'Member User',
   email: 'member@test.com',
   role: 3, // Member
+  isActive: true,
   createdDate: '2026-01-02T00:00:00',
   lastUpdated: '2026-01-02T00:00:00',
 };
@@ -41,13 +45,28 @@ export const MOCK_STAFF_USER = {
   fullName: 'Staff User',
   email: 'staff@test.com',
   role: 6, // Staff
+  isActive: true,
   createdDate: '2026-01-03T00:00:00',
   lastUpdated: '2026-01-03T00:00:00',
+};
+
+// Never signed in — either they never verified their email or an admin deactivated them.
+// Kept out of the login helpers so only the admin list has to deal with it.
+export const MOCK_INACTIVE_USER = {
+  userId: 'u4',
+  userGuid: 'user-guid-0004',
+  fullName: 'Inactive User',
+  email: 'inactive@test.com',
+  role: 3, // Member
+  isActive: false,
+  createdDate: '2026-01-04T00:00:00',
+  lastUpdated: '2026-01-04T00:00:00',
 };
 
 export const MOCK_USER_LIST = [
   MOCK_USER,
   MOCK_MEMBER_USER,
+  MOCK_INACTIVE_USER,
 ];
 
 // Field names match ApiEvent shape expected by toEvent() in useEventsApi.ts

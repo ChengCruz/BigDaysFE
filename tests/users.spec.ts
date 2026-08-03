@@ -74,12 +74,14 @@ test.describe('Users — Change Password validation', () => {
 test.describe('Users — Admin: All Users list', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/users');
-    // Click "View All Users" to switch from profile view to list view
+    // Click "View All Users" to switch from profile view to list view. UsersPage renders
+    // only a PageLoader until the profile query lands, so wait for the button rather than
+    // probing for it — a conditional skip here leaves every test in this block silently
+    // asserting against the profile view instead of the list.
     const viewAllBtn = page.locator('button:has-text("View All Users")');
-    if (await viewAllBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await viewAllBtn.click();
-      await page.waitForLoadState('networkidle');
-    }
+    await expect(viewAllBtn).toBeVisible();
+    await viewAllBtn.click();
+    await expect(page.getByRole('heading', { name: 'All Users' })).toBeVisible();
   });
 
   test('shows all users from list', async ({ page }) => {
@@ -91,6 +93,14 @@ test.describe('Users — Admin: All Users list', () => {
   test('shows all user emails from API response', async ({ page }) => {
     for (const user of MOCK_USER_LIST) {
       await expect(page.locator(`text=${user.email}`).first()).toBeVisible();
+    }
+  });
+
+  test('account status badge reflects isActive from the API', async ({ page }) => {
+    for (const user of MOCK_USER_LIST) {
+      const card = page.locator('li').filter({ hasText: user.email });
+      // exact: true matters — "Inactive" contains "Active" as a substring.
+      await expect(card.getByText(user.isActive ? 'Active' : 'Inactive', { exact: true })).toBeVisible();
     }
   });
 
@@ -136,9 +146,8 @@ test.describe('Users — Admin: Create User', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/users');
     const viewAllBtn = page.locator('button:has-text("View All Users")');
-    if (await viewAllBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await viewAllBtn.click();
-    }
+    await expect(viewAllBtn).toBeVisible();
+    await viewAllBtn.click();
     await page.click('button:has-text("New User")');
     await expect(page.locator('text=New User')).toBeVisible({ timeout: 3000 });
   });
@@ -172,10 +181,9 @@ test.describe('Users — Admin: Edit User', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/users');
     const viewAllBtn = page.locator('button:has-text("View All Users")');
-    if (await viewAllBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await viewAllBtn.click();
-      await page.waitForLoadState('networkidle');
-    }
+    await expect(viewAllBtn).toBeVisible();
+    await viewAllBtn.click();
+    await expect(page.getByRole('heading', { name: 'All Users' })).toBeVisible();
   });
 
   test('Edit button opens "Edit User" modal', async ({ page }) => {
@@ -214,10 +222,9 @@ test.describe('Users — Admin: Delete User', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/users');
     const viewAllBtn = page.locator('button:has-text("View All Users")');
-    if (await viewAllBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await viewAllBtn.click();
-      await page.waitForLoadState('networkidle');
-    }
+    await expect(viewAllBtn).toBeVisible();
+    await viewAllBtn.click();
+    await expect(page.getByRole('heading', { name: 'All Users' })).toBeVisible();
   });
 
   test('Delete button shows confirmation dialog', async ({ page }) => {
