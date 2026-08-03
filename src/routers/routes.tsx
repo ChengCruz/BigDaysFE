@@ -15,6 +15,7 @@ import { CoupleShell } from "../components/organisms/CoupleShell";
 import { PlannerShell } from "../components/organisms/PlannerShell";
 import { HelpBubble } from "../components/organisms/HelpBubble";
 import { ExportBackupReminder } from "../components/organisms/ExportBackupReminder";
+import { WhatsNewAnnouncer } from "../components/organisms/WhatsNewAnnouncer";
 import { TourProvider } from "../components/tour/TourProvider";
 import { NoEventsState } from "../components/molecules/NoEventsState";
 import { useEventContext } from "../context/EventContext";
@@ -61,6 +62,10 @@ function AppLayout() {
       {/* Nudges the user to take an offline copy of their guest list as the
           big day approaches. Skipped until they actually have an event. */}
       {!showEmptyState && <ExportBackupReminder />}
+      {/* Announces newly shipped features once. Skipped while the user is
+          mid-onboarding with no event, and for crew (role 6) — they reach this
+          layout on /app/checkin, and helpers don't need product news. */}
+      {!showEmptyState && userRole !== 6 && <WhatsNewAnnouncer />}
     </TourProvider>
   );
 }
@@ -178,6 +183,7 @@ import { useAuth } from "../api/hooks/useAuth";
 import CrewPage from "../components/pages/Crew/CrewPage";
 import ChecklistPage from "../components/pages/Checklist/ChecklistPage";
 import TutorialPage from "../components/pages/Tutorial/TutorialPage";
+import WhatsNewPage from "../components/pages/WhatsNew/WhatsNewPage";
 import ContactSupportPage from "../components/pages/Contact/ContactSupportPage";
 // …and other Public pages…
 
@@ -294,6 +300,9 @@ export default function AppRoutes() {
 
         {/* TUTORIAL */}
         <Route path="tutorial" element={<TutorialPage />} />
+
+        {/* WHAT'S NEW — the full release history behind the announcement modal */}
+        <Route path="whats-new" element={<WhatsNewPage />} />
 
         {/* CONTACT / SUPPORT */}
         <Route path="contact" element={<ContactSupportPage />} />

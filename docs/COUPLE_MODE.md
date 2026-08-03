@@ -78,8 +78,11 @@ Both live in the same place — the bottom of the side nav — so the switch is 
 learnable location regardless of which mode you are in. The avatar-menu mirror exists
 only because mobile has no rail.
 
-The planner-side control is gated on `defaultMode === "couple" || override !== null`,
-so a planner-native account that never opted in sees no change to its sidebar.
+The planner-side control is shown to every role except crew (6). It was once gated on
+`defaultMode === "couple" || override !== null`, which meant an admin who had never
+switched could not reach couple mode at all — no button, and nothing else in planner
+mode links there. Crew stay excluded because `AppLayout` confines them to check-in and
+the couple tabs would offer them the helper-management list.
 
 > Without the planner-side control the switch is **one-way**: `PlannerShell` renders
 > the existing `Sidebar`/`Navbar`, neither of which knows about UI mode, so the only
