@@ -154,9 +154,17 @@ export default function RsvpFormRenderer({
     return result;
   }, [rawBlocks]);
 
-  // ── Required formFieldConfigs not covered by a formField block OR by a
-  //    customQuestion embedded inside a guestDetails block ─────────────────
-  const missingRequiredFields = useMemo(() => {
+  // ── Questions no block in the design accounts for ──────────────────────
+  //
+  // The design is a layout, not the list of what gets asked -- that is the
+  // Questions page. So a question the couple never placed still has to be put
+  // to the guest, or adding one after the invite was built would quietly do
+  // nothing. This used to rescue only `isRequired` questions, which meant an
+  // optional one added later was never asked and nothing said so.
+  //
+  // Covered means a formField block, or a customQuestion inside a guestDetails
+  // block, already points at it.
+  const uncoveredFields = useMemo(() => {
     const coveredIds = new Set<string>();
     for (const b of blocks) {
       if (b.type === "formField" && b.questionId) {
@@ -167,9 +175,7 @@ export default function RsvpFormRenderer({
         }
       }
     }
-    return formFields.filter(
-      (fc) => fc.isRequired && !coveredIds.has(fc.questionId ?? fc.id ?? "")
-    );
+    return formFields.filter((fc) => !coveredIds.has(fc.questionId ?? fc.id ?? ""));
   }, [blocks, formFields]);
 
   // ── Core fields ──────────────────────────────────────────────────────────
@@ -239,7 +245,11 @@ export default function RsvpFormRenderer({
     blocks.forEach((block) => {
       if (block.type !== "formField" || !block.questionId) return;
       const cfg = formFields.find((f) => (f.questionId ?? f.id) === block.questionId);
-      const required = block.required ?? cfg?.isRequired ?? false;
+      // Must mirror renderBlock: a block whose question is hidden or deleted is not
+      // rendered, so validating it would demand an answer to an invisible field and
+      // wedge the form shut — older designs can still carry `required: true` on it.
+      if (!cfg) return;
+      const required = block.required ?? cfg.isRequired ?? false;
       if (!required) return;
 
       const val = answers[block.questionId];
@@ -255,7 +265,8 @@ export default function RsvpFormRenderer({
       block.customQuestions.forEach((q) => {
         if (!q.questionId) return;
         const cfg = formFields.find((f) => (f.questionId ?? f.id) === q.questionId);
-        const required = q.required ?? cfg?.isRequired ?? false;
+        if (!cfg) return;   // hidden or deleted — not rendered, so not validated
+        const required = q.required ?? cfg.isRequired ?? false;
         if (!required) return;
         const val = answers[q.questionId];
         const isEmpty = Array.isArray(val) ? val.length === 0 : !(val ?? "").trim();
@@ -265,8 +276,11 @@ export default function RsvpFormRenderer({
       });
     });
 
-    // Validate required fields not in design blocks
-    missingRequiredFields.forEach((fc) => {
+    // Questions with no block of their own. They are all rendered now, not just
+    // the required ones, so the required check has to happen here rather than
+    // being implied by membership of the list.
+    uncoveredFields.forEach((fc) => {
+      if (!fc.isRequired) return;
       const id = fc.questionId ?? fc.id ?? "";
       const val = answers[id];
       const isEmpty = Array.isArray(val) ? val.length === 0 : !(val ?? "").trim();
@@ -499,15 +513,18 @@ export default function RsvpFormRenderer({
 
                 const qid = q.questionId;
                 const cfg = formFields.find((f) => (f.questionId ?? f.id) === qid);
-                const rawOpts = cfg?.options ?? undefined;
+                // Hidden or deleted — same reasoning as the formField block above.
+                if (!cfg) return null;
+
+                const rawOpts = cfg.options ?? undefined;
                 const opts = Array.isArray(rawOpts)
                   ? rawOpts
                   : typeof rawOpts === "string"
                   ? rawOpts.split(",").map((s) => s.trim())
                   : undefined;
-                const fieldType = cfg?.typeKey ?? "text";
-                const fieldLabel = q.label || cfg?.label || cfg?.text || "Custom field";
-                const fieldRequired = q.required ?? cfg?.isRequired ?? false;
+                const fieldType = cfg.typeKey ?? "text";
+                const fieldLabel = q.label || cfg.label || cfg.text || "Custom field";
+                const fieldRequired = q.required ?? cfg.isRequired ?? false;
                 const isCheckboxGroup = fieldType === "checkbox" && opts && opts.length > 1;
                 const currentAnswer = answers[qid];
                 const checkedValues: string[] = Array.isArray(currentAnswer)
@@ -570,16 +587,25 @@ export default function RsvpFormRenderer({
     } else if (block.type === "formField") {
       if (!block.questionId) return null;
       const cfg = formFields.find((f) => (f.questionId ?? f.id) === block.questionId);
+      // The question was hidden or deleted after this block was laid out. The
+      // backend already excludes it from the questions it serves, so a missing
+      // config IS the signal to drop the field — rendering on regardless is what
+      // put hidden questions back in front of guests, and stripped select/radio
+      // blocks of their options (they live on the question, not the block).
+      //
+      // The block itself is deliberately left in the design: unhiding the question
+      // brings the field straight back with no re-editing.
+      if (!cfg) return null;
 
-      const rawOpts = cfg?.options ?? undefined;
+      const rawOpts = cfg.options ?? undefined;
       const opts = Array.isArray(rawOpts)
         ? rawOpts
         : typeof rawOpts === "string"
         ? rawOpts.split(",").map((s) => s.trim())
         : undefined;
-      const fieldType = cfg?.typeKey ?? "text";
-      const fieldLabel = block.label || cfg?.label || cfg?.text || "Custom field";
-      const fieldRequired = block.required ?? cfg?.isRequired ?? false;
+      const fieldType = cfg.typeKey ?? "text";
+      const fieldLabel = block.label || cfg.label || cfg.text || "Custom field";
+      const fieldRequired = block.required ?? cfg.isRequired ?? false;
 
       const isCheckboxGroup = fieldType === "checkbox" && opts && opts.length > 1;
       const currentAnswer = answers[block.questionId];
@@ -875,14 +901,14 @@ export default function RsvpFormRenderer({
           {/* ── All blocks rendered inline in designed order ── */}
           {blocks.map((block) => renderBlock(block))}
 
-          {/* ── Required fields not in design (auto-rendered) ── */}
-          {missingRequiredFields.length > 0 && (
+          {/* ── Questions with no block of their own (auto-rendered) ── */}
+          {uncoveredFields.length > 0 && (
             <section className={isFlush ? "" : "rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl ring-1 ring-white/5 backdrop-blur-sm"}>
               <div className={`${isFlush ? "px-8 py-6" : ""} space-y-4`}>
-                {missingRequiredFields.map((fc) => {
+                {uncoveredFields.map((fc) => {
                   const id = fc.questionId ?? fc.id ?? "";
                   const fieldType = fc.typeKey ?? "text";
-                  const fieldLabel = fc.label || fc.text || "Required field";
+                  const fieldLabel = fc.label || fc.text || "Question";
                   const rawOpts = fc.options;
                   const opts = Array.isArray(rawOpts)
                     ? rawOpts
@@ -890,6 +916,10 @@ export default function RsvpFormRenderer({
                     ? rawOpts.split(",").map((s) => s.trim())
                     : undefined;
                   const isCheckboxGroup = fieldType === "checkbox" && opts && opts.length > 1;
+                  // Without this, a dropdown that happens to have no block renders as a
+                  // free-text box and loses its options -- the same degradation the
+                  // formField branch above avoids.
+                  const isSelect = fieldType === "select" || fieldType === "radio";
                   const currentAnswer = answers[id];
                   const checkedValues: string[] = Array.isArray(currentAnswer)
                     ? currentAnswer
@@ -901,7 +931,8 @@ export default function RsvpFormRenderer({
                   return (
                     <div key={id} className="w-full">
                       <label className="block text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: clr.muted }}>
-                        {fieldLabel}<span className="ml-1 text-rose-400">*</span>
+                        {fieldLabel}
+                        {fc.isRequired && <span className="ml-1 text-rose-400">*</span>}
                       </label>
                       {isCheckboxGroup ? (
                         <div className="space-y-2">
@@ -918,6 +949,21 @@ export default function RsvpFormRenderer({
                             </label>
                           ))}
                           {errors[id] && <p className="text-[11px] text-rose-400">{errors[id]}</p>}
+                        </div>
+                      ) : isSelect && opts?.length ? (
+                        <div>
+                          <select
+                            value={(currentAnswer as string) ?? ""}
+                            onChange={(e) => setAnswer(id, e.target.value)}
+                            className={inputCls}
+                            style={{ background: clr.inputBg, border: `1px solid ${errors[id] ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
+                          >
+                            <option value="">Select...</option>
+                            {opts.map((opt) => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                          {errors[id] && <p className="text-[11px] mt-1 text-rose-400">{errors[id]}</p>}
                         </div>
                       ) : (
                         <div>

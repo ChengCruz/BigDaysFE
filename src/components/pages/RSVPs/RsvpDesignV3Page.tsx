@@ -342,8 +342,14 @@ function CountdownDisplay({
 // ─── Canvas block renderer ──────────────────────────────────────────────────
 
 function renderSectionContent(
-  block: RsvpBlock, accentColor: string, isLight: boolean, event?: Event
+  block: RsvpBlock, accentColor: string, isLight: boolean, event?: Event,
+  // Blocks no longer copy a question's label or required flag onto themselves, so
+  // the canvas has to resolve them the same way the guest page does. Without this
+  // every linked field would preview as "Field" / "Question".
+  questions?: FormFieldConfig[]
 ): React.ReactNode {
+  const questionFor = (questionId?: string) =>
+    questionId ? questions?.find((f) => String(f.questionId ?? f.id) === String(questionId)) : undefined;
   const clr = {
     heading:    isLight ? "#1e293b" : "#ffffff",
     body:       isLight ? "#475569" : "rgba(255,255,255,0.75)",
@@ -422,28 +428,36 @@ function renderSectionContent(
               <p className="text-[10px] uppercase tracking-[0.28em] font-semibold" style={{ color: accentColor }}>
                 Additional questions
               </p>
-              {customQuestions.map((q) => (
+              {customQuestions.map((q) => {
+                const cfg = questionFor(q.questionId);
+                const qLabel = q.label || cfg?.label || cfg?.text || "Question";
+                const qRequired = q.required ?? cfg?.isRequired ?? false;
+                return (
                 <div key={q.id} className="space-y-1.5">
                   <label className="block text-[11px] font-semibold" style={{ color: clr.body }}>
-                    {q.label || "Question"}{q.required && <span className="ml-1" style={{ color: accentColor }}>*</span>}
+                    {qLabel}{qRequired && <span className="ml-1" style={{ color: accentColor }}>*</span>}
                   </label>
                   <div className="rounded-xl px-4 py-3 text-[12px]" style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.faint }}>
                     {q.placeholder || "Guest response here..."}
                   </div>
                   {q.hint && <p className="text-[10px]" style={{ color: clr.faint }}>{q.hint}</p>}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       );
     }
 
-    case "formField":
+    case "formField": {
+      const cfg = questionFor(block.questionId);
+      const fieldLabel = block.label || cfg?.label || cfg?.text || "Field";
+      const fieldRequired = block.required ?? cfg?.isRequired ?? false;
       return (
         <div className="px-8 py-5">
           <label className="block text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: clr.muted }}>
-            {block.label || "Field"}{block.required && <span className="ml-1 text-rose-400">*</span>}
+            {fieldLabel}{fieldRequired && <span className="ml-1 text-rose-400">*</span>}
           </label>
           <div className="rounded-xl px-4 py-3 text-[12px]" style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.faint }}>
             {block.placeholder || "Guest response here..."}
@@ -451,6 +465,7 @@ function renderSectionContent(
           {block.hint && <p className="text-[10px] mt-1.5" style={{ color: clr.faint }}>{block.hint}</p>}
         </div>
       );
+    }
 
     case "cta":
       return (
@@ -561,11 +576,11 @@ function renderSectionContent(
 // ─── Canvas block wrapper (V3 — with drop zone + duplicate) ─────────────────
 
 function V3CanvasBlock({
-  block, isSelected, accentColor, globalIsLight, event, isFirst, isLast,
+  block, isSelected, accentColor, globalIsLight, event, questions, isFirst, isLast,
   onSelect, onMoveUp, onMoveDown, onRemove, onDuplicate, onDropAbove,
 }: {
   block: RsvpBlock; isSelected: boolean; accentColor: string; globalIsLight: boolean;
-  event?: Event; isFirst: boolean; isLast: boolean;
+  event?: Event; questions?: FormFieldConfig[]; isFirst: boolean; isLast: boolean;
   onSelect: () => void; onMoveUp: () => void; onMoveDown: () => void;
   onRemove: () => void; onDuplicate: () => void;
   onDropAbove: (sourceId: string) => void;
@@ -625,7 +640,7 @@ function V3CanvasBlock({
           </div>
         )}
 
-        <div>{renderSectionContent(block, accentColor, isLight, event)}</div>
+        <div>{renderSectionContent(block, accentColor, isLight, event, questions)}</div>
         <div className="h-px" style={{ background: "rgba(255,255,255,0.04)" }} />
       </div>
   );
@@ -689,7 +704,10 @@ function LayerRow({
 export default function RsvpDesignV3Page() {
   const { event, eventId, eventsLoading } = useEventContext() ?? {};
 
-  const { data: serverFormFields = [] } = useFormFields(eventId, { enabled: !!eventId });
+  // isLoading (not isPending) so a disabled query -- no eventId yet -- reads as
+  // settled rather than blocking the seed below forever.
+  const { data: serverFormFields = [], isLoading: isLoadingQuestions } =
+    useFormFields(eventId, { enabled: !!eventId });
   const { data: savedDesign, isLoading: isLoadingDesign } = useRsvpDesign(eventId ?? "");
   const { mutateAsync: saveDesignAsync, isPending: isSaving, isSuccess: isSaveSuccess, isError: isSaveError, data: saveResponse } = useSaveRsvpDesign(eventId ?? "");
   const { mutateAsync: publishDesignAsync, isPending: isPublishing } = usePublishRsvpDesign(eventId ?? "");
@@ -724,9 +742,41 @@ export default function RsvpDesignV3Page() {
   const copyResetRef = useRef<number | null>(null);
   useEffect(() => () => { if (copyResetRef.current) window.clearTimeout(copyResetRef.current); }, []);
 
+  // GetQuestions deliberately returns hidden questions too — the Questions page
+  // needs them to offer "unhide". The designer must not: a hidden question is not
+  // on the invite, so offering it to link would create a field guests never see.
   const availableQuestions = useMemo<FormFieldConfig[]>(
+    () =>
+      serverFormFields
+        .filter((q) => q.isActive !== false)
+        .slice()
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    [serverFormFields]
+  );
+
+  // The unfiltered list, for diagnosing an EXISTING link only. A block pointing at
+  // a hidden or deleted question still needs to be explained to the couple, even
+  // though that question can no longer be chosen. See BlockEditor's link status.
+  const allQuestions = useMemo<FormFieldConfig[]>(
     () => serverFormFields.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [serverFormFields]
+  );
+
+  // One shape for questions carried inside a guestDetails block, shared by the
+  // first-time seed and the RSVP-form preset so the two can't drift apart.
+  // label/required stay unset on purpose -- the live question owns them, see
+  // applyQuestionToBlock.
+  const buildCustomQuestions = useCallback(
+    () =>
+      availableQuestions.map((field) => ({
+        id: uid(),
+        questionId: String(field.id ?? (field as any).questionId ?? ""),
+        label: undefined as string | undefined,
+        placeholder: Array.isArray(field.options) ? String(field.options[0] ?? "") : "",
+        required: undefined as boolean | undefined,
+        hint: undefined as string | undefined,
+      })),
+    [availableQuestions]
   );
 
   const selectedBlock = useMemo(
@@ -761,7 +811,13 @@ export default function RsvpDesignV3Page() {
 
   // ── Load saved design ─────────────────────────────────────────────────────
   useEffect(() => {
-    if (isLoadingDesign || isDesignLoaded) return;
+    // Wait for the event and the questions too, not just the design. This effect
+    // latches on isDesignLoaded, so whatever has not arrived by the first run is
+    // lost for good -- and the seed below needs all three. Running early took the
+    // do-nothing `else` branch (no event.title yet) and left the couple with the
+    // stock "Welcome to our wedding" headline and none of their questions,
+    // intermittently, depending on which response won the race.
+    if (eventsLoading || isLoadingDesign || isLoadingQuestions || isDesignLoaded) return;
     if (savedDesign?.blocks?.length) {
       const loaded = sanitizeBlocks(savedDesign.blocks);
       const patch: Partial<DesignState> = { blocks: loaded };
@@ -824,12 +880,24 @@ export default function RsvpDesignV3Page() {
       if (event.time) parts.push(event.time);
       if (event.location) parts.push(event.location);
       const subtitle = parts.length > 0 ? `Save the date — ${parts.join(" · ")}` : "Save the date and RSVP below";
-      dispatch({ type: "SET_BLOCKS", payload: state.blocks.map((b) => b.type === "headline" ? { ...b, title: event.title, subtitle } : b) });
+      // The starter design is a static constant, so it used to open with the
+      // built-in name/phone/pax fields and none of the couple's own questions --
+      // even when they had written them before ever opening the designer. Seed
+      // them into the guestDetails block, exactly as the RSVP-form preset does.
+      const seededQuestions = buildCustomQuestions();
+      dispatch({
+        type: "SET_BLOCKS",
+        payload: state.blocks.map((b) => {
+          if (b.type === "headline") return { ...b, title: event.title, subtitle };
+          if (b.type === "guestDetails") return { ...b, customQuestions: seededQuestions };
+          return b;
+        }),
+      });
       dispatch({ type: "LOAD_DESIGN", payload: {} });
     } else {
       dispatch({ type: "LOAD_DESIGN", payload: {} });
     }
-  }, [isLoadingDesign, savedDesign, isDesignLoaded, event?.title, event?.slug, eventId]);
+  }, [eventsLoading, isLoadingDesign, isLoadingQuestions, buildCustomQuestions, savedDesign, isDesignLoaded, event?.title, event?.slug, eventId]);
 
   // ── Google Fonts ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -889,14 +957,10 @@ export default function RsvpDesignV3Page() {
 
   const addRsvpFormPreset = () => {
     pushSnapshot();
-    const customQuestions = availableQuestions.map((field) => ({
-      id: uid(),
-      questionId: String(field.id ?? (field as any).questionId ?? ""),
-      label: field.label || (field as any).text || "Custom field",
-      placeholder: Array.isArray(field.options) ? String(field.options[0] ?? "") : "",
-      required: field.isRequired ?? false,
-      hint: undefined as string | undefined,
-    }));
+    // availableQuestions is already active-only, so the preset can't seed the
+    // invite with hidden questions. label/required are left unset for the same
+    // reason as applyQuestionToBlock — the live question owns them.
+    const customQuestions = buildCustomQuestions();
     const g: RsvpBlock = {
       id: uid(),
       type: "guestDetails",
@@ -947,10 +1011,20 @@ export default function RsvpDesignV3Page() {
       payload: {
         id: blockId,
         patch: {
-          label: field.label || field.text,
+          // Deliberately NOT copying label/isRequired onto the block. The question
+          // owns its wording and its required-ness; the renderer falls back to the
+          // live config (`block.label || cfg.label`). Snapshotting them here meant a
+          // later rename or "Must answer" tick never reached the invite.
+          //
+          // `required` in particular must stay undefined rather than false: the
+          // renderer reads `block.required ?? cfg.isRequired`, and `false` is not
+          // nullish, so a copied `false` would permanently pin the field optional.
+          //
+          // "Label override" in BlockEditor still writes block.label — an override
+          // the couple typed deliberately is kept and still wins.
+          label: undefined,
+          required: undefined,
           placeholder: Array.isArray(field.options) ? String(field.options[0] ?? "") : undefined,
-          required: field.isRequired ?? false,
-          hint: field.typeKey ? `${field.typeKey}${field.isRequired ? " · required" : ""}` : undefined,
           questionId,
         },
       },
@@ -1577,7 +1651,8 @@ export default function RsvpDesignV3Page() {
                     key={block.id} block={block}
                     isSelected={selectedId === block.id}
                     accentColor={accentColor} globalIsLight={globalIsLight}
-                    event={event} isFirst={i === 0} isLast={i === blocks.length - 1}
+                    event={event} questions={allQuestions}
+                    isFirst={i === 0} isLast={i === blocks.length - 1}
                     onSelect={() => { dispatch({ type: "SELECT", payload: block.id }); setRightTab("block"); }}
                     onMoveUp={() => moveBlock(block.id, "up")}
                     onMoveDown={() => moveBlock(block.id, "down")}
@@ -1615,7 +1690,7 @@ export default function RsvpDesignV3Page() {
           {rightTab === "block" && (
             <div className="flex-1 overflow-y-auto">
               {selectedBlock ? (
-                <BlockEditor block={selectedBlock} accentColor={accentColor} formFields={availableQuestions}
+                <BlockEditor block={selectedBlock} accentColor={accentColor} formFields={availableQuestions} allFormFields={allQuestions}
                   onUpdate={updateBlock} onRemove={removeBlock}
                   onAddBackgroundImages={addBackgroundImagesToBlock} onSetActiveBackground={setActiveBackgroundForBlock}
                   onSetOverlay={setOverlayForBlock} onRemoveBackgroundImage={removeBackgroundImageFromBlock}
@@ -1739,7 +1814,7 @@ export default function RsvpDesignV3Page() {
                 return (
                   <div key={block.id}
                     style={sectionImg?.src ? { backgroundImage: `linear-gradient(rgba(15,23,42,${blockOverlay}),rgba(15,23,42,${blockOverlay})), url(${sectionImg.src})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}>
-                    {renderSectionContent(block, accentColor, blockIsLight, event)}
+                    {renderSectionContent(block, accentColor, blockIsLight, event, allQuestions)}
                     <div className="h-px" style={{ background: "rgba(255,255,255,0.04)" }} />
                   </div>
                 );

@@ -18,7 +18,10 @@ import type { FormFieldConfig } from "../../../../api/hooks/useFormFieldsApi";
 interface Props {
   block: RsvpBlock | null;
   accentColor: string;
+  /** Selectable questions — active only. */
   formFields: FormFieldConfig[];
+  /** Every question including hidden ones, used only to explain an existing link. */
+  allFormFields?: FormFieldConfig[];
   onUpdate: (id: string, patch: Partial<RsvpBlock>) => void;
   onRemove: (id: string) => void;
   onAddBackgroundImages: (blockId: string, files: FileList) => void;
@@ -38,6 +41,29 @@ const toAlign = (v: string): "left" | "center" | "right" =>
   v === "center" || v === "right" ? v : "left";
 
 const toWidth = (v: string): "full" | "half" => (v === "half" ? "half" : "full");
+
+/**
+ * What has become of the question a block points at.
+ *
+ * A block keeps its questionId when the question is hidden or deleted — that is
+ * deliberate, so unhiding restores the field without re-editing the design. But
+ * the guest page skips such blocks, so the couple must be told why a field they
+ * can see in the designer is not on their invite.
+ */
+type LinkStatus = "unlinked" | "active" | "hidden" | "missing";
+
+function questionLinkStatus(
+  questionId: string | undefined,
+  all: FormFieldConfig[] | undefined,
+): { status: LinkStatus; question?: FormFieldConfig } {
+  if (!questionId) return { status: "unlinked" };
+  // Without the unfiltered list there is nothing to diagnose against; assume the
+  // link is good rather than crying wolf.
+  if (!all?.length) return { status: "active" };
+  const question = all.find((q) => String(q.id ?? q.questionId) === String(questionId));
+  if (!question) return { status: "missing" };
+  return { status: question.isActive === false ? "hidden" : "active", question };
+}
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
@@ -142,6 +168,7 @@ export function BlockEditor({
   block,
   accentColor,
   formFields,
+  allFormFields,
   onUpdate,
   onRemove,
   onAddBackgroundImages,
@@ -376,32 +403,70 @@ export function BlockEditor({
           <div className="space-y-4">
             {/* Link to question */}
             <Field label="Link to RSVP question">
-              <select
-                value={block.questionId ?? ""}
-                onChange={(e) => onApplyQuestion(block.id, e.target.value || undefined)}
-                className={inputCls}
-              >
-                <option value="">— Choose a question —</option>
-                {formFields.map((q) => (
-                  <option key={q.id ?? q.questionId} value={q.id ?? q.questionId}>
-                    {q.label || q.text || q.name}
-                    {q.isRequired ? " *" : ""}
-                    {q.typeKey ? ` (${q.typeKey})` : ""}
-                  </option>
-                ))}
-              </select>
-              {block.questionId ? (
-                <p className="text-xs text-emerald-600 mt-1">✓ Linked to question.</p>
-              ) : (
-                <p className="text-xs text-amber-600 mt-1">Select a question to activate this field.</p>
-              )}
+              {(() => {
+                const { status, question } = questionLinkStatus(block.questionId, allFormFields);
+                // A hidden or deleted question is no longer selectable, so its option
+                // is absent from formFields and the select would fall back to the
+                // placeholder — making it look unlinked. Re-add it as a disabled
+                // option so the block visibly keeps its link.
+                const orphan =
+                  status === "hidden" || status === "missing" ? block.questionId : undefined;
+                return (
+                  <>
+                    <select
+                      value={block.questionId ?? ""}
+                      onChange={(e) => onApplyQuestion(block.id, e.target.value || undefined)}
+                      className={inputCls}
+                    >
+                      <option value="">— Choose a question —</option>
+                      {orphan && (
+                        <option value={orphan} disabled>
+                          {question
+                            ? `${question.label || question.text} (hidden)`
+                            : "(deleted question)"}
+                        </option>
+                      )}
+                      {formFields.map((q) => (
+                        <option key={q.id ?? q.questionId} value={q.id ?? q.questionId}>
+                          {q.label || q.text || q.name}
+                          {q.isRequired ? " *" : ""}
+                          {q.typeKey ? ` (${q.typeKey})` : ""}
+                        </option>
+                      ))}
+                    </select>
+
+                    {status === "active" && (
+                      <p className="text-xs text-emerald-600 mt-1">✓ Linked to question.</p>
+                    )}
+                    {status === "unlinked" && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        Select a question to activate this field.
+                      </p>
+                    )}
+                    {status === "hidden" && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        This question is hidden, so guests won’t see this field. Unhide it on the
+                        questions page to bring it back — no need to edit this block.
+                      </p>
+                    )}
+                    {status === "missing" && (
+                      <p className="text-xs text-rose-600 mt-1">
+                        This question was deleted, so guests won’t see this field. Link another
+                        question, or remove this block.
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
             </Field>
 
             {/* Field details */}
             <div className="grid grid-cols-1 gap-3">
               <Field label="Label override">
                 <input
-                  value={block.label}
+                  // Undefined once a question is linked — the live question supplies
+                  // the label unless the couple deliberately types an override here.
+                  value={block.label ?? ""}
                   onChange={(e) => onUpdate(block.id, { label: e.target.value })}
                   className={inputCls}
                   placeholder="Leave blank to use question label"
@@ -425,13 +490,22 @@ export function BlockEditor({
                 </select>
               </Field>
               <Field label="Required">
+                {/* Undefined means "follow the question", which is the default once a
+                    question is linked. Without a third option the select would read
+                    "Optional" for a question that is in fact required. */}
                 <select
-                  value={block.required ? "yes" : "no"}
-                  onChange={(e) => onUpdate(block.id, { required: e.target.value === "yes" })}
+                  value={block.required === undefined ? "inherit" : block.required ? "yes" : "no"}
+                  onChange={(e) =>
+                    onUpdate(block.id, {
+                      required:
+                        e.target.value === "inherit" ? undefined : e.target.value === "yes",
+                    })
+                  }
                   className={inputCls}
                 >
-                  <option value="yes">Required</option>
-                  <option value="no">Optional</option>
+                  <option value="inherit">Use the question’s setting</option>
+                  <option value="yes">Always required</option>
+                  <option value="no">Always optional</option>
                 </select>
               </Field>
             </div>
