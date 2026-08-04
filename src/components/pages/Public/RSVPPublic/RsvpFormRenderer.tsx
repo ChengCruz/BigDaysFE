@@ -239,7 +239,11 @@ export default function RsvpFormRenderer({
     blocks.forEach((block) => {
       if (block.type !== "formField" || !block.questionId) return;
       const cfg = formFields.find((f) => (f.questionId ?? f.id) === block.questionId);
-      const required = block.required ?? cfg?.isRequired ?? false;
+      // Must mirror renderBlock: a block whose question is hidden or deleted is not
+      // rendered, so validating it would demand an answer to an invisible field and
+      // wedge the form shut — older designs can still carry `required: true` on it.
+      if (!cfg) return;
+      const required = block.required ?? cfg.isRequired ?? false;
       if (!required) return;
 
       const val = answers[block.questionId];
@@ -255,7 +259,8 @@ export default function RsvpFormRenderer({
       block.customQuestions.forEach((q) => {
         if (!q.questionId) return;
         const cfg = formFields.find((f) => (f.questionId ?? f.id) === q.questionId);
-        const required = q.required ?? cfg?.isRequired ?? false;
+        if (!cfg) return;   // hidden or deleted — not rendered, so not validated
+        const required = q.required ?? cfg.isRequired ?? false;
         if (!required) return;
         const val = answers[q.questionId];
         const isEmpty = Array.isArray(val) ? val.length === 0 : !(val ?? "").trim();
@@ -499,15 +504,18 @@ export default function RsvpFormRenderer({
 
                 const qid = q.questionId;
                 const cfg = formFields.find((f) => (f.questionId ?? f.id) === qid);
-                const rawOpts = cfg?.options ?? undefined;
+                // Hidden or deleted — same reasoning as the formField block above.
+                if (!cfg) return null;
+
+                const rawOpts = cfg.options ?? undefined;
                 const opts = Array.isArray(rawOpts)
                   ? rawOpts
                   : typeof rawOpts === "string"
                   ? rawOpts.split(",").map((s) => s.trim())
                   : undefined;
-                const fieldType = cfg?.typeKey ?? "text";
-                const fieldLabel = q.label || cfg?.label || cfg?.text || "Custom field";
-                const fieldRequired = q.required ?? cfg?.isRequired ?? false;
+                const fieldType = cfg.typeKey ?? "text";
+                const fieldLabel = q.label || cfg.label || cfg.text || "Custom field";
+                const fieldRequired = q.required ?? cfg.isRequired ?? false;
                 const isCheckboxGroup = fieldType === "checkbox" && opts && opts.length > 1;
                 const currentAnswer = answers[qid];
                 const checkedValues: string[] = Array.isArray(currentAnswer)
@@ -570,16 +578,25 @@ export default function RsvpFormRenderer({
     } else if (block.type === "formField") {
       if (!block.questionId) return null;
       const cfg = formFields.find((f) => (f.questionId ?? f.id) === block.questionId);
+      // The question was hidden or deleted after this block was laid out. The
+      // backend already excludes it from the questions it serves, so a missing
+      // config IS the signal to drop the field — rendering on regardless is what
+      // put hidden questions back in front of guests, and stripped select/radio
+      // blocks of their options (they live on the question, not the block).
+      //
+      // The block itself is deliberately left in the design: unhiding the question
+      // brings the field straight back with no re-editing.
+      if (!cfg) return null;
 
-      const rawOpts = cfg?.options ?? undefined;
+      const rawOpts = cfg.options ?? undefined;
       const opts = Array.isArray(rawOpts)
         ? rawOpts
         : typeof rawOpts === "string"
         ? rawOpts.split(",").map((s) => s.trim())
         : undefined;
-      const fieldType = cfg?.typeKey ?? "text";
-      const fieldLabel = block.label || cfg?.label || cfg?.text || "Custom field";
-      const fieldRequired = block.required ?? cfg?.isRequired ?? false;
+      const fieldType = cfg.typeKey ?? "text";
+      const fieldLabel = block.label || cfg.label || cfg.text || "Custom field";
+      const fieldRequired = block.required ?? cfg.isRequired ?? false;
 
       const isCheckboxGroup = fieldType === "checkbox" && opts && opts.length > 1;
       const currentAnswer = answers[block.questionId];
