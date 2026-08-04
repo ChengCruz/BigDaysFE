@@ -724,7 +724,22 @@ export default function RsvpDesignV3Page() {
   const copyResetRef = useRef<number | null>(null);
   useEffect(() => () => { if (copyResetRef.current) window.clearTimeout(copyResetRef.current); }, []);
 
+  // GetQuestions deliberately returns hidden questions too — the Questions page
+  // needs them to offer "unhide". The designer must not: a hidden question is not
+  // on the invite, so offering it to link would create a field guests never see.
   const availableQuestions = useMemo<FormFieldConfig[]>(
+    () =>
+      serverFormFields
+        .filter((q) => q.isActive !== false)
+        .slice()
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    [serverFormFields]
+  );
+
+  // The unfiltered list, for diagnosing an EXISTING link only. A block pointing at
+  // a hidden or deleted question still needs to be explained to the couple, even
+  // though that question can no longer be chosen. See BlockEditor's link status.
+  const allQuestions = useMemo<FormFieldConfig[]>(
     () => serverFormFields.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [serverFormFields]
   );
@@ -889,12 +904,15 @@ export default function RsvpDesignV3Page() {
 
   const addRsvpFormPreset = () => {
     pushSnapshot();
+    // availableQuestions is already active-only, so the preset can't seed the
+    // invite with hidden questions. label/required are left unset for the same
+    // reason as applyQuestionToBlock — the live question owns them.
     const customQuestions = availableQuestions.map((field) => ({
       id: uid(),
       questionId: String(field.id ?? (field as any).questionId ?? ""),
-      label: field.label || (field as any).text || "Custom field",
+      label: undefined as string | undefined,
       placeholder: Array.isArray(field.options) ? String(field.options[0] ?? "") : "",
-      required: field.isRequired ?? false,
+      required: undefined as boolean | undefined,
       hint: undefined as string | undefined,
     }));
     const g: RsvpBlock = {
@@ -947,10 +965,20 @@ export default function RsvpDesignV3Page() {
       payload: {
         id: blockId,
         patch: {
-          label: field.label || field.text,
+          // Deliberately NOT copying label/isRequired onto the block. The question
+          // owns its wording and its required-ness; the renderer falls back to the
+          // live config (`block.label || cfg.label`). Snapshotting them here meant a
+          // later rename or "Must answer" tick never reached the invite.
+          //
+          // `required` in particular must stay undefined rather than false: the
+          // renderer reads `block.required ?? cfg.isRequired`, and `false` is not
+          // nullish, so a copied `false` would permanently pin the field optional.
+          //
+          // "Label override" in BlockEditor still writes block.label — an override
+          // the couple typed deliberately is kept and still wins.
+          label: undefined,
+          required: undefined,
           placeholder: Array.isArray(field.options) ? String(field.options[0] ?? "") : undefined,
-          required: field.isRequired ?? false,
-          hint: field.typeKey ? `${field.typeKey}${field.isRequired ? " · required" : ""}` : undefined,
           questionId,
         },
       },
@@ -1615,7 +1643,7 @@ export default function RsvpDesignV3Page() {
           {rightTab === "block" && (
             <div className="flex-1 overflow-y-auto">
               {selectedBlock ? (
-                <BlockEditor block={selectedBlock} accentColor={accentColor} formFields={availableQuestions}
+                <BlockEditor block={selectedBlock} accentColor={accentColor} formFields={availableQuestions} allFormFields={allQuestions}
                   onUpdate={updateBlock} onRemove={removeBlock}
                   onAddBackgroundImages={addBackgroundImagesToBlock} onSetActiveBackground={setActiveBackgroundForBlock}
                   onSetOverlay={setOverlayForBlock} onRemoveBackgroundImage={removeBackgroundImageFromBlock}
