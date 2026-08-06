@@ -360,6 +360,13 @@ export default function RsvpFormRenderer({
   // ── Shared input style (matches V3 designer) ─────────────────────────
   const inputCls = "w-full rounded-xl px-4 py-3 text-[13px] bg-transparent outline-none placeholder:opacity-40";
 
+  // A mobile browser's expanded <option> list is a native OS popup that always
+  // renders on the OS's own light background — it can't be dark-themed. Every
+  // <select> here sets color: clr.heading (white on the dark card), which the
+  // <option>s inherit; on that native white popup the text became invisible.
+  // Options need their own explicit dark color regardless of the card's theme.
+  const optionStyle: React.CSSProperties = { color: "#1e293b", background: "#ffffff" };
+
   // ── The design's own submit button ────────────────────────────────────
   // A cta block with no external link ("#" is the designer's default) *is* the
   // submit button the host laid out. Wire that block to the form instead of
@@ -479,7 +486,7 @@ export default function RsvpFormRenderer({
                     style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.heading }}
                   >
                     {COUNTRY_CODES.map(({ code, label }) => (
-                      <option key={code} value={code}>{label}</option>
+                      <option key={code} value={code} style={optionStyle}>{label}</option>
                     ))}
                   </select>
                   <input
@@ -601,9 +608,9 @@ export default function RsvpFormRenderer({
                         className={inputCls}
                         style={{ background: clr.inputBg, border: `1px solid ${errors[qid] ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
                       >
-                        <option value="">{q.placeholder || "Select..."}</option>
+                        <option value="" style={optionStyle}>{q.placeholder || "Select..."}</option>
                         {opts?.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
+                          <option key={opt} value={opt} style={optionStyle}>{opt}</option>
                         ))}
                       </select>
                     ) : (
@@ -688,9 +695,9 @@ export default function RsvpFormRenderer({
                 className={inputCls}
                 style={{ background: clr.inputBg, border: `1px solid ${errors[block.questionId!] ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
               >
-                <option value="">{block.placeholder || "Select..."}</option>
+                <option value="" style={optionStyle}>{block.placeholder || "Select..."}</option>
                 {opts?.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
+                  <option key={opt} value={opt} style={optionStyle}>{opt}</option>
                 ))}
               </select>
               {errors[block.questionId] && <p className="text-[11px] mt-1 text-rose-400">{errors[block.questionId]}</p>}
@@ -1000,9 +1007,9 @@ export default function RsvpFormRenderer({
                             className={inputCls}
                             style={{ background: clr.inputBg, border: `1px solid ${errors[id] ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
                           >
-                            <option value="">Select...</option>
+                            <option value="" style={optionStyle}>Select...</option>
                             {opts.map((opt) => (
-                              <option key={opt} value={opt}>{opt}</option>
+                              <option key={opt} value={opt} style={optionStyle}>{opt}</option>
                             ))}
                           </select>
                           {errors[id] && <p className="text-[11px] mt-1 text-rose-400">{errors[id]}</p>}
