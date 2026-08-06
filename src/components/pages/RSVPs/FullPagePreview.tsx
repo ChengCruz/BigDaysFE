@@ -14,9 +14,82 @@
 // rendering DENSITY and has nothing to do with content width. Leave it.
 import React from "react";
 import type { RsvpBlock, FlowPreset } from "../../../types/rsvpDesign";
+import type { FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
 import { contentWidthClass, type StoredContentWidth } from "../../../utils/rsvpContentWidths";
 
-function renderBlockPreview(block: RsvpBlock, accentColor: string, mode: "thumb" | "full" = "thumb"): React.ReactNode {
+/**
+ * Mock for a linked question's input, keyed off its real type. Without this
+ * every question (checkbox, select, radio) previewed as the same disabled
+ * text box, regardless of how it actually renders for guests.
+ */
+function renderFormFieldMock(
+  fieldType: string,
+  opts: string[] | undefined,
+  placeholder: string | undefined,
+  mode: "thumb" | "full",
+): React.ReactNode {
+  const items = opts && opts.length > 0 ? opts : [placeholder || "Option"];
+
+  if (fieldType === "checkbox") {
+    return (
+      <div className={mode === "full" ? "space-y-2" : "space-y-1"}>
+        {items.map((opt) => (
+          <div key={opt} className="flex items-center gap-2">
+            <span className={mode === "full" ? "h-4 w-4 shrink-0 rounded border border-gray-300" : "h-3 w-3 shrink-0 rounded border border-white/30"} />
+            <span className={mode === "full" ? "text-sm text-gray-500" : "text-[11px] text-white/70"}>{opt}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (fieldType === "radio") {
+    return (
+      <div className={mode === "full" ? "space-y-2" : "space-y-1"}>
+        {items.map((opt) => (
+          <div key={opt} className="flex items-center gap-2">
+            <span className={mode === "full" ? "h-4 w-4 shrink-0 rounded-full border border-gray-300" : "h-3 w-3 shrink-0 rounded-full border border-white/30"} />
+            <span className={mode === "full" ? "text-sm text-gray-500" : "text-[11px] text-white/70"}>{opt}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (fieldType === "select") {
+    return mode === "full" ? (
+      <div className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-400">
+        <span>{opts?.[0] || placeholder || "Select..."}</span>
+        <span aria-hidden="true">⌄</span>
+      </div>
+    ) : (
+      <div className="flex items-center justify-between rounded-lg border border-white/30 bg-white/20 px-3 py-2 text-xs text-white/80">
+        <span>{opts?.[0] || placeholder || "Select..."}</span>
+        <span aria-hidden="true">⌄</span>
+      </div>
+    );
+  }
+
+  return mode === "full" ? (
+    <input
+      type="text"
+      placeholder={placeholder || "Guest response here"}
+      disabled
+      className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-400 cursor-not-allowed"
+    />
+  ) : (
+    <div className="rounded-lg border border-white/30 bg-white/20 px-3 py-2 text-xs text-white/80">
+      {placeholder || "Guest response here"}
+    </div>
+  );
+}
+
+function renderBlockPreview(
+  block: RsvpBlock,
+  accentColor: string,
+  mode: "thumb" | "full" = "thumb",
+  formFields?: FormFieldConfig[],
+): React.ReactNode {
   switch (block.type) {
     case "headline":
       return (
@@ -46,6 +119,15 @@ function renderBlockPreview(block: RsvpBlock, accentColor: string, mode: "thumb"
         </div>
       );
     case "formField": {
+      const cfg = formFields?.find((f) => (f.questionId ?? f.id) === block.questionId);
+      const fieldType = cfg?.typeKey ?? "text";
+      const rawOpts = cfg?.options;
+      const opts = Array.isArray(rawOpts)
+        ? rawOpts
+        : typeof rawOpts === "string"
+        ? rawOpts.split(",").map((s) => s.trim()).filter(Boolean)
+        : undefined;
+
       if (mode === "full") {
         const cardBg = (block as { fieldCardColor?: string }).fieldCardColor ?? "#ffffff";
         const cardText = (block as { fieldCardTextColor?: string }).fieldCardTextColor ?? "#111827";
@@ -56,12 +138,7 @@ function renderBlockPreview(block: RsvpBlock, accentColor: string, mode: "thumb"
                 {block.label}
                 {block.required && <span className="ml-1 text-rose-500">*</span>}
               </label>
-              <input
-                type="text"
-                placeholder={block.placeholder || "Guest response here"}
-                disabled
-                className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-400 cursor-not-allowed"
-              />
+              {renderFormFieldMock(fieldType, opts, block.placeholder, "full")}
               {block.hint && <p className="mt-1 text-xs text-gray-400">{block.hint}</p>}
             </div>
           </div>
@@ -73,9 +150,7 @@ function renderBlockPreview(block: RsvpBlock, accentColor: string, mode: "thumb"
             {block.label}
             {block.required && <span className="ml-1 text-rose-300">*</span>}
           </label>
-          <div className="rounded-lg border border-white/30 bg-white/20 px-3 py-2 text-xs text-white/80">
-            {block.placeholder || "Guest response here"}
-          </div>
+          {renderFormFieldMock(fieldType, opts, block.placeholder, "thumb")}
           {block.hint && <p className="mt-1 text-[10px] text-white/60">{block.hint}</p>}
         </div>
       );
@@ -215,6 +290,7 @@ export function FullPagePreview({
   accentColor,
   flowPreset = "serene",
   contentWidth,
+  formFields,
 }: {
   blocks: RsvpBlock[];
   backgroundColor: string;
@@ -225,6 +301,8 @@ export function FullPagePreview({
   flowPreset?: FlowPreset;
   /** Accepts the retired "full" from older saved designs; normalised on read. */
   contentWidth?: StoredContentWidth;
+  /** Linked questions, so formField blocks can preview their real input type. */
+  formFields?: FormFieldConfig[];
 }) {
   // Same helper the public guest page uses, so the preview cannot drift from
   // what a guest actually sees. Undefined and "full" both fall back to the
@@ -256,7 +334,7 @@ export function FullPagePreview({
             bgImages[0] ??
             block.sectionImage;
           const overlayStr = block.background?.overlay ?? 0.35;
-          const content = renderBlockPreview(block, accentColor, "full");
+          const content = renderBlockPreview(block, accentColor, "full", formFields);
           if (content === null) return null;
 
           return (

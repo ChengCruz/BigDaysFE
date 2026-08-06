@@ -341,6 +341,76 @@ function CountdownDisplay({
 
 // ─── Canvas block renderer ──────────────────────────────────────────────────
 
+/**
+ * The canvas mock for a linked question's input — was a single generic
+ * placeholder box regardless of type, so checkbox/select/radio questions
+ * previewed identically to a plain text field. Mirrors the actual controls
+ * guests get in RsvpFormRenderer (checkbox → tick list, select/radio →
+ * dropdown-look box).
+ */
+function renderFieldPreviewMock(
+  fieldType: string,
+  opts: string[] | undefined,
+  placeholder: string | undefined,
+  clr: { inputBg: string; inputBdr: string; faint: string },
+): React.ReactNode {
+  if (fieldType === "checkbox") {
+    const items = opts && opts.length > 0 ? opts : [placeholder || "Option"];
+    return (
+      <div className="space-y-1.5">
+        {items.map((opt) => (
+          <div key={opt} className="flex items-center gap-2">
+            <span className="h-3.5 w-3.5 rounded shrink-0" style={{ border: `1px solid ${clr.inputBdr}` }} />
+            <span className="text-[12px]" style={{ color: clr.faint }}>{opt}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (fieldType === "radio") {
+    const items = opts && opts.length > 0 ? opts : [placeholder || "Option"];
+    return (
+      <div className="space-y-1.5">
+        {items.map((opt) => (
+          <div key={opt} className="flex items-center gap-2">
+            <span className="h-3.5 w-3.5 rounded-full shrink-0" style={{ border: `1px solid ${clr.inputBdr}` }} />
+            <span className="text-[12px]" style={{ color: clr.faint }}>{opt}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (fieldType === "select") {
+    return (
+      <div
+        className="rounded-xl px-4 py-3 text-[12px] flex items-center justify-between"
+        style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.faint }}
+      >
+        <span>{opts?.[0] || placeholder || "Select..."}</span>
+        <span aria-hidden="true">⌄</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl px-4 py-3 text-[12px]" style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.faint }}>
+      {placeholder || "Guest response here..."}
+    </div>
+  );
+}
+
+function fieldOptionsOf(cfg?: FormFieldConfig): string[] | undefined {
+  const raw = cfg?.options;
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "string") {
+    const parsed = raw.split(",").map((s) => s.trim()).filter(Boolean);
+    return parsed.length > 0 ? parsed : undefined;
+  }
+  return undefined;
+}
+
 function renderSectionContent(
   block: RsvpBlock, accentColor: string, isLight: boolean, event?: Event,
   // Blocks no longer copy a question's label or required flag onto themselves, so
@@ -432,14 +502,14 @@ function renderSectionContent(
                 const cfg = questionFor(q.questionId);
                 const qLabel = q.label || cfg?.label || cfg?.text || "Question";
                 const qRequired = q.required ?? cfg?.isRequired ?? false;
+                const qFieldType = cfg?.typeKey ?? "text";
+                const qOpts = fieldOptionsOf(cfg);
                 return (
                 <div key={q.id} className="space-y-1.5">
                   <label className="block text-[11px] font-semibold" style={{ color: clr.body }}>
                     {qLabel}{qRequired && <span className="ml-1" style={{ color: accentColor }}>*</span>}
                   </label>
-                  <div className="rounded-xl px-4 py-3 text-[12px]" style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.faint }}>
-                    {q.placeholder || "Guest response here..."}
-                  </div>
+                  {renderFieldPreviewMock(qFieldType, qOpts, q.placeholder, clr)}
                   {q.hint && <p className="text-[10px]" style={{ color: clr.faint }}>{q.hint}</p>}
                 </div>
                 );
@@ -454,14 +524,14 @@ function renderSectionContent(
       const cfg = questionFor(block.questionId);
       const fieldLabel = block.label || cfg?.label || cfg?.text || "Field";
       const fieldRequired = block.required ?? cfg?.isRequired ?? false;
+      const fieldType = cfg?.typeKey ?? "text";
+      const opts = fieldOptionsOf(cfg);
       return (
         <div className="px-8 py-5">
           <label className="block text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: clr.muted }}>
             {fieldLabel}{fieldRequired && <span className="ml-1 text-rose-400">*</span>}
           </label>
-          <div className="rounded-xl px-4 py-3 text-[12px]" style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.faint }}>
-            {block.placeholder || "Guest response here..."}
-          </div>
+          {renderFieldPreviewMock(fieldType, opts, block.placeholder, clr)}
           {block.hint && <p className="text-[10px] mt-1.5" style={{ color: clr.faint }}>{block.hint}</p>}
         </div>
       );

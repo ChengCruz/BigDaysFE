@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from "react-router";
 
 import { FullPagePreview } from "./FullPagePreview";
 import type { RsvpBlock } from "../../../types/rsvpDesign";
+import type { FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
 import { Button } from "../../atoms/Button";
 import { Spinner } from "../../atoms/Spinner";
 import client from "../../../api/client";
@@ -25,6 +26,8 @@ type PreviewData = {
   accentColor: string;
   /** Old designs may still carry the retired "full"; normalised on render. */
   contentWidth?: StoredContentWidth;
+  /** So formField blocks can preview their real input type (checkbox/select/radio). */
+  formFields?: FormFieldConfig[];
 };
 
 function toPreview(apiDesign: ApiRsvpDesign): PreviewData | null {
@@ -38,6 +41,7 @@ function toPreview(apiDesign: ApiRsvpDesign): PreviewData | null {
     overlay: mapped.globalOverlay ?? 0.3,
     accentColor: mapped.accentColor ?? "#f97316",
     contentWidth: mapped.contentWidth,
+    formFields: mapped.formFieldConfigs,
   };
 }
 
@@ -155,6 +159,7 @@ export default function RsvpSharePreviewPage() {
       overlay={preview.overlay}
       accentColor={preview.accentColor}
       contentWidth={preview.contentWidth}
+      formFields={preview.formFields}
     />
   );
 }
