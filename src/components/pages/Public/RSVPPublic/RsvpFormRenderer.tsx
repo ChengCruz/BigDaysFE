@@ -13,6 +13,31 @@ import { isRsvpTurnstileEnabled, TURNSTILE_SITE_KEY_RSVP } from "../../../../uti
 import { contentWidthClass } from "../../../../utils/rsvpContentWidths";
 import { DEFAULT_BACKDROP_COLOR } from "../../../../utils/rsvpBackdrops";
 
+// Same list/order as the admin RSVP and Guest modals (RsvpFormModal.tsx,
+// GuestFormModal.tsx) — Malaysia first (this app's home market), then the
+// two next-closest markets, then the rest.
+const COUNTRY_CODES = [
+  { code: "+60", label: "🇲🇾 +60" },
+  { code: "+65", label: "🇸🇬 +65" },
+  { code: "+62", label: "🇮🇩 +62" },
+  { code: "+66", label: "🇹🇭 +66" },
+  { code: "+63", label: "🇵🇭 +63" },
+  { code: "+84", label: "🇻🇳 +84" },
+  { code: "+95", label: "🇲🇲 +95" },
+  { code: "+855", label: "🇰🇭 +855" },
+  { code: "+856", label: "🇱🇦 +856" },
+  { code: "+673", label: "🇧🇳 +673" },
+  { code: "+1", label: "🇺🇸 +1" },
+  { code: "+44", label: "🇬🇧 +44" },
+  { code: "+61", label: "🇦🇺 +61" },
+  { code: "+81", label: "🇯🇵 +81" },
+  { code: "+82", label: "🇰🇷 +82" },
+  { code: "+86", label: "🇨🇳 +86" },
+  { code: "+91", label: "🇮🇳 +91" },
+  { code: "+971", label: "🇦🇪 +971" },
+  { code: "+966", label: "🇸🇦 +966" },
+];
+
 interface Props {
   design: RsvpDesign;
   /** Questions embedded in the design (no auth needed) */
@@ -181,7 +206,8 @@ export default function RsvpFormRenderer({
   // ── Core fields ──────────────────────────────────────────────────────────
   const [guestName, setGuestName] = useState("");
   const [noOfPax, setNoOfPax] = useState<number>(1);
-  const [phoneNo, setPhoneNo] = useState("");
+  const [countryCode, setCountryCode] = useState("+60");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [remarks, setRemarks] = useState("");
 
   // ── Custom field answers: keyed by questionId, supports string[] for multi-select ─
@@ -238,7 +264,7 @@ export default function RsvpFormRenderer({
     };
 
     if (showFields.name !== false && !guestName.trim()) errs.guestName = "Name is required";
-    if (showFields.phone !== false && !phoneNo.trim()) errs.phoneNo = "Phone number is required";
+    if (showFields.phone !== false && !phoneNumber.trim()) errs.phoneNo = "Phone number is required";
     if (showFields.pax !== false && (noOfPax == null || noOfPax < 0)) errs.noOfPax = "Please enter the number of guests";
 
     // Validate required formField blocks
@@ -322,7 +348,9 @@ export default function RsvpFormRenderer({
       eventId,
       guestName: guestName.trim(),
       noOfPax,
-      phoneNo: phoneNo.trim(),
+      // Digits-only, no "+" — matches the format the admin RSVP/Guest modals write
+      // (RsvpFormModal.tsx, GuestFormModal.tsx parse both this and the legacy "+"-prefixed form).
+      phoneNo: phoneNumber.trim() ? `${countryCode.replace(/^\+/, "")}${phoneNumber.trim()}` : "",
       remarks: remarks.trim(),
       answers,
       captchaToken: captchaToken ?? undefined,
@@ -443,14 +471,26 @@ export default function RsvpFormRenderer({
             )}
             {show.phone !== false && (
               <div>
-                <input
-                  type="text"
-                  value={phoneNo}
-                  onChange={(e) => { setPhoneNo(e.target.value); clearError("phoneNo"); }}
-                  placeholder="Phone number"
-                  className={inputCls}
-                  style={{ background: clr.inputBg, border: `1px solid ${errors.phoneNo ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
-                />
+                <div className="flex gap-2">
+                  <select
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                    className="w-[5.5rem] shrink-0 rounded-xl px-2 py-3 text-[13px] bg-transparent outline-none"
+                    style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.heading }}
+                  >
+                    {COUNTRY_CODES.map(({ code, label }) => (
+                      <option key={code} value={code}>{label}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => { setPhoneNumber(e.target.value); clearError("phoneNo"); }}
+                    placeholder="Phone number"
+                    className={inputCls}
+                    style={{ background: clr.inputBg, border: `1px solid ${errors.phoneNo ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
+                  />
+                </div>
                 {errors.phoneNo && <p className="text-[11px] mt-1 text-rose-400">{errors.phoneNo}</p>}
               </div>
             )}
@@ -525,7 +565,8 @@ export default function RsvpFormRenderer({
                 const fieldType = cfg.typeKey ?? "text";
                 const fieldLabel = q.label || cfg.label || cfg.text || "Custom field";
                 const fieldRequired = q.required ?? cfg.isRequired ?? false;
-                const isCheckboxGroup = fieldType === "checkbox" && opts && opts.length > 1;
+                const isCheckboxGroup = fieldType === "checkbox" && !!opts && opts.length > 0;
+                const isSelect = fieldType === "select" || fieldType === "radio";
                 const currentAnswer = answers[qid];
                 const checkedValues: string[] = Array.isArray(currentAnswer)
                   ? currentAnswer
@@ -553,7 +594,7 @@ export default function RsvpFormRenderer({
                           </label>
                         ))}
                       </div>
-                    ) : fieldType === "select" ? (
+                    ) : isSelect ? (
                       <select
                         value={(currentAnswer as string) ?? ""}
                         onChange={(e) => setAnswer(qid, e.target.value)}
@@ -607,7 +648,8 @@ export default function RsvpFormRenderer({
       const fieldLabel = block.label || cfg.label || cfg.text || "Custom field";
       const fieldRequired = block.required ?? cfg.isRequired ?? false;
 
-      const isCheckboxGroup = fieldType === "checkbox" && opts && opts.length > 1;
+      const isCheckboxGroup = fieldType === "checkbox" && !!opts && opts.length > 0;
+      const isSelect = fieldType === "select" || fieldType === "radio";
       const currentAnswer = answers[block.questionId];
       const checkedValues: string[] = Array.isArray(currentAnswer)
         ? currentAnswer
@@ -638,7 +680,7 @@ export default function RsvpFormRenderer({
                 <p className="text-[11px] text-rose-400">{errors[block.questionId]}</p>
               )}
             </div>
-          ) : fieldType === "select" ? (
+          ) : isSelect ? (
             <div>
               <select
                 value={(currentAnswer as string) ?? ""}
@@ -915,10 +957,10 @@ export default function RsvpFormRenderer({
                     : typeof rawOpts === "string"
                     ? rawOpts.split(",").map((s) => s.trim())
                     : undefined;
-                  const isCheckboxGroup = fieldType === "checkbox" && opts && opts.length > 1;
-                  // Without this, a dropdown that happens to have no block renders as a
-                  // free-text box and loses its options -- the same degradation the
-                  // formField branch above avoids.
+                  const isCheckboxGroup = fieldType === "checkbox" && !!opts && opts.length > 0;
+                  // radio is rendered as a select here too, matching the formField and
+                  // guestDetails custom-question branches above (kept in sync 6 Aug 2026 —
+                  // this branch used to be the only one of the three that handled radio).
                   const isSelect = fieldType === "select" || fieldType === "radio";
                   const currentAnswer = answers[id];
                   const checkedValues: string[] = Array.isArray(currentAnswer)
