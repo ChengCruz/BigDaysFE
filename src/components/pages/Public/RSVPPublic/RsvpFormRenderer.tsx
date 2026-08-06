@@ -525,7 +525,8 @@ export default function RsvpFormRenderer({
                 const fieldType = cfg.typeKey ?? "text";
                 const fieldLabel = q.label || cfg.label || cfg.text || "Custom field";
                 const fieldRequired = q.required ?? cfg.isRequired ?? false;
-                const isCheckboxGroup = fieldType === "checkbox" && opts && opts.length > 1;
+                const isCheckboxGroup = fieldType === "checkbox" && !!opts && opts.length > 0;
+                const isSelect = fieldType === "select" || fieldType === "radio";
                 const currentAnswer = answers[qid];
                 const checkedValues: string[] = Array.isArray(currentAnswer)
                   ? currentAnswer
@@ -553,7 +554,7 @@ export default function RsvpFormRenderer({
                           </label>
                         ))}
                       </div>
-                    ) : fieldType === "select" ? (
+                    ) : isSelect ? (
                       <select
                         value={(currentAnswer as string) ?? ""}
                         onChange={(e) => setAnswer(qid, e.target.value)}
@@ -607,7 +608,8 @@ export default function RsvpFormRenderer({
       const fieldLabel = block.label || cfg.label || cfg.text || "Custom field";
       const fieldRequired = block.required ?? cfg.isRequired ?? false;
 
-      const isCheckboxGroup = fieldType === "checkbox" && opts && opts.length > 1;
+      const isCheckboxGroup = fieldType === "checkbox" && !!opts && opts.length > 0;
+      const isSelect = fieldType === "select" || fieldType === "radio";
       const currentAnswer = answers[block.questionId];
       const checkedValues: string[] = Array.isArray(currentAnswer)
         ? currentAnswer
@@ -638,7 +640,7 @@ export default function RsvpFormRenderer({
                 <p className="text-[11px] text-rose-400">{errors[block.questionId]}</p>
               )}
             </div>
-          ) : fieldType === "select" ? (
+          ) : isSelect ? (
             <div>
               <select
                 value={(currentAnswer as string) ?? ""}
@@ -915,10 +917,10 @@ export default function RsvpFormRenderer({
                     : typeof rawOpts === "string"
                     ? rawOpts.split(",").map((s) => s.trim())
                     : undefined;
-                  const isCheckboxGroup = fieldType === "checkbox" && opts && opts.length > 1;
-                  // Without this, a dropdown that happens to have no block renders as a
-                  // free-text box and loses its options -- the same degradation the
-                  // formField branch above avoids.
+                  const isCheckboxGroup = fieldType === "checkbox" && !!opts && opts.length > 0;
+                  // radio is rendered as a select here too, matching the formField and
+                  // guestDetails custom-question branches above (kept in sync 6 Aug 2026 —
+                  // this branch used to be the only one of the three that handled radio).
                   const isSelect = fieldType === "select" || fieldType === "radio";
                   const currentAnswer = answers[id];
                   const checkedValues: string[] = Array.isArray(currentAnswer)
