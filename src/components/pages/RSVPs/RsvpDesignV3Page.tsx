@@ -411,6 +411,45 @@ function fieldOptionsOf(cfg?: FormFieldConfig): string[] | undefined {
   return undefined;
 }
 
+/**
+ * Mirrors BlockEditor.tsx's questionLinkStatus (same "hidden" vs "missing"
+ * distinction), but the canvas already has `cfg` from questionFor() so it's
+ * cheaper to just classify that instead of doing a second lookup.
+ */
+function fieldLinkStatus(
+  questionId: string | undefined,
+  cfg: FormFieldConfig | undefined,
+): "unlinked" | "active" | "hidden" | "missing" {
+  if (!questionId) return "unlinked";
+  if (!cfg) return "missing";
+  return cfg.isActive === false ? "hidden" : "active";
+}
+
+/**
+ * The canvas used to render a formField block identically whether its linked
+ * question was active, hidden, or deleted — a couple could stare at the live
+ * design and have no idea a field wouldn't actually reach guests. This is the
+ * ONLY on-canvas signal; BlockEditor.tsx's side panel has its own (textual)
+ * version of the same status, but that requires opening the block first.
+ */
+function questionStatusBadge(status: "hidden" | "missing"): React.ReactNode {
+  return status === "hidden" ? (
+    <span
+      className="ml-2 inline-block whitespace-nowrap rounded-full px-2 py-0.5 align-middle text-[9px] font-bold normal-case tracking-normal"
+      style={{ background: "rgba(245,158,11,0.18)", color: "#d97706" }}
+    >
+      Hidden from invite
+    </span>
+  ) : (
+    <span
+      className="ml-2 inline-block whitespace-nowrap rounded-full px-2 py-0.5 align-middle text-[9px] font-bold normal-case tracking-normal"
+      style={{ background: "rgba(244,63,94,0.18)", color: "#e11d48" }}
+    >
+      Question deleted
+    </span>
+  );
+}
+
 function renderSectionContent(
   block: RsvpBlock, accentColor: string, isLight: boolean, event?: Event,
   // Blocks no longer copy a question's label or required flag onto themselves, so
@@ -504,10 +543,13 @@ function renderSectionContent(
                 const qRequired = q.required ?? cfg?.isRequired ?? false;
                 const qFieldType = cfg?.typeKey ?? "text";
                 const qOpts = fieldOptionsOf(cfg);
+                const qStatus = fieldLinkStatus(q.questionId, cfg);
+                const qGhosted = qStatus === "hidden" || qStatus === "missing";
                 return (
-                <div key={q.id} className="space-y-1.5">
+                <div key={q.id} className="space-y-1.5" style={qGhosted ? { opacity: 0.45 } : undefined}>
                   <label className="block text-[11px] font-semibold" style={{ color: clr.body }}>
                     {qLabel}{qRequired && <span className="ml-1" style={{ color: accentColor }}>*</span>}
+                    {qGhosted && questionStatusBadge(qStatus)}
                   </label>
                   {renderFieldPreviewMock(qFieldType, qOpts, q.placeholder, clr)}
                   {q.hint && <p className="text-[10px]" style={{ color: clr.faint }}>{q.hint}</p>}
@@ -526,10 +568,13 @@ function renderSectionContent(
       const fieldRequired = block.required ?? cfg?.isRequired ?? false;
       const fieldType = cfg?.typeKey ?? "text";
       const opts = fieldOptionsOf(cfg);
+      const status = fieldLinkStatus(block.questionId, cfg);
+      const isGhosted = status === "hidden" || status === "missing";
       return (
-        <div className="px-8 py-5">
+        <div className="px-8 py-5" style={isGhosted ? { opacity: 0.45 } : undefined}>
           <label className="block text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: clr.muted }}>
             {fieldLabel}{fieldRequired && <span className="ml-1 text-rose-400">*</span>}
+            {isGhosted && questionStatusBadge(status)}
           </label>
           {renderFieldPreviewMock(fieldType, opts, block.placeholder, clr)}
           {block.hint && <p className="text-[10px] mt-1.5" style={{ color: clr.faint }}>{block.hint}</p>}
