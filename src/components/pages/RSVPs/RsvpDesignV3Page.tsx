@@ -404,7 +404,7 @@ function renderFieldPreviewMock(
   if (fieldType === "checkbox") {
     const items = opts && opts.length > 0 ? opts : [placeholder || "Option"];
     return (
-      <div className="space-y-1.5">
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
         {items.map((opt) => (
           <div key={opt} className="flex items-center gap-2">
             <span className="h-3.5 w-3.5 rounded shrink-0" style={{ border: `1px solid ${clr.inputBdr}` }} />
@@ -418,7 +418,7 @@ function renderFieldPreviewMock(
   if (fieldType === "radio") {
     const items = opts && opts.length > 0 ? opts : [placeholder || "Option"];
     return (
-      <div className="space-y-1.5">
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
         {items.map((opt) => (
           <div key={opt} className="flex items-center gap-2">
             <span className="h-3.5 w-3.5 rounded-full shrink-0" style={{ border: `1px solid ${clr.inputBdr}` }} />

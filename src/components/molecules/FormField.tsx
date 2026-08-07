@@ -144,6 +144,44 @@ export function FormField({
             </label>
           ))}
         </div>
+      ) : type === "checkbox" && options?.length ? (
+        // checkbox group; value is a comma-separated list of the checked options
+        // (matches the join format the public RSVP form submits — see
+        // usePublicRsvpApi.ts's `value.join(", ")`)
+        <div className="flex flex-wrap gap-3">
+          {options.map((opt) => {
+            const selected = value
+              .split(",")
+              .map((v) => v.trim())
+              .includes(opt);
+            return (
+              <label key={opt} className="inline-flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id={id ? `${id}-${opt}` : undefined}
+                  name={name}
+                  checked={selected}
+                  onChange={(e) => {
+                    const current = value
+                      .split(",")
+                      .map((v) => v.trim())
+                      .filter(Boolean);
+                    const next = e.target.checked
+                      ? [...current, opt]
+                      : current.filter((v) => v !== opt);
+                    const synthetic = {
+                      ...e,
+                      target: { ...(e.target as any), value: next.join(", ") },
+                    } as React.ChangeEvent<HTMLInputElement>;
+                    onChange(synthetic);
+                  }}
+                  disabled={disabled}
+                />
+                <span>{opt}</span>
+              </label>
+            );
+          })}
+        </div>
       ) : type === "checkbox" ? (
         // single boolean checkbox; value is "true" | "false"
         <label className="inline-flex items-center space-x-2">

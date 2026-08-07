@@ -45,6 +45,20 @@ const COUNTRY_CODES = [
 // keep syntactically alive for. Flip to true to reinstate.
 const LEGACY_CUSTOM_QUESTIONS_ENABLED: boolean = false;
 
+// Deliberately loose (not RFC 5322) -- just enough to catch obvious garbage
+// ("asdf") in a question typed as Email without rejecting real addresses.
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// The native browser/mobile-keyboard hint for a question's answer input.
+// Unchanged behaviour for "number" (still the native spinner input) -- only
+// asked to fix that for the built-in Number of guests field, not every
+// question typed as Number. This only adds the "email" case.
+function htmlInputType(fieldType: string): string {
+  if (fieldType === "number") return "number";
+  if (fieldType === "email") return "email";
+  return "text";
+}
+
 interface Props {
   design: RsvpDesign;
   /** Questions embedded in the design (no auth needed) */
@@ -283,7 +297,9 @@ export default function RsvpFormRenderer({
     if (showFields.phone !== false && !phoneNumber.trim()) errs.phoneNo = "Phone number is required";
     if (showFields.pax !== false && (noOfPax == null || noOfPax < 0)) errs.noOfPax = "Please enter the number of guests";
 
-    // Validate required formField blocks
+    // Validate formField blocks: required-ness, plus email format regardless
+    // of required (an optional email question a guest chose to answer should
+    // still look like an email, not be accepted as garbage).
     blocks.forEach((block) => {
       if (block.type !== "formField" || !block.questionId) return;
       const cfg = formFields.find((f) => (f.questionId ?? f.id) === block.questionId);
@@ -292,12 +308,15 @@ export default function RsvpFormRenderer({
       // wedge the form shut — older designs can still carry `required: true` on it.
       if (!cfg) return;
       const required = block.required ?? cfg.isRequired ?? false;
-      if (!required) return;
 
       const val = answers[block.questionId];
       const isEmpty = Array.isArray(val) ? val.length === 0 : !(val ?? "").trim();
-      if (isEmpty) {
+      if (required && isEmpty) {
         errs[block.questionId] = `${block.label || cfg?.label || "This field"} is required`;
+        return;
+      }
+      if (!isEmpty && cfg.typeKey === "email" && !EMAIL_PATTERN.test((val as string).trim())) {
+        errs[block.questionId] = `${block.label || cfg?.label || "This field"} must be a valid email address`;
       }
     });
 
@@ -324,14 +343,19 @@ export default function RsvpFormRenderer({
 
     // Every active question the guest is asked (see askedQuestions above) is
     // rendered now, not just the required ones, so the required check has to
-    // happen here rather than being implied by membership of the list.
+    // happen here rather than being implied by membership of the list. Email
+    // format is checked regardless of required, same reasoning as formField
+    // blocks above.
     askedQuestions.forEach((fc) => {
-      if (!fc.isRequired) return;
       const id = fc.questionId ?? fc.id ?? "";
       const val = answers[id];
       const isEmpty = Array.isArray(val) ? val.length === 0 : !(val ?? "").trim();
-      if (isEmpty) {
+      if (fc.isRequired && isEmpty) {
         errs[id] = `${fc.label || fc.text || "This field"} is required`;
+        return;
+      }
+      if (!isEmpty && fc.typeKey === "email" && !EMAIL_PATTERN.test((val as string).trim())) {
+        errs[id] = `${fc.label || fc.text || "This field"} must be a valid email address`;
       }
     });
 
@@ -550,7 +574,7 @@ export default function RsvpFormRenderer({
                     {fieldLabel}{fieldRequired && <span className="ml-1" style={{ color: accentColor }}>*</span>}
                   </label>
                   {isCheckboxGroup ? (
-                    <div className="space-y-1.5">
+                    <div className="flex flex-wrap gap-x-4 gap-y-1.5">
                       {opts!.map((opt) => (
                         <label key={opt} className="flex cursor-pointer items-center gap-2">
                           <input
@@ -578,7 +602,7 @@ export default function RsvpFormRenderer({
                     </select>
                   ) : (
                     <input
-                      type={fieldType === "number" ? "number" : "text"}
+                      type={htmlInputType(fieldType)}
                       value={(currentAnswer as string) ?? ""}
                       onChange={(e) => setAnswer(qid, e.target.value)}
                       placeholder={q.placeholder || "Your answer..."}
@@ -642,12 +666,15 @@ export default function RsvpFormRenderer({
             {show.pax !== false && (
               <div>
                 <input
-                  type="number"
-                  min={0}
+                  // Plain text with digits-only filtering, not type="number" --
+                  // that draws native up/down spinner arrows the couple didn't want.
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={noOfPax}
                   onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    setNoOfPax(isNaN(val) ? 0 : Math.max(0, val));
+                    const digitsOnly = e.target.value.replace(/\D/g, "");
+                    setNoOfPax(digitsOnly === "" ? 0 : parseInt(digitsOnly, 10));
                     clearError("noOfPax");
                   }}
                   placeholder="Number of guests"
@@ -706,7 +733,7 @@ export default function RsvpFormRenderer({
                       {fieldLabel}{fc.isRequired && <span className="ml-1" style={{ color: accentColor }}>*</span>}
                     </label>
                     {isCheckboxGroup ? (
-                      <div className="space-y-1.5">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
                         {opts!.map((opt) => (
                           <label key={opt} className="flex cursor-pointer items-center gap-2">
                             <input
@@ -734,7 +761,7 @@ export default function RsvpFormRenderer({
                       </select>
                     ) : (
                       <input
-                        type={fieldType === "number" ? "number" : "text"}
+                        type={htmlInputType(fieldType)}
                         value={(currentAnswer as string) ?? ""}
                         onChange={(e) => setAnswer(qid, e.target.value)}
                         placeholder={fieldLabel}
@@ -788,7 +815,7 @@ export default function RsvpFormRenderer({
             {fieldLabel}{fieldRequired && <span className="ml-1 text-rose-400">*</span>}
           </label>
           {isCheckboxGroup ? (
-            <div className="space-y-2">
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
               {opts!.map((opt) => (
                 <label key={opt} className="flex cursor-pointer items-center gap-2">
                   <input
@@ -802,7 +829,7 @@ export default function RsvpFormRenderer({
                 </label>
               ))}
               {errors[block.questionId] && (
-                <p className="text-[11px] text-rose-400">{errors[block.questionId]}</p>
+                <p className="w-full text-[11px] text-rose-400">{errors[block.questionId]}</p>
               )}
             </div>
           ) : isSelect ? (
@@ -823,7 +850,7 @@ export default function RsvpFormRenderer({
           ) : (
             <div>
               <input
-                type={fieldType === "number" ? "number" : "text"}
+                type={htmlInputType(fieldType)}
                 value={(currentAnswer as string) ?? ""}
                 onChange={(e) => setAnswer(block.questionId!, e.target.value)}
                 placeholder={block.placeholder || "Guest response here..."}
@@ -1104,7 +1131,7 @@ export default function RsvpFormRenderer({
                         {fc.isRequired && <span className="ml-1 text-rose-400">*</span>}
                       </label>
                       {isCheckboxGroup ? (
-                        <div className="space-y-2">
+                        <div className="flex flex-wrap gap-x-4 gap-y-2">
                           {opts!.map((opt) => (
                             <label key={opt} className="flex cursor-pointer items-center gap-2">
                               <input
@@ -1117,7 +1144,7 @@ export default function RsvpFormRenderer({
                               <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
                             </label>
                           ))}
-                          {errors[id] && <p className="text-[11px] text-rose-400">{errors[id]}</p>}
+                          {errors[id] && <p className="w-full text-[11px] text-rose-400">{errors[id]}</p>}
                         </div>
                       ) : isSelect && opts?.length ? (
                         <div>
@@ -1137,7 +1164,7 @@ export default function RsvpFormRenderer({
                       ) : (
                         <div>
                           <input
-                            type={fieldType === "number" ? "number" : "text"}
+                            type={htmlInputType(fieldType)}
                             value={(currentAnswer as string) ?? ""}
                             onChange={(e) => setAnswer(id, e.target.value)}
                             placeholder={fieldLabel}
