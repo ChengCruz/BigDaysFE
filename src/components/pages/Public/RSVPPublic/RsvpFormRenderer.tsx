@@ -12,6 +12,7 @@ import TurnstileWidget from "../../../molecules/TurnstileWidget";
 import { isRsvpTurnstileEnabled, TURNSTILE_SITE_KEY_RSVP } from "../../../../utils/turnstile";
 import { contentWidthClass } from "../../../../utils/rsvpContentWidths";
 import { DEFAULT_BACKDROP_COLOR } from "../../../../utils/rsvpBackdrops";
+import { formatEventTime } from "../../../../utils/eventUtils";
 
 // Same list/order as the admin RSVP and Guest modals (RsvpFormModal.tsx,
 // GuestFormModal.tsx) — Malaysia first (this app's home market), then the
@@ -65,6 +66,10 @@ interface Props {
   formFields: FormFieldConfig[];
   /** eventGuid used as the submission target */
   eventId: string;
+  /** Raw event date/time/location, used to fill in the eventDetails block */
+  eventDate?: string;
+  eventTime?: string;
+  eventLocation?: string;
   onSubmit: (payload: RsvpSubmitPayload) => Promise<void>;
   isSubmitting: boolean;
 }
@@ -142,6 +147,9 @@ export default function RsvpFormRenderer({
   design,
   formFields,
   eventId,
+  eventDate,
+  eventTime,
+  eventLocation,
   onSubmit,
   isSubmitting,
 }: Props) {
@@ -921,10 +929,16 @@ export default function RsvpFormRenderer({
       const showTime = block.showTime ?? true;
       const showLocation = block.showLocation ?? true;
 
+      const formattedDate = eventDate
+        ? (() => { try { return new Date(eventDate).toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); } catch { return eventDate; } })()
+        : "Date TBC";
+      const formattedTime = formatEventTime(eventDate, eventTime) || "Time TBC";
+      const location = eventLocation || "Venue TBC";
+
       const cards = [
-        showDate     && { icon: "\uD83D\uDCC5", label: "Date",  value: "Date TBC" },
-        showTime     && { icon: "\u23F0", label: "Time",  value: "Time TBC" },
-        showLocation && { icon: "\uD83D\uDCCD", label: "Venue", value: "Venue TBC" },
+        showDate     && { icon: "\uD83D\uDCC5", label: "Date",  value: formattedDate },
+        showTime     && { icon: "\u23F0", label: "Time",  value: formattedTime },
+        showLocation && { icon: "\uD83D\uDCCD", label: "Venue", value: location },
       ].filter(Boolean) as { icon: string; label: string; value: string }[];
 
       inner = (
