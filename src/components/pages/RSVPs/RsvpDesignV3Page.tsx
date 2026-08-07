@@ -155,7 +155,10 @@ const initialState: DesignState = {
   version: undefined,
   isDesignLoaded: false,
   previewBackdropColor: DEFAULT_BACKDROP_COLOR,
-  previewBackdropImage: "",
+  // Default for a brand-new design only -- once the couple saves (even after
+  // picking "None", which also persists as ""), the LOAD_DESIGN effect below
+  // only overwrites this from a truthy saved value, so their own choice sticks.
+  previewBackdropImage: BACKDROP_OPTIONS.find((o) => o.label === "Ocean Horizon")?.value ?? "",
 };
 
 type DesignAction =
