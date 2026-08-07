@@ -94,7 +94,6 @@ function renderBlockPreview(
     case "headline":
       return (
         <div className={`text-${block.align}`}>
-          <p className={`uppercase tracking-[0.2em] text-white/70 ${mode === "full" ? "text-xs" : "text-xs"}`}>Welcome</p>
           <h2 className={`mt-0.5 font-extrabold text-white drop-shadow ${block.accent} ${mode === "full" ? "text-4xl" : "text-2xl"}`}>{block.title}</h2>
           {block.subtitle && <p className={`mt-1 text-white/75 ${mode === "full" ? "text-base" : "text-xs"}`}>{block.subtitle}</p>}
         </div>
