@@ -25,4 +25,13 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // QA harness for the real backend (docs/qa). Not shipped and not in
+    // tsconfig.app — it reads raw, untyped API envelopes, so mirroring every
+    // backend DTO here would be noise that rots the moment the API moves.
+    files: ['docs/qa/**/*.{ts,mjs}'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
 )
