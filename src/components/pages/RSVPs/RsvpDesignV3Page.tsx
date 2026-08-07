@@ -173,6 +173,29 @@ type DesignAction =
   | { type: "SET_VERSION"; payload: number }
   | { type: "RESTORE"; payload: DesignState };
 
+// A cta block with no external link is the submit button (mirrors
+// RsvpFormRenderer's submitCtaId) -- "#" is this designer's own default href.
+const isSubmitCta = (b: RsvpBlock) => b.type === "cta" && (!b.href || b.href === "#");
+
+/**
+ * The contiguous index range that should move together as one unit when the
+ * block at `index` is moved or dragged. A guestDetails block and an
+ * immediately-adjacent submit-cta block are bundled -- separately reordering
+ * the form from its own submit button left couples with the button stranded
+ * wherever it happened to be when they last moved the form (reported 8 Aug
+ * 2026). Returns [index, index] for any block with no such neighbor.
+ */
+function getMoveGroup(blocks: RsvpBlock[], index: number): [number, number] {
+  const block = blocks[index];
+  if (block.type === "guestDetails" && blocks[index + 1] && isSubmitCta(blocks[index + 1]!)) {
+    return [index, index + 1];
+  }
+  if (isSubmitCta(block) && blocks[index - 1]?.type === "guestDetails") {
+    return [index - 1, index];
+  }
+  return [index, index];
+}
+
 function designReducer(state: DesignState, action: DesignAction): DesignState {
   switch (action.type) {
     case "LOAD_DESIGN":
@@ -219,10 +242,17 @@ function designReducer(state: DesignState, action: DesignAction): DesignState {
       const { id, dir } = action.payload;
       const i = state.blocks.findIndex((b) => b.id === id);
       if (i === -1) return state;
-      const j = dir === "up" ? i - 1 : i + 1;
-      if (j < 0 || j >= state.blocks.length) return state;
+      const [start, end] = getMoveGroup(state.blocks, i);
       const next = [...state.blocks];
-      [next[i], next[j]] = [next[j], next[i]];
+      if (dir === "up") {
+        if (start === 0) return state;
+        const group = next.splice(start, end - start + 1);
+        next.splice(start - 1, 0, ...group);
+      } else {
+        if (end === state.blocks.length - 1) return state;
+        const group = next.splice(start, end - start + 1);
+        next.splice(start + 1, 0, ...group);
+      }
       return { ...state, blocks: next };
     }
 
@@ -231,9 +261,14 @@ function designReducer(state: DesignState, action: DesignAction): DesignState {
       const si = state.blocks.findIndex((b) => b.id === sourceId);
       const ti = state.blocks.findIndex((b) => b.id === targetId);
       if (si === -1 || ti === -1 || si === ti) return state;
+      // Drag the form and its submit button together -- same reasoning as
+      // MOVE_BLOCK above.
+      const [start, end] = getMoveGroup(state.blocks, si);
       const next = [...state.blocks];
-      const [moved] = next.splice(si, 1);
-      next.splice(ti, 0, moved);
+      const group = next.splice(start, end - start + 1);
+      let insertAt = next.findIndex((b) => b.id === targetId);
+      if (insertAt === -1) insertAt = next.length; // target was part of the dragged group
+      next.splice(insertAt, 0, ...group);
       return { ...state, blocks: next };
     }
 
