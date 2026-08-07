@@ -38,6 +38,13 @@ const COUNTRY_CODES = [
   { code: "+966", label: "🇸🇦 +966" },
 ];
 
+// Disabled 7 Aug 2026 -- see legacyQuestionsSection in renderBlock. Typed as
+// `boolean` (not left to infer the `false` literal) on purpose: TypeScript
+// proves a literal-`false` condition statically unreachable and skips full
+// narrowing inside it, which is exactly the dead code this flag is meant to
+// keep syntactically alive for. Flip to true to reinstate.
+const LEGACY_CUSTOM_QUESTIONS_ENABLED: boolean = false;
+
 interface Props {
   design: RsvpDesign;
   /** Questions embedded in the design (no auth needed) */
@@ -179,29 +186,38 @@ export default function RsvpFormRenderer({
     return result;
   }, [rawBlocks]);
 
-  // ── Questions no block in the design accounts for ──────────────────────
+  // ── Questions the guest is actually asked ───────────────────────────────
   //
-  // The design is a layout, not the list of what gets asked -- that is the
-  // Questions page. So a question the couple never placed still has to be put
-  // to the guest, or adding one after the invite was built would quietly do
-  // nothing. This used to rescue only `isRequired` questions, which meant an
-  // optional one added later was never asked and nothing said so.
-  //
-  // Covered means a formField block, or a customQuestion inside a guestDetails
-  // block, already points at it.
-  const uncoveredFields = useMemo(() => {
-    const coveredIds = new Set<string>();
+  // 7 Aug 2026: the Questions page is now the only source of truth for which
+  // questions guests get asked -- active means asked, deactivated means not,
+  // full stop. No design-side "did the couple remember to place it" step
+  // anymore (see RsvpDesignV3Page.tsx / BlockEditor.tsx for the couple-facing
+  // side of this). A standalone formField block from a design built before
+  // this change is still honoured in its own designed position, so its
+  // question is excluded here to avoid asking it twice.
+  const formFieldBlockQuestionIds = useMemo(() => {
+    const ids = new Set<string>();
     for (const b of blocks) {
-      if (b.type === "formField" && b.questionId) {
-        coveredIds.add(b.questionId);
-      } else if (b.type === "guestDetails" && b.customQuestions) {
-        for (const q of b.customQuestions) {
-          if (q.questionId) coveredIds.add(q.questionId);
-        }
-      }
+      if (b.type === "formField" && b.questionId) ids.add(b.questionId);
     }
-    return formFields.filter((fc) => !coveredIds.has(fc.questionId ?? fc.id ?? ""));
-  }, [blocks, formFields]);
+    return ids;
+  }, [blocks]);
+
+  const askedQuestions = useMemo(
+    () =>
+      formFields
+        .filter((fc) => !formFieldBlockQuestionIds.has(fc.questionId ?? fc.id ?? ""))
+        .slice()
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    [formFields, formFieldBlockQuestionIds]
+  );
+
+  // Only the first guestDetails block (couples can duplicate blocks) renders
+  // askedQuestions, so a duplicated block doesn't ask every question twice.
+  const firstGuestDetailsBlockId = useMemo(
+    () => blocks.find((b) => b.type === "guestDetails")?.id,
+    [blocks]
+  );
 
   // ── Core fields ──────────────────────────────────────────────────────────
   const [guestName, setGuestName] = useState("");
@@ -285,27 +301,31 @@ export default function RsvpFormRenderer({
       }
     });
 
-    // Validate required customQuestions embedded inside guestDetails
-    blocks.forEach((block) => {
-      if (block.type !== "guestDetails" || !block.customQuestions) return;
-      block.customQuestions.forEach((q) => {
-        if (!q.questionId) return;
-        const cfg = formFields.find((f) => (f.questionId ?? f.id) === q.questionId);
-        if (!cfg) return;   // hidden or deleted — not rendered, so not validated
-        const required = q.required ?? cfg.isRequired ?? false;
-        if (!required) return;
-        const val = answers[q.questionId];
-        const isEmpty = Array.isArray(val) ? val.length === 0 : !(val ?? "").trim();
-        if (isEmpty) {
-          errs[q.questionId] = `${q.label || cfg?.label || "This field"} is required`;
-        }
+    // Disabled 7 Aug 2026 along with the customQuestions render branch below --
+    // kept in case per-instance overrides come back. Superseded by the
+    // askedQuestions check right after, which now covers every active question.
+    if (LEGACY_CUSTOM_QUESTIONS_ENABLED) {
+      blocks.forEach((block) => {
+        if (block.type !== "guestDetails" || !block.customQuestions) return;
+        block.customQuestions.forEach((q) => {
+          if (!q.questionId) return;
+          const cfg = formFields.find((f) => (f.questionId ?? f.id) === q.questionId);
+          if (!cfg) return;   // hidden or deleted — not rendered, so not validated
+          const required = q.required ?? cfg.isRequired ?? false;
+          if (!required) return;
+          const val = answers[q.questionId];
+          const isEmpty = Array.isArray(val) ? val.length === 0 : !(val ?? "").trim();
+          if (isEmpty) {
+            errs[q.questionId] = `${q.label || cfg?.label || "This field"} is required`;
+          }
+        });
       });
-    });
+    }
 
-    // Questions with no block of their own. They are all rendered now, not just
-    // the required ones, so the required check has to happen here rather than
-    // being implied by membership of the list.
-    uncoveredFields.forEach((fc) => {
+    // Every active question the guest is asked (see askedQuestions above) is
+    // rendered now, not just the required ones, so the required check has to
+    // happen here rather than being implied by membership of the list.
+    askedQuestions.forEach((fc) => {
       if (!fc.isRequired) return;
       const id = fc.questionId ?? fc.id ?? "";
       const val = answers[id];
@@ -456,7 +476,125 @@ export default function RsvpFormRenderer({
       // Attendance (status) is not supported by the API — skip rendering
       return null;
     } else if (block.type === "guestDetails") {
-      const show = block.showFields ?? { name: true, phone: true, pax: true, remarks: true };
+      // Captured once, narrowed to the guestDetails variant -- TypeScript's
+      // narrowing of `block` itself doesn't reliably survive this far into such
+      // a long branch, so every guestDetails-only field below reads from this
+      // instead of `block` directly.
+      const guestBlock = block;
+      const show = guestBlock.showFields ?? { name: true, phone: true, pax: true, remarks: true };
+      // Plain local (not a repeated guestBlock.customQuestions property access) --
+      // TypeScript's narrowing of a property path doesn't reliably survive into
+      // the .map() closure below, but a local variable's does.
+      const legacyCustomQuestions = guestBlock.customQuestions;
+
+      // Disabled 7 Aug 2026: per-instance custom-question placement retired in
+      // favour of the Questions page being the only source of truth (see
+      // askedQuestions below). Kept as a real `if` (not an inline `{cond && }`
+      // in the JSX) because TypeScript's narrowing of legacyCustomQuestions
+      // doesn't survive into a JSX `&&` chain reliably; a plain `if` avoids
+      // that. Left in place in case per-instance overrides (custom
+      // wording/placeholder per design) come back later.
+      let legacyQuestionsSection: React.ReactNode = null;
+      if (LEGACY_CUSTOM_QUESTIONS_ENABLED && legacyCustomQuestions && legacyCustomQuestions.length > 0) {
+        legacyQuestionsSection = (
+          <div className="mt-5 pt-5 border-t space-y-3" style={{ borderColor: clr.inputBdr }}>
+            <p className="text-[10px] uppercase tracking-[0.28em] font-semibold" style={{ color: accentColor }}>
+              Additional questions
+            </p>
+            {legacyCustomQuestions.map((q) => {
+              if (!q.questionId) {
+                // Free-form question with no linked config — render as plain text input
+                // (won't be submitted because there's no questionId to key against)
+                return (
+                  <div key={q.id} className="space-y-1.5">
+                    <label className="block text-[11px] font-semibold" style={{ color: clr.body }}>
+                      {q.label || "Question"}{q.required && <span className="ml-1" style={{ color: accentColor }}>*</span>}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={q.placeholder || "Your answer..."}
+                      className={inputCls}
+                      style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.heading }}
+                    />
+                    {q.hint && <p className="text-[10px]" style={{ color: clr.faint }}>{q.hint}</p>}
+                  </div>
+                );
+              }
+
+              const qid = q.questionId;
+              const cfg = formFields.find((f) => (f.questionId ?? f.id) === qid);
+              // Hidden or deleted — same reasoning as the formField block above.
+              if (!cfg) return null;
+
+              const rawOpts = cfg.options ?? undefined;
+              const opts = Array.isArray(rawOpts)
+                ? rawOpts
+                : typeof rawOpts === "string"
+                ? rawOpts.split(",").map((s) => s.trim())
+                : undefined;
+              const fieldType = cfg.typeKey ?? "text";
+              const fieldLabel = q.label || cfg.label || cfg.text || "Custom field";
+              const fieldRequired = q.required ?? cfg.isRequired ?? false;
+              const isCheckboxGroup = fieldType === "checkbox" && !!opts && opts.length > 0;
+              const isSelect = fieldType === "select" || fieldType === "radio";
+              const currentAnswer = answers[qid];
+              const checkedValues: string[] = Array.isArray(currentAnswer)
+                ? currentAnswer
+                : currentAnswer
+                ? [currentAnswer as string]
+                : [];
+
+              return (
+                <div key={q.id} className="space-y-1.5">
+                  <label className="block text-[11px] font-semibold" style={{ color: clr.body }}>
+                    {fieldLabel}{fieldRequired && <span className="ml-1" style={{ color: accentColor }}>*</span>}
+                  </label>
+                  {isCheckboxGroup ? (
+                    <div className="space-y-1.5">
+                      {opts!.map((opt) => (
+                        <label key={opt} className="flex cursor-pointer items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={checkedValues.includes(opt)}
+                            onChange={() => toggleCheckboxAnswer(qid, opt)}
+                            className="h-4 w-4 rounded"
+                            style={{ accentColor }}
+                          />
+                          <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : isSelect ? (
+                    <select
+                      value={(currentAnswer as string) ?? ""}
+                      onChange={(e) => setAnswer(qid, e.target.value)}
+                      className={inputCls}
+                      style={{ background: clr.inputBg, border: `1px solid ${errors[qid] ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
+                    >
+                      <option value="" style={optionStyle}>{q.placeholder || "Select..."}</option>
+                      {opts?.map((opt) => (
+                        <option key={opt} value={opt} style={optionStyle}>{opt}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type={fieldType === "number" ? "number" : "text"}
+                      value={(currentAnswer as string) ?? ""}
+                      onChange={(e) => setAnswer(qid, e.target.value)}
+                      placeholder={q.placeholder || "Your answer..."}
+                      className={inputCls}
+                      style={{ background: clr.inputBg, border: `1px solid ${errors[qid] ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
+                    />
+                  )}
+                  {q.hint && <p className="text-[10px]" style={{ color: clr.faint }}>{q.hint}</p>}
+                  {errors[qid] && <p className="text-[11px] text-rose-400">{errors[qid]}</p>}
+                </div>
+              );
+            })}
+          </div>
+        );
+      }
+
       inner = (
         <div className="px-8 py-8">
           <p className="text-[13px] font-semibold mb-1" style={{ color: clr.heading }}>{block.title || "Guest Information"}</p>
@@ -533,45 +671,26 @@ export default function RsvpFormRenderer({
             )}
           </div>
 
-          {block.customQuestions && block.customQuestions.length > 0 && (
+          {legacyQuestionsSection}
+
+          {/* Every active question, live from the Questions page -- see
+              askedQuestions above. Only the first guestDetails block renders
+              these, so a duplicated block doesn't ask twice. */}
+          {block.id === firstGuestDetailsBlockId && askedQuestions.length > 0 && (
             <div className="mt-5 pt-5 border-t space-y-3" style={{ borderColor: clr.inputBdr }}>
               <p className="text-[10px] uppercase tracking-[0.28em] font-semibold" style={{ color: accentColor }}>
                 Additional questions
               </p>
-              {block.customQuestions.map((q) => {
-                if (!q.questionId) {
-                  // Free-form question with no linked config — render as plain text input
-                  // (won't be submitted because there's no questionId to key against)
-                  return (
-                    <div key={q.id} className="space-y-1.5">
-                      <label className="block text-[11px] font-semibold" style={{ color: clr.body }}>
-                        {q.label || "Question"}{q.required && <span className="ml-1" style={{ color: accentColor }}>*</span>}
-                      </label>
-                      <input
-                        type="text"
-                        placeholder={q.placeholder || "Your answer..."}
-                        className={inputCls}
-                        style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.heading }}
-                      />
-                      {q.hint && <p className="text-[10px]" style={{ color: clr.faint }}>{q.hint}</p>}
-                    </div>
-                  );
-                }
-
-                const qid = q.questionId;
-                const cfg = formFields.find((f) => (f.questionId ?? f.id) === qid);
-                // Hidden or deleted — same reasoning as the formField block above.
-                if (!cfg) return null;
-
-                const rawOpts = cfg.options ?? undefined;
+              {askedQuestions.map((fc) => {
+                const qid = fc.questionId ?? fc.id ?? "";
+                const rawOpts = fc.options ?? undefined;
                 const opts = Array.isArray(rawOpts)
                   ? rawOpts
                   : typeof rawOpts === "string"
                   ? rawOpts.split(",").map((s) => s.trim())
                   : undefined;
-                const fieldType = cfg.typeKey ?? "text";
-                const fieldLabel = q.label || cfg.label || cfg.text || "Custom field";
-                const fieldRequired = q.required ?? cfg.isRequired ?? false;
+                const fieldType = fc.typeKey ?? "text";
+                const fieldLabel = fc.label || fc.text || "Question";
                 const isCheckboxGroup = fieldType === "checkbox" && !!opts && opts.length > 0;
                 const isSelect = fieldType === "select" || fieldType === "radio";
                 const currentAnswer = answers[qid];
@@ -582,9 +701,9 @@ export default function RsvpFormRenderer({
                   : [];
 
                 return (
-                  <div key={q.id} className="space-y-1.5">
+                  <div key={qid} className="space-y-1.5">
                     <label className="block text-[11px] font-semibold" style={{ color: clr.body }}>
-                      {fieldLabel}{fieldRequired && <span className="ml-1" style={{ color: accentColor }}>*</span>}
+                      {fieldLabel}{fc.isRequired && <span className="ml-1" style={{ color: accentColor }}>*</span>}
                     </label>
                     {isCheckboxGroup ? (
                       <div className="space-y-1.5">
@@ -608,7 +727,7 @@ export default function RsvpFormRenderer({
                         className={inputCls}
                         style={{ background: clr.inputBg, border: `1px solid ${errors[qid] ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
                       >
-                        <option value="" style={optionStyle}>{q.placeholder || "Select..."}</option>
+                        <option value="" style={optionStyle}>Select...</option>
                         {opts?.map((opt) => (
                           <option key={opt} value={opt} style={optionStyle}>{opt}</option>
                         ))}
@@ -618,12 +737,11 @@ export default function RsvpFormRenderer({
                         type={fieldType === "number" ? "number" : "text"}
                         value={(currentAnswer as string) ?? ""}
                         onChange={(e) => setAnswer(qid, e.target.value)}
-                        placeholder={q.placeholder || "Your answer..."}
+                        placeholder={fieldLabel}
                         className={inputCls}
                         style={{ background: clr.inputBg, border: `1px solid ${errors[qid] ? "#f43f5e" : clr.inputBdr}`, color: clr.heading }}
                       />
                     )}
-                    {q.hint && <p className="text-[10px]" style={{ color: clr.faint }}>{q.hint}</p>}
                     {errors[qid] && <p className="text-[11px] text-rose-400">{errors[qid]}</p>}
                   </div>
                 );
@@ -950,11 +1068,13 @@ export default function RsvpFormRenderer({
           {/* ── All blocks rendered inline in designed order ── */}
           {blocks.map((block) => renderBlock(block))}
 
-          {/* ── Questions with no block of their own (auto-rendered) ── */}
-          {uncoveredFields.length > 0 && (
+          {/* Disabled 7 Aug 2026: superseded by askedQuestions rendering inline
+              inside the guestDetails block above, so every active question now
+              shows in one place instead of a separate tacked-on section. */}
+          {LEGACY_CUSTOM_QUESTIONS_ENABLED && (
             <section className={isFlush ? "" : "rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl ring-1 ring-white/5 backdrop-blur-sm"}>
               <div className={`${isFlush ? "px-8 py-6" : ""} space-y-4`}>
-                {uncoveredFields.map((fc) => {
+                {askedQuestions.map((fc) => {
                   const id = fc.questionId ?? fc.id ?? "";
                   const fieldType = fc.typeKey ?? "text";
                   const fieldLabel = fc.label || fc.text || "Question";
