@@ -80,6 +80,10 @@ export default function CoupleQuestionsPage() {
   const [hideTarget, setHideTarget] = useState<FormFieldConfig | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<FormFieldConfig | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
+  // Save/edit failures show inside the modal itself (see FormFieldModal's onSave
+  // below) rather than on the page banner, so the refusal lands right where the
+  // couple just clicked Save instead of behind a modal that already closed.
+  const [modalError, setModalError] = useState<string | null>(null);
 
   const fields = useMemo<FormFieldConfig[]>(
     () => (Array.isArray(fieldsRaw) ? [...fieldsRaw].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) : []),
@@ -139,10 +143,12 @@ export default function CoupleQuestionsPage() {
           </button>
           <h1 className="font-display text-3xl font-semibold text-text">What to ask</h1>
           <p className="text-sm text-text/60">
-            The questions your guests answer when they reply to your invite.
+            The questions your guests answer when they reply to your invite. Once a guest
+            has answered a question, it can’t be edited — hide it instead if you no longer
+            want to ask it.
           </p>
         </div>
-        <Button onClick={() => setModal({ open: true })} className="whitespace-nowrap">
+        <Button onClick={() => { setModalError(null); setModal({ open: true }); }} className="whitespace-nowrap">
           <PlusIcon className="mr-1 h-4 w-4" />
           Add a question
         </Button>
@@ -167,7 +173,7 @@ export default function CoupleQuestionsPage() {
             meal choice, song requests, whether they need a room.
           </p>
           <div className="mt-1 flex flex-wrap justify-center gap-2">
-            <Button onClick={() => setModal({ open: true })}>Add a question</Button>
+            <Button onClick={() => { setModalError(null); setModal({ open: true }); }}>Add a question</Button>
             <Button variant="secondary" onClick={() => setTemplateModal(true)}>
               Start from examples
             </Button>
@@ -215,7 +221,7 @@ export default function CoupleQuestionsPage() {
                       type="button"
                       aria-label={`Edit ${f.label || f.text}`}
                       title="Edit"
-                      onClick={() => setModal({ open: true, initial: f })}
+                      onClick={() => { setModalError(null); setModal({ open: true, initial: f }); }}
                       className="rounded-lg p-2 text-text/55 transition-colors hover:bg-primary/10 hover:text-text"
                     >
                       <PencilIcon className="h-4 w-4" />
@@ -320,7 +326,8 @@ export default function CoupleQuestionsPage() {
       {modal.open && (
         <FormFieldModal
           isOpen={modal.open}
-          onClose={() => setModal({ open: false })}
+          onClose={() => { setModal({ open: false }); setModalError(null); }}
+          error={modalError}
           initial={
             modal.initial
               ? {
@@ -339,7 +346,7 @@ export default function CoupleQuestionsPage() {
           }
           onSave={async (dto) => {
             if (!eventId) return;
-            setBanner(null);
+            setModalError(null);
 
             // Every field, every time — update is a full replace (see header).
             const payload: QuestionPayload = {
@@ -352,17 +359,21 @@ export default function CoupleQuestionsPage() {
             };
 
             const editingId = modal.initial?.questionId ?? modal.initial?.id;
-            setModal({ open: false });
 
             try {
               const res = editingId
                 ? await updateField.mutateAsync({ ...payload, questionId: String(editingId) })
                 : await createField.mutateAsync(payload);
               const err = envelopeError(res);
-              if (err) setBanner(err);
+              if (err) {
+                setModalError(err);
+                return;
+              }
             } catch {
-              setBanner("We couldn’t save that question. Please try again.");
+              setModalError("We couldn’t save that question. Please try again.");
+              return;
             }
+            setModal({ open: false });
           }}
         />
       )}

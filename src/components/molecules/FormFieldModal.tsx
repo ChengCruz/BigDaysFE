@@ -24,7 +24,14 @@ interface Props {
   /** existing Question dto when editing */
   initial?: QuestionDto;
   /** caller (page/hook) will attach eventId and send to the API */
-  onSave: (payload: QuestionDto) => void;
+  onSave: (payload: QuestionDto) => void | Promise<void>;
+  /**
+   * Message from the last failed save attempt (e.g. the backend refuses edits to a
+   * question guests already answered). Shown at the top of the form so the refusal
+   * is visible right where the user just clicked Save, instead of on a page banner
+   * behind a modal that already closed.
+   */
+  error?: string | null;
 }
 
 /** String ⇄ number map for the API "type" enum */
@@ -58,6 +65,7 @@ export function FormFieldModal({
   onClose,
   initial,
   onSave,
+  error,
 }: Props) {
   // derive string key for the select from the numeric initial?.type
   const initialTypeKey = useMemo<TypeKey>(() => {
@@ -73,6 +81,7 @@ export function FormFieldModal({
   const [typeKey, setTypeKey] = useState<TypeKey>(initialTypeKey);
   const [options, setOptions] = useState<string>(initial?.options ?? "");
   const [order, setOrder] = useState<number>(Number.isFinite(initial?.order) ? (initial!.order as number) : 1);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -87,7 +96,7 @@ export function FormFieldModal({
     setOptions(initial?.options ?? "");
   }, [isOpen, initial]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim()) {
       setTextError("Question text is required");
@@ -104,7 +113,12 @@ export function FormFieldModal({
       order: Number.isFinite(order) ? order : 0,
       isDeleted: initial?.isDeleted ?? false,
     };
-    onSave(dto);
+    setSaving(true);
+    try {
+      await onSave(dto);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const needsOptions = REQUIRES_OPTIONS.includes(typeKey);
@@ -116,6 +130,15 @@ export function FormFieldModal({
       title={initial ? "Edit Question" : "New Question"}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div
+            role="alert"
+            className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700/40 dark:bg-amber-900/20 dark:text-amber-200"
+          >
+            {error}
+          </div>
+        )}
+
         <FormField
           label="Question Text"
           value={text}
@@ -167,11 +190,11 @@ export function FormFieldModal({
         />
 
         <div className="flex justify-end space-x-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button type="submit" variant="primary">
-            {initial ? "Save" : "Create"}
+          <Button type="submit" variant="primary" disabled={saving}>
+            {saving ? "Saving…" : initial ? "Save" : "Create"}
           </Button>
         </div>
       </form>

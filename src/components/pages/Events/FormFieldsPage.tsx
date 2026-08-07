@@ -49,6 +49,10 @@ export default function FormFieldsPage() {
   const [templateModal, setTemplateModal] = useState(false);
   const [isAddingTemplates, setIsAddingTemplates] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
+  // Save/edit failures (e.g. backend refusing an edit to an answered question) show
+  // inside the modal itself rather than on this page banner — see FormFieldModal's
+  // onSave below, which keeps the modal open until the write actually lands.
+  const [modalError, setModalError] = useState<string | null>(null);
 
   const [editWarning, setEditWarning] = useState<{
     open: boolean;
@@ -125,13 +129,16 @@ export default function FormFieldsPage() {
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-1">
         <h2 className="text-2xl font-semibold">Custom RSVP Fields</h2>
         <div data-tour="formfields-actions" className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={() => setTemplateModal(true)} className="whitespace-nowrap">+ Add from Template</Button>
-          <Button onClick={() => setModal({ open: true })} className="whitespace-nowrap">+ New Field</Button>
+          <Button onClick={() => { setModalError(null); setModal({ open: true }); }} className="whitespace-nowrap">+ New Field</Button>
         </div>
       </div>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        Once a guest has answered a question, it can’t be edited — hide it instead if you no longer want to ask it.
+      </p>
 
       {/* Surfaces the 200-with-the-refusal-inside case described at the top of the file. */}
       {banner && (
@@ -153,7 +160,8 @@ export default function FormFieldsPage() {
         </div>
       ) : (
         <ul data-tour="formfields-list" className="space-y-2">
-          {fields.map((f) => (
+          {fields.map((f) => {
+            return (
             <li
               key={f.questionId ?? f.id}
               className="p-4 bg-white dark:bg-gray-800 rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3"
@@ -169,6 +177,7 @@ export default function FormFieldsPage() {
                   title="Edit"
                   onClick={() => {
                     const field = f as FormFieldConfig & { questionId: string };
+                    setModalError(null);
                     if (f.hasExistingAnswers) {
                       setEditWarning({ open: true, field });
                     } else {
@@ -205,7 +214,8 @@ export default function FormFieldsPage() {
                 </button>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
 
@@ -235,6 +245,7 @@ export default function FormFieldsPage() {
               <Button className="flex-1" onClick={() => {
                 const field = editWarning.field!;
                 setEditWarning({ open: false });
+                setModalError(null);
                 setModal({ open: true, initial: field });
               }}>
                 Continue Editing
@@ -320,7 +331,8 @@ export default function FormFieldsPage() {
       {modal.open && (
         <FormFieldModal
           isOpen={modal.open}
-          onClose={() => setModal({ open: false })}
+          onClose={() => { setModal({ open: false }); setModalError(null); }}
+          error={modalError}
           initial={
             modal.initial
               ? {
@@ -351,16 +363,22 @@ export default function FormFieldsPage() {
             };
 
             const editingId = modal.initial?.questionId;
-            setModal({ open: false });
 
-            await runWrite(
-              () =>
-                editingId
-                  ? // update expects an id; map from questionId
-                    updateField.mutateAsync({ ...payload, questionId: editingId.toString() })
-                  : createField.mutateAsync(payload),
-              "We couldn’t save that field. Please try again."
-            );
+            try {
+              const res = editingId
+                ? // update expects an id; map from questionId
+                  await updateField.mutateAsync({ ...payload, questionId: editingId.toString() })
+                : await createField.mutateAsync(payload);
+              const err = envelopeError(res);
+              if (err) {
+                setModalError(err);
+                return;
+              }
+            } catch {
+              setModalError("We couldn’t save that field. Please try again.");
+              return;
+            }
+            setModal({ open: false });
           }}
         />
       )}
