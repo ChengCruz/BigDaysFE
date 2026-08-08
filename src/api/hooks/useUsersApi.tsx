@@ -3,12 +3,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { UsersEndpoints } from "../endpoints";
 
-export function useUsersListApi() {
+export function useUsersListApi(opts?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["users", "list"],
     queryFn: async () => (await client.get(UsersEndpoints.all)).data.data,
     staleTime: 5 * 60_000,
-    enabled: false, // Don't auto-fetch, only fetch when manually triggered
+    // Defaults to manual-trigger only (callers use refetch()); pass
+    // enabled: true to auto-fetch and share the same cache entry.
+    enabled: opts?.enabled ?? false,
   });
 }
 

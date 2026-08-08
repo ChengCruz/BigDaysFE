@@ -19,28 +19,14 @@ import {
   QrcodeIcon,
 } from "@heroicons/react/solid";
 import { formatEventDate, formatEventTime } from "../../../utils/eventUtils";
-
-const ALMOST_THERE_MSGS = [
-  "The excitement is building as your wedding day gets closer 🎉",
-  "Only a little more time before your forever begins 💫",
-  "You are so close to the moment you have been waiting for 🤍",
-];
-const TODAY_MSGS = [
-  "Today is your wedding day and it is finally here 💍",
-  "This is the moment where your forever begins 🤍",
-  "Everything has led to this beautiful day ✨",
-];
-const PAST_MSGS = [
-  "Your wedding day has passed but your journey together continues 🤍",
-  "A beautiful day has ended and a lifetime together begins ✨",
-  "The celebration is over but your story together goes on 🥂",
-];
-const FAR_MSGS = [
-  "Your big day is coming and every day brings you closer 💍",
-  "Counting down to the start of your forever ✨",
-  "A beautiful day is waiting for you ahead 🤍",
-];
-const randomMsg = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+import {
+  ALMOST_THERE_MSGS,
+  ALMOST_THERE_DAYS,
+  TODAY_MSGS,
+  PAST_MSGS,
+  FAR_MSGS,
+  randomMsg,
+} from "../../../utils/countdownMessages";
 
 // Helper function to format relative time
 function formatRelativeTime(timestamp: string): string {
@@ -193,7 +179,7 @@ export default function MemberDashboardPage() {
                   </div>
                 </div>
                 <p className="text-white/90 text-sm font-medium">
-                  {countdown.days < 15 ? almostMsg : farMsg}
+                  {countdown.days < ALMOST_THERE_DAYS ? almostMsg : farMsg}
                 </p>
               </>
             )}
@@ -266,7 +252,7 @@ export default function MemberDashboardPage() {
             ></div>
           </div>
           <button
-            onClick={() => navigate("/app/wallet")}
+            onClick={() => navigate("/app/budget")}
             className="flex items-center gap-2 text-xs text-primary hover:text-button transition"
           >
             <CashIcon className="h-4 w-4" />
@@ -353,7 +339,7 @@ export default function MemberDashboardPage() {
               <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Arrange Seats</span>
             </button>
             <button
-              onClick={() => navigate("/app/wallet")}
+              onClick={() => navigate("/app/budget")}
               className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-br from-button/5 to-primary/10 border border-button/15 hover:border-button/30 hover:shadow-md transition group"
             >
               <div className="h-10 w-10 rounded-xl bg-button/10 group-hover:bg-button/20 grid place-items-center transition">

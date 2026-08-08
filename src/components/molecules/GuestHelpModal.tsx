@@ -76,7 +76,7 @@ function IconsTab() {
           </span>
         }
         label="More Options"
-        description="View/revoke QR code or record a gift. Only shows when wallet or QR is active."
+        description="View/revoke QR code or record a gift. Only shows when budget or QR is active."
       />
     </div>
   );

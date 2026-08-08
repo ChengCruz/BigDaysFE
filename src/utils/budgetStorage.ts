@@ -1,8 +1,9 @@
-// src/utils/walletStorage.ts
-// Helper functions for storing wallet budget in localStorage
+// src/utils/budgetStorage.ts
+// Helper functions for storing the event budget amount in localStorage
 // NOTE: Used as backward compatibility fallback while backend is being updated
 // Once backend fully supports totalBudget field, this will only serve as cache/fallback
 
+// Key prefix kept as "wallet-budget-" so existing users' cached values stay readable.
 const BUDGET_KEY_PREFIX = 'wallet-budget-';
 
 export const saveBudget = (walletGuid: string, budget: number): void => {

@@ -22,12 +22,16 @@ import {
   QuestionMarkCircleIcon,
   PhotographIcon,
   MailIcon,
+  HeartIcon,
+  SparklesIcon,
 } from "@heroicons/react/solid";
 import { Chair, Blueprint } from "@phosphor-icons/react";
 import { BrandLogo } from "../atoms/BrandLogo";
 import { useEventContext } from "../../context/EventContext";
 import { useAuth } from "../../api/hooks/useAuth";
+import { useUiMode } from "../../context/UiModeContext";
 import { getRoleLabel } from "../../utils/jwtUtils";
+import { hasUnseenRelease } from "../../utils/whatsNew";
 
 interface SidebarLink {
   to: string;
@@ -48,7 +52,7 @@ const BASE_LINKS: SidebarLink[] = [
   { to: "/app/guests", label: "Guests", Icon: UserGroupIcon, sub: true },
   { to: "/app/tables/v3", label: "Tables", Icon: Chair, end: true },
   { to: "/app/tables/floorplan", label: "Floor Plan", Icon: Blueprint, sub: true },
-  { to: "/app/wallet", label: "Wallet", Icon: CurrencyDollarIcon },
+  { to: "/app/budget", label: "Budget", Icon: CurrencyDollarIcon },
   { to: "/app/checkin", label: "Check-in", Icon: QrcodeIcon, end: true },
   { to: "/app/checklist", label: "Checklist", Icon: ClipboardCheckIcon },
   { to: "/app/users", label: "Users", Icon: UserIcon },
@@ -67,7 +71,22 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { eventId } = useEventContext();
   const { user, userRole, logout } = useAuth();
+  const { setMode } = useUiMode();
   const displayRole = userRole != null ? getRoleLabel(userRole) : null;
+
+  // Recomputed on every route change (NavLink re-renders this on navigation),
+  // which is exactly when the dot needs to clear — visiting the page marks the
+  // releases read.
+  const hasUnseenNews = hasUnseenRelease();
+
+  // Everyone except crew can try the simple view. It used to be gated on
+  // `defaultMode === "couple" || override !== null`, which left an admin who
+  // had never switched with no way in at all — and the What's New note now
+  // tells every reader the switch exists, so it has to.
+  //
+  // Crew stay out: AppLayout confines them to check-in, and CoupleShell's tabs
+  // would offer them the helper-management list. Helpers don't manage helpers.
+  const canUseCoupleMode = userRole !== 6;
 
   const links = BASE_LINKS.map(l =>
     l.label === "RSVP Questions" && eventId
@@ -207,8 +226,52 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </nav>
           </div>
 
-          {/* Footer: user profile + logout + version */}
+          {/* Footer: release notes + back to couple view + profile + version */}
           <div className="border-t border-primary/10 dark:border-white/10 p-3">
+            {/* Kept out of the nav list above — that list is the fourteen items
+                couple mode exists to escape, and this is an app-level page, not
+                part of running an event. Mirrors the couple rail footer, which
+                puts it beside "Get help". */}
+            <NavLink
+              to="/app/whats-new"
+              title="What's new"
+              onClick={onClose}
+              className={({ isActive }) =>
+                `w-full flex items-center gap-3 ${
+                  collapsed ? "justify-center px-2" : "px-3"
+                } py-2 mb-1 rounded-lg text-sm transition-colors ${
+                  isActive
+                    ? "bg-primary/10 text-primary font-semibold dark:bg-primary/20"
+                    : "text-text/70 hover:bg-primary/5 hover:text-text dark:text-white/60 dark:hover:bg-white/5 dark:hover:text-white"
+                }`
+              }
+            >
+              <SparklesIcon className="h-5 w-5 flex-shrink-0 text-primary" />
+              {!collapsed && <span>What's new</span>}
+              {hasUnseenNews && (
+                <span
+                  className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"
+                  aria-label="New updates"
+                />
+              )}
+            </NavLink>
+
+            {/* The only way into the simple view from here, and the only way
+                back for someone who arrived via the couple shell's account
+                menu. Neither Navbar nor the nav list above knows about UI mode. */}
+            {canUseCoupleMode && (
+              <button
+                onClick={() => setMode("couple")}
+                title="Switch to simple view"
+                className={`w-full flex items-center gap-3 ${
+                  collapsed ? "justify-center px-2" : "px-3"
+                } py-2 mb-1 rounded-lg text-sm text-text/70 hover:bg-primary/5 hover:text-text
+                  dark:text-white/60 dark:hover:bg-white/5 dark:hover:text-white transition-colors`}
+              >
+                <HeartIcon className="h-5 w-5 flex-shrink-0 text-primary" />
+                {!collapsed && <span>Switch to simple view</span>}
+              </button>
+            )}
             {!collapsed ? (
               <div className="flex items-center gap-3 px-2 py-2">
                 <div className="h-8 w-8 rounded-full bg-primary/10 dark:bg-white/10 grid place-items-center flex-shrink-0">

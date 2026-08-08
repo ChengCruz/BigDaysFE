@@ -6,6 +6,7 @@ import {
   ChevronDownIcon,
   LocationMarkerIcon,
   SwitchHorizontalIcon,
+  UserIcon,
 } from "@heroicons/react/solid";
 
 // Inline SVGs used in place of heroicons PlusIcon / SearchIcon — the deploy
@@ -23,6 +24,7 @@ const SearchIconSvg = ({ className }: { className?: string }) => (
 import { CheckCircleIcon } from "@heroicons/react/solid";
 import { useEventContext } from "../../context/EventContext";
 import { useAuth } from "../../api/hooks/useAuth";
+import { useEventOwners } from "../../api/hooks/useEventOwners";
 import { formatEventDate, formatEventTime } from "../../utils/eventUtils";
 
 /**
@@ -33,6 +35,8 @@ export function EventSwitcher() {
   const { event, events = [], eventId, setEventId, mustChooseEvent } = useEventContext();
   const { userRole } = useAuth();
   const isCrew = userRole === 6;
+  // Declared above the crew early-return so the hook order stays stable.
+  const { showOwner, isMine, ownerName } = useEventOwners();
   const navigate = useNavigate();
 
   if (isCrew) {
@@ -65,12 +69,16 @@ export function EventSwitcher() {
     const term = search.trim().toLowerCase();
     return events
       .filter((e) => (showArchived ? true : !e?.raw?.isDeleted))
-      .filter((e) =>
-        term
-          ? e.title.toLowerCase().includes(term) ||
-            e.location?.toLowerCase().includes(term)
-          : true
-      )
+      .filter((e) => {
+        if (!term) return true;
+        // Admins scan a system-wide list, so let them search by owner too.
+        const owner = showOwner ? ownerName(e.ownerGuid)?.toLowerCase() : null;
+        return (
+          e.title.toLowerCase().includes(term) ||
+          Boolean(e.location?.toLowerCase().includes(term)) ||
+          Boolean(owner?.includes(term))
+        );
+      })
       .sort((a, b) => {
         const now = Date.now();
         const aFuture = new Date(a.date).getTime() >= now;
@@ -78,7 +86,7 @@ export function EventSwitcher() {
         if (aFuture !== bFuture) return aFuture ? -1 : 1;
         return new Date(a.date).getTime() - new Date(b.date).getTime();
       });
-  }, [events, search, showArchived]);
+  }, [events, search, showArchived, showOwner, ownerName]);
 
   const archivedCount = useMemo(
     () => events.filter((e) => e?.raw?.isDeleted).length,
@@ -224,6 +232,8 @@ export function EventSwitcher() {
               visibleEvents.map((ev) => {
                 const isActive = eventId === ev.id;
                 const isArchived = Boolean(ev?.raw?.isDeleted);
+                const owner = showOwner ? ownerName(ev.ownerGuid) : null;
+                const mine = showOwner && isMine(ev.ownerGuid);
                 return (
                   <li key={ev.id} role="option" aria-selected={isActive}>
                     <button
@@ -246,6 +256,11 @@ export function EventSwitcher() {
                           <p className={`text-sm truncate ${isActive ? "font-semibold text-primary" : "font-medium text-slate-800 dark:text-white"}`}>
                             {ev.title}
                           </p>
+                          {mine && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary dark:bg-primary/25 dark:text-white font-semibold uppercase tracking-wide flex-shrink-0">
+                              Mine
+                            </span>
+                          )}
                           {isArchived && (
                             <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300 font-semibold uppercase tracking-wide">
                               Archived
@@ -263,6 +278,12 @@ export function EventSwitcher() {
                           <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-white/50 mt-0.5">
                             <LocationMarkerIcon className="h-3 w-3 flex-shrink-0" />
                             <span className="truncate">{ev.location}</span>
+                          </div>
+                        )}
+                        {owner && (
+                          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-white/50 mt-0.5">
+                            <UserIcon className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">{owner}</span>
                           </div>
                         )}
                       </div>

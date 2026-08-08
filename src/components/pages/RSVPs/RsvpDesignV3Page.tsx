@@ -14,6 +14,7 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useEventContext } from "../../../context/EventContext";
+import { formatEventTime } from "../../../utils/eventUtils";
 import type { Event } from "../../../api/hooks/useEventsApi";
 import { useFormFields, type FormFieldConfig } from "../../../api/hooks/useFormFieldsApi";
 import { useRsvpDesign, useSaveRsvpDesign, usePublishRsvpDesign, useGenerateShareToken } from "../../../api/hooks/useRsvpDesignApi";
@@ -27,6 +28,16 @@ import {
   cleanupExpiredImages,
 } from "../../../utils/designImageCache";
 import { resizeImageToWebp, validateImageFile, MAX_UPLOAD_MB } from "../../../utils/imageResize";
+import {
+  CONTENT_WIDTHS,
+  CONTENT_WIDTH_ORDER,
+  DEFAULT_CONTENT_WIDTH,
+  contentWidthOption,
+  normalizeContentWidth,
+  type ContentWidthKey,
+} from "../../../utils/rsvpContentWidths";
+import { DEFAULT_BACKDROP_COLOR } from "../../../utils/rsvpBackdrops";
+import { coveredQuestionIds } from "../../../utils/rsvpQuestionCoverage";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { PageLoader } from "../../atoms/PageLoader";
 import { BlockEditor } from "./designer/BlockEditor";
@@ -34,6 +45,17 @@ import { GlobalSettingsPanel, BACKDROP_OPTIONS } from "./designer/GlobalSettings
 import { Spinner } from "../../atoms/Spinner";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+// Disabled 7 Aug 2026: per-instance custom-question placement (the "Custom
+// Questions" panel in BlockEditor.tsx, and this canvas's own legacyQuestions
+// rendering below) retired in favour of the Questions page being the only
+// source of truth for what guests are asked -- see askedQuestions. Typed as
+// `boolean` (not left to infer the `false` literal): TypeScript proves a
+// literal-`false` condition statically unreachable and skips full narrowing
+// inside it, which defeats the point of keeping this code alive for reuse.
+// Flip to true, and re-enable the matching flag in RsvpFormRenderer.tsx and
+// the panel in BlockEditor.tsx, to reinstate.
+const LEGACY_CUSTOM_QUESTIONS_ENABLED: boolean = false;
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -101,7 +123,7 @@ interface DesignState {
   submitButtonTextColor: string;
   submitButtonLabel: string;
   globalFontFamily: string;
-  contentWidth: "compact" | "standard" | "wide" | "full";
+  contentWidth: ContentWidthKey;
   blockMarginX: number;
   blockMarginY: number;
   version: number | undefined;
@@ -127,13 +149,16 @@ const initialState: DesignState = {
   submitButtonTextColor: "",
   submitButtonLabel: "",
   globalFontFamily: "",
-  contentWidth: "full",
+  contentWidth: DEFAULT_CONTENT_WIDTH,
   blockMarginX: 0,
   blockMarginY: 0,
   version: undefined,
   isDesignLoaded: false,
-  previewBackdropColor: "#ffffff",
-  previewBackdropImage: "",
+  previewBackdropColor: DEFAULT_BACKDROP_COLOR,
+  // Default for a brand-new design only -- once the couple saves (even after
+  // picking "None", which also persists as ""), the LOAD_DESIGN effect below
+  // only overwrites this from a truthy saved value, so their own choice sticks.
+  previewBackdropImage: BACKDROP_OPTIONS.find((o) => o.label === "Ocean Horizon")?.value ?? "",
 };
 
 type DesignAction =
@@ -150,6 +175,29 @@ type DesignAction =
   | { type: "SET_GLOBAL"; payload: Partial<DesignState> }
   | { type: "SET_VERSION"; payload: number }
   | { type: "RESTORE"; payload: DesignState };
+
+// A cta block with no external link is the submit button (mirrors
+// RsvpFormRenderer's submitCtaId) -- "#" is this designer's own default href.
+const isSubmitCta = (b: RsvpBlock) => b.type === "cta" && (!b.href || b.href === "#");
+
+/**
+ * The contiguous index range that should move together as one unit when the
+ * block at `index` is moved or dragged. A guestDetails block and an
+ * immediately-adjacent submit-cta block are bundled -- separately reordering
+ * the form from its own submit button left couples with the button stranded
+ * wherever it happened to be when they last moved the form (reported 8 Aug
+ * 2026). Returns [index, index] for any block with no such neighbor.
+ */
+function getMoveGroup(blocks: RsvpBlock[], index: number): [number, number] {
+  const block = blocks[index];
+  if (block.type === "guestDetails" && blocks[index + 1] && isSubmitCta(blocks[index + 1]!)) {
+    return [index, index + 1];
+  }
+  if (isSubmitCta(block) && blocks[index - 1]?.type === "guestDetails") {
+    return [index - 1, index];
+  }
+  return [index, index];
+}
 
 function designReducer(state: DesignState, action: DesignAction): DesignState {
   switch (action.type) {
@@ -197,10 +245,17 @@ function designReducer(state: DesignState, action: DesignAction): DesignState {
       const { id, dir } = action.payload;
       const i = state.blocks.findIndex((b) => b.id === id);
       if (i === -1) return state;
-      const j = dir === "up" ? i - 1 : i + 1;
-      if (j < 0 || j >= state.blocks.length) return state;
+      const [start, end] = getMoveGroup(state.blocks, i);
       const next = [...state.blocks];
-      [next[i], next[j]] = [next[j], next[i]];
+      if (dir === "up") {
+        if (start === 0) return state;
+        const group = next.splice(start, end - start + 1);
+        next.splice(start - 1, 0, ...group);
+      } else {
+        if (end === state.blocks.length - 1) return state;
+        const group = next.splice(start, end - start + 1);
+        next.splice(start + 1, 0, ...group);
+      }
       return { ...state, blocks: next };
     }
 
@@ -209,9 +264,14 @@ function designReducer(state: DesignState, action: DesignAction): DesignState {
       const si = state.blocks.findIndex((b) => b.id === sourceId);
       const ti = state.blocks.findIndex((b) => b.id === targetId);
       if (si === -1 || ti === -1 || si === ti) return state;
+      // Drag the form and its submit button together -- same reasoning as
+      // MOVE_BLOCK above.
+      const [start, end] = getMoveGroup(state.blocks, si);
       const next = [...state.blocks];
-      const [moved] = next.splice(si, 1);
-      next.splice(ti, 0, moved);
+      const group = next.splice(start, end - start + 1);
+      let insertAt = next.findIndex((b) => b.id === targetId);
+      if (insertAt === -1) insertAt = next.length; // target was part of the dragged group
+      next.splice(insertAt, 0, ...group);
       return { ...state, blocks: next };
     }
 
@@ -331,9 +391,144 @@ function CountdownDisplay({
 
 // ─── Canvas block renderer ──────────────────────────────────────────────────
 
-function renderSectionContent(
-  block: RsvpBlock, accentColor: string, isLight: boolean, event?: Event
+/**
+ * The canvas mock for a linked question's input — was a single generic
+ * placeholder box regardless of type, so checkbox/select/radio questions
+ * previewed identically to a plain text field. Mirrors the actual controls
+ * guests get in RsvpFormRenderer (checkbox → tick list, select/radio →
+ * dropdown-look box).
+ */
+function renderFieldPreviewMock(
+  fieldType: string,
+  opts: string[] | undefined,
+  placeholder: string | undefined,
+  clr: { inputBg: string; inputBdr: string; faint: string },
 ): React.ReactNode {
+  if (fieldType === "checkbox") {
+    const items = opts && opts.length > 0 ? opts : [placeholder || "Option"];
+    return (
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+        {items.map((opt) => (
+          <div key={opt} className="flex items-center gap-2">
+            <span className="h-3.5 w-3.5 rounded shrink-0" style={{ border: `1px solid ${clr.inputBdr}` }} />
+            <span className="text-[12px]" style={{ color: clr.faint }}>{opt}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (fieldType === "radio") {
+    const items = opts && opts.length > 0 ? opts : [placeholder || "Option"];
+    return (
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+        {items.map((opt) => (
+          <div key={opt} className="flex items-center gap-2">
+            <span className="h-3.5 w-3.5 rounded-full shrink-0" style={{ border: `1px solid ${clr.inputBdr}` }} />
+            <span className="text-[12px]" style={{ color: clr.faint }}>{opt}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (fieldType === "select") {
+    return (
+      <div
+        className="rounded-xl px-4 py-3 text-[12px] flex items-center justify-between"
+        style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.faint }}
+      >
+        <span>{opts?.[0] || placeholder || "Select..."}</span>
+        <span aria-hidden="true">⌄</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl px-4 py-3 text-[12px]" style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.faint }}>
+      {placeholder || "Guest response here..."}
+    </div>
+  );
+}
+
+function fieldOptionsOf(cfg?: FormFieldConfig): string[] | undefined {
+  const raw = cfg?.options;
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "string") {
+    const parsed = raw.split(",").map((s) => s.trim()).filter(Boolean);
+    return parsed.length > 0 ? parsed : undefined;
+  }
+  return undefined;
+}
+
+/**
+ * Mirrors BlockEditor.tsx's questionLinkStatus (same "hidden" vs "missing"
+ * distinction), but the canvas already has `cfg` from questionFor() so it's
+ * cheaper to just classify that instead of doing a second lookup.
+ *
+ * Narrower job than it used to have: before 7 Aug 2026 this also covered
+ * customQuestions entries inside a guestDetails block, but that whole path
+ * (the "Custom Questions" panel) is now retired -- see
+ * LEGACY_CUSTOM_QUESTIONS_ENABLED above. What's left is legacy standalone
+ * formField blocks only: a design built before that date could have placed
+ * one specific question as its own block at a deliberate spot in the layout
+ * (between the headline and a photo, say). New formField blocks can't be
+ * added anymore, but an existing one still needs this -- unlike the
+ * auto-listed questions in guestDetails (which simply omit a hidden
+ * question), a formField block is a fixed position in the couple's layout.
+ * If its question goes hidden, silently rendering nothing there would leave
+ * an unexplained gap; the dim + badge tells the couple why.
+ */
+function fieldLinkStatus(
+  questionId: string | undefined,
+  cfg: FormFieldConfig | undefined,
+): "unlinked" | "active" | "hidden" | "missing" {
+  if (!questionId) return "unlinked";
+  if (!cfg) return "missing";
+  return cfg.isActive === false ? "hidden" : "active";
+}
+
+/**
+ * The canvas used to render a formField block identically whether its linked
+ * question was active, hidden, or deleted — a couple could stare at the live
+ * design and have no idea a field wouldn't actually reach guests. This is the
+ * ONLY on-canvas signal; BlockEditor.tsx's side panel has its own (textual)
+ * version of the same status, but that requires opening the block first.
+ */
+function questionStatusBadge(status: "hidden" | "missing"): React.ReactNode {
+  return status === "hidden" ? (
+    <span
+      className="ml-2 inline-block whitespace-nowrap rounded-full px-2 py-0.5 align-middle text-[9px] font-bold normal-case tracking-normal"
+      style={{ background: "rgba(245,158,11,0.18)", color: "#d97706" }}
+    >
+      Hidden from invite
+    </span>
+  ) : (
+    <span
+      className="ml-2 inline-block whitespace-nowrap rounded-full px-2 py-0.5 align-middle text-[9px] font-bold normal-case tracking-normal"
+      style={{ background: "rgba(244,63,94,0.18)", color: "#e11d48" }}
+    >
+      Question deleted
+    </span>
+  );
+}
+
+function renderSectionContent(
+  block: RsvpBlock, accentColor: string, isLight: boolean, event?: Event,
+  // Blocks no longer copy a question's label or required flag onto themselves, so
+  // the canvas has to resolve them the same way the guest page does. Without this
+  // every linked field would preview as "Field" / "Question".
+  questions?: FormFieldConfig[],
+  // Every active question the couple's guests are actually asked (Questions
+  // page is the only source of truth -- see askedQuestions in the component
+  // body). Rendered inline in a guestDetails block, same as the guest form.
+  askedQuestions?: FormFieldConfig[],
+  // Only the first guestDetails block renders askedQuestions, so a duplicated
+  // block doesn't ask every question twice.
+  isFirstGuestDetailsBlock?: boolean
+): React.ReactNode {
+  const questionFor = (questionId?: string) =>
+    questionId ? questions?.find((f) => String(f.questionId ?? f.id) === String(questionId)) : undefined;
   const clr = {
     heading:    isLight ? "#1e293b" : "#ffffff",
     body:       isLight ? "#475569" : "rgba(255,255,255,0.75)",
@@ -349,7 +544,6 @@ function renderSectionContent(
     case "headline":
       return (
         <div className={`px-8 py-14 text-${block.align ?? "center"}`} style={{ fontFamily: block.fontFamily || "Georgia, 'Times New Roman', serif" }}>
-          <p className="text-[10px] uppercase tracking-[0.28em] mb-4 font-semibold" style={{ color: accentColor }}>Welcome</p>
           <h2 className="text-[2.2rem] font-normal leading-[1.15] mb-2" style={{ color: clr.heading, letterSpacing: "-0.01em" }}>{block.title || "Your Headline"}</h2>
           {block.subtitle && <p className="text-[13px] leading-relaxed mt-3 max-w-[85%] mx-auto" style={{ color: clr.body }}>{block.subtitle}</p>}
           <div className="w-12 h-px mx-auto mt-7" style={{ background: `linear-gradient(90deg, transparent, ${accentColor}88, transparent)` }} />
@@ -393,7 +587,41 @@ function renderSectionContent(
       const KNOWN_GUEST_KEYS = ["name", "phone", "pax", "remarks"] as const;
       const visible = KNOWN_GUEST_KEYS.filter((k) => fields[k] !== false);
       const placeholders: Record<string, string> = { name: "Full name", phone: "Phone number", pax: "Number of guests", remarks: "Remarks" };
-      const customQuestions = block.customQuestions ?? [];
+      const legacyCustomQuestions = block.customQuestions ?? [];
+
+      // Disabled 7 Aug 2026 -- see LEGACY_CUSTOM_QUESTIONS_ENABLED above.
+      // Real `if` rather than an inline `{cond && }` in the JSX for the same
+      // reason as RsvpFormRenderer.tsx's legacyQuestionsSection.
+      let legacyQuestionsSection: React.ReactNode = null;
+      if (LEGACY_CUSTOM_QUESTIONS_ENABLED && legacyCustomQuestions.length > 0) {
+        legacyQuestionsSection = (
+          <div className="mt-5 pt-5 border-t space-y-3" style={{ borderColor: clr.inputBdr }}>
+            <p className="text-[10px] uppercase tracking-[0.28em] font-semibold" style={{ color: accentColor }}>
+              Additional questions
+            </p>
+            {legacyCustomQuestions.map((q) => {
+              const cfg = questionFor(q.questionId);
+              const qLabel = q.label || cfg?.label || cfg?.text || "Question";
+              const qRequired = q.required ?? cfg?.isRequired ?? false;
+              const qFieldType = cfg?.typeKey ?? "text";
+              const qOpts = fieldOptionsOf(cfg);
+              const qStatus = fieldLinkStatus(q.questionId, cfg);
+              const qGhosted = qStatus === "hidden" || qStatus === "missing";
+              return (
+              <div key={q.id} className="space-y-1.5" style={qGhosted ? { opacity: 0.45 } : undefined}>
+                <label className="block text-[11px] font-semibold" style={{ color: clr.body }}>
+                  {qLabel}{qRequired && <span className="ml-1" style={{ color: accentColor }}>*</span>}
+                  {qGhosted && questionStatusBadge(qStatus)}
+                </label>
+                {renderFieldPreviewMock(qFieldType, qOpts, q.placeholder, clr)}
+                {q.hint && <p className="text-[10px]" style={{ color: clr.faint }}>{q.hint}</p>}
+              </div>
+              );
+            })}
+          </div>
+        );
+      }
+
       return (
         <div className="px-8 py-8">
           <p className="text-[13px] font-semibold mb-1" style={{ color: clr.heading }}>{block.title || "Guest Information"}</p>
@@ -407,40 +635,55 @@ function renderSectionContent(
             ))}
           </div>
 
-          {customQuestions.length > 0 && (
+          {legacyQuestionsSection}
+
+          {/* Every active question, live from the Questions page -- see
+              askedQuestions in the component body. Only the first guestDetails
+              block renders these, so a duplicated block doesn't ask twice. */}
+          {isFirstGuestDetailsBlock && askedQuestions && askedQuestions.length > 0 && (
             <div className="mt-5 pt-5 border-t space-y-3" style={{ borderColor: clr.inputBdr }}>
               <p className="text-[10px] uppercase tracking-[0.28em] font-semibold" style={{ color: accentColor }}>
                 Additional questions
               </p>
-              {customQuestions.map((q) => (
-                <div key={q.id} className="space-y-1.5">
-                  <label className="block text-[11px] font-semibold" style={{ color: clr.body }}>
-                    {q.label || "Question"}{q.required && <span className="ml-1" style={{ color: accentColor }}>*</span>}
-                  </label>
-                  <div className="rounded-xl px-4 py-3 text-[12px]" style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.faint }}>
-                    {q.placeholder || "Guest response here..."}
+              {askedQuestions.map((fc) => {
+                const qid = fc.questionId ?? fc.id ?? "";
+                const qLabel = fc.label || fc.text || "Question";
+                const qFieldType = fc.typeKey ?? "text";
+                const qOpts = fieldOptionsOf(fc);
+                return (
+                  <div key={qid} className="space-y-1.5">
+                    <label className="block text-[11px] font-semibold" style={{ color: clr.body }}>
+                      {qLabel}{fc.isRequired && <span className="ml-1" style={{ color: accentColor }}>*</span>}
+                    </label>
+                    {renderFieldPreviewMock(qFieldType, qOpts, undefined, clr)}
                   </div>
-                  {q.hint && <p className="text-[10px]" style={{ color: clr.faint }}>{q.hint}</p>}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       );
     }
 
-    case "formField":
+    case "formField": {
+      const cfg = questionFor(block.questionId);
+      const fieldLabel = block.label || cfg?.label || cfg?.text || "Field";
+      const fieldRequired = block.required ?? cfg?.isRequired ?? false;
+      const fieldType = cfg?.typeKey ?? "text";
+      const opts = fieldOptionsOf(cfg);
+      const status = fieldLinkStatus(block.questionId, cfg);
+      const isGhosted = status === "hidden" || status === "missing";
       return (
-        <div className="px-8 py-5">
+        <div className="px-8 py-5" style={isGhosted ? { opacity: 0.45 } : undefined}>
           <label className="block text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: clr.muted }}>
-            {block.label || "Field"}{block.required && <span className="ml-1 text-rose-400">*</span>}
+            {fieldLabel}{fieldRequired && <span className="ml-1 text-rose-400">*</span>}
+            {isGhosted && questionStatusBadge(status)}
           </label>
-          <div className="rounded-xl px-4 py-3 text-[12px]" style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.faint }}>
-            {block.placeholder || "Guest response here..."}
-          </div>
+          {renderFieldPreviewMock(fieldType, opts, block.placeholder, clr)}
           {block.hint && <p className="text-[10px] mt-1.5" style={{ color: clr.faint }}>{block.hint}</p>}
         </div>
       );
+    }
 
     case "cta":
       return (
@@ -482,7 +725,9 @@ function renderSectionContent(
         ? (() => { try { return new Date(rawDate).toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); } catch { return rawDate; } })()
         : "Date TBC";
       const rawTime = event?.raw?.eventTime ?? "";
-      const formattedTime = rawTime || "Time TBC";
+      // The date above is formatted for guests, so the time must be too —
+      // printing rawTime verbatim showed invitees "18:00:00".
+      const formattedTime = formatEventTime(rawDate, rawTime) || "Time TBC";
       const location = event?.location ?? event?.raw?.eventLocation ?? "Venue TBC";
 
       const cards = [
@@ -549,11 +794,12 @@ function renderSectionContent(
 // ─── Canvas block wrapper (V3 — with drop zone + duplicate) ─────────────────
 
 function V3CanvasBlock({
-  block, isSelected, accentColor, globalIsLight, event, isFirst, isLast,
+  block, isSelected, accentColor, globalIsLight, event, questions, askedQuestions, isFirstGuestDetailsBlock, isFirst, isLast,
   onSelect, onMoveUp, onMoveDown, onRemove, onDuplicate, onDropAbove,
 }: {
   block: RsvpBlock; isSelected: boolean; accentColor: string; globalIsLight: boolean;
-  event?: Event; isFirst: boolean; isLast: boolean;
+  event?: Event; questions?: FormFieldConfig[]; askedQuestions?: FormFieldConfig[]; isFirstGuestDetailsBlock?: boolean;
+  isFirst: boolean; isLast: boolean;
   onSelect: () => void; onMoveUp: () => void; onMoveDown: () => void;
   onRemove: () => void; onDuplicate: () => void;
   onDropAbove: (sourceId: string) => void;
@@ -613,7 +859,7 @@ function V3CanvasBlock({
           </div>
         )}
 
-        <div>{renderSectionContent(block, accentColor, isLight, event)}</div>
+        <div>{renderSectionContent(block, accentColor, isLight, event, questions, askedQuestions, isFirstGuestDetailsBlock)}</div>
         <div className="h-px" style={{ background: "rgba(255,255,255,0.04)" }} />
       </div>
   );
@@ -677,7 +923,10 @@ function LayerRow({
 export default function RsvpDesignV3Page() {
   const { event, eventId, eventsLoading } = useEventContext() ?? {};
 
-  const { data: serverFormFields = [] } = useFormFields(eventId, { enabled: !!eventId });
+  // isLoading (not isPending) so a disabled query -- no eventId yet -- reads as
+  // settled rather than blocking the seed below forever.
+  const { data: serverFormFields = [], isLoading: isLoadingQuestions } =
+    useFormFields(eventId, { enabled: !!eventId });
   const { data: savedDesign, isLoading: isLoadingDesign } = useRsvpDesign(eventId ?? "");
   const { mutateAsync: saveDesignAsync, isPending: isSaving, isSuccess: isSaveSuccess, isError: isSaveError, data: saveResponse } = useSaveRsvpDesign(eventId ?? "");
   const { mutateAsync: publishDesignAsync, isPending: isPublishing } = usePublishRsvpDesign(eventId ?? "");
@@ -712,9 +961,95 @@ export default function RsvpDesignV3Page() {
   const copyResetRef = useRef<number | null>(null);
   useEffect(() => () => { if (copyResetRef.current) window.clearTimeout(copyResetRef.current); }, []);
 
+  // GetQuestions deliberately returns hidden questions too — the Questions page
+  // needs them to offer "unhide". The designer must not: a hidden question is not
+  // on the invite, so offering it to link would create a field guests never see.
   const availableQuestions = useMemo<FormFieldConfig[]>(
+    () =>
+      serverFormFields
+        .filter((q) => q.isActive !== false)
+        .slice()
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    [serverFormFields]
+  );
+
+  // The unfiltered list, for diagnosing an EXISTING link only. A block pointing at
+  // a hidden or deleted question still needs to be explained to the couple, even
+  // though that question can no longer be chosen. See BlockEditor's link status.
+  const allQuestions = useMemo<FormFieldConfig[]>(
     () => serverFormFields.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [serverFormFields]
+  );
+
+  // Every questionId covered by a standalone formField block. New formField
+  // blocks can no longer be added (see BlockEditor.tsx), so this only matters
+  // for a design built before this change -- its question keeps asking in its
+  // own designed position instead of being asked twice.
+  const formFieldBlockQuestionIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const b of blocks) {
+      if (b.type === "formField" && b.questionId) ids.add(b.questionId);
+    }
+    return ids;
+  }, [blocks]);
+
+  // Every active question the couple's guests are actually asked. The
+  // Questions page (isActive + Order) is the only source of truth for this --
+  // mirrors RsvpFormRenderer's identical askedQuestions on the guest side.
+  const askedQuestions = useMemo(
+    () => availableQuestions.filter((q) => !formFieldBlockQuestionIds.has(String(q.id ?? q.questionId ?? ""))),
+    [availableQuestions, formFieldBlockQuestionIds]
+  );
+
+  const firstGuestDetailsBlockId = useMemo(
+    () => blocks.find((b) => b.type === "guestDetails")?.id,
+    [blocks]
+  );
+
+  // One shape for questions carried inside a guestDetails block, shared by the
+  // first-time seed, the auto-merge-on-load below, and the RSVP-form preset so
+  // the three can't drift apart. label/required stay unset on purpose -- the
+  // live question owns them, see applyQuestionToBlock. Takes an explicit field
+  // list (rather than always using availableQuestions) so callers can build
+  // entries for just the questions they care about -- e.g. only the ones not
+  // yet covered by any block, without touching entries that already exist.
+  const buildCustomQuestionEntries = useCallback(
+    (fields: FormFieldConfig[]) =>
+      fields.map((field) => ({
+        id: uid(),
+        questionId: String(field.id ?? (field as any).questionId ?? ""),
+        label: undefined as string | undefined,
+        placeholder: Array.isArray(field.options) ? String(field.options[0] ?? "") : "",
+        required: undefined as boolean | undefined,
+        hint: undefined as string | undefined,
+      })),
+    []
+  );
+
+  // Appends any active question not yet covered by any block into the first
+  // guestDetails block, non-destructively -- existing entries (and any custom
+  // label/order the couple already set) are left untouched. No-op if every
+  // active question is already covered, or if the design has no guestDetails
+  // block to append into.
+  const mergeUncoveredQuestions = useCallback(
+    (designBlocks: RsvpBlock[]): RsvpBlock[] => {
+      const covered = coveredQuestionIds(designBlocks);
+      const missing = availableQuestions.filter(
+        (q) => !covered.has(String(q.id ?? q.questionId ?? ""))
+      );
+      if (missing.length === 0) return designBlocks;
+
+      const target = designBlocks.find((b) => b.type === "guestDetails");
+      if (!target || target.type !== "guestDetails") return designBlocks;
+
+      const withMerged: RsvpBlock = {
+        ...target,
+        customQuestions: [...(target.customQuestions ?? []), ...buildCustomQuestionEntries(missing)],
+      };
+
+      return designBlocks.map((b) => (b === target ? withMerged : b));
+    },
+    [availableQuestions, buildCustomQuestionEntries]
   );
 
   const selectedBlock = useMemo(
@@ -749,9 +1084,20 @@ export default function RsvpDesignV3Page() {
 
   // ── Load saved design ─────────────────────────────────────────────────────
   useEffect(() => {
-    if (isLoadingDesign || isDesignLoaded) return;
+    // Wait for the event and the questions too, not just the design. This effect
+    // latches on isDesignLoaded, so whatever has not arrived by the first run is
+    // lost for good -- and the seed below needs all three. Running early took the
+    // do-nothing `else` branch (no event.title yet) and left the couple with the
+    // stock "Welcome to our wedding" headline and none of their questions,
+    // intermittently, depending on which response won the race.
+    if (eventsLoading || isLoadingDesign || isLoadingQuestions || isDesignLoaded) return;
     if (savedDesign?.blocks?.length) {
-      const loaded = sanitizeBlocks(savedDesign.blocks);
+      // Disabled 7 Aug 2026: superseded by askedQuestions, which renders every
+      // active question live instead of needing one merged into customQuestions
+      // on load. See LEGACY_CUSTOM_QUESTIONS_ENABLED above.
+      const loaded = LEGACY_CUSTOM_QUESTIONS_ENABLED
+        ? mergeUncoveredQuestions(sanitizeBlocks(savedDesign.blocks))
+        : sanitizeBlocks(savedDesign.blocks);
       const patch: Partial<DesignState> = { blocks: loaded };
       if (savedDesign.globalBackgroundType)  patch.globalBackgroundType = savedDesign.globalBackgroundType;
       if (savedDesign.globalBackgroundAsset && !isBlob(savedDesign.globalBackgroundAsset)) patch.globalBackgroundAsset = savedDesign.globalBackgroundAsset;
@@ -763,7 +1109,8 @@ export default function RsvpDesignV3Page() {
       if (savedDesign.submitButtonTextColor) patch.submitButtonTextColor = savedDesign.submitButtonTextColor;
       if (savedDesign.submitButtonLabel)  patch.submitButtonLabel = savedDesign.submitButtonLabel;
       if (savedDesign.globalFontFamily)   patch.globalFontFamily = savedDesign.globalFontFamily;
-      if (savedDesign.contentWidth)       patch.contentWidth = savedDesign.contentWidth;
+      // Normalised because old designs may carry the retired "full".
+      if (savedDesign.contentWidth)       patch.contentWidth = normalizeContentWidth(savedDesign.contentWidth);
       if (savedDesign.blockMarginX !== undefined) patch.blockMarginX = savedDesign.blockMarginX;
       if (savedDesign.blockMarginY !== undefined) patch.blockMarginY = savedDesign.blockMarginY;
       if (savedDesign.version !== undefined) patch.version = savedDesign.version;
@@ -811,12 +1158,27 @@ export default function RsvpDesignV3Page() {
       if (event.time) parts.push(event.time);
       if (event.location) parts.push(event.location);
       const subtitle = parts.length > 0 ? `Save the date — ${parts.join(" · ")}` : "Save the date and RSVP below";
-      dispatch({ type: "SET_BLOCKS", payload: state.blocks.map((b) => b.type === "headline" ? { ...b, title: event.title, subtitle } : b) });
+      // The starter design is a static constant, so it used to open with the
+      // built-in name/phone/pax fields and none of the couple's own questions --
+      // even when they had written them before ever opening the designer.
+      // Disabled 7 Aug 2026: no longer needs seeding into customQuestions,
+      // since askedQuestions renders every active question live regardless.
+      const seededQuestions = LEGACY_CUSTOM_QUESTIONS_ENABLED
+        ? buildCustomQuestionEntries(availableQuestions)
+        : undefined;
+      dispatch({
+        type: "SET_BLOCKS",
+        payload: state.blocks.map((b) => {
+          if (b.type === "headline") return { ...b, title: event.title, subtitle };
+          if (seededQuestions && b.type === "guestDetails") return { ...b, customQuestions: seededQuestions };
+          return b;
+        }),
+      });
       dispatch({ type: "LOAD_DESIGN", payload: {} });
     } else {
       dispatch({ type: "LOAD_DESIGN", payload: {} });
     }
-  }, [isLoadingDesign, savedDesign, isDesignLoaded, event?.title, event?.slug, eventId]);
+  }, [eventsLoading, isLoadingDesign, isLoadingQuestions, buildCustomQuestionEntries, mergeUncoveredQuestions, availableQuestions, savedDesign, isDesignLoaded, event?.title, event?.slug, eventId]);
 
   // ── Google Fonts ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -876,21 +1238,15 @@ export default function RsvpDesignV3Page() {
 
   const addRsvpFormPreset = () => {
     pushSnapshot();
-    const customQuestions = availableQuestions.map((field) => ({
-      id: uid(),
-      questionId: String(field.id ?? (field as any).questionId ?? ""),
-      label: field.label || (field as any).text || "Custom field",
-      placeholder: Array.isArray(field.options) ? String(field.options[0] ?? "") : "",
-      required: field.isRequired ?? false,
-      hint: undefined as string | undefined,
-    }));
+    // No customQuestions to seed here anymore -- every active question renders
+    // automatically inside the first guestDetails block (see askedQuestions),
+    // so this preset only needs to lay down the block itself.
     const g: RsvpBlock = {
       id: uid(),
       type: "guestDetails",
       title: "Guest Information",
       subtitle: "",
       showFields: { name: true, phone: true, pax: true, remarks: true },
-      customQuestions,
       background: { images: [], overlay: 0.4 },
     };
     const c: RsvpBlock = { id: uid(), type: "cta", label: "Submit RSVP", href: "#", align: "center", background: { images: [], overlay: 0.4 } };
@@ -934,10 +1290,20 @@ export default function RsvpDesignV3Page() {
       payload: {
         id: blockId,
         patch: {
-          label: field.label || field.text,
+          // Deliberately NOT copying label/isRequired onto the block. The question
+          // owns its wording and its required-ness; the renderer falls back to the
+          // live config (`block.label || cfg.label`). Snapshotting them here meant a
+          // later rename or "Must answer" tick never reached the invite.
+          //
+          // `required` in particular must stay undefined rather than false: the
+          // renderer reads `block.required ?? cfg.isRequired`, and `false` is not
+          // nullish, so a copied `false` would permanently pin the field optional.
+          //
+          // "Label override" in BlockEditor still writes block.label — an override
+          // the couple typed deliberately is kept and still wins.
+          label: undefined,
+          required: undefined,
           placeholder: Array.isArray(field.options) ? String(field.options[0] ?? "") : undefined,
-          required: field.isRequired ?? false,
-          hint: field.typeKey ? `${field.typeKey}${field.isRequired ? " · required" : ""}` : undefined,
           questionId,
         },
       },
@@ -1121,7 +1487,9 @@ export default function RsvpDesignV3Page() {
         submitButtonLabel: submitButtonLabel || undefined,
         globalFontFamily: globalFontFamily || undefined,
         layoutStyle: "flush" as const,
-        contentWidth: "full",
+        // Was hardcoded to the retired "full", which silently discarded whatever
+        // width the couple picked and persisted a value we no longer support.
+        contentWidth,
         blockMarginX,
         blockMarginY,
         formFieldConfigs: availableQuestions,
@@ -1219,16 +1587,12 @@ export default function RsvpDesignV3Page() {
   const frameBg: React.CSSProperties = globalBackgroundType === "color" ? { background: globalBackgroundColor } : { background: "linear-gradient(to bottom, #0f172a, #020617)" };
   const globalIsLight = globalBackgroundType === "color" && isLightColor(globalBackgroundColor);
 
-  // Device-frame sizing (canvas mode = what device we're previewing on).
-  // contentWidth is applied as an inner mx-auto max-w-* — mirroring preview/public exactly.
-  const contentWidthPx: Record<string, number> = { compact: 384, standard: 512, wide: 672 };
-  const cwPx = contentWidthPx[contentWidth];
-  const contentMaxClass =
-    contentWidth === "compact"  ? "max-w-sm"  :
-    contentWidth === "standard" ? "max-w-lg"  :
-    contentWidth === "wide"     ? "max-w-2xl" : "";
-  const canvasWidth = 430;
-  const canvasClass = "w-[430px] rounded-[2.5rem] shadow-[0_8px_48px_0_rgba(0,0,0,0.15),0_0_0_6px_#9ca3af]";
+  // The canvas IS the device: its width is the selected phone viewport, so the
+  // couple composes against exactly what a guest will hold. No inner cap — the
+  // card edge is the viewport edge, mirroring preview/public.
+  const widthOption = contentWidthOption(contentWidth);
+  // No grey bezel ring here either — rounded corners only. See rsvpContentWidths.
+  const canvasClass = "rounded-[2.5rem] shadow-[0_22px_64px_-14px_rgba(15,23,42,0.45)]";
 
   const chevronSvg = (open: boolean) => (
     <svg aria-hidden width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -1275,7 +1639,27 @@ export default function RsvpDesignV3Page() {
 
         <div className="w-px h-6 bg-gray-200 shrink-0" />
 
-        <span className="text-xs text-gray-400 font-medium">📱 430 px</span>
+        {/* Device switcher — the canvas, preview and guest page all follow this.
+            Previously a hardcoded "430 px" label that lied about the real width. */}
+        <div className="flex items-center gap-0.5" role="group" aria-label="Preview device width">
+          {CONTENT_WIDTH_ORDER.map((key) => {
+            const opt = CONTENT_WIDTHS[key];
+            const active = normalizeContentWidth(contentWidth) === key;
+            return (
+              <button
+                key={key}
+                onClick={() => dispatch({ type: "SET_GLOBAL", payload: { contentWidth: key } })}
+                aria-pressed={active}
+                title={`${opt.device} — ${opt.px}px · ${opt.hint}`}
+                className={`px-2 py-1 text-[11px] font-medium rounded-md transition ${
+                  active ? "bg-primary/10 text-primary" : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                }`}
+              >
+                {opt.px}
+              </button>
+            );
+          })}
+        </div>
 
         {/* Zoom */}
         <div className="flex items-center gap-1">
@@ -1493,19 +1877,20 @@ export default function RsvpDesignV3Page() {
             style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top center", transition: "transform 0.2s ease" }}>
 
             {/* Canvas breadcrumb */}
-            <div className="w-full max-w-2xl mb-3 flex items-center justify-between">
-              <p className="text-[11px] text-gray-500">
+            {/* Width matches the card so the labels sit over it, not floating wide of it */}
+            <div className="mb-3 flex items-center justify-between gap-3" style={{ width: widthOption.px }}>
+              <p className="text-[11px] text-gray-500 min-w-0 truncate">
                 <span className="font-semibold text-gray-700">{blocks.length}</span> {blocks.length === 1 ? "block" : "blocks"}
                 {selectedBlock && <span className="text-primary font-semibold"> · editing <em className="not-italic">{BLOCK_LABEL[selectedBlock.type]}</em></span>}
               </p>
-              <p className="text-[10px] text-gray-400 uppercase tracking-widest">
-                📱 430 PX{cwPx ? ` · content ${cwPx}px` : contentWidth === "full" ? " · CONTENT FULL" : ""}
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest whitespace-nowrap shrink-0">
+                📱 {widthOption.px} PX · {widthOption.device}
               </p>
             </div>
 
-            {/* Device frame — size = viewport. contentWidth applied on inner wrapper so canvas matches preview/public exactly. */}
+            {/* Invitation card — width = the selected device viewport. */}
             <div className={`relative transition-all duration-300 overflow-hidden ${canvasClass}`}
-              style={{ ...frameBg, minHeight: 700, fontFamily: globalFontFamily || "Georgia, 'Times New Roman', serif" }}
+              style={{ ...frameBg, width: widthOption.px, minHeight: 700, fontFamily: globalFontFamily || "Georgia, 'Times New Roman', serif" }}
               onClick={(e) => { if (e.currentTarget === e.target) dispatch({ type: "SELECT", payload: null }); }}>
 
               {/* Global background image/video layer */}
@@ -1519,9 +1904,9 @@ export default function RsvpDesignV3Page() {
                 <div className="absolute inset-0 pointer-events-none" style={{ background: `rgba(15,23,42,${globalOverlay})` }} />
               )}
 
-              {/* Blocks — mx-auto + max-w matches preview/public. Device frame = viewport, inner wrapper = content column */}
+              {/* Blocks — no inner cap; the card edge is the viewport edge, same as preview/public */}
               <div
-                className={`relative z-10 mx-auto flex flex-col ${contentMaxClass}`}
+                className="relative z-10 mx-auto flex flex-col w-full"
                 style={{
                   paddingLeft: blockMarginX,
                   paddingRight: blockMarginX,
@@ -1545,7 +1930,9 @@ export default function RsvpDesignV3Page() {
                     key={block.id} block={block}
                     isSelected={selectedId === block.id}
                     accentColor={accentColor} globalIsLight={globalIsLight}
-                    event={event} isFirst={i === 0} isLast={i === blocks.length - 1}
+                    event={event} questions={allQuestions}
+                    askedQuestions={askedQuestions} isFirstGuestDetailsBlock={block.id === firstGuestDetailsBlockId}
+                    isFirst={i === 0} isLast={i === blocks.length - 1}
                     onSelect={() => { dispatch({ type: "SELECT", payload: block.id }); setRightTab("block"); }}
                     onMoveUp={() => moveBlock(block.id, "up")}
                     onMoveDown={() => moveBlock(block.id, "down")}
@@ -1583,7 +1970,7 @@ export default function RsvpDesignV3Page() {
           {rightTab === "block" && (
             <div className="flex-1 overflow-y-auto">
               {selectedBlock ? (
-                <BlockEditor block={selectedBlock} accentColor={accentColor} formFields={availableQuestions}
+                <BlockEditor block={selectedBlock} accentColor={accentColor} formFields={availableQuestions} allFormFields={allQuestions}
                   onUpdate={updateBlock} onRemove={removeBlock}
                   onAddBackgroundImages={addBackgroundImagesToBlock} onSetActiveBackground={setActiveBackgroundForBlock}
                   onSetOverlay={setOverlayForBlock} onRemoveBackgroundImage={removeBackgroundImageFromBlock}
@@ -1675,8 +2062,9 @@ export default function RsvpDesignV3Page() {
             className="fixed top-4 right-4 z-[101] flex items-center gap-1.5 rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm hover:bg-black/80 transition">
             Close Preview
           </button>
-          {/* Phone card frame */}
-          <div className="relative mx-auto w-full sm:max-w-[430px] sm:rounded-[2.5rem] sm:shadow-[0_8px_48px_0_rgba(0,0,0,0.15),0_0_0_6px_#9ca3af] overflow-hidden">
+          {/* Invitation card — device width on desktop, full-bleed on a real phone.
+              Matches RsvpFormRenderer exactly so preview == guest page. */}
+          <div className={`relative mx-auto w-full ${widthOption.cardClass} sm:rounded-[2.5rem] sm:shadow-[0_22px_64px_-14px_rgba(15,23,42,0.45)] overflow-hidden`}>
           {/* Mobile content — backgrounds scoped inside card frame */}
           <div className="relative w-full min-h-[600px] overflow-hidden"
             style={frameBg}>
@@ -1692,7 +2080,7 @@ export default function RsvpDesignV3Page() {
             )}
             {/* Blocks */}
             <div
-              className="relative z-10 mx-auto flex flex-col w-full max-w-[430px]"
+              className="relative z-10 mx-auto flex flex-col w-full"
               style={{
                 paddingLeft: blockMarginX,
                 paddingRight: blockMarginX,
@@ -1706,7 +2094,7 @@ export default function RsvpDesignV3Page() {
                 return (
                   <div key={block.id}
                     style={sectionImg?.src ? { backgroundImage: `linear-gradient(rgba(15,23,42,${blockOverlay}),rgba(15,23,42,${blockOverlay})), url(${sectionImg.src})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}>
-                    {renderSectionContent(block, accentColor, blockIsLight, event)}
+                    {renderSectionContent(block, accentColor, blockIsLight, event, allQuestions, askedQuestions, block.id === firstGuestDetailsBlockId)}
                     <div className="h-px" style={{ background: "rgba(255,255,255,0.04)" }} />
                   </div>
                 );

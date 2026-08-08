@@ -1,11 +1,18 @@
 // designer/GlobalSettingsPanel.tsx
 // Global design settings: background, accent color, overlay, music, submit button.
 import React, { useEffect } from "react";
-import { BACKDROP_OPTIONS, backdropColorFor } from "../../../../utils/rsvpBackdrops";
+import { BACKDROP_OPTIONS, backdropColorFor, DEFAULT_BACKDROP_COLOR } from "../../../../utils/rsvpBackdrops";
+import {
+  CONTENT_WIDTHS,
+  CONTENT_WIDTH_ORDER,
+  contentWidthOption,
+  normalizeContentWidth,
+  type ContentWidthKey,
+} from "../../../../utils/rsvpContentWidths";
 
 export { BACKDROP_OPTIONS };
 
-type ContentWidth = "compact" | "standard" | "wide" | "full";
+type ContentWidth = ContentWidthKey;
 
 interface GlobalSettings {
   globalBackgroundType: "color" | "image" | "video";
@@ -39,12 +46,6 @@ const FONT_OPTIONS: { value: string; label: string; googleFont?: string }[] = [
   { value: "'Dancing Script', cursive",         label: "Dancing Script",      googleFont: "Dancing+Script:wght@400;700" },
 ];
 
-const WIDTH_PRESETS: { value: ContentWidth; label: string; desc: string; icon: string }[] = [
-  { value: "compact",  icon: "📱", label: "Compact",  desc: "Phone-like narrow layout" },
-  { value: "standard", icon: "📋", label: "Standard", desc: "Default balanced width" },
-  { value: "wide",     icon: "🖥",  label: "Wide",     desc: "Wider content area" },
-  { value: "full",     icon: "↔",  label: "Full",     desc: "Edge-to-edge, no side margins" },
-];
 
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
@@ -90,10 +91,10 @@ export function GlobalSettingsPanel({
   submitButtonTextColor,
   submitButtonLabel,
   globalFontFamily = "",
-  contentWidth = "full",
+  contentWidth,
   blockMarginX = 0,
   blockMarginY = 0,
-  previewBackdropColor = "#f3f4f6",
+  previewBackdropColor = DEFAULT_BACKDROP_COLOR,
   previewBackdropImage = "",
   onChange,
   onUploadBackground,
@@ -270,7 +271,39 @@ export function GlobalSettingsPanel({
         </div>
 
 
-        {/* ── Content width — hidden (mobile-only; always "full") ── */}
+        {/* ── Content width — a real phone viewport, not an abstract size ── */}
+        <div className="space-y-3">
+          <SectionTitle>Phone width</SectionTitle>
+          <p className="-mt-1 text-xs text-gray-400">
+            Your page is sized to this device. Guests on a wider phone simply get more room.
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {CONTENT_WIDTH_ORDER.map((key) => {
+              const opt = CONTENT_WIDTHS[key];
+              const selected = normalizeContentWidth(contentWidth) === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => onChange({ contentWidth: key })}
+                  aria-pressed={selected}
+                  title={opt.hint}
+                  className={`rounded-lg border px-2 py-2.5 text-center transition ${
+                    selected
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  <span className="block font-mono text-[13px] font-semibold">{opt.px}</span>
+                  <span className="mt-0.5 block text-[10px] leading-tight opacity-80">{opt.device}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[11px] text-gray-400">
+            {contentWidthOption(contentWidth).hint}
+          </p>
+        </div>
 
         {/* ── Block spacing ── */}
         <div className="space-y-3">

@@ -175,7 +175,7 @@ export function useRecordGift(eventId: string) {
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ["guests", eventId] });
       qc.invalidateQueries({ queryKey: ["transactions"] });
-      qc.invalidateQueries({ queryKey: ["wallet", variables.eventGuid] });
+      qc.invalidateQueries({ queryKey: ["budget", variables.eventGuid] });
     },
   });
 }

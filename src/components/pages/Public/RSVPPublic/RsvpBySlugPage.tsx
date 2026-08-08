@@ -116,6 +116,9 @@ export default function RsvpBySlugPage() {
       design={template.design}
       formFields={template.formFields}
       eventId={template.eventId}
+      eventDate={template.eventDate}
+      eventTime={template.eventTime}
+      eventLocation={template.eventLocation}
       onSubmit={async (payload) => {
         try {
           await submitMutation.mutateAsync(payload);

@@ -1,18 +1,18 @@
-// src/components/pages/Wallet/ExportReportModal.tsx
+// src/components/pages/Budget/ExportReportModal.tsx
 import React, { useState } from "react";
 import { saveAs } from "file-saver";
 import { Modal } from "../../molecules/Modal";
 import { Button } from "../../atoms/Button";
 import type { Transaction } from "../../../types/transaction";
-import type { Wallet } from "../../../types/wallet";
+import type { Budget } from "../../../types/budget";
 import { getTransactionTypeLabel } from "../../../utils/transactionUtils";
-import { CURRENCY_CONFIG } from "../../../types/wallet";
+import { CURRENCY_CONFIG } from "../../../types/budget";
 
 interface ExportReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   transactions: Transaction[];
-  wallet: Wallet;
+  budget: Budget;
 }
 
 type ExportFormat = "csv" | "excel" | "pdf";
@@ -21,7 +21,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
   isOpen,
   onClose,
   transactions,
-  wallet,
+  budget,
 }) => {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -56,7 +56,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
       return;
     }
 
-    const currencySymbol = CURRENCY_CONFIG[wallet.currency].symbol;
+    const currencySymbol = CURRENCY_CONFIG[budget.currency].symbol;
     const wb = XLSX.utils.book_new();
 
     if (includeTransactionDetails) {
@@ -100,7 +100,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), "Category Summary");
     }
 
-    saveAs(new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })]), `wallet-report-${Date.now()}.xlsx`);
+    saveAs(new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })]), `budget-report-${Date.now()}.xlsx`);
     onClose();
   };
 
@@ -112,12 +112,12 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
       return;
     }
 
-    const currencySymbol = CURRENCY_CONFIG[wallet.currency].symbol;
+    const currencySymbol = CURRENCY_CONFIG[budget.currency].symbol;
     let csv = "";
 
     // Add header with metadata
-    csv += `Event Wallet Report\n`;
-    csv += `Currency: ${wallet.currency}\n`;
+    csv += `Event Budget Report\n`;
+    csv += `Currency: ${budget.currency}\n`;
     csv += `Generated: ${new Date().toLocaleDateString()}\n`;
     csv += `Date Range: ${dateFrom || "All"} to ${dateTo || "All"}\n`;
     csv += `\n`;
@@ -194,7 +194,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `wallet-report-${Date.now()}.csv`);
+    link.setAttribute("download", `budget-report-${Date.now()}.csv`);
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();

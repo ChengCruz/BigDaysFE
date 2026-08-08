@@ -9,6 +9,14 @@
 // `previewBackdropLabel`, so labels must stay stable. Asset paths are free to
 // change (they did — the originals were 1920x1080 PNGs averaging 2.4MB each).
 
+/**
+ * Gutter colour behind the invitation card when no backdrop image is chosen.
+ * Single constant because the designer's initial state and the public guest page
+ * used to disagree (#ffffff vs #f3f4f6), so "None" looked different to the couple
+ * than it did to their guests.
+ */
+export const DEFAULT_BACKDROP_COLOR = "#f3f4f6";
+
 export interface BackdropOption {
   label: string;
   /** Full-size asset used as the actual backdrop */
@@ -46,8 +54,15 @@ export const BACKDROP_OPTIONS: BackdropOption[] = [
   { label: "Rose Gold Arch",     ...asset("bg-06c-rosegold-arch") },
 ];
 
-/** Neutral page color behind a preset; plain white when no backdrop is chosen. */
-export const backdropColorFor = (imageUrl: string) => (imageUrl ? "#f3f4f6" : "#ffffff");
+/**
+ * Neutral gutter colour behind the invitation card, with or without a preset.
+ *
+ * This used to return plain white for the "None" preset, which made picking
+ * "None" look different from a design that had never chosen a backdrop at all
+ * (the guest page has always fallen back to #f3f4f6). Takes the image URL only
+ * so existing call sites read clearly — every case resolves to the same colour.
+ */
+export const backdropColorFor = (_imageUrl: string) => DEFAULT_BACKDROP_COLOR;
 
 /**
  * Resolve the persisted `previewBackdropLabel` back to a renderable asset URL.

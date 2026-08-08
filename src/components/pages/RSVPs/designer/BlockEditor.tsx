@@ -15,10 +15,23 @@ import { ChevronDownIcon } from "@heroicons/react/solid";
 import type { RsvpBlock } from "../../../../types/rsvpDesign";
 import type { FormFieldConfig } from "../../../../api/hooks/useFormFieldsApi";
 
+// Disabled 7 Aug 2026: manual question placement/linking retired in favour of
+// the Questions page being the only source of truth for what guests are
+// asked (see RsvpDesignV3Page.tsx's LEGACY_CUSTOM_QUESTIONS_ENABLED /
+// askedQuestions, and RsvpFormRenderer.tsx's matching flag). Gates both the
+// formField block's "Link to RSVP question" picker and the guestDetails
+// block's "Custom questions" manage panel below. Typed as `boolean` (not left
+// to infer the `false` literal) so TypeScript doesn't prove the gated code
+// statically unreachable and skip narrowing inside it.
+const CUSTOM_QUESTION_LINKING_ENABLED: boolean = false;
+
 interface Props {
   block: RsvpBlock | null;
   accentColor: string;
+  /** Selectable questions — active only. */
   formFields: FormFieldConfig[];
+  /** Every question including hidden ones, used only to explain an existing link. */
+  allFormFields?: FormFieldConfig[];
   onUpdate: (id: string, patch: Partial<RsvpBlock>) => void;
   onRemove: (id: string) => void;
   onAddBackgroundImages: (blockId: string, files: FileList) => void;
@@ -38,6 +51,33 @@ const toAlign = (v: string): "left" | "center" | "right" =>
   v === "center" || v === "right" ? v : "left";
 
 const toWidth = (v: string): "full" | "half" => (v === "half" ? "half" : "full");
+
+/**
+ * What has become of the question a block points at.
+ *
+ * A block keeps its questionId when the question is hidden or deleted — that is
+ * deliberate, so unhiding restores the field without re-editing the design. But
+ * the guest page skips such blocks, so the couple must be told why a field they
+ * can see in the designer is not on their invite.
+ *
+ * Only reached for a legacy formField block now (see
+ * CUSTOM_QUESTION_LINKING_ENABLED above) -- guestDetails' auto-listed
+ * questions are always active by construction, so they never need this.
+ */
+type LinkStatus = "unlinked" | "active" | "hidden" | "missing";
+
+function questionLinkStatus(
+  questionId: string | undefined,
+  all: FormFieldConfig[] | undefined,
+): { status: LinkStatus; question?: FormFieldConfig } {
+  if (!questionId) return { status: "unlinked" };
+  // Without the unfiltered list there is nothing to diagnose against; assume the
+  // link is good rather than crying wolf.
+  if (!all?.length) return { status: "active" };
+  const question = all.find((q) => String(q.id ?? q.questionId) === String(questionId));
+  if (!question) return { status: "missing" };
+  return { status: question.isActive === false ? "hidden" : "active", question };
+}
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
@@ -142,6 +182,7 @@ export function BlockEditor({
   block,
   accentColor,
   formFields,
+  allFormFields,
   onUpdate,
   onRemove,
   onAddBackgroundImages,
@@ -374,34 +415,91 @@ export function BlockEditor({
         {/* ── Form field ── */}
         {block.type === "formField" && (
           <div className="space-y-4">
-            {/* Link to question */}
-            <Field label="Link to RSVP question">
-              <select
-                value={block.questionId ?? ""}
-                onChange={(e) => onApplyQuestion(block.id, e.target.value || undefined)}
-                className={inputCls}
-              >
-                <option value="">— Choose a question —</option>
-                {formFields.map((q) => (
-                  <option key={q.id ?? q.questionId} value={q.id ?? q.questionId}>
-                    {q.label || q.text || q.name}
-                    {q.isRequired ? " *" : ""}
-                    {q.typeKey ? ` (${q.typeKey})` : ""}
-                  </option>
-                ))}
-              </select>
-              {block.questionId ? (
-                <p className="text-xs text-emerald-600 mt-1">✓ Linked to question.</p>
-              ) : (
-                <p className="text-xs text-amber-600 mt-1">Select a question to activate this field.</p>
-              )}
+            {/* Link to question -- read-only as of 7 Aug 2026. The Questions page
+                is now the only source of truth for which questions guests are
+                asked, so re-linking a standalone field to a different question
+                here is disabled; this block (a design built before this change)
+                keeps showing whichever question it already pointed at. See
+                CUSTOM_QUESTION_LINKING_ENABLED below to reinstate the picker. */}
+            <Field label="RSVP question">
+              {(() => {
+                const { status, question } = questionLinkStatus(block.questionId, allFormFields);
+
+                if (CUSTOM_QUESTION_LINKING_ENABLED) {
+                  // A hidden or deleted question is no longer selectable, so its option
+                  // is absent from formFields and the select would fall back to the
+                  // placeholder — making it look unlinked. Re-add it as a disabled
+                  // option so the block visibly keeps its link.
+                  const orphan =
+                    status === "hidden" || status === "missing" ? block.questionId : undefined;
+                  return (
+                    <>
+                      <select
+                        value={block.questionId ?? ""}
+                        onChange={(e) => onApplyQuestion(block.id, e.target.value || undefined)}
+                        className={inputCls}
+                      >
+                        <option value="">— Choose a question —</option>
+                        {orphan && (
+                          <option value={orphan} disabled>
+                            {question
+                              ? `${question.label || question.text} (hidden)`
+                              : "(deleted question)"}
+                          </option>
+                        )}
+                        {formFields.map((q) => (
+                          <option key={q.id ?? q.questionId} value={q.id ?? q.questionId}>
+                            {q.label || q.text || q.name}
+                            {q.isRequired ? " *" : ""}
+                            {q.typeKey ? ` (${q.typeKey})` : ""}
+                          </option>
+                        ))}
+                      </select>
+
+                      {status === "active" && (
+                        <p className="text-xs text-emerald-600 mt-1">✓ Linked to question.</p>
+                      )}
+                      {status === "unlinked" && (
+                        <p className="text-xs text-amber-600 mt-1">
+                          Select a question to activate this field.
+                        </p>
+                      )}
+                      {status === "hidden" && (
+                        <p className="text-xs text-amber-600 mt-1">
+                          This question is hidden, so guests won’t see this field. Unhide it on the
+                          questions page to bring it back — no need to edit this block.
+                        </p>
+                      )}
+                      {status === "missing" && (
+                        <p className="text-xs text-rose-600 mt-1">
+                          This question was deleted, so guests won’t see this field. Link another
+                          question, or remove this block.
+                        </p>
+                      )}
+                    </>
+                  );
+                }
+
+                return (
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5">
+                    <p className="text-sm font-medium text-gray-700">
+                      {question?.label || question?.text || (status === "unlinked" ? "No question linked" : "(deleted question)")}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Managed from RSVP Questions — activate, deactivate, or edit it there.
+                    </p>
+                  </div>
+                );
+              })()}
             </Field>
 
             {/* Field details */}
             <div className="grid grid-cols-1 gap-3">
               <Field label="Label override">
                 <input
-                  value={block.label}
+                  // Undefined once a question is linked — the live question supplies
+                  // the label unless the couple deliberately types an override here.
+                  value={block.label ?? ""}
                   onChange={(e) => onUpdate(block.id, { label: e.target.value })}
                   className={inputCls}
                   placeholder="Leave blank to use question label"
@@ -425,13 +523,22 @@ export function BlockEditor({
                 </select>
               </Field>
               <Field label="Required">
+                {/* Undefined means "follow the question", which is the default once a
+                    question is linked. Without a third option the select would read
+                    "Optional" for a question that is in fact required. */}
                 <select
-                  value={block.required ? "yes" : "no"}
-                  onChange={(e) => onUpdate(block.id, { required: e.target.value === "yes" })}
+                  value={block.required === undefined ? "inherit" : block.required ? "yes" : "no"}
+                  onChange={(e) =>
+                    onUpdate(block.id, {
+                      required:
+                        e.target.value === "inherit" ? undefined : e.target.value === "yes",
+                    })
+                  }
                   className={inputCls}
                 >
-                  <option value="yes">Required</option>
-                  <option value="no">Optional</option>
+                  <option value="inherit">Use the question’s setting</option>
+                  <option value="yes">Always required</option>
+                  <option value="no">Always optional</option>
                 </select>
               </Field>
             </div>
@@ -667,12 +774,28 @@ export function BlockEditor({
               ))}
             </div>
 
-            {/* Custom questions — embedded inside this block */}
-            <GuestDetailsCustomQuestions
-              block={block}
-              formFields={formFields}
-              onUpdate={onUpdate}
-            />
+            {/* Custom questions — embedded inside this block. Manage panel
+                disabled 7 Aug 2026, see CUSTOM_QUESTION_LINKING_ENABLED above:
+                every active question from RSVP Questions is now asked here
+                automatically, in Order, with no placement step required. */}
+            {CUSTOM_QUESTION_LINKING_ENABLED ? (
+              <GuestDetailsCustomQuestions
+                block={block}
+                formFields={formFields}
+                onUpdate={onUpdate}
+              />
+            ) : (
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                  Additional questions
+                </p>
+                <p className="text-[11px] text-gray-400 leading-relaxed">
+                  Every active question from RSVP Questions is asked here automatically, in
+                  order. Activate or deactivate a question there to control it — no separate
+                  step needed here.
+                </p>
+              </div>
+            )}
           </div>
         )}
 

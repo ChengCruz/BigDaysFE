@@ -1,4 +1,14 @@
 // src/components/pages/Events/FormFieldsPage.tsx
+//
+// Planner-mode question builder. Couple mode renders CoupleQuestionsPage from the
+// same route against the same hooks — see routes.tsx:FormFieldsRoute.
+//
+// Every write here goes through runWrite() because the question endpoints report
+// refusals inside a HTTP 200 envelope rather than as a 4xx (utils/apiEnvelope):
+// POST /question/Update answers `statusCode: 422` when the question already has
+// answers, and the toggles do the same when the save writes no rows. Calling
+// mutate() and closing the modal on a resolved promise showed a success the
+// backend never granted.
 import { PageLoader } from "../../atoms/PageLoader";
 import { useMemo, useState } from "react";
 import {
@@ -19,6 +29,7 @@ import { NoEventsState } from "../../molecules/NoEventsState";
 import { useEventContext } from "../../../context/EventContext";
 import { QuestionTemplateModal } from "../../molecules/QuestionTemplateModal";
 import type { QuestionTemplate } from "../../../utils/formFieldTemplates";
+import { envelopeError } from "../../../utils/apiEnvelope";
 
 export default function FormFieldsPage() {
   // ─── All hooks first (React Rules of Hooks) ─────────────────────────────────────────
@@ -37,6 +48,11 @@ export default function FormFieldsPage() {
 
   const [templateModal, setTemplateModal] = useState(false);
   const [isAddingTemplates, setIsAddingTemplates] = useState(false);
+  const [banner, setBanner] = useState<string | null>(null);
+  // Save/edit failures (e.g. backend refusing an edit to an answered question) show
+  // inside the modal itself rather than on this page banner — see FormFieldModal's
+  // onSave below, which keeps the modal open until the write actually lands.
+  const [modalError, setModalError] = useState<string | null>(null);
 
   const [editWarning, setEditWarning] = useState<{
     open: boolean;
@@ -64,18 +80,40 @@ export default function FormFieldsPage() {
     [fieldsRaw]
   );
 
+  /**
+   * Single funnel for every question write. A resolved mutation is not proof the
+   * write landed — the refusal may be inside the envelope — so the result is
+   * checked before the caller reports success. Returns false when it failed.
+   */
+  async function runWrite(write: () => Promise<unknown>, fallback: string): Promise<boolean> {
+    setBanner(null);
+    try {
+      const err = envelopeError(await write());
+      if (err) setBanner(err);
+      return !err;
+    } catch {
+      setBanner(fallback);
+      return false;
+    }
+  }
+
   async function handleAddTemplates(selected: QuestionTemplate[]) {
     if (!eventId) return;
     setIsAddingTemplates(true);
     for (const tpl of selected) {
-      await createField.mutateAsync({
-        text: tpl.text,
-        type: tpl.type,
-        isRequired: tpl.isRequired,
-        options: tpl.options ?? "",
-        order: tpl.order,
-        eventGuid: eventId,
-      });
+      const ok = await runWrite(
+        () =>
+          createField.mutateAsync({
+            text: tpl.text,
+            type: tpl.type,
+            isRequired: tpl.isRequired,
+            options: tpl.options ?? "",
+            order: tpl.order,
+            eventGuid: eventId,
+          }),
+        "We couldn’t add those fields. Please try again."
+      );
+      if (!ok) break;
     }
     setIsAddingTemplates(false);
     setTemplateModal(false);
@@ -91,13 +129,26 @@ export default function FormFieldsPage() {
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-1">
         <h2 className="text-2xl font-semibold">Custom RSVP Fields</h2>
         <div data-tour="formfields-actions" className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={() => setTemplateModal(true)} className="whitespace-nowrap">+ Add from Template</Button>
-          <Button onClick={() => setModal({ open: true })} className="whitespace-nowrap">+ New Field</Button>
+          <Button onClick={() => { setModalError(null); setModal({ open: true }); }} className="whitespace-nowrap">+ New Field</Button>
         </div>
       </div>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        Once a guest has answered a question, it can’t be edited — hide it instead if you no longer want to ask it.
+      </p>
+
+      {/* Surfaces the 200-with-the-refusal-inside case described at the top of the file. */}
+      {banner && (
+        <div
+          role="alert"
+          className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-700/40 dark:bg-amber-900/20 dark:text-amber-200"
+        >
+          {banner}
+        </div>
+      )}
 
       {fields.length === 0 ? (
         <div data-tour="formfields-list" className="text-center text-gray-500 py-10 bg-white dark:bg-gray-800 rounded-lg shadow">
@@ -109,7 +160,8 @@ export default function FormFieldsPage() {
         </div>
       ) : (
         <ul data-tour="formfields-list" className="space-y-2">
-          {fields.map((f) => (
+          {fields.map((f) => {
+            return (
             <li
               key={f.questionId ?? f.id}
               className="p-4 bg-white dark:bg-gray-800 rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3"
@@ -125,6 +177,7 @@ export default function FormFieldsPage() {
                   title="Edit"
                   onClick={() => {
                     const field = f as FormFieldConfig & { questionId: string };
+                    setModalError(null);
                     if (f.hasExistingAnswers) {
                       setEditWarning({ open: true, field });
                     } else {
@@ -161,7 +214,8 @@ export default function FormFieldsPage() {
                 </button>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
 
@@ -191,6 +245,7 @@ export default function FormFieldsPage() {
               <Button className="flex-1" onClick={() => {
                 const field = editWarning.field!;
                 setEditWarning({ open: false });
+                setModalError(null);
                 setModal({ open: true, initial: field });
               }}>
                 Continue Editing
@@ -209,8 +264,12 @@ export default function FormFieldsPage() {
         confirmLabel="Activate"
         onCancel={() => setActivateWarning({ open: false })}
         onConfirm={() => {
-          activateField.mutate({ questionId: activateWarning.field!.questionId!, eventId: eventId! });
+          const field = activateWarning.field!;
           setActivateWarning({ open: false });
+          void runWrite(
+            () => activateField.mutateAsync({ questionId: field.questionId!, eventId: eventId! }),
+            "We couldn’t reactivate that field. Please try again."
+          );
         }}
       >
         <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -227,8 +286,12 @@ export default function FormFieldsPage() {
         confirmLabel="Deactivate"
         onCancel={() => setDeactivateWarning({ open: false })}
         onConfirm={() => {
-          deactivateField.mutate({ questionId: deactivateWarning.field!.questionId!, eventId: eventId! });
+          const field = deactivateWarning.field!;
           setDeactivateWarning({ open: false });
+          void runWrite(
+            () => deactivateField.mutateAsync({ questionId: field.questionId!, eventId: eventId! }),
+            "We couldn’t deactivate that field. Please try again."
+          );
         }}
       >
         <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -245,8 +308,12 @@ export default function FormFieldsPage() {
         confirmLabel="Delete Permanently"
         onCancel={() => setDeleteWarning({ open: false })}
         onConfirm={() => {
-          deleteField.mutate({ questionId: deleteWarning.field!.questionId!, eventId: eventId! });
+          const field = deleteWarning.field!;
           setDeleteWarning({ open: false });
+          void runWrite(
+            () => deleteField.mutateAsync({ questionId: field.questionId!, eventId: eventId! }),
+            "We couldn’t delete that field. Please try again."
+          );
         }}
       >
         <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -264,7 +331,8 @@ export default function FormFieldsPage() {
       {modal.open && (
         <FormFieldModal
           isOpen={modal.open}
-          onClose={() => setModal({ open: false })}
+          onClose={() => { setModal({ open: false }); setModalError(null); }}
+          error={modalError}
           initial={
             modal.initial
               ? {
@@ -279,10 +347,12 @@ export default function FormFieldsPage() {
                 }
               : undefined
           }
-          onSave={(dto) => {
+          onSave={async (dto) => {
             if (!eventId) return;
 
-            // Build the payload the API expects (QuestionDto shape)
+            // Build the payload the API expects (QuestionDto shape). Every field,
+            // every time — Update is a full replace, so an omitted one is wiped to
+            // its CLR default.
             const payload: QuestionPayload = {
               text: dto.text ?? "",
               type: dto.type,
@@ -292,17 +362,22 @@ export default function FormFieldsPage() {
               eventGuid: eventId,
             };
 
-            if (modal.initial?.questionId) {
-              // update expects an id; map from questionId
-              updateField.mutate({
-                ...payload,
-                questionId: modal.initial.questionId.toString(),
-              });
-            } else {
-              // create
-              createField.mutate(payload);
-            }
+            const editingId = modal.initial?.questionId;
 
+            try {
+              const res = editingId
+                ? // update expects an id; map from questionId
+                  await updateField.mutateAsync({ ...payload, questionId: editingId.toString() })
+                : await createField.mutateAsync(payload);
+              const err = envelopeError(res);
+              if (err) {
+                setModalError(err);
+                return;
+              }
+            } catch {
+              setModalError("We couldn’t save that field. Please try again.");
+              return;
+            }
             setModal({ open: false });
           }}
         />

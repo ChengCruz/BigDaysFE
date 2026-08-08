@@ -7,7 +7,7 @@
  * Run just this file:
  *   npx playwright test showcase-capture --project=desktop
  *
- * Output: public/showcase/{rsvp,floorplan,wallet,guests}.png
+ * Output: public/showcase/{rsvp,floorplan,budget,guests}.png
  */
 import { test, type Route, type Page } from '@playwright/test';
 import {
@@ -15,8 +15,8 @@ import {
   MOCK_USER,
   MOCK_EVENT,
   MOCK_EVENT_GUID,
-  MOCK_WALLET,
-  MOCK_WALLET_GUID,
+  MOCK_BUDGET,
+  MOCK_BUDGET_GUID,
 } from './helpers';
 
 const OUT = 'public/showcase';
@@ -30,6 +30,22 @@ test.use({ viewport: { width: 1440, height: 900 } });
 const BRAND_JWT =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLWd1aWQtMDAwMSIsImVtYWlsIjoiYWRtaW5AYmlnZGF5c21hbmFnZXIuY29tIiwicm9sZSI6IkFkbWluIiwiZXhwIjo5OTk5OTk5OTk5fQ.fakesig';
 const BRAND_USER = { ...MOCK_USER, email: 'admin@bigdaysmanager.com' };
+
+/** The event shown in every capture. helpers.MOCK_EVENT is deliberately
+ *  generic ("Test Wedding" at "Test Venue") because assertions depend on it —
+ *  these are marketing shots, so the navbar and page headers need a real-
+ *  looking celebration instead. Names match the RSVP design headline below and
+ *  the venue matches the "Venue Deposit" vendor in TRANSACTIONS. */
+const SHOWCASE_EVENT = {
+  ...MOCK_EVENT,
+  eventName: 'Sarah & James Wedding',
+  eventDate: '2026-12-01',
+  eventTime: '18:00:00',
+  eventLocation: 'Grand Ballroom, Kuala Lumpur',
+  eventDescription: 'An evening celebration with family and closest friends',
+  noOfTable: 7, // matches the seven tables in FLOOR_ITEMS
+  title: 'Sarah & James Wedding',
+};
 
 /** Log in as the branded admin and land on /app/events with event context set.
  *  Mirrors helpers.gotoAuthenticated but returns a token carrying the branded
@@ -48,6 +64,11 @@ async function loginBranded(page: Page) {
     }
     if (/\/User\//i.test(url) && method === 'GET') {
       return route.fulfill({ status: 200, json: { isSuccess: true, data: BRAND_USER } });
+    }
+    // Every capture shows the event switcher in the navbar, so the showcase
+    // event has to replace MOCK_EVENT for all of them, not just the RSVP shot.
+    if (/\/event\//i.test(url) && method === 'GET' && !/\/event\/eventRsvp\//i.test(url)) {
+      return route.fulfill({ status: 200, json: { isSuccess: true, data: [SHOWCASE_EVENT] } });
     }
     return route.fallback();
   });
@@ -70,7 +91,7 @@ async function hideHelpHint(page: Page) {
 
 // ── Enriched mock data ──────────────────────────────────────────────────────
 
-const EVENT_WITH_SLUG = { ...MOCK_EVENT, slug: 'test-wedding' };
+const EVENT_WITH_SLUG = { ...SHOWCASE_EVENT, slug: 'sarah-and-james' };
 
 /** A fuller RSVP design: hero headline over a dark theme + event details, an
  *  attendance toggle, a guest-details card and a CTA — enough to look real. */
@@ -174,7 +195,7 @@ function txn(id: number, name: string, amount: number, category: string, status:
   return {
     transactionId: id,
     transactionGuid: `txn-${id}`,
-    walletGuid: MOCK_WALLET_GUID,
+    walletGuid: MOCK_BUDGET_GUID,
     transactionName: name,
     amount,
     transactionDate: date,
@@ -256,17 +277,17 @@ test('capture — Floor plan', async ({ page }) => {
   await page.screenshot({ path: `${OUT}/floorplan.png` });
 });
 
-test('capture — Wallet', async ({ page }) => {
+test('capture — Budget', async ({ page }) => {
   await loginBranded(page);
   await hideHelpHint(page);
   await page.route('**/__mock_api__/**', async (route: Route) => {
     const url = route.request().url();
     const method = route.request().method();
     if (/\/Wallet\//i.test(url) && method === 'GET') {
-      // useWalletsApi expects an ARRAY and maps backend `budget` → `totalBudget`.
+      // useBudgetsApi expects an ARRAY and maps backend `budget` → `totalBudget`.
       return route.fulfill({
         status: 200,
-        json: { isSuccess: true, data: [{ ...MOCK_WALLET, budget: 50000, totalSpent: 35730, remainingBudget: 14270 }] },
+        json: { isSuccess: true, data: [{ ...MOCK_BUDGET, budget: 50000, totalSpent: 35730, remainingBudget: 14270 }] },
       });
     }
     if (/\/Transaction\//i.test(url) && method === 'GET') {
@@ -274,10 +295,10 @@ test('capture — Wallet', async ({ page }) => {
     }
     return route.fallback();
   });
-  await page.goto('/app/wallet');
+  await page.goto('/app/budget');
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(1500);
-  await page.screenshot({ path: `${OUT}/wallet.png` });
+  await page.screenshot({ path: `${OUT}/budget.png` });
 });
 
 test('capture — Guests', async ({ page }) => {

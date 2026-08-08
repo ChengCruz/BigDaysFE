@@ -1,38 +1,8 @@
 import { useNavigate } from "react-router";
-import {
-  HomeIcon,
-  CalendarIcon,
-  ClipboardListIcon,
-  QuestionMarkCircleIcon,
-  UserGroupIcon,
-  ViewBoardsIcon,
-  TemplateIcon,
-  CurrencyDollarIcon,
-  QrcodeIcon,
-  UserIcon,
-  BriefcaseIcon,
-  PencilAltIcon,
-  CheckCircleIcon,
-} from "@heroicons/react/solid";
-import { TOURS, type TourIconKey } from "../../tour/tours";
+import { TOURS } from "../../tour/tours";
+import { FALLBACK_ICON, TOUR_ICONS } from "../../tour/tourIcons";
 import { Card } from "../../molecules/Card";
 import { Button } from "../../atoms/Button";
-
-const ICONS: Record<TourIconKey, React.FC<React.SVGProps<SVGSVGElement>>> = {
-  home: HomeIcon,
-  calendar: CalendarIcon,
-  rsvps: ClipboardListIcon,
-  questions: QuestionMarkCircleIcon,
-  guests: UserGroupIcon,
-  tables: ViewBoardsIcon,
-  floorplan: TemplateIcon,
-  wallet: CurrencyDollarIcon,
-  checkin: QrcodeIcon,
-  users: UserIcon,
-  crew: BriefcaseIcon,
-  "rsvp-designer": PencilAltIcon,
-  checklist: CheckCircleIcon,
-};
 
 export default function TutorialPage() {
   const navigate = useNavigate();
@@ -57,7 +27,7 @@ export default function TutorialPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {TOURS.map((tour) => {
-          const Icon = ICONS[tour.icon] ?? HomeIcon;
+          const Icon = TOUR_ICONS[tour.icon] ?? FALLBACK_ICON;
           return (
             <Card
               key={tour.routePath}
