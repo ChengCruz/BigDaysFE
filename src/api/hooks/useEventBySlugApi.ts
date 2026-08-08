@@ -12,6 +12,9 @@ import { TYPE_KEY_MAP } from "../../utils/eventUtils";
 export interface EventRsvpTemplate {
   eventId: string;
   eventName: string;
+  eventDate?: string;
+  eventTime?: string;
+  eventLocation?: string;
   isExpired: boolean;
   rsvpDueDate?: string | null;
   design: RsvpDesign;
@@ -69,6 +72,9 @@ export function useEventBySlug(slug: string | undefined) {
       return {
         eventId: design.eventGuid ?? "",
         eventName: event?.eventName ?? "",
+        eventDate: event?.eventDate,
+        eventTime: event?.eventTime,
+        eventLocation: event?.eventLocation,
         isExpired: event?.isExpired ?? false,
         rsvpDueDate: event?.rsvpDueDate ?? null,
         design,

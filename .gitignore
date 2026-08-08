@@ -39,3 +39,4 @@ tests/**/*.jpg
 tests/**/*.jpeg
 tests/**/*.webp
 tests/**-snapshots/
+docs/qa/evidence/
