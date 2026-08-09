@@ -1,13 +1,13 @@
 /**
- * Budget tests — Read, CRUD Transactions, Setup Budget, Summary Cards,
+ * Budget tests covering Read, CRUD Transactions, Setup Budget, Summary Cards,
  * Table Filters, Export Report, and edge states.
  */
 import { test, expect } from '@playwright/test';
 import { gotoAuthenticated, mockApi, setMockAuth, MOCK_BUDGET, MOCK_TRANSACTION } from './helpers';
 
-// ── Budget page load ──────────────────────────────────────────────────────────
+// -- Budget page load --------------------------------------------------------------
 
-test.describe('Budget — Read', () => {
+test.describe('Budget: Read', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/budget');
   });
@@ -25,9 +25,9 @@ test.describe('Budget — Read', () => {
   });
 });
 
-// ── Setup Budget Modal — Create ───────────────────────────────────────────────
+// -- Setup Budget Modal: Create -----------------------------------------------------
 
-test.describe('Budget — Setup Budget Modal (create)', () => {
+test.describe('Budget: Setup Budget Modal (create)', () => {
   test.beforeEach(async ({ page }) => {
     await mockApi(page);
     await page.route('**/__mock_api__/**', async route => {
@@ -65,7 +65,7 @@ test.describe('Budget — Setup Budget Modal (create)', () => {
     await expect(page.locator('text=Setup Budget').nth(1)).not.toBeVisible({ timeout: 3000 });
   });
 
-  test('validation — shows error when budget is negative', async ({ page }) => {
+  test('validation: shows error when budget is negative', async ({ page }) => {
     await page.fill('input[placeholder="50000"]', '-100');
     await page.click('button:has-text("Create Budget")');
     await expect(page.locator('text=Budget must be a positive number')).toBeVisible({ timeout: 3000 });
@@ -82,9 +82,9 @@ test.describe('Budget — Setup Budget Modal (create)', () => {
   });
 });
 
-// ── Setup Budget Modal — Edit ─────────────────────────────────────────────────
+// -- Setup Budget Modal: Edit -------------------------------------------------------
 
-test.describe('Budget — Setup Budget Modal (edit)', () => {
+test.describe('Budget: Setup Budget Modal (edit)', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/budget');
     await page.click('button:has-text("Setup Budget")');
@@ -105,9 +105,9 @@ test.describe('Budget — Setup Budget Modal (edit)', () => {
   });
 });
 
-// ── Add Transaction ───────────────────────────────────────────────────────────
+// -- Add Transaction -----------------------------------------------------------------
 
-test.describe('Budget — Create Transaction', () => {
+test.describe('Budget: Create Transaction', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/budget');
     await page.click('button:has-text("Add Transaction")');
@@ -129,21 +129,21 @@ test.describe('Budget — Create Transaction', () => {
     await expect(page.locator('text=Add Transaction')).not.toBeVisible({ timeout: 3000 });
   });
 
-  test('validation — shows error when transaction name is empty', async ({ page }) => {
+  test('validation: shows error when transaction name is empty', async ({ page }) => {
     await page.fill('input[placeholder="0.00"]', '100');
     await page.fill('input[type="date"]', '2026-06-01');
     await page.click('button:has-text("Save Transaction")');
     await expect(page.locator('text=Transaction name is required')).toBeVisible({ timeout: 3000 });
   });
 
-  test('validation — shows error when amount is empty', async ({ page }) => {
+  test('validation: shows error when amount is empty', async ({ page }) => {
     await page.fill('input[placeholder="e.g. Venue Deposit Payment"]', 'Venue Deposit');
     await page.fill('input[type="date"]', '2026-06-01');
     await page.click('button:has-text("Save Transaction")');
     await expect(page.locator('text=Amount is required')).toBeVisible({ timeout: 3000 });
   });
 
-  test('validation — shows error when amount is negative', async ({ page }) => {
+  test('validation: shows error when amount is negative', async ({ page }) => {
     await page.fill('input[placeholder="e.g. Venue Deposit Payment"]', 'Venue Deposit');
     await page.fill('input[placeholder="0.00"]', '-50');
     await page.fill('input[type="date"]', '2026-06-01');
@@ -151,7 +151,7 @@ test.describe('Budget — Create Transaction', () => {
     await expect(page.locator('text=Amount must be a positive number')).toBeVisible({ timeout: 3000 });
   });
 
-  test('validation — shows error when date is empty', async ({ page }) => {
+  test('validation: shows error when date is empty', async ({ page }) => {
     await page.fill('input[placeholder="e.g. Venue Deposit Payment"]', 'Venue Deposit');
     await page.fill('input[placeholder="0.00"]', '500');
     await page.click('button:has-text("Save Transaction")');
@@ -176,7 +176,7 @@ test.describe('Budget — Create Transaction', () => {
     await debitBtn.click();
   });
 
-  test('payment status toggles — Pending shows Due Date field', async ({ page }) => {
+  test('payment status toggles: Pending shows Due Date field', async ({ page }) => {
     const pendingBtn = page.locator('button:has-text("Pending")');
     await expect(pendingBtn).toBeVisible();
     await pendingBtn.click();
@@ -189,9 +189,9 @@ test.describe('Budget — Create Transaction', () => {
   });
 });
 
-// ── Edit Transaction ──────────────────────────────────────────────────────────
+// -- Edit Transaction ----------------------------------------------------------------
 
-test.describe('Budget — Edit Transaction', () => {
+test.describe('Budget: Edit Transaction', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/budget');
   });
@@ -215,7 +215,7 @@ test.describe('Budget — Edit Transaction', () => {
 
 // ── Delete Transaction ────────────────────────────────────────────────────────
 
-test.describe('Budget — Delete Transaction', () => {
+test.describe('Budget: Delete Transaction', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/budget');
   });
@@ -259,7 +259,7 @@ test.describe('Budget — Delete Transaction', () => {
 
 // ── Summary Cards ─────────────────────────────────────────────────────────────
 
-test.describe('Budget — Summary Cards', () => {
+test.describe('Budget: Summary Cards', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/budget');
   });
@@ -316,7 +316,7 @@ test.describe('Budget — Summary Cards', () => {
 
 // ── Transaction Table Filters ─────────────────────────────────────────────────
 
-test.describe('Budget — Transaction Table Filters', () => {
+test.describe('Budget: Transaction Table Filters', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/budget');
   });
@@ -363,7 +363,7 @@ test.describe('Budget — Transaction Table Filters', () => {
 
 // ── Export Report ─────────────────────────────────────────────────────────────
 
-test.describe('Budget — Export Report', () => {
+test.describe('Budget: Export Report', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/budget');
   });
@@ -383,7 +383,7 @@ test.describe('Budget — Export Report', () => {
 
 // ── No Events State ───────────────────────────────────────────────────────────
 
-test.describe('Budget — No Events State', () => {
+test.describe('Budget: No Events State', () => {
   test('shows no-events message when no event exists', async ({ page }) => {
     await mockApi(page);
     await page.route('**/__mock_api__/**', async route => {
@@ -404,7 +404,7 @@ test.describe('Budget — No Events State', () => {
 
 // ── Error State ───────────────────────────────────────────────────────────────
 
-test.describe('Budget — Error State', () => {
+test.describe('Budget: Error State', () => {
   test.beforeEach(async ({ page }) => {
     await mockApi(page);
     await page.route('**/__mock_api__/**', async route => {

@@ -2,7 +2,7 @@
  * Couple-mode Home (CoupleHomePage).
  *
  * The point of this file is the counting. Home reads the same dashboard
- * endpoint as planner mode, and every number in `tableStats` is a ROW count —
+ * endpoint as planner mode, and every number in `tableStats` is a ROW count:
  * one Guest row is one RSVP *party*, not one person (docs/COUPLE_MODE.md).
  * The page therefore speaks in parties and never derives a head count.
  *
@@ -15,7 +15,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { gotoAuthenticated, mockApi, MOCK_DASHBOARD } from './helpers';
 
-/** Force couple mode before the app boots — UiModeContext reads it once, at mount. */
+/** Force couple mode before the app boots; UiModeContext reads it once, at mount. */
 async function forceCoupleMode(page: Page) {
   await page.addInitScript(() => localStorage.setItem('uiMode', 'couple'));
 }
@@ -39,7 +39,7 @@ async function gotoCoupleHome(page: Page, dashboard?: Record<string, unknown>) {
 
 const nextCard = (page: Page) => page.locator('main, body').first();
 
-test.describe('Couple Home — the day', () => {
+test.describe('Couple Home: the day', () => {
   test.beforeEach(async ({ page }) => {
     await gotoCoupleHome(page);
   });
@@ -66,7 +66,7 @@ test.describe('Couple Home — the day', () => {
   });
 
   test('shows the readiness ring from checklistStats', async ({ page }) => {
-    // 9 of 15 done = 60%, 6 remaining. Both come from the dashboard payload —
+    // 9 of 15 done = 60%, 6 remaining. Both come from the dashboard payload;
     // Home must not fetch /Checklist/ByEvent to work this out.
     await expect(page.locator("text=You’re 60% ready")).toBeVisible();
     await expect(page.locator('text=6 things left before the big day.')).toBeVisible();
@@ -86,7 +86,7 @@ test.describe('Couple Home — the day', () => {
   });
 });
 
-test.describe('Couple Home — counts parties, exactly as the backend does', () => {
+test.describe('Couple Home: counts parties, exactly as the backend does', () => {
   test.beforeEach(async ({ page }) => {
     await gotoCoupleHome(page);
   });
@@ -124,7 +124,7 @@ test.describe('Couple Home — counts parties, exactly as the backend does', () 
   });
 });
 
-test.describe('Couple Home — the next action changes with the data', () => {
+test.describe('Couple Home: the next action changes with the data', () => {
   test('chases replies once everyone is seated', async ({ page }) => {
     await gotoCoupleHome(page, {
       ...MOCK_DASHBOARD,
@@ -187,8 +187,8 @@ test.describe('Couple Home — the next action changes with the data', () => {
   });
 
   test('invites you to start a checklist instead of showing 0%', async ({ page }) => {
-    // Nothing seeds a checklist on event creation — POST /Checklist/Seed is
-    // manual — so an empty checklist is normal, not a failure state.
+    // Nothing seeds a checklist on event creation: POST /Checklist/Seed is
+    // manual, so an empty checklist is normal, not a failure state.
     await gotoCoupleHome(page, {
       ...MOCK_DASHBOARD,
       checklistStats: { totalItems: 0, completedItems: 0, remainingItems: 0, percentComplete: 0 },
@@ -222,7 +222,7 @@ test.describe('Couple Home — the next action changes with the data', () => {
 test.describe('Planner mode is untouched', () => {
   test('planner mode still gets the six-panel dashboard', async ({ page }) => {
     await mockApi(page);
-    // No uiMode override — gotoAuthenticated signs in as Admin (role 2), which
+    // No uiMode override; gotoAuthenticated signs in as Admin (role 2), which
     // defaults to planner.
     await gotoAuthenticated(page, '/app/dashboard');
     await expect(page.locator('text=Quick Actions')).toBeVisible();
@@ -233,7 +233,7 @@ test.describe('Planner mode is untouched', () => {
     await mockApi(page);
     await gotoAuthenticated(page, '/app/dashboard');
 
-    // Mounted AND functional — a bubble that renders but no longer opens its
+    // Mounted AND functional: a bubble that renders but no longer opens its
     // menu would pass a bare visibility check.
     const bubble = page.getByRole('button', { name: 'Open help' });
     await expect(bubble).toBeVisible();
@@ -245,7 +245,7 @@ test.describe('Planner mode is untouched', () => {
 /**
  * The bubble is planner-only (routes.tsx). Couple mode swaps in Couple* pages
  * that carry no `data-tour` targets, so "Take a tour of this page" would offer
- * a tour Joyride cannot anchor — and `fixed bottom-6 right-6` sat on top of the
+ * a tour Joyride cannot anchor, and `fixed bottom-6 right-6` sat on top of the
  * mobile tab bar's last tab.
  */
 test.describe('Couple mode hides the help bubble', () => {
@@ -260,7 +260,7 @@ test.describe('Couple mode hides the help bubble', () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await gotoCoupleHome(page);
 
-    // Big Day is the last of the five tabs — the one the bubble used to sit on.
+    // Big Day is the last of the five tabs, the one the bubble used to sit on.
     // Playwright's actionability check fails this click if another element
     // intercepts the pointer, which is exactly the regression being guarded.
     await page.getByRole('link', { name: 'Big Day' }).click();

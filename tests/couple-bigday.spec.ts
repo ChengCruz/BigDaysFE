@@ -2,7 +2,7 @@
  * Couple-mode Big Day (CoupleBigDayPage).
  *
  * The point of this file is reachability. `coupleSections.ts` maps /app/crew to
- * the Big Day tab, but the tab navigates to /app/checkin — so the helpers row on
+ * the Big Day tab, but the tab navigates to /app/checkin, so the helpers row on
  * this page is the ONLY path to crew in couple mode (docs/COUPLE_MODE.md). It
  * used to be a rail-footer link; these tests hold both halves of that move.
  *
@@ -23,7 +23,7 @@ const CREW = [
   { crewGuid: 'crew-3', crewCode: 'C03', name: 'Priya', isActive: false, eventGuid: MOCK_EVENT_GUID },
 ];
 
-/** Force couple mode before the app boots — UiModeContext reads it once, at mount. */
+/** Force couple mode before the app boots; UiModeContext reads it once, at mount. */
 async function forceCoupleMode(page: Page) {
   await page.addInitScript(() => localStorage.setItem('uiMode', 'couple'));
 }
@@ -40,7 +40,7 @@ async function mockCrew(page: Page, crew: typeof CREW | []) {
 
 const helpersRow = (page: Page) => page.getByRole('link', { name: /Your helpers/i });
 
-test.describe('Couple mode — Big Day', () => {
+test.describe('Couple mode: Big Day', () => {
   test('shows the helpers row above the scanner, counting only active helpers', async ({ page }) => {
     await forceCoupleMode(page);
     await gotoAuthenticatedAsMember(page, '/app/checkin');
@@ -77,7 +77,7 @@ test.describe('Couple mode — Big Day', () => {
     await expect(page.getByRole('heading', { name: 'Crew' })).toBeVisible();
   });
 
-  test('the shell no longer offers helpers — the row is the only path', async ({ page }) => {
+  test('the shell no longer offers helpers, so the row is the only path', async ({ page }) => {
     await forceCoupleMode(page);
     await gotoAuthenticatedAsMember(page, '/app/dashboard');
 
@@ -85,7 +85,7 @@ test.describe('Couple mode — Big Day', () => {
     await expect(page.locator('a[href="/app/crew"]')).toHaveCount(0);
     await expect(page.getByText('Your helpers')).toHaveCount(0);
 
-    // Avatar menu — the mobile mirror of the rail footer.
+    // Avatar menu: the mobile mirror of the rail footer.
     await page.getByLabel('Account').click();
     await expect(page.getByRole('button', { name: 'Your account' })).toBeVisible();
     await expect(page.getByText('Your helpers')).toHaveCount(0);

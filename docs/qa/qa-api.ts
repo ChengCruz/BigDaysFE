@@ -3,7 +3,7 @@
 import dns from "node:dns";
 
 // Chromium resolves *.localhost natively; Node's getaddrinfo does not. Only the
-// test-runner-side fetch needs this — the browser under test is unaffected.
+// test-runner-side fetch needs this; the browser under test is unaffected.
 const origLookup = dns.lookup;
 (dns as any).lookup = (hostname: string, opts: any, cb: any) => {
   if (String(hostname).endsWith(".localhost")) {
@@ -22,7 +22,7 @@ const EMAIL = process.env.QA_EMAIL ?? "";
 const PASSWORD = process.env.QA_PASSWORD ?? "";
 const API_KEY = process.env.QA_API_KEY ?? "a";
 if (!EMAIL || !PASSWORD) {
-  throw new Error("QA_EMAIL and QA_PASSWORD must be set — see docs/qa/TEST_FLOW.md");
+  throw new Error("QA_EMAIL and QA_PASSWORD must be set; see docs/qa/TEST_FLOW.md");
 }
 
 let token: string | null = null;
@@ -67,9 +67,9 @@ export async function api(method: string, path: string, body?: unknown, anon = f
 export interface Fixture {
   eventGuid: string;
   slug: string;
-  qSelect: number;   // "Meal choice"   — select, 3 options
-  qText: number;     // "Song request"  — short text
-  qRename: number;   // "Need a room"   — short text, rename target
+  qSelect: number;   // "Meal choice"   : select, 3 options
+  qText: number;     // "Song request"  : short text
+  qRename: number;   // "Need a room"   : short text, rename target
 }
 
 /**
@@ -89,7 +89,7 @@ export async function buildFixture(opts: { withDesign?: boolean } = {}): Promise
 
   await api("POST", "/event/Create", {
     name, date: "2027-09-18T00:00:00", time: "16:00",
-    description: "Automated QA — guest page rendering",
+    description: "Automated QA: guest page rendering",
     location: "QA Venue", userGuid, noOfTable: "5",
   });
 
@@ -98,7 +98,7 @@ export async function buildFixture(opts: { withDesign?: boolean } = {}): Promise
   if (!ev) throw new Error("fixture event not created");
   const eventGuid = ev.eventGuid;
 
-  // The backend derives/sanitises the slug itself — never trust the one we asked
+  // The backend derives/sanitises the slug itself, so never trust the one we asked
   // for. Read back what it actually stored.
   await api("POST", "/event/UpdateSlug", { eventGuid, slug: `qa-render-${stamp}` });
   const reread = await api("GET", "/event/GetEventsListByUser");
@@ -132,7 +132,7 @@ export async function buildFixture(opts: { withDesign?: boolean } = {}): Promise
       layout: { width: 393, maxHeight: 1 },
       previewModes: ["mobile", "desktop"],
       flowPreset: "serene",
-      // Blocks carry NO label/required — that is what the designer produces now that
+      // Blocks carry NO label/required; that is what the designer produces now that
       // applyQuestionToBlock stops snapshotting them, so the live question supplies
       // both. b-txt is the deliberate exception: it keeps an explicit label, to prove
       // a real override still wins.

@@ -4,7 +4,7 @@
  * Three rules this file exists to protect:
  *
  *  1. A live release fires on the FIRST login. A brand-new browser is not a
- *     special case — if it were, the first release someone ever heard about
+ *     special case: if it were, the first release someone ever heard about
  *     would be the second one we shipped.
  *  2. Closing is not reading. A plain close quiets the release for this browser
  *     session only; it comes back next session. Only the "don't show this
@@ -13,7 +13,7 @@
  *     never tell a different story about the same release.
  *
  * Because of rule 1 the shared helpers silence the modal for every other spec
- * (see silenceWhatsNew in helpers.ts) — this file opts back in.
+ * (see silenceWhatsNew in helpers.ts); this file opts back in.
  *
  * Content lives in src/components/whatsNew/releases.ts. The strings asserted
  * below come from the seeded entries; if you retire those entries, retarget
@@ -42,7 +42,7 @@ const modal = (page: Page) => page.getByTestId('whats-new-modal');
  * Undo the blanket silencing the shared helpers apply.
  *
  * Must be registered BEFORE the goto helper: init scripts run in registration
- * order, so this flag is already set when silenceWhatsNew checks for it — on
+ * order, so this flag is already set when silenceWhatsNew checks for it, on
  * the first load and on every reload after.
  */
 async function enableAnnouncements(page: Page) {
@@ -71,7 +71,7 @@ async function startNewSession(page: Page) {
   await page.waitForLoadState('networkidle');
 }
 
-test.describe("What's new — announcement modal", () => {
+test.describe("What's new: announcement modal", () => {
   test('fires on a first-ever login, with nothing in storage', async ({ page }) => {
     await enableAnnouncements(page);
     await gotoAuthenticated(page, '/app/dashboard');
@@ -81,7 +81,7 @@ test.describe("What's new — announcement modal", () => {
 
     // …and the announcement still arrives.
     await expect(modal(page)).toBeVisible({ timeout: 6000 });
-    // Exact — the intro sentence also contains the phrase "a simpler view".
+    // Exact, since the intro sentence also contains the phrase "a simpler view".
     await expect(modal(page).getByText(ANNOUNCED_TITLE, { exact: true })).toBeVisible();
     await expect(modal(page).getByText(FIRST_ITEM)).toBeVisible();
   });
@@ -150,7 +150,7 @@ test.describe("What's new — announcement modal", () => {
     await expect(modal(page).getByText(DEFAULT_INTRO)).toBeHidden();
   });
 
-  test('is a read-only list — no per-item navigation', async ({ page }) => {
+  test('is a read-only list, with no per-item navigation', async ({ page }) => {
     await enableAnnouncements(page);
     await gotoAuthenticated(page, '/app/dashboard');
 
@@ -161,7 +161,7 @@ test.describe("What's new — announcement modal", () => {
   });
 });
 
-test.describe("What's new — same notes in both views", () => {
+test.describe("What's new: same notes in both views", () => {
   /**
    * There is no per-view filtering, and this is what stops it creeping back:
    * both views must show the same rows, in the same order, for the same release.
@@ -193,7 +193,7 @@ test.describe("What's new — same notes in both views", () => {
   });
 });
 
-test.describe("What's new — history page", () => {
+test.describe("What's new: history page", () => {
   test('lists quiet releases alongside announced ones', async ({ page }) => {
     await gotoAuthenticated(page, '/app/whats-new');
 
@@ -222,7 +222,7 @@ test.describe("What's new — history page", () => {
   test('is reachable from the planner sidebar footer', async ({ page }) => {
     await gotoAuthenticated(page, '/app/dashboard');
 
-    // Below Tailwind's `md` the rail is an off-canvas drawer — open it first,
+    // Below Tailwind's `md` the rail is an off-canvas drawer, so open it first,
     // or the link sits outside the viewport. Checking the width rather than the
     // toggle's visibility keeps this free of hydration races.
     if ((page.viewportSize()?.width ?? 0) < 768) {

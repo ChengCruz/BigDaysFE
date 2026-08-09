@@ -4,7 +4,7 @@
 // when an edit is refused. Real stack, real login, nothing mocked.
 //
 // View mode is pinned per test via localStorage rather than by clicking the
-// sidebar toggle — the mode persists, so a mid-test switch leaks into the next test.
+// sidebar toggle, since the mode persists, so a mid-test switch leaks into the next test.
 //
 // Run: npx playwright test -c docs/qa/playwright.qa.config.ts --project=desktop
 import { test, expect, type Page } from "@playwright/test";
@@ -23,7 +23,7 @@ const PASSWORD = process.env.QA_PASSWORD ?? "";
 const save = (name: string, data: unknown) =>
   writeFileSync(join(EVID, `admin-${name}.json`), JSON.stringify(data, null, 2));
 
-/** Real UI login — the access token is in-memory, so there is no shortcut. */
+/** Real UI login: the access token is in-memory, so there is no shortcut. */
 async function loginAs(page: Page, fx: Fixture, mode: "couple" | "planner" = "couple") {
   // Retire the What's New announcement before any app script runs: it re-arms on
   // every navigation and blocks clicks with a full-screen overlay. Pin the view
@@ -31,7 +31,7 @@ async function loginAs(page: Page, fx: Fixture, mode: "couple" | "planner" = "co
   // Keys from src/utils/whatsNew.ts and src/context/UiModeContext.tsx.
   // eventId is pinned here too, not just once after login: EventContext clears a
   // "stale" eventId when the cached events list doesn't contain it, and a
-  // just-created event is exactly that case — it would silently fall back to the
+  // just-created event is exactly that case; it would silently fall back to the
   // account's first event and the spec would design the wrong invite.
   await page.addInitScript(
     ({ m, ev }) => {
@@ -79,7 +79,7 @@ async function readQuestionRows(page: Page) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-test("E1 — the Questions page DOES tell the couple a question is hidden", async ({ page }) => {
+test("E1: the Questions page DOES tell the couple a question is hidden", async ({ page }) => {
   const fx = await buildFixture();
   await loginAs(page, fx, "couple");
 
@@ -104,7 +104,7 @@ test("E1 — the Questions page DOES tell the couple a question is hidden", asyn
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-test("E2 — the DESIGNER no longer offers a hidden question, and explains existing links", async ({ page }) => {
+test("E2: the DESIGNER no longer offers a hidden question, and explains existing links", async ({ page }) => {
   const fx = await buildFixture();
   expect((await hideQuestion(fx.qSelect, fx.eventGuid)).http).toBe(200);
 
@@ -159,7 +159,7 @@ test("E2 — the DESIGNER no longer offers a hidden question, and explains exist
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-test("F — editing an ANSWERED question is refused, and the couple is told why", async ({ page }) => {
+test("F: editing an ANSWERED question is refused, and the couple is told why", async ({ page }) => {
   const fx = await buildFixture();
 
   // Seed an answer so the question becomes uneditable.
@@ -220,7 +220,7 @@ test("F — editing an ANSWERED question is refused, and the couple is told why"
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-test("G — a first-time design opens with the couple's questions already in it", async ({ page }) => {
+test("G: a first-time design opens with the couple's questions already in it", async ({ page }) => {
   // Questions written BEFORE the designer was ever opened: no design row exists.
   const fx = await buildFixture({ withDesign: false });
   await loginAs(page, fx, "planner");

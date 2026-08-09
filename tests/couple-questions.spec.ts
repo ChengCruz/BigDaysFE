@@ -3,27 +3,27 @@
  *
  * Three things are under test, and each one guards a specific mistake:
  *
- * 1. ROUTE SPLIT — /app/form-fields must render the couple body in couple mode
+ * 1. ROUTE SPLIT: /app/form-fields must render the couple body in couple mode
  *    and the planner body in planner mode, from the SAME url. If someone forks
  *    this into /app/couple/form-fields, the step-1 card and the sidebar diverge.
  *
- * 2. THE STEP-1 LINK — CoupleGuestsPage must navigate to /app/form-fields, not
+ * 2. THE STEP-1 LINK: CoupleGuestsPage must navigate to /app/form-fields, not
  *    /app/events/:id/form-fields. Both render the same page (the :id segment is
  *    decorative), but only the former matches the Guests section in
- *    coupleSections.ts — the latter matches /app/events and lights up Home.
+ *    coupleSections.ts; the latter matches /app/events and lights up Home.
  *
- * 3. THE ENVELOPE — the backend returns HTTP *200* with `statusCode: 422`
+ * 3. THE ENVELOPE: the backend returns HTTP *200* with `statusCode: 422`
  *    inside the body when you edit a question that already has answers
  *    (QuestionService.UpdateQuestion). Nothing in client.ts converts that into
  *    a rejection, so react-query reports success. If the page trusts the
  *    promise it will close the modal on a save that never happened. There is no
- *    `hasExistingAnswers` field on the backend to predict this with — the
+ *    `hasExistingAnswers` field on the backend to predict this with, so the
  *    envelope is the only signal, which is why it is tested at all.
  */
 import { test, expect, type Page } from '@playwright/test';
 import { gotoAuthenticated, mockApi, MOCK_EVENT_GUID } from './helpers';
 
-/** Force couple mode before the app boots — UiModeContext reads it once, at mount. */
+/** Force couple mode before the app boots; UiModeContext reads it once, at mount. */
 async function forceCoupleMode(page: Page) {
   await page.addInitScript(() => localStorage.setItem('uiMode', 'couple'));
 }
@@ -77,7 +77,7 @@ async function mockQuestions(
       return route.fulfill({ status: 200, json: { isSuccess: true, data: questions } });
     }
     if (updateEnvelope && /\/question\/Update/i.test(url)) {
-      // Deliberately HTTP 200 — the failure lives in the body, as the BE does it.
+      // Deliberately HTTP 200: the failure lives in the body, as the BE does it.
       return route.fulfill({ status: 200, json: updateEnvelope });
     }
     return route.fallback();
@@ -101,7 +101,7 @@ test.describe('The route renders a different body per mode, from one url', () =>
   });
 
   test('planner mode still gets the planner page at the same url', async ({ page }) => {
-    // No uiMode override — gotoAuthenticated signs in as Admin (role 2, planner).
+    // No uiMode override; gotoAuthenticated signs in as Admin (role 2, planner).
     await gotoAuthenticated(page, '/app/form-fields');
     await mockQuestions(page);
     await page.reload();
@@ -226,7 +226,7 @@ test.describe('Hiding is offered as the reversible option, deleting as the final
 });
 
 test.describe('The backend contract is honoured exactly', () => {
-  test('update sends every field plus eventGuid — the BE update is a full replace', async ({
+  test('update sends every field plus eventGuid, since the BE update is a full replace', async ({
     page,
   }) => {
     await gotoCoupleQuestions(page);

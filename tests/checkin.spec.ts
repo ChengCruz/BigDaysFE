@@ -1,5 +1,5 @@
 /**
- * CheckIn page tests — Page render, idle state, and scan result UI states.
+ * CheckIn page tests: page render, idle state, and scan result UI states.
  * Note: QR scanning requires camera access and cannot be automated in headless
  * Playwright. These tests cover the static UI and the initial idle state.
  * Scan result states (success/error) are verified by injecting component state
@@ -10,7 +10,7 @@ import { gotoAuthenticated, mockApi, setMockAuth } from './helpers';
 
 // ── Page render ────────────────────────────────────────────────────────────────
 
-test.describe('CheckIn — Page render', () => {
+test.describe('CheckIn: Page render', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/checkin');
   });
@@ -38,7 +38,7 @@ test.describe('CheckIn — Page render', () => {
 
 // ── Error messages map ─────────────────────────────────────────────────────────
 
-test.describe('CheckIn — Error message strings (static verification)', () => {
+test.describe('CheckIn: Error message strings (static verification)', () => {
   // These tests verify the error message strings exist in the source page
   // by checking that the page renders correctly and the mapping is consistent.
   // Full scan-state tests require camera access or QR simulation.
@@ -66,7 +66,7 @@ test.describe('CheckIn — Error message strings (static verification)', () => {
 
 // ── No auth state ──────────────────────────────────────────────────────────────
 
-test.describe('CheckIn — Authenticated access', () => {
+test.describe('CheckIn: Authenticated access', () => {
   test('navigates to checkin page when authenticated', async ({ page }) => {
     await gotoAuthenticated(page, '/app/checkin');
     await expect(page).toHaveURL(/\/app\/checkin/);

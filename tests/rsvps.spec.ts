@@ -1,5 +1,5 @@
 /**
- * RSVPs page tests — Stat cards, List view, Grid view, Search, Empty states,
+ * RSVPs page tests covering Stat cards, List view, Grid view, Search, Empty states,
  * CRUD modals, and API response value verification.
  */
 import { test, expect } from '@playwright/test';
@@ -12,7 +12,7 @@ import {
 
 // ── Read (list) ────────────────────────────────────────────────────────────────
 
-test.describe('RSVPs — Read (list)', () => {
+test.describe('RSVPs: Read (list)', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/rsvps');
   });
@@ -30,7 +30,7 @@ test.describe('RSVPs — Read (list)', () => {
   });
 
   test('Total RSVPs count matches API response (1 RSVP)', async ({ page }) => {
-    // MOCK_RSVP is the single RSVP returned — stat shows 1
+    // MOCK_RSVP is the single RSVP returned, so stat shows 1
     const totalCard = page.locator('text=Total RSVPs').locator('../..');
     await expect(totalCard.locator('text=1')).toBeVisible();
   });
@@ -84,7 +84,7 @@ test.describe('RSVPs — Read (list)', () => {
 
 // ── Grid view ──────────────────────────────────────────────────────────────────
 
-test.describe('RSVPs — Grid view', () => {
+test.describe('RSVPs: Grid view', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/rsvps');
   });
@@ -102,7 +102,7 @@ test.describe('RSVPs — Grid view', () => {
 
 // ── Search filter ──────────────────────────────────────────────────────────────
 
-test.describe('RSVPs — Search filter', () => {
+test.describe('RSVPs: Search filter', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/rsvps');
   });
@@ -120,7 +120,7 @@ test.describe('RSVPs — Search filter', () => {
 
 // ── CRUD modals ────────────────────────────────────────────────────────────────
 
-test.describe('RSVPs — New RSVP modal', () => {
+test.describe('RSVPs: New RSVP modal', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/rsvps');
     await page.click('button:has-text("New RSVP")');
@@ -137,7 +137,7 @@ test.describe('RSVPs — New RSVP modal', () => {
   });
 });
 
-test.describe('RSVPs — Edit modal', () => {
+test.describe('RSVPs: Edit modal', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/rsvps');
   });
@@ -152,7 +152,7 @@ test.describe('RSVPs — Edit modal', () => {
   });
 });
 
-test.describe('RSVPs — Delete modal', () => {
+test.describe('RSVPs: Delete modal', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/rsvps');
   });
@@ -182,7 +182,7 @@ test.describe('RSVPs — Delete modal', () => {
 
 // ── Empty state ────────────────────────────────────────────────────────────────
 
-test.describe('RSVPs — Empty state (no RSVPs)', () => {
+test.describe('RSVPs: Empty state (no RSVPs)', () => {
   test.beforeEach(async ({ page }) => {
     await mockApi(page);
     // Override RSVPs GET to return empty list
@@ -217,7 +217,7 @@ test.describe('RSVPs — Empty state (no RSVPs)', () => {
 
 // ── Error state ────────────────────────────────────────────────────────────────
 
-test.describe('RSVPs — Error state', () => {
+test.describe('RSVPs: Error state', () => {
   test('shows error message when RSVPs API fails', async ({ page }) => {
     await mockApi(page);
     await page.route('**/__mock_api__/**', async route => {
@@ -238,7 +238,7 @@ test.describe('RSVPs — Error state', () => {
 
 // ── No event state ─────────────────────────────────────────────────────────────
 
-test.describe('RSVPs — No event state', () => {
+test.describe('RSVPs: No event state', () => {
   test('shows "No Events to Manage RSVPs" when no event selected', async ({ page }) => {
     await mockApi(page);
     await page.route('**/__mock_api__/**', async route => {

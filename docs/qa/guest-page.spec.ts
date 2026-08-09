@@ -63,7 +63,7 @@ async function gotoInvite(page: Page, fx: Fixture) {
 const labelsOf = (form: { fields: any[] }) => form.fields.map((f) => f.label);
 
 // ─────────────────────────────────────────────────────────────────────────────
-test("BASELINE — questions render with their own label, type and options", async ({ page }) => {
+test("BASELINE: questions render with their own label, type and options", async ({ page }) => {
   const fx = await buildFixture();
   await gotoInvite(page, fx);
 
@@ -85,7 +85,7 @@ test("BASELINE — questions render with their own label, type and options", asy
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-test("A — HIDING a question removes it from the live invite", async ({ page }) => {
+test("A: HIDING a question removes it from the live invite", async ({ page }) => {
   const fx = await buildFixture();
   expect((await hideQuestion(fx.qSelect, fx.eventGuid)).http).toBe(200);
 
@@ -114,7 +114,7 @@ test("A — HIDING a question removes it from the live invite", async ({ page })
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-test("A2 — UNHIDING brings the field back, with no edit to the design", async ({ page }) => {
+test("A2: UNHIDING brings the field back, with no edit to the design", async ({ page }) => {
   const fx = await buildFixture();
 
   await hideQuestion(fx.qSelect, fx.eventGuid);
@@ -147,7 +147,7 @@ test("A2 — UNHIDING brings the field back, with no edit to the design", async 
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-test("B — a hidden question cannot be answered from the invite", async ({ page }) => {
+test("B: a hidden question cannot be answered from the invite", async ({ page }) => {
   const fx = await buildFixture();
   expect((await hideQuestion(fx.qSelect, fx.eventGuid)).http).toBe(200);
 
@@ -196,7 +196,7 @@ test("B — a hidden question cannot be answered from the invite", async ({ page
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-test("C — RENAMING a question updates its label on the invite", async ({ page }) => {
+test("C: RENAMING a question updates its label on the invite", async ({ page }) => {
   const fx = await buildFixture();
   expect((await renameQuestion(fx.qRename, fx.eventGuid, "Do you need accommodation?", 3)).http).toBe(200);
 
@@ -218,12 +218,12 @@ test("C — RENAMING a question updates its label on the invite", async ({ page 
   // The rename reaches the guest, because the block no longer snapshots the label.
   expect(labels).toContain("Do you need accommodation?");
   expect(labels).not.toContain("Need a room");
-  // A deliberate override is still respected — it is not collateral damage.
+  // A deliberate override is still respected; it is not collateral damage.
   expect(labels).toContain("Your favourite song");
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-test("D — DELETING a question removes it from the invite; existing answers survive", async ({ page }) => {
+test("D: DELETING a question removes it from the invite; existing answers survive", async ({ page }) => {
   const fx = await buildFixture();
 
   // Seed a real answer through the public API so the question is "answered".
@@ -263,7 +263,7 @@ test("D — DELETING a question removes it from the invite; existing answers sur
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-test("E — a question added AFTER the design was built still reaches guests", async ({ page }) => {
+test("E: a question added AFTER the design was built still reaches guests", async ({ page }) => {
   // A published design covering the original three questions...
   const fx = await buildFixture();
 

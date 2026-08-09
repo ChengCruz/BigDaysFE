@@ -1,10 +1,10 @@
 /**
- * Dashboard page tests — quick actions navigation and page rendering.
+ * Dashboard page tests, covering quick actions navigation and page rendering.
  */
 import { test, expect } from '@playwright/test';
 import { gotoAuthenticated, mockApi, mockApiEmptyEvents, setMockAuth, MOCK_DASHBOARD } from './helpers';
 
-test.describe('Dashboard — rendering', () => {
+test.describe('Dashboard: rendering', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/dashboard');
   });
@@ -134,7 +134,7 @@ test.describe('Dashboard — rendering', () => {
   });
 });
 
-test.describe('Dashboard — quick actions navigation', () => {
+test.describe('Dashboard: quick actions navigation', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/dashboard');
   });
@@ -160,7 +160,7 @@ test.describe('Dashboard — quick actions navigation', () => {
   });
 });
 
-test.describe('Dashboard — stat card navigation', () => {
+test.describe('Dashboard: stat card navigation', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/dashboard');
   });
@@ -181,7 +181,7 @@ test.describe('Dashboard — stat card navigation', () => {
   });
 });
 
-test.describe('Dashboard — no activity state', () => {
+test.describe('Dashboard: no activity state', () => {
   test('shows "No activity yet" when recentActivity is empty', async ({ page }) => {
     await mockApi(page);
     // Override Dashboard Summary to return empty recentActivity
@@ -215,7 +215,7 @@ test.describe('Dashboard — no activity state', () => {
   });
 });
 
-test.describe('Dashboard — no events exist', () => {
+test.describe('Dashboard: no events exist', () => {
   test.beforeEach(async ({ page }) => {
     await mockApiEmptyEvents(page);
     await page.goto('/login');

@@ -5,7 +5,7 @@
 import { test, expect } from '@playwright/test';
 import { gotoAuthenticated } from './helpers';
 
-test.describe('Dashboard navigation — sidebar links', () => {
+test.describe('Dashboard navigation: sidebar links', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/dashboard');
   });

@@ -1,5 +1,5 @@
 // docs/qa/run-api-matrix.mjs
-// E2E matrix driver — REAL backend, no mocks.
+// E2E matrix driver: REAL backend, no mocks.
 // Exercises Question CRUD against the three consumers that read questions:
 //   admin list (GetQuestions) · guest template (eventRsvp/slug) · answer write (rsvp/Create)
 // Writes one JSON evidence file per scenario to ./evidence/.
@@ -34,7 +34,7 @@ const EMAIL = process.env.QA_EMAIL ?? "";
 const PASSWORD = process.env.QA_PASSWORD ?? "";
 const API_KEY = process.env.QA_API_KEY ?? "a";
 if (!EMAIL || !PASSWORD) {
-  throw new Error("QA_EMAIL and QA_PASSWORD must be set — see docs/qa/TEST_FLOW.md");
+  throw new Error("QA_EMAIL and QA_PASSWORD must be set; see docs/qa/TEST_FLOW.md");
 }
 
 let token = null;
@@ -87,7 +87,7 @@ const qById = (list, id) => (list ?? []).find((q) => String(q.questionId) === St
 const blockFor = (blocks, id) =>
   (blocks ?? []).find((b) => String(b.questionId ?? b.formFieldId) === String(id));
 
-/** Both consumers, side by side — the whole point of the exercise. */
+/** Both consumers, side by side: the whole point of the exercise. */
 async function readBothSides(slug, eventGuid) {
   const admin = await api("GET", `/question/GetQuestions/${eventGuid}`);
   const guest = await api("GET", `/event/eventRsvp/slug/${slug}`, undefined, { anon: true });
@@ -124,7 +124,7 @@ const run = async () => {
     name: `QA Question/RSVP ${stamp}`,
     date: "2027-06-12T00:00:00",
     time: "15:00",
-    description: "Automated QA — question/design/submit relationship",
+    description: "Automated QA: question/design/submit relationship",
     location: "QA Venue",
     userGuid,
     noOfTable: "5",
@@ -145,9 +145,9 @@ const run = async () => {
   });
 
   // ─── Setup: three questions ──────────────────────────────────────────────
-  // Q_SEL  select w/ options — proves type degradation when config is lost
-  // Q_RENAME text          — proves label propagation
-  // Q_DEL  text            — proves delete-with-answers behaviour
+  // Q_SEL  select w/ options: proves type degradation when config is lost
+  // Q_RENAME text          : proves label propagation
+  // Q_DEL  text            : proves delete-with-answers behaviour
   const mk = (text, type, isRequired, options, order) =>
     api("POST", "/question/Create", { text, type, isRequired, options, order, eventGuid });
 
@@ -202,7 +202,7 @@ const run = async () => {
       ],
       // FE sends this; watching whether it survives the round trip.
       // NOTE: mapToBackendPayload runs a GUID regex over the question id and emits
-      // `id: undefined, questionId: undefined` for int ids — JSON.stringify then drops
+      // `id: undefined, questionId: undefined` for int ids, and JSON.stringify then drops
       // the keys entirely. Reproduced verbatim: these configs go out with NO identity.
       formFieldConfigs: [
         { label: "Meal choice", text: "Meal choice", typeKey: "select", type: 2,
@@ -227,7 +227,7 @@ const run = async () => {
   });
 
   // ─── Probe: the "Add RSVP form" preset path ──────────────────────────────
-  // transformBlockToBackend spreads customQuestions VERBATIM (`{...q}`) — unlike
+  // transformBlockToBackend spreads customQuestions VERBATIM (`{...q}`); unlike
   // formField blocks it applies no GUID regex and no formFieldId fallback, so an
   // int question id goes to the wire as `questionId: "31"`. Probed on its own so
   // a failure here can't be confused with the formField path above.
@@ -248,7 +248,7 @@ const run = async () => {
       errors: presetSave.json?.errors ?? null,
       VERDICT: presetSave.http === 200
         ? "accepted"
-        : "REJECTED — customQuestions[].questionId is not int-compatible on the wire",
+        : "REJECTED: customQuestions[].questionId is not int-compatible on the wire",
     },
     response: presetSave.json,
   });
@@ -303,7 +303,7 @@ const run = async () => {
       statusCode: submitHidden.json?.statusCode,
       message: submitHidden.json?.message,
       VERDICT: submitHidden.json?.isSuccess
-        ? "ACCEPTED — no validation that the question is visible"
+        ? "ACCEPTED: no validation that the question is visible"
         : "rejected",
     },
     response: submitHidden.json,
@@ -320,12 +320,12 @@ const run = async () => {
     summary: {
       http: submitGhost.http, isSuccess: submitGhost.json?.isSuccess,
       message: submitGhost.json?.message,
-      VERDICT: submitGhost.json?.isSuccess ? "ACCEPTED — orphan answer stored, no FK" : "rejected",
+      VERDICT: submitGhost.json?.isSuccess ? "ACCEPTED: orphan answer stored, no FK" : "rejected",
     },
     response: submitGhost.json,
   });
 
-  // ─── Read the RSVP list back — can the couple see these answers? ─────────
+  // ─── Read the RSVP list back: can the couple see these answers? ─────────
   const rsvpList = await api("GET", `/rsvp/GetRsvp/List/${eventGuid}`);
   const rsvps = rsvpList.json?.data ?? [];
   rec("07-rsvp-list-with-answers", {
@@ -335,13 +335,13 @@ const run = async () => {
         guestName: r.guestName,
         answers: (r.answers ?? []).map((a) => ({ questionId: a.questionId, text: a.text })),
       })),
-      NOTE: "answers carry questionId only — no label/text snapshot",
+      NOTE: "answers carry questionId only, no label/text snapshot",
     },
     rsvps,
   });
 
   // ─── D: RENAME a question that has NO answers ───────────────────────────
-  // Q_DEL has no answers yet — safe rename target.
+  // Q_DEL has no answers yet, so it is a safe rename target.
   const renameClean = await api("POST", "/question/Update", {
     questionId: String(Q_DEL.questionId), eventGuid,
     text: "Need a hotel room (RENAMED)", type: 0, isRequired: false, options: "", order: 3,
@@ -371,7 +371,7 @@ const run = async () => {
       textAfter: qById(afterRenameDirty.guestQuestions, Q_RENAME.questionId)?.text,
       EXPECTED_PER_CODE_READ: "HTTP 200, envelope statusCode 422 'question has ... answer submitted'",
       VERDICT: renameDirty.http === 500
-        ? "HTTP 500 — the documented 422 refusal is DEAD CODE (EF identity conflict in LockQuestion)"
+        ? "HTTP 500: the documented 422 refusal is DEAD CODE (EF identity conflict in LockQuestion)"
         : `HTTP ${renameDirty.http}`,
     },
     response: renameDirty.json,
@@ -392,12 +392,12 @@ const run = async () => {
       designBlockStillPresent: !!blockFor(afterDelete.designBlocks, Q_SEL.questionId),
       answersStillReturned: (rsvpAfterDelete.json?.data ?? []).flatMap((r) => r.answers ?? [])
         .filter((a) => String(a.questionId) === String(Q_SEL.questionId)).length,
-      VERDICT: "delete of an ANSWERED question is allowed (rename is not) — answers orphaned",
+      VERDICT: "delete of an ANSWERED question is allowed (rename is not), so answers are orphaned",
     },
     ...afterDelete,
   });
 
-  // ─── G: re-activate — does it come back? ────────────────────────────────
+  // ─── G: re-activate: does it come back? ────────────────────────────────
   const react = await api("POST", "/question/Activate", { questionId: String(Q_RENAME.questionId), eventId: eventGuid });
   const deactThenReact = await readBothSides(realSlug, eventGuid);
   rec("11-G-activate-idempotent", {

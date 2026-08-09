@@ -1,5 +1,5 @@
 /**
- * Planner-mode question builder (FormFieldsPage) — the envelope contract.
+ * Planner-mode question builder (FormFieldsPage): the envelope contract.
  *
  * The question endpoints do not report every refusal as a 4xx. POST
  * /question/Update answers HTTP *200* with `statusCode: 422` inside the body when
@@ -14,7 +14,7 @@
  * contract, plus the identifiers each write has to carry.
  *
  * On identifiers: `eventGuid` on create/update and `eventId` on the toggles are
- * two names for the SAME value — an event GUID. QuestionToggleRequest.EventId is
+ * two names for the SAME value: an event GUID. QuestionToggleRequest.EventId is
  * a string that QuestionService feeds to IdsValidatorHelper.GetEventGuid, so a
  * numeric event id there is a 400. Only `questionId` is an integer (the identity
  * PK), and it travels as a string.
@@ -52,7 +52,7 @@ async function mockQuestions(page: Page, envelopes: Envelopes = {}) {
     if (/\/question\/GetQuestions\//i.test(url)) {
       return route.fulfill({ status: 200, json: { isSuccess: true, data: QUESTIONS } });
     }
-    // Deliberately HTTP 200 on every one of these — the failure lives in the body.
+    // Deliberately HTTP 200 on every one of these; the failure lives in the body.
     if (envelopes.update && /\/question\/Update/i.test(url)) {
       return route.fulfill({ status: 200, json: envelopes.update });
     }
@@ -114,7 +114,7 @@ test.describe('A refusal hidden in a 200 is surfaced, not swallowed', () => {
     await expect(page.getByRole('alert')).toHaveCount(0);
   });
 
-  test('a refused delete is surfaced too — the toggles use the same envelope', async ({ page }) => {
+  test('a refused delete is surfaced too, since the toggles use the same envelope', async ({ page }) => {
     await gotoFormFields(page, {
       delete: { isSuccess: false, statusCode: 422, message: 'Delete failed.', data: false },
     });
@@ -131,7 +131,7 @@ test.describe('A refusal hidden in a 200 is surfaced, not swallowed', () => {
     });
 
     await page.click('[title="Deactivate question"]');
-    // exact — the row's icon button is named "Deactivate question".
+    // exact: the row's icon button is named "Deactivate question".
     await page.getByRole('button', { name: 'Deactivate', exact: true }).click();
 
     await expect(page.getByRole('alert')).toContainText('Deactivate failed.');
@@ -149,14 +149,14 @@ test.describe('Every write carries the identifiers the backend validates', () =>
     const sent = await body;
     expect(sent.eventGuid).toBe(MOCK_EVENT_GUID);
     expect(String(sent.questionId)).toBe('7');
-    // Update is a full replace — AssignEventsParam assigns all of these
+    // Update is a full replace: AssignEventsParam assigns all of these
     // unconditionally, so an omitted key is a wipe, not a no-op.
     for (const key of ['text', 'type', 'options', 'order', 'isRequired']) {
       expect(sent).toHaveProperty(key);
     }
   });
 
-  test('delete sends the event GUID under eventId — the toggles parse it as a Guid', async ({
+  test('delete sends the event GUID under eventId, since the toggles parse it as a Guid', async ({
     page,
   }) => {
     await gotoFormFields(page);
@@ -166,7 +166,7 @@ test.describe('Every write carries the identifiers the backend validates', () =>
     await page.getByRole('button', { name: 'Delete Permanently' }).click();
 
     const sent = await body;
-    // Named eventId, but GetEventGuid parses it — an integer here is a 400.
+    // Named eventId, but GetEventGuid parses it, so an integer here is a 400.
     expect(sent.eventId).toBe(MOCK_EVENT_GUID);
     expect(String(sent.questionId)).toBe('7');
   });
@@ -176,7 +176,7 @@ test.describe('Every write carries the identifiers the backend validates', () =>
     const body = capturePost(page, /\/question\/Deactivate/i);
 
     await page.click('[title="Deactivate question"]');
-    // exact — the row's icon button is named "Deactivate question".
+    // exact: the row's icon button is named "Deactivate question".
     await page.getByRole('button', { name: 'Deactivate', exact: true }).click();
 
     const sent = await body;
