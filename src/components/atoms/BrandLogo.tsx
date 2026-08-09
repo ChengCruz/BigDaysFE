@@ -7,10 +7,10 @@ interface BrandLogoProps {
   height?: number | string;
   /**
    * Color treatment:
-   * - `full`  — full-color logo (rose + gold)
-   * - `dark`  — single-color ink mark, for light surfaces
-   * - `light` — single-color cream mark, for dark surfaces
-   * - `auto`  — ink in light mode, cream in dark mode (Tailwind `dark:`)
+   * - `full`  : full-color logo (rose + gold)
+   * - `dark`  : single-color ink mark, for light surfaces
+   * - `light` : single-color cream mark, for dark surfaces
+   * - `auto`  : ink in light mode, cream in dark mode (Tailwind `dark:`)
    */
   tone?: LogoTone;
   className?: string;
@@ -24,7 +24,7 @@ const SRC = {
   light: "/mybigday-logo-light.png",
 } as const;
 
-// Intrinsic size of the trimmed asset — set as width/height attrs so the browser
+// Intrinsic size of the trimmed asset: set as width/height attrs so the browser
 // reserves the right space before the PNG loads (avoids layout shift).
 const INTRINSIC_W = 1401;
 const INTRINSIC_H = 1107;

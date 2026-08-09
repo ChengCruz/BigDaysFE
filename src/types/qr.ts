@@ -1,7 +1,7 @@
 export interface QrToken {
   guestId: string;
   eventId: string;
-  token: string; // UUID v4 — used to render QR image client-side
+  token: string; // UUID v4, used to render QR image client-side
   generatedAt: string;
   isRevoked: boolean;
   checkedInAt: string | null;

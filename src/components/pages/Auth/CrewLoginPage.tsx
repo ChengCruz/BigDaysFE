@@ -1,6 +1,6 @@
 // src/components/pages/Auth/CrewLoginPage.tsx
 // Dedicated crew (event-day staff) sign-in. Reached via the invite message /
-// Crew page link the organiser shares — deliberately kept out of the public nav.
+// Crew page link the organiser shares; deliberately kept out of the public nav.
 import React, { useState } from "react";
 import { useNavigate, Link, Navigate } from "react-router";
 import { useAuth } from "../../../api/hooks/useAuth";
@@ -42,7 +42,7 @@ export default function CrewLoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   if (loading) return null;
-  // Already signed in — let /app route them to the right place (crew → check-in).
+  // Already signed in, so let /app route them to the right place (crew → check-in).
   if (user) return <Navigate to="/app" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,7 +89,7 @@ export default function CrewLoginPage() {
           </h1>
 
           <p style={{ color: '#6B5D50', marginBottom: '1.5rem', fontSize: '1.1rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
-            For event-day staff — enter the Event Code, Crew ID and PIN your organiser gave you.
+            For event-day staff: enter the Event Code, Crew ID and PIN your organiser gave you.
           </p>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>

@@ -29,7 +29,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = !!userGuid;
   const isCrew = userRole === 6;
 
-  // Crew users are scoped to a single event set at login — skip the admin
+  // Crew users are scoped to a single event set at login, so skip the admin
   // events-list endpoint entirely and use the guid stored in sessionStorage.
   const crewEventGuid = isCrew ? (crewEventGuidStore.get() ?? undefined) : undefined;
 
@@ -55,7 +55,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
 
   // Synchronously resolve the best event when none is stored (e.g. after login).
   // Using useMemo means effectiveEventId is available on the same render that
-  // events finish loading — no flash of "no event" or selector modal.
+  // events finish loading, with no flash of "no event" or selector modal.
   const autoSelectedId = useMemo((): string | undefined => {
     if (isCrew) return undefined;
     if (eventId || eventsLoading || !events || events.length === 0) return undefined;

@@ -269,7 +269,7 @@ export const ImportRsvpsModal: React.FC<Props> = ({
         {/* Step 1 */}
         <div className="space-y-2">
           <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            Step 1 — Get the template
+            Step 1: Get the template
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Download the Excel template for this event. It includes columns for all custom questions.
@@ -349,7 +349,7 @@ export const ImportRsvpsModal: React.FC<Props> = ({
                 {cols.some((c) => c.options) && (
                   <div className="px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border-t border-amber-100 dark:border-amber-800/40">
                     <p className="text-[10px] text-amber-700 dark:text-amber-400">
-                      For fields showing <span className="font-semibold">1 / 2 / 3…</span>, enter the number in your Excel file — e.g. type <span className="font-semibold">1</span> for the first option.
+                      For fields showing <span className="font-semibold">1 / 2 / 3…</span>, enter the number in your Excel file (e.g. type <span className="font-semibold">1</span> for the first option).
                     </p>
                   </div>
                 )}
@@ -363,7 +363,7 @@ export const ImportRsvpsModal: React.FC<Props> = ({
         {/* Step 2 */}
         <div className="space-y-3">
           <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            Step 2 — Upload your filled file
+            Step 2: Upload your filled file
           </p>
           <label className="flex items-center gap-3 cursor-pointer">
             <span className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">

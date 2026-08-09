@@ -271,7 +271,7 @@ export function GlobalSettingsPanel({
         </div>
 
 
-        {/* ── Content width — a real phone viewport, not an abstract size ── */}
+        {/* ── Content width: a real phone viewport, not an abstract size ── */}
         <div className="space-y-3">
           <SectionTitle>Phone width</SectionTitle>
           <p className="-mt-1 text-xs text-gray-400">
@@ -356,7 +356,7 @@ export function GlobalSettingsPanel({
         <div className="space-y-3">
           <SectionTitle>Preview backdrop</SectionTitle>
           <p className="text-xs text-gray-400">
-            Shown around the phone frame — in this preview and on the guest page when
+            Shown around the phone frame, both in this preview and on the guest page when
             viewed on a desktop. Guests on a phone see the design full-width, so the
             backdrop isn't visible to them.
           </p>
@@ -409,7 +409,7 @@ export function GlobalSettingsPanel({
           )}
         </div>
 
-        {/* ── Ambient music — hidden for now, to be implemented later ──
+        {/* ── Ambient music: hidden for now, to be implemented later ──
         <div className="space-y-2">
           <SectionTitle>Ambient music</SectionTitle>
           <input
@@ -419,7 +419,7 @@ export function GlobalSettingsPanel({
             className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 transition"
             placeholder="https://example.com/music.mp3"
           />
-          <p className="text-xs text-gray-400">Direct link to .mp3/.ogg — guests see a floating play button.</p>
+          <p className="text-xs text-gray-400">Direct link to .mp3/.ogg. Guests see a floating play button.</p>
         </div>
         ── */}
 

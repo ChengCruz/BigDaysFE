@@ -1,6 +1,6 @@
 // src/components/pages/Budget/CoupleBudgetPage.tsx
 //
-// Couple-mode money. Same budget and transactions as BudgetPage — what changes
+// Couple-mode money. Same budget and transactions as BudgetPage; what changes
 // is which facts are surfaced.
 //
 // The transaction record already carries `vendorName`, `paymentStatus` and
@@ -8,7 +8,7 @@
 // mode buries them in table columns. A couple's actual questions are "what do
 // we still owe" and "is anything late", so those come first here.
 //
-// Money is split into three inner tabs held in local state — /app/budget is a
+// Money is split into three inner tabs held in local state; /app/budget is a
 // single route and stays that way.
 
 import { useMemo, useState } from "react";
@@ -120,7 +120,7 @@ export default function CoupleBudgetPage() {
       <ErrorState message="We couldn’t load your budget." onRetry={() => window.location.reload()} />
     );
 
-  // No budget yet — a warmer first run than the planner setup prompt.
+  // No budget yet: a warmer first run than the planner setup prompt.
   if (!budget) {
     return (
       <div className="flex flex-col gap-5">
@@ -136,7 +136,7 @@ export default function CoupleBudgetPage() {
           </span>
           <p className="text-lg font-semibold text-text">Set your budget</p>
           <p className="max-w-[36ch] text-sm text-text/55">
-            Put in a number you’re comfortable with. You can change it any time — nothing here is
+            Put in a number you’re comfortable with. You can change it any time, since nothing here is
             locked in.
           </p>
           <Button variant="primary" onClick={() => setSetupOpen(true)}>
@@ -209,7 +209,7 @@ export default function CoupleBudgetPage() {
         <p className="text-sm text-text/60">{money(total)} set aside for the wedding.</p>
       </div>
 
-      {/* ─── Inner tabs (local state — /app/budget stays one route) ───────── */}
+      {/* ─── Inner tabs (local state; /app/budget stays one route) ───────── */}
       <div className="flex gap-1 rounded-full border border-primary/15 bg-white p-1">
         {TABS.map((t) => (
           <button
@@ -237,7 +237,7 @@ export default function CoupleBudgetPage() {
               {split.late.length} payment{split.late.length === 1 ? " is" : "s are"} overdue
             </p>
             <p className="mb-3 text-[13px] text-white/90">
-              {split.late[0].transactionName} — {money(split.late[0].amount)}
+              {split.late[0].transactionName}: {money(split.late[0].amount)}
               {split.late[0].dueDate ? `, was due ${fmtDue(split.late[0].dueDate)}` : ""}.
             </p>
             <button

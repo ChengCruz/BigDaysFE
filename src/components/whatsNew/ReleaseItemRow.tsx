@@ -5,7 +5,7 @@
 //
 // Deliberately read-only. An earlier version put a "Show me" link on every row;
 // five of them down a list pulled the eye away from the words, and on the
-// history page they were plainly wrong — that page is a record of what changed,
+// history page they were plainly wrong: that page is a record of what changed,
 // not an onboarding flow.
 
 import { FALLBACK_ICON, TOUR_ICONS } from "../tour/tourIcons";

@@ -109,7 +109,7 @@ function BadgesTab() {
           </div>
         }
         label="Guest Type"
-        description="Family, VIP, Friend, or Other — color-coded border badge."
+        description="Family, VIP, Friend, or Other: color-coded border badge."
       />
       <GuideCard
         icon={

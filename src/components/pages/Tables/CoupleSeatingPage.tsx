@@ -1,6 +1,6 @@
 // src/components/pages/Tables/CoupleSeatingPage.tsx
 //
-// Couple-mode seating. Same data and same endpoints as TablesPageV3 — what
+// Couple-mode seating. Same data and same endpoints as TablesPageV3: what
 // changes is that the job comes first (who still needs a seat) and assignment
 // works by tapping rather than dragging, because dragging does not work on a
 // phone.
@@ -8,7 +8,7 @@
 // ── Rules inherited from planner mode, not invented here ──────────────────
 // 1. A party cannot be split. One RSVP is one Guest row carrying `pax`, and
 //    AssignTable takes a single guestId. See docs/COUPLE_MODE.md.
-// 2. Over-capacity is ALWAYS allowed, never blocked — it only warns. Tables
+// 2. Over-capacity is ALWAYS allowed, never blocked; it only warns. Tables
 //    that would overfill are flagged amber but stay tappable. The warning
 //    sentence and its amber toast styling are copied verbatim from
 //    TablesPage.tsx:234 / GuestsPage.tsx:193 / TableAssignments.tsx:56.
@@ -83,7 +83,7 @@ export default function CoupleSeatingPage() {
   /** Party awaiting a table (tap a party, then tap a table). */
   const [picking, setPicking] = useState<Guest | null>(null);
   const [openTableId, setOpenTableId] = useState<string | null>(null);
-  /** Parties the last auto-assign could not place — from skippedGuestIds. */
+  /** Parties the last auto-assign could not place (from skippedGuestIds). */
   const [skippedIds, setSkippedIds] = useState<string[]>([]);
   const [addTableOpen, setAddTableOpen] = useState(false);
 
@@ -177,7 +177,7 @@ export default function CoupleSeatingPage() {
         const skipped = data?.skippedGuestIds ?? [];
         setSkippedIds(skipped);
         if (skipped.length) {
-          toast(`Seated ${assigned} — ${skipped.length} didn’t fit`, {
+          toast(`Seated ${assigned}, but ${skipped.length} didn’t fit`, {
             duration: 4000,
             style: { background: "#fef3c7", color: "#92400e" },
           });
@@ -228,7 +228,7 @@ export default function CoupleSeatingPage() {
         </NavLink>
       </div>
 
-      {/* All three are pax sums, so every label says "seats" — couple mode's
+      {/* All three are pax sums, so every label says "seats": couple mode's
           word for planner's "(pax)" suffix. The guests page's "No table yet"
           counts parties, so this one cannot borrow that wording. */}
       <div className="grid grid-cols-3 gap-3">
@@ -293,7 +293,7 @@ export default function CoupleSeatingPage() {
               Seating {picking.guestName || picking.name}
             </p>
             <p className="text-[12.5px] text-white/80">
-              {paxOf(picking)} {paxOf(picking) === 1 ? "seat" : "seats"} — now tap a table
+              {paxOf(picking)} {paxOf(picking) === 1 ? "seat" : "seats"}; now tap a table
             </p>
           </div>
           <button
@@ -309,7 +309,7 @@ export default function CoupleSeatingPage() {
         <div className="overflow-hidden rounded-2xl border border-primary/10 bg-white">
           <div className="flex items-center justify-between gap-3 border-b border-primary/10 px-4 py-3">
             <p className="text-sm text-text/70">
-              {/* A row count, so it must not say "seats" — the card above it
+              {/* A row count, so it must not say "seats". The card above it
                   reads "Seats needed" and sums pax. */}
               <span className="text-[15px] font-bold text-text">{unseated.length}</span>{" "}
               still ha{unseated.length === 1 ? "s" : "ve"} no table
@@ -443,7 +443,7 @@ export default function CoupleSeatingPage() {
                     {isOver
                       ? "Over capacity"
                       : tight
-                        ? `Only ${Math.max(free, 0)} left — will overfill`
+                        ? `Only ${Math.max(free, 0)} left (will overfill)`
                         : fits
                           ? "Seat them here →"
                           : isFull
@@ -451,7 +451,7 @@ export default function CoupleSeatingPage() {
                             : `${free} seat${free === 1 ? "" : "s"} free`}
                   </span>
                   <span className="sr-only">
-                    {t.name} — {filled} of {t.capacity} seats filled
+                    {t.name}: {filled} of {t.capacity} seats filled
                   </span>
                 </button>
 

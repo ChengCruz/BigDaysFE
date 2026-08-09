@@ -1,7 +1,7 @@
 // src/components/organisms/coupleSections.ts
 //
 // The five couple-mode destinations. This is the single source of truth for
-// both the desktop rail and the mobile tab bar — add a section in one place.
+// both the desktop rail and the mobile tab bar; add a section in one place.
 //
 // Nothing here changes any route. Every `to` and `match` value is an existing
 // path from src/routers/routes.tsx, so bookmarks and email deep-links keep

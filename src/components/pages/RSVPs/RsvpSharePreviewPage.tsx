@@ -59,7 +59,7 @@ export default function RsvpSharePreviewPage() {
     let cancelled = false;
 
     // Fallback chain for the preview page:
-    //   1. Token endpoint (intended public path — currently unreliable; see
+    //   1. Token endpoint (intended public path, currently unreliable; see
     //      .claude/todo/rsvp-v3-preview-public-sync.md).
     //   2. ?slug=  → public slug endpoint (works for everyone).
     //   3. ?event= → admin design endpoint (only works for logged-in admins).

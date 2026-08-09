@@ -19,7 +19,7 @@ const errorMessages: Record<CheckInErrorCode | "UNKNOWN" | "NO_TOKEN", string> =
   WRONG_DAY: "QR not valid today.",
   TOKEN_NOT_FOUND: "Unknown QR code.",
   NO_TOKEN: "No QR code generated for this guest yet.",
-  UNKNOWN: "Unexpected error — try again.",
+  UNKNOWN: "Unexpected error, try again.",
 };
 
 function mapError(err: unknown): CheckInErrorCode | "UNKNOWN" {
@@ -108,7 +108,7 @@ export const ManualCheckInModal: React.FC<ManualCheckInModalProps> = ({
     try {
       await undoCheckIn.mutateAsync({ token: tokenRec.token, eventId });
     } catch {
-      setError("Failed to undo check-in — try again.");
+      setError("Failed to undo check-in, try again.");
     } finally {
       setUndoingGuestId(null);
     }

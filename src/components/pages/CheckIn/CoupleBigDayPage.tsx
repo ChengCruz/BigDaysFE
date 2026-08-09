@@ -1,20 +1,20 @@
 // src/components/pages/CheckIn/CoupleBigDayPage.tsx
 //
-// Couple-mode Big Day. Same route (/app/checkin) and the same scanner — what
+// Couple-mode Big Day. Same route (/app/checkin) and the same scanner; what
 // changes is that the day-of helper list is reachable from the section that
 // already owns it.
 //
 // `coupleSections.ts` maps BOTH /app/checkin and /app/crew to the Big Day tab,
 // so standing on crew lights this tab up. Until this page existed the tab still
 // navigated to check-in and nothing on it led onward, so crew hung off the rail
-// footer instead — an event-scoped list wedged between two account-level links,
+// footer instead, an event-scoped list wedged between two account-level links,
 // and on mobile it lived in the avatar menu where nobody looks for it.
 //
 // The row below is now the ONLY path to /app/crew in couple mode. If you rework
 // this page, keep one.
 //
 // The scanner itself is `CheckInPage`, untouched and shared with planner mode
-// and with the crew role — this file only prepends to it.
+// and with the crew role; this file only prepends to it.
 
 import { Link } from "react-router";
 import { ChevronRightIcon, IdentificationIcon } from "@heroicons/react/solid";
@@ -37,7 +37,7 @@ export default function CoupleBigDayPage() {
       ? `${active} ${active === 1 ? "person" : "people"} can scan guests in on the day`
       : crew.length > 0
         ? "Everyone you added is switched off right now"
-        : "No one yet — you'll be checking guests in on your own";
+        : "No one yet, so you'll be checking guests in on your own";
 
   return (
     <>

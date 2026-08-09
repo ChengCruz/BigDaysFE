@@ -53,10 +53,10 @@ export default function TablesPage() {
   const [selectedTableIds, setSelectedTableIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [statsExpanded, setStatsExpanded] = useState(true);
-  // Tap-to-assign pickup state — works alongside HTML5 drag-and-drop.
+  // Tap-to-assign pickup state, works alongside HTML5 drag-and-drop.
   // sourceTableId === null means the guest was picked from the Unassigned panel.
   const [picked, setPicked] = useState<{ guestId: string; paxCount: number; sourceTableId: string | null } | null>(null);
-  // Mobile tab switcher (only visible < lg). Defaults to "tables" — the main work surface.
+  // Mobile tab switcher (only visible < lg). Defaults to "tables", the main work surface.
   const [mobileTab, setMobileTab] = useState<"unassigned" | "tables">("tables");
 
   // Calculate statistics (must be before early returns - React rules of hooks)
@@ -174,7 +174,7 @@ export default function TablesPage() {
   }, [tablesWithGuests, searchTerm, filterType]);
 
   // ESC cancels pickup. Declared up here so it stays above the early returns
-  // (Rules of Hooks — hooks must run in the same order every render).
+  // (Rules of Hooks: hooks must run in the same order every render).
   useEffect(() => {
     if (!picked) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setPicked(null); };
@@ -370,8 +370,8 @@ export default function TablesPage() {
           <SparklesIcon className="w-4 h-4 flex-shrink-0" />
           <span className="text-xs md:text-sm font-medium truncate">
             {picked.sourceTableId
-              ? <>Moving <strong>{pickedGuest?.guestName || pickedGuest?.name}</strong>{pickedSourceTableName ? <> from <em className="not-italic opacity-80">{pickedSourceTableName}</em></> : ""} — tap a table</>
-              : <>Assigning <strong>{pickedGuest?.guestName || pickedGuest?.name}</strong> — tap a table</>
+              ? <>Moving <strong>{pickedGuest?.guestName || pickedGuest?.name}</strong>{pickedSourceTableName ? <> from <em className="not-italic opacity-80">{pickedSourceTableName}</em></> : ""}; tap a table</>
+              : <>Assigning <strong>{pickedGuest?.guestName || pickedGuest?.name}</strong>; tap a table</>
             }
           </span>
           {picked.sourceTableId && (
@@ -482,7 +482,7 @@ export default function TablesPage() {
         )}
       </div>
 
-      {/* Stats overview — collapsible */}
+      {/* Stats overview (collapsible) */}
       <div className="mb-5">
         <div className="flex items-center justify-between mb-2">
           <button
@@ -496,7 +496,7 @@ export default function TablesPage() {
             data-tour="tables-fullscreen"
             onClick={() => window.open("/app/tables/fullscreen", "_blank")}
             className="group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50/70 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-900/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors text-[11px] font-medium text-indigo-700 dark:text-indigo-300"
-            title="Open in fullscreen mode — better for 100+ guests"
+            title="Open in fullscreen mode: better for 100+ guests"
           >
             <ArrowsExpandIcon className="w-3 h-3 text-indigo-500 dark:text-indigo-400" />
             <span>Fullscreen mode</span>
@@ -534,7 +534,7 @@ export default function TablesPage() {
         />
       </div>
 
-      {/* Mobile tab switcher — picks which panel is visible on < lg.
+      {/* Mobile tab switcher: picks which panel is visible on < lg.
           Auto-switches to "tables" when a guest is picked from the Unassigned panel. */}
       <div className="lg:hidden flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 mb-4">
         {([

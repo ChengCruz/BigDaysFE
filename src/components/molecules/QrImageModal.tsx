@@ -22,7 +22,7 @@ export default function QrImageModal({ isOpen, guestName, token, onClose }: Prop
   }
 
   return (
-    <Modal isOpen={isOpen} title={`QR Code — ${guestName}`} onClose={onClose}>
+    <Modal isOpen={isOpen} title={`QR Code: ${guestName}`} onClose={onClose}>
       <div className="flex flex-col items-center gap-4">
         <div ref={canvasRef}>
           <QRCodeCanvas value={token} size={256} marginSize={2} />

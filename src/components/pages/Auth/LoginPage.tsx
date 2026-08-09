@@ -85,7 +85,7 @@ export default function LoginPage() {
       await login({ email, password, captchaToken: captchaToken ?? undefined });
       nav(from, { replace: true });
     } catch (err: any) {
-      // Token is single-use — refresh the widget so the user can retry.
+      // Token is single-use; refresh the widget so the user can retry.
       setCaptchaToken(null);
       setCaptchaNonce((n) => n + 1);
       const errorCode = err.response?.data?.errorCode;
@@ -108,7 +108,7 @@ export default function LoginPage() {
   };
 
   const handleUseDifferentEmail = () => {
-    // Re-requesting issues a fresh token, so drop the old one — leaving it in the
+    // Re-requesting issues a fresh token, so drop the old one: leaving it in the
     // field means the next submit fails with a confusing "invalid token".
     setForgotStep("request");
     setResetToken("");
@@ -125,7 +125,7 @@ export default function LoginPage() {
       try {
         const res = await forgotPassword.mutateAsync({ email: forgotEmail });
         const devToken = /reset password:\s*(\S+)/i.exec(res.message ?? "")?.[1] ?? "";
-        // No token in the response means this env emails it instead — fall through
+        // No token in the response means this env emails it instead, so fall through
         // to the in-modal reset step rather than deep-linking with an empty token.
         if (!devToken) { setForgotStep("reset"); return; }
         setForgotOpen(false);
@@ -312,7 +312,7 @@ export default function LoginPage() {
                   </Link>
                 </div>
 
-                {/* Quiet crew entry point — kept off the public nav; crew normally arrive via the invite link */}
+                {/* Quiet crew entry point, kept off the public nav; crew normally arrive via the invite link */}
                 <div style={{ textAlign: 'center', marginTop: '0.25rem', paddingTop: '1.25rem', borderTop: '1px solid #EDE4D3', fontFamily: 'var(--font-label)', fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
                   <Link to="/crew-login" style={{ color: '#6B5D50', textDecoration: 'none' }}>
                     Checking in guests as event crew? <span style={{ color: '#B4543A' }}>Crew sign-in →</span>
@@ -321,7 +321,7 @@ export default function LoginPage() {
               </form>
           </div>
 
-          {/* Mobile-only footer — brand context the desktop left panel already provides */}
+          {/* Mobile-only footer: brand context the desktop left panel already provides */}
           <footer
             className="md:hidden"
             style={{

@@ -1,11 +1,11 @@
 /* src/index.css */
 @import "tailwindcss";
 
-/* 1. Match your .dark class for all dark: utilities (legacy — palette switch
+/* 1. Match your .dark class for all dark: utilities (legacy; palette switch
    now uses .slate at :root; dark mode is no longer toggled). */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* 2. Default palette ("Rose") — Blush rose + champagne for the feminine theme */
+/* 2. Default palette ("Rose"): blush rose + champagne for the feminine theme */
 @theme {
   --color-primary:    oklch(0.65 0.13 15);   /* Dusty rose for core actions */
   --color-secondary:  oklch(0.78 0.10 70);   /* Champagne gold for highlights */
@@ -29,17 +29,17 @@
   /* ── Couple-mode section hues (see docs/COUPLE_MODE.md) ──
      Each of the five couple-mode sections owns one hue, carried from the nav
      into that section's pages. Tuned to sit alongside the Rose palette. */
-  --color-sect-home:    oklch(0.65 0.13 15);   /* dusty rose — matches primary */
+  --color-sect-home:    oklch(0.65 0.13 15);   /* dusty rose, matches primary */
   --color-sect-guests:  oklch(0.58 0.10 150);  /* sage */
   --color-sect-seating: oklch(0.66 0.11 70);   /* champagne */
-  --color-sect-money:   oklch(0.55 0.16 10);   /* deep rose — matches button */
+  --color-sect-money:   oklch(0.55 0.16 10);   /* deep rose, matches button */
   --color-sect-bigday:  oklch(0.60 0.13 330);  /* orchid */
 
   /* ── Neutral ramp ──
      Overrides Tailwind's stock `gray`, which is a cold blue-grey (hue 261) and
      reads as dissonant against the warm ivory `--color-background`. Same
      lightness at every step as the stock ramp, so nothing shifts weight or
-     contrast — this is a hue correction only. Chroma peaks mid-ramp and tapers
+     contrast; this is a hue correction only. Chroma peaks mid-ramp and tapers
      at the dark end to keep 800-950 neutral rather than brown.
      Re-declared under `:root.slate` below, where the ground is cool again. */
   --color-gray-50:  oklch(98.5% 0.004 42);
@@ -73,7 +73,7 @@
   --font-playfair:'Fraunces', 'Cormorant Garamond', serif;
 }
 
-/* 3. "Slate" palette — Deep slate blue + steel bronze, applied via :root.slate */
+/* 3. "Slate" palette: deep slate blue + steel bronze, applied via :root.slate */
 :root.slate {
   --color-primary:    oklch(0.50 0.07 245);  /* Deep slate blue */
   --color-secondary:  oklch(0.65 0.06 65);   /* Steel bronze */
@@ -83,13 +83,13 @@
   --color-button:     oklch(0.42 0.10 250);  /* Deep navy for CTA buttons */
 
   /* Couple-mode section hues, cooled to sit alongside the Slate palette */
-  --color-sect-home:    oklch(0.50 0.07 245); /* slate blue — matches primary */
+  --color-sect-home:    oklch(0.50 0.07 245); /* slate blue, matches primary */
   --color-sect-guests:  oklch(0.54 0.08 175); /* teal */
   --color-sect-seating: oklch(0.62 0.07 65);  /* steel bronze */
-  --color-sect-money:   oklch(0.42 0.10 250); /* deep navy — matches button */
+  --color-sect-money:   oklch(0.42 0.10 250); /* deep navy, matches button */
   --color-sect-bigday:  oklch(0.54 0.09 300); /* muted violet */
 
-  /* Neutral ramp returned to cool — Slate's ground is a cool off-white, so the
+  /* Neutral ramp returned to cool: Slate's ground is a cool off-white, so the
      warm ramp in @theme would fight it. Lightness matches @theme step for step. */
   --color-gray-50:  oklch(98.5% 0.002 250);
   --color-gray-100: oklch(96.7% 0.003 250);
@@ -198,7 +198,7 @@
   animation: marquee-scroll 40s linear infinite;
 }
 
-/* 6. Floor plan print — show canvas only */
+/* 6. Floor plan print: show canvas only */
 @media print {
   body * { visibility: hidden; }
   .floor-canvas,
@@ -215,7 +215,7 @@
     /* Force backgrounds and gradients to print */
     print-color-adjust: exact !important;
     -webkit-print-color-adjust: exact !important;
-    /* Plain white background — no faint grid lines */
+    /* Plain white background, no faint grid lines */
     background: white !important;
   }
   .floor-canvas * {
@@ -226,7 +226,7 @@
   .floor-canvas [data-floor-item] > div { outline: none !important; }
 }
 
-/* 7. Printable sheets (guest check-in list) — piggybacks on the
+/* 7. Printable sheets (guest check-in list): piggybacks on the
       `body * { visibility: hidden }` rule in section 6, revealing only the
       sheet. Without this a print from anywhere but the floor plan is blank. */
 @media print {

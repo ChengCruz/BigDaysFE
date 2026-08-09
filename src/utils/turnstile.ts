@@ -3,14 +3,14 @@
 //
 // The site key is PUBLIC and read from VITE_TURNSTILE_SITE_KEY. When it is
 // absent (e.g. local dev), the widget renders nothing and forms skip the
-// CAPTCHA gate — mirroring the backend, which disables verification when no
+// CAPTCHA gate, mirroring the backend, which disables verification when no
 // secret key is configured. This keeps local/dev friction-free.
 
 export const TURNSTILE_SITE_KEY =
   (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined)?.trim() ?? "";
 
 // Optional DEDICATED site key for the public, guest-facing RSVP form.
-// Turnstile keys are bound to hostnames, not URL paths — so ONE key covers every
+// Turnstile keys are bound to hostnames, not URL paths, so ONE key covers every
 // per-event RSVP slug. This separate key is only about running RSVP on its own
 // widget (e.g. "Managed"/invisible mode, its own analytics) apart from the admin
 // forms. When unset it falls back to the shared key above.

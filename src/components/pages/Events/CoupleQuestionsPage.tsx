@@ -1,6 +1,6 @@
 // src/components/pages/Events/CoupleQuestionsPage.tsx
 //
-// Couple-mode "What to ask" — step 1 of the guest flow on CoupleGuestsPage.
+// Couple-mode "What to ask": step 1 of the guest flow on CoupleGuestsPage.
 // Same route as planner mode (/app/form-fields), same hooks, same API contract;
 // only the body differs. See docs/COUPLE_MODE.md and routes.tsx:FormFieldsRoute.
 //
@@ -13,7 +13,7 @@
 //    `statusCode: 422` INSIDE the envelope when any answer already exists
 //    (QuestionService.UpdateQuestion). Nothing in client.ts turns that into a
 //    rejection, so react-query calls it a success. This page reads the envelope
-//    itself — see envelopeError() — and shows the couple what actually happened
+//    itself (see envelopeError()) and shows the couple what actually happened
 //    instead of silently closing the modal on a save that never landed.
 //
 // 2. Update is a FULL REPLACE, not a patch. AssignEventsParam assigns all six
@@ -123,7 +123,7 @@ export default function CoupleQuestionsPage() {
     return (
       <NoEventsState
         title="No event yet"
-        message="Create your event first — then you can choose what to ask your guests."
+        message="Create your event first, then you can choose what to ask your guests."
       />
     );
   }
@@ -144,7 +144,7 @@ export default function CoupleQuestionsPage() {
           <h1 className="font-display text-3xl font-semibold text-text">What to ask</h1>
           <p className="text-sm text-text/60">
             The questions your guests answer when they reply to your invite. Once a guest
-            has answered a question, it can’t be edited — hide it instead if you no longer
+            has answered a question, it can’t be edited; hide it instead if you no longer
             want to ask it.
           </p>
         </div>
@@ -169,8 +169,8 @@ export default function CoupleQuestionsPage() {
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-primary/25 bg-white px-6 py-10 text-center">
           <p className="text-[15px] font-semibold text-text">No questions yet</p>
           <p className="max-w-sm text-sm text-text/60">
-            Everyone is asked their name and how many are coming. Add a question for anything else —
-            meal choice, song requests, whether they need a room.
+            Everyone is asked their name and how many are coming. Add a question for anything else,
+            like meal choice, song requests, or whether they need a room.
           </p>
           <div className="mt-1 flex flex-wrap justify-center gap-2">
             <Button onClick={() => { setModalError(null); setModal({ open: true }); }}>Add a question</Button>
@@ -348,7 +348,7 @@ export default function CoupleQuestionsPage() {
             if (!eventId) return;
             setModalError(null);
 
-            // Every field, every time — update is a full replace (see header).
+            // Every field, every time: update is a full replace (see header).
             const payload: QuestionPayload = {
               text: dto.text ?? "",
               type: dto.type,

@@ -1,6 +1,6 @@
 // src/types/budget.ts
 // NOTE: The backend entity is still named "Wallet" (see MyBigDays_Mono), so `walletGuid`
-// fields below are kept as-is to match the wire contract — only the frontend-facing
+// fields below are kept as-is to match the wire contract; only the frontend-facing
 // names (Budget, BudgetApiResponse, etc.) are renamed.
 
 export const Currency = {

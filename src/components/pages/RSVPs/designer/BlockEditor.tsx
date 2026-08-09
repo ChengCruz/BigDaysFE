@@ -28,7 +28,7 @@ const CUSTOM_QUESTION_LINKING_ENABLED: boolean = false;
 interface Props {
   block: RsvpBlock | null;
   accentColor: string;
-  /** Selectable questions — active only. */
+  /** Selectable questions, active only. */
   formFields: FormFieldConfig[];
   /** Every question including hidden ones, used only to explain an existing link. */
   allFormFields?: FormFieldConfig[];
@@ -55,7 +55,7 @@ const toWidth = (v: string): "full" | "half" => (v === "half" ? "half" : "full")
 /**
  * What has become of the question a block points at.
  *
- * A block keeps its questionId when the question is hidden or deleted — that is
+ * A block keeps its questionId when the question is hidden or deleted; that is
  * deliberate, so unhiding restores the field without re-editing the design. But
  * the guest page skips such blocks, so the couple must be told why a field they
  * can see in the designer is not on their invite.
@@ -428,7 +428,7 @@ export function BlockEditor({
                 if (CUSTOM_QUESTION_LINKING_ENABLED) {
                   // A hidden or deleted question is no longer selectable, so its option
                   // is absent from formFields and the select would fall back to the
-                  // placeholder — making it look unlinked. Re-add it as a disabled
+                  // placeholder, making it look unlinked. Re-add it as a disabled
                   // option so the block visibly keeps its link.
                   const orphan =
                     status === "hidden" || status === "missing" ? block.questionId : undefined;
@@ -439,7 +439,7 @@ export function BlockEditor({
                         onChange={(e) => onApplyQuestion(block.id, e.target.value || undefined)}
                         className={inputCls}
                       >
-                        <option value="">— Choose a question —</option>
+                        <option value="">Choose a question</option>
                         {orphan && (
                           <option value={orphan} disabled>
                             {question
@@ -467,7 +467,7 @@ export function BlockEditor({
                       {status === "hidden" && (
                         <p className="text-xs text-amber-600 mt-1">
                           This question is hidden, so guests won’t see this field. Unhide it on the
-                          questions page to bring it back — no need to edit this block.
+                          questions page to bring it back. No need to edit this block.
                         </p>
                       )}
                       {status === "missing" && (
@@ -486,7 +486,7 @@ export function BlockEditor({
                       {question?.label || question?.text || (status === "unlinked" ? "No question linked" : "(deleted question)")}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                      Managed from RSVP Questions — activate, deactivate, or edit it there.
+                      Managed from RSVP Questions: activate, deactivate, or edit it there.
                     </p>
                   </div>
                 );
@@ -497,7 +497,7 @@ export function BlockEditor({
             <div className="grid grid-cols-1 gap-3">
               <Field label="Label override">
                 <input
-                  // Undefined once a question is linked — the live question supplies
+                  // Undefined once a question is linked; the live question supplies
                   // the label unless the couple deliberately types an override here.
                   value={block.label ?? ""}
                   onChange={(e) => onUpdate(block.id, { label: e.target.value })}
@@ -745,7 +745,7 @@ export function BlockEditor({
                   color: block.cardTextColor ?? "#111827",
                 }}
               >
-                Name · Phone number · Pax · Remarks — card preview
+                Name · Phone number · Pax · Remarks (card preview)
               </div>
             </div>
 
@@ -774,7 +774,7 @@ export function BlockEditor({
               ))}
             </div>
 
-            {/* Custom questions — embedded inside this block. Manage panel
+            {/* Custom questions: embedded inside this block. Manage panel
                 disabled 7 Aug 2026, see CUSTOM_QUESTION_LINKING_ENABLED above:
                 every active question from RSVP Questions is now asked here
                 automatically, in Order, with no placement step required. */}
@@ -791,7 +791,7 @@ export function BlockEditor({
                 </p>
                 <p className="text-[11px] text-gray-400 leading-relaxed">
                   Every active question from RSVP Questions is asked here automatically, in
-                  order. Activate or deactivate a question there to control it — no separate
+                  order. Activate or deactivate a question there to control it. No separate
                   step needed here.
                 </p>
               </div>
@@ -874,7 +874,7 @@ export function BlockEditor({
           <div className="space-y-3">
             <Field
               label="Address or venue name"
-              hint="Enter a full street address or a well-known landmark — e.g. Mandarin Oriental, Kuala Lumpur. The map updates automatically."
+              hint="Enter a full street address or a well-known landmark, e.g. Mandarin Oriental, Kuala Lumpur. The map updates automatically."
             >
               <input
                 value={block.address ?? ""}
@@ -987,7 +987,7 @@ export function BlockEditor({
           />
           {spotlightOpen && (
             <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
-              <p className="text-xs text-gray-400">A full backdrop just for this block — ideal for hero moments.</p>
+              <p className="text-xs text-gray-400">A full backdrop just for this block, ideal for hero moments.</p>
               <div className="flex gap-2">
                 <label className="flex-1 cursor-pointer rounded-lg border border-dashed border-gray-300 px-3 py-2 text-center text-xs text-primary hover:border-primary transition">
                   {block.sectionImage ? "Replace spotlight image" : "+ Set spotlight image"}
@@ -1111,7 +1111,7 @@ function GuestDetailsCustomQuestions({
             onChange={(e) => { addFromBank(e.target.value); e.target.value = ""; }}
             className="flex-1 text-xs bg-transparent outline-none text-gray-700"
           >
-            <option value="">— pick a question —</option>
+            <option value="">Pick a question</option>
             {remainingFields.map((q) => (
               <option key={q.id ?? q.questionId} value={String(q.id ?? q.questionId)}>
                 {q.label || q.text || q.name}{q.isRequired ? " *" : ""}

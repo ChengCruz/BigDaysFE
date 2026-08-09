@@ -278,7 +278,7 @@ function renderBlockPreview(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FullPagePreview — exported for RsvpSharePreviewPage
+// FullPagePreview: exported for RsvpSharePreviewPage
 // ─────────────────────────────────────────────────────────────────────────────
 export function FullPagePreview({
   blocks,

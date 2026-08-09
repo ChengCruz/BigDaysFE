@@ -40,7 +40,7 @@ export function useEventBySlug(slug: string | undefined) {
 
       const { event, rsvpDesign, questions } = data;
 
-      // Map rsvpDesign — handle both nested { design: {...} } and flat structures
+      // Map rsvpDesign: handle both nested { design: {...} } and flat structures
       let design: RsvpDesign;
       if (rsvpDesign?.design) {
         design = mapToFrontendDesign(rsvpDesign as ApiRsvpDesign) as RsvpDesign;

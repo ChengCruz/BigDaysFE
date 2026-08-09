@@ -29,7 +29,7 @@ interface Props {
 
 type TabId = "manual" | "qr";
 
-// Feedback shown after a manual tap or a QR scan — mirrors the real scanner's
+// Feedback shown after a manual tap or a QR scan, mirroring the real scanner's
 // success / already-checked-in / error states.
 type Feedback =
   | { kind: "success"; name: string; pax: number }
@@ -57,7 +57,7 @@ function beep(frequency: number, duration = 130) {
       ctx.close().catch(() => {});
     }, duration);
   } catch {
-    /* ignore — audio is best-effort */
+    /* ignore: audio is best-effort */
   }
 }
 
@@ -143,7 +143,7 @@ export const PracticeCheckInModal: React.FC<Props> = ({ isOpen, onClose }) => {
       if (!id) {
         setFeedback({
           kind: "error",
-          message: "That’s not a demo QR. Point the camera at the demo code above — this is a practice sandbox, real guest QRs aren’t checked in here.",
+          message: "That’s not a demo QR. Point the camera at the demo code above. This is a practice sandbox, real guest QRs aren’t checked in here.",
         });
         beep(220, 200);
         vibrate([80, 60, 80]);
@@ -174,7 +174,7 @@ export const PracticeCheckInModal: React.FC<Props> = ({ isOpen, onClose }) => {
     handleDecodedRef.current = handleDecoded;
   });
 
-  // Live camera scanner — mirrors the real Check-in page, but sandboxed.
+  // Live camera scanner that mirrors the real Check-in page, but sandboxed.
   useEffect(() => {
     if (!isOpen || tab !== "qr" || !cameraActive) return;
     setCameraError(null);
@@ -317,7 +317,7 @@ export const PracticeCheckInModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <SparklesIcon className="h-4 w-4" />
           </span>
           <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-            A safe sandbox to rehearse check-in with <strong>demo guests only</strong>. Try both ways —
+            A safe sandbox to rehearse check-in with <strong>demo guests only</strong>. Try both ways:
             scan a demo QR or check in from the list. Nothing here touches your real guest list or stats.
           </p>
         </div>
@@ -326,7 +326,7 @@ export const PracticeCheckInModal: React.FC<Props> = ({ isOpen, onClose }) => {
         <div className="rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-900/20 p-3 flex items-start gap-2.5">
           <LightBulbIcon className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
-            <strong>Heads up — this is expected, not a bug:</strong> a demo guest you check in here will
+            <strong>Heads up, this is expected, not a bug:</strong> a demo guest you check in here will
             automatically return to <strong>Pending</strong> after about {RESET_HOURS} hours. That’s on
             purpose, so you can practise again anytime and the demo never leaves stale data behind.
           </p>
@@ -389,7 +389,7 @@ export const PracticeCheckInModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
               <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                 This is <strong>{qrGuest.name}</strong>’s demo QR. Show it on another screen and scan it
-                with your phone’s camera below — or just tap <strong>Simulate scan</strong> to try it on
+                with your phone’s camera below, or just tap <strong>Simulate scan</strong> to try it on
                 this device. Pick any of the three above to try them all.
               </p>
               <div className="bg-white p-3 rounded-xl">

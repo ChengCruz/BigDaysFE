@@ -50,10 +50,10 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background text-text">
       <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-background rounded-2xl shadow-lg">
-        {/* Dev/Staging banner — hidden in production */}
+        {/* Dev/Staging banner (hidden in production) */}
         {isDevOrStaging() && (
           <div className="bg-yellow-100 dark:bg-yellow-900/40 border border-yellow-400 rounded-lg px-4 py-2 text-xs text-yellow-800 dark:text-yellow-300 font-medium text-center">
-            DEV / STAGING — token is returned in the ForgotPassword response body (no email sent)
+            DEV / STAGING: token is returned in the ForgotPassword response body (no email sent)
           </div>
         )}
 

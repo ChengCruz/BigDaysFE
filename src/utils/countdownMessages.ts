@@ -1,7 +1,7 @@
 // src/utils/countdownMessages.ts
 //
 // The preset countdown lines shown under the event hero. Lifted verbatim out of
-// MemberDashboardPage so planner mode and couple mode read from one list — the
+// MemberDashboardPage so planner mode and couple mode read from one list. The
 // strings were previously module-local there and would have drifted the moment
 // a second page copied them.
 

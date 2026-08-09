@@ -30,7 +30,7 @@ export function Footer() {
         {/* Brand */}
         <BrandWordmark size="1.75rem" />
 
-        {/* Menu — mirrors the top navigation */}
+        {/* Menu: mirrors the top navigation */}
         <nav style={{ display: 'flex', alignItems: 'center', gap: '2.5rem', flexWrap: 'wrap' }}>
           <NavLink to="/" style={linkStyle}>Home</NavLink>
           <NavLink to="/features" style={linkStyle}>Features</NavLink>

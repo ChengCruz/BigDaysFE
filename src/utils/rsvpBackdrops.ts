@@ -1,5 +1,5 @@
 // src/utils/rsvpBackdrops.ts
-// Preset backdrops shown behind the phone frame — in the designer preview and on
+// Preset backdrops shown behind the phone frame, in the designer preview and on
 // the public guest page (desktop only; on mobile the frame is full-bleed).
 //
 // Lives in utils rather than alongside the panel because both the settings panel
@@ -7,7 +7,7 @@
 //
 // `label` is the persistence key: the backend theme DTO only stores
 // `previewBackdropLabel`, so labels must stay stable. Asset paths are free to
-// change (they did — the originals were 1920x1080 PNGs averaging 2.4MB each).
+// change (they did: the originals were 1920x1080 PNGs averaging 2.4MB each).
 
 /**
  * Gutter colour behind the invitation card when no backdrop image is chosen.
@@ -60,7 +60,7 @@ export const BACKDROP_OPTIONS: BackdropOption[] = [
  * This used to return plain white for the "None" preset, which made picking
  * "None" look different from a design that had never chosen a backdrop at all
  * (the guest page has always fallen back to #f3f4f6). Takes the image URL only
- * so existing call sites read clearly — every case resolves to the same colour.
+ * so existing call sites read clearly: every case resolves to the same colour.
  */
 export const backdropColorFor = (_imageUrl: string) => DEFAULT_BACKDROP_COLOR;
 

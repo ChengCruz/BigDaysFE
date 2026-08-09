@@ -102,7 +102,7 @@ export function useUpdateFormField(eventId?: string) {
   });
 }
 
-/** DEACTIVATE question — hides from RSVP form but preserves data */
+/** DEACTIVATE question: hides from RSVP form but preserves data */
 export function useDeactivateFormField(eventId?: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -119,7 +119,7 @@ export function useDeactivateFormField(eventId?: string) {
   });
 }
 
-/** ACTIVATE question — re-shows a previously deactivated question on the RSVP form */
+/** ACTIVATE question: re-shows a previously deactivated question on the RSVP form */
 export function useActivateFormField(eventId?: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -135,7 +135,7 @@ export function useActivateFormField(eventId?: string) {
   });
 }
 
-/** DELETE question — permanently marks as deleted, cannot be referenced back */
+/** DELETE question: permanently marks as deleted, cannot be referenced back */
 export function useDeleteFormField(eventId?: string) {
   const qc = useQueryClient();
   return useMutation({

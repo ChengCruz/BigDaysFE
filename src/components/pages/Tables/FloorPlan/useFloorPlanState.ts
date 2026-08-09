@@ -100,7 +100,7 @@ export function useFloorPlanState(eventId: string) {
         const side = Math.max(90, 50 + Math.ceil(capacity / 4) * 20);
         return { width: side, height: side };
       }
-      // round — diameter scales with seats
+      // round: diameter scales with seats
       const d = Math.max(100, 60 + capacity * 6);
       return { width: d, height: d };
     },
@@ -109,7 +109,7 @@ export function useFloorPlanState(eventId: string) {
 
   /** Ensure every API table has a floor item; add missing ones.
    *  Also patches existing table items that are missing meta.shape.
-   *  @param defaultShape — shape used for newly added tables (default "round") */
+   *  @param defaultShape shape used for newly added tables (default "round") */
   const syncTables = useCallback(
     (apiTables: { id: string; capacity: number }[], defaultShape: string = "round") => {
       setFloorItems((prev) => {

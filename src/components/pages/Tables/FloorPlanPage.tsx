@@ -100,11 +100,11 @@ export default function FloorPlanPage() {
   const FLOOR_TIPS = [
     { icon: "⇧", text: "Shift+Click tables to select multiple, then drag any of them to move the group together" },
     { icon: "✦", text: "Pick a shape tool then click the canvas to place a new table instantly" },
-    { icon: "↔", text: "Drag a guest card onto a table — green ring means it fits, red ring means full" },
+    { icon: "↔", text: "Drag a guest card onto a table: green ring means it fits, red ring means full" },
     { icon: "⊡", text: "Double-click any table to edit its name, capacity, or view seated guests" },
     { icon: "◎", text: "Click a seat to assign a guest, or click an occupied seat to unassign (Undo available)" },
     { icon: "⊕", text: "Hover over a table to see its full guest list and seating progress" },
-    { icon: "⌕", text: "Scroll to zoom in/out — drag the minimap in the bottom-right to navigate" },
+    { icon: "⌕", text: "Scroll to zoom in/out; drag the minimap in the bottom-right to navigate" },
   ];
   const [tipIndex, setTipIndex] = useState(0);
   const [tipsVisible, setTipsVisible] = useState(true);
@@ -189,7 +189,7 @@ export default function FloorPlanPage() {
   const pendingShape = React.useRef<string | null>(null);
   const pendingTablePos = React.useRef<{ x: number; y: number } | null>(null);
 
-  // Sync API tables into floor items — wait for floor plan to settle first so the
+  // Sync API tables into floor items. Wait for floor plan to settle first so the
   // hook's init (setFloorItems(apiFloorItems)) doesn't overwrite what we just synced.
   useEffect(() => {
     if (!floorPlanLoading && tables.length > 0) {
@@ -425,7 +425,7 @@ export default function FloorPlanPage() {
       onSuccess: (res) => {
         const d = res?.data;
         const message = d
-          ? `Auto-assign complete — ${d.assignedCount} assigned, ${d.skippedCount} skipped`
+          ? `Auto-assign complete: ${d.assignedCount} assigned, ${d.skippedCount} skipped`
           : "Auto-assign complete";
         toast(
           (t) => (
@@ -496,7 +496,7 @@ export default function FloorPlanPage() {
       };
       const d = defaults[type] ?? { w: 100, h: 100 };
       // Drop the new item at the current viewport center in world coords, so it lands
-      // wherever the user is currently looking — not the canvas origin.
+      // wherever the user is currently looking, not the canvas origin.
       const container = document.querySelector(".floor-canvas") as HTMLElement | null;
       const cw = container?.clientWidth ?? 800;
       const ch = container?.clientHeight ?? 500;
@@ -645,7 +645,7 @@ export default function FloorPlanPage() {
     setStandardizeOpen(false);
     const shapeLabel = stdShape === "rect" ? "long" : stdShape;
     const sizeLabel = stdSizeMode === "uniform" ? "uniform" : "auto";
-    toast.success(`Standardized ${n} tables — ${shapeLabel}, ${sizeLabel} size`);
+    toast.success(`Standardized ${n} tables: ${shapeLabel}, ${sizeLabel} size`);
   }, [standardizeTables, autoArrange, tables, stdShape, stdSizeMode]);
 
   const stats = useMemo(() => {

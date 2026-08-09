@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Assigned fresh each render so the setTimeout callback always calls the
-  // latest closure via the ref — avoids stale capture of setTokenVersion.
+  // latest closure via the ref, avoiding stale capture of setTokenVersion.
   const scheduleProactiveRefreshRef = useRef<(expiresIn: number) => void>(null!);
   scheduleProactiveRefreshRef.current = (expiresIn: number) => {
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTokenVersion(v => v + 1);
       })
       .catch(() => {
-        // Crew (Staff) tokens have no refresh cookie — fall back to the token
+        // Crew (Staff) tokens have no refresh cookie, so fall back to the token
         // stored in sessionStorage if it hasn't expired yet.
         const crewToken = crewTokenStore.get();
         if (crewToken && !isTokenExpired(crewToken)) {

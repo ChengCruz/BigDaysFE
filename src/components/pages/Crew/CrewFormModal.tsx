@@ -76,7 +76,7 @@ export function CrewFormModal({ isOpen, onClose, initialData, eventId, eventCode
     if (!created) return;
     const loginUrl = `${window.location.origin}/crew-login`;
     const message = [
-      `You're crew for ${eventName ?? "the event"} — sign in at ${loginUrl}:`,
+      `You're crew for ${eventName ?? "the event"}; sign in at ${loginUrl}:`,
       `Crew ID: ${created.crewCode}`,
       `PIN: ${created.pin}`,
       `Event Code: ${eventCode ?? "—"}`,
@@ -160,7 +160,7 @@ export function CrewFormModal({ isOpen, onClose, initialData, eventId, eventCode
             <p className="font-medium text-text dark:text-white">{created.name} is ready to sign in</p>
           </div>
           <p className="text-sm text-text/60 dark:text-white/50">
-            Send them these — they'll enter all three at the{" "}
+            Send them these; they'll enter all three at the{" "}
             <span className="font-medium">crew sign-in page</span> ({window.location.origin}/crew-login).
           </p>
           <div className="space-y-2">

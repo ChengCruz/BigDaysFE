@@ -1,7 +1,7 @@
 // src/components/whatsNew/releases.ts
 // ---------------------------------------------------------------------------
 // The release notes themselves. This is the ONLY file you edit to announce a
-// feature — see the "Adding an entry" note at the bottom.
+// feature; see the "Adding an entry" note at the bottom.
 //
 // Ships with the frontend on purpose. Notes written here land in the same
 // deploy as the code they describe, so we can never announce something that
@@ -24,7 +24,7 @@ export interface Release {
    * Stable slug, keyed on by the seen-map in utils/whatsNew.ts. Deliberately
    * NOT pkg.version: most deploys add no entry, so tying the two would mean
    * bumping the version just to say something. Convention: YYYY-MM-<slug>.
-   * Never reuse or rename an id — that re-announces it to everyone.
+   * Never reuse or rename an id: that re-announces it to everyone.
    */
   id: string;
   /** ISO date, shown on the What's New page. */
@@ -32,7 +32,7 @@ export interface Release {
   title: string;
   /**
    * The "why we did this" line, shown under the title in both the modal and the
-   * page. This is where the warmth goes — without it, the reason has to be
+   * page. This is where the warmth goes; without it, the reason has to be
    * crammed into an item row and the whole thing reads like a manual.
    *
    * NOT mode-filtered, unlike items: write one sentence that works for a couple
@@ -44,7 +44,7 @@ export interface Release {
   /**
    * Opens the modal on the user's next visit, and again each session until they
    * tick "don't show this again" or `announceUntil` passes. Omit for a quiet
-   * entry that only shows up on the What's New page — most releases should be
+   * entry that only shows up on the What's New page: most releases should be
    * quiet, precisely because an announcement repeats.
    */
   announce?: boolean;
@@ -93,7 +93,7 @@ export const RELEASES: Release[] = [
 //
 //   1. Add an object to the TOP of RELEASES, in the same PR as the feature.
 //   2. Give it a fresh `id` (YYYY-MM-<slug>) and today's `date`.
-//   3. Write an `intro` — one sentence on why, which is the part people read.
+//   3. Write an `intro`: one sentence on why, which is the part people read.
 //   4. Add `announce: true` ONLY if it's worth interrupting someone for, and
 //      set `announceUntil` while you're there. An announcement returns every
 //      session until the user ticks "don't show this again", so this is a
@@ -102,10 +102,10 @@ export const RELEASES: Release[] = [
 //
 // Copy rules: write for the person, not the changelog.
 //
-//   - EVERY reader sees EVERY item — there is no per-view filtering. If a
+//   - EVERY reader sees EVERY item; there is no per-view filtering. If a
 //     change only exists in one view, say which one ("in the simple view, …")
 //     rather than assuming who is reading.
 //   - Never write "couple" or "planner". Those are internal names for the two
 //     shells; the UI calls them the SIMPLE view and the ADVANCED view.
-//   - Say "seats", never "pax" — see docs/COUPLE_MODE.md and CLAUDE.md.
+//   - Say "seats", never "pax"; see docs/COUPLE_MODE.md and CLAUDE.md.
 // ---------------------------------------------------------------------------

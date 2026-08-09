@@ -2,8 +2,8 @@
 // ---------------------------------------------------------------------------
 // Shared client-side spreadsheet download helpers.
 //
-// Every export in this app is built from data React Query already has cached —
-// there is no server-side export endpoint. These two functions are the extracted
+// Every export in this app is built from data React Query already has cached,
+// since there is no server-side export endpoint. These two functions are the extracted
 // form of the block that used to be copy-pasted into each exporting page.
 // ---------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ function escapeCsv(value: unknown): string {
  * Writes rows to a .csv file and triggers a download.
  *
  * Headers come from the first row, so every row must share the same keys.
- * The leading U+FEFF is a UTF-8 BOM — without it Excel on Windows mangles
+ * The leading U+FEFF is a UTF-8 BOM; without it Excel on Windows mangles
  * non-ASCII guest names.
  */
 export function downloadCsv(rows: ExportRow[], filename: string): void {

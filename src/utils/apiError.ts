@@ -18,7 +18,7 @@ export function apiErrorMessage(err: unknown, fallback: string): string {
     try {
       return fromBody(JSON.parse(trimmed)) ?? fallback;
     } catch {
-      // Not JSON — surface it, but don't dump an HTML error page into the UI.
+      // Not JSON, so surface it, but don't dump an HTML error page into the UI.
       return trimmed.startsWith("<") ? fallback : trimmed.slice(0, 300);
     }
   }

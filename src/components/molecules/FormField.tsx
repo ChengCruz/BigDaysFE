@@ -56,7 +56,7 @@ export interface FormFieldProps {
   hint?: string;
   error?: string;
 
-  /** Label for the empty option in a <select> (default: "— select —") */
+  /** Label for the empty option in a <select> (default: "- select -") */
   emptyOptionLabel?: string;
 }
 
@@ -81,7 +81,7 @@ export function FormField({
   rows = 3,
   hint,
   error,
-  emptyOptionLabel = "— select —",
+  emptyOptionLabel = "- select -",
 }: FormFieldProps) {
   const base =
     "w-full border rounded p-2 disabled:opacity-60 disabled:cursor-not-allowed";
@@ -146,7 +146,7 @@ export function FormField({
         </div>
       ) : type === "checkbox" && options?.length ? (
         // checkbox group; value is a comma-separated list of the checked options
-        // (matches the join format the public RSVP form submits — see
+        // (matches the join format the public RSVP form submits, see
         // usePublicRsvpApi.ts's `value.join(", ")`)
         <div className="flex flex-wrap gap-3">
           {options.map((opt) => {

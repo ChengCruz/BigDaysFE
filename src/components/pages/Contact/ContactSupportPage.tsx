@@ -14,7 +14,7 @@ const TYPES: { value: ContactType; label: string }[] = [
   { value: "Other", label: "Other" },
 ];
 
-// App areas a bug can be reported against — mirrors the sidebar sections.
+// App areas a bug can be reported against; mirrors the sidebar sections.
 const MODULES = [
   "Dashboard",
   "Events",
@@ -94,12 +94,12 @@ export default function ContactSupportPage() {
         message: message.trim(),
         captchaToken: captchaToken ?? undefined,
       });
-      toast.success("Thanks! Your message has been sent — we'll be in touch.");
+      toast.success("Thanks! Your message has been sent. We'll be in touch.");
       setMessage("");
       setCaptchaToken(null);
       setCaptchaNonce((n) => n + 1);
     } catch {
-      // Token is single-use — refresh the widget so the user can retry.
+      // Token is single-use, so refresh the widget so the user can retry.
       setCaptchaToken(null);
       setCaptchaNonce((n) => n + 1);
       toast.error("Couldn't send your message. Please try again in a moment.");
@@ -117,7 +117,7 @@ export default function ContactSupportPage() {
           <div>
             <h1 className="text-xl font-bold text-text dark:text-white">Contact Us</h1>
             <p className="text-sm text-text/60 dark:text-white/50">
-              Report a bug, share feedback, or ask us anything — we'll get back to you.
+              Report a bug, share feedback, or ask us anything. We'll get back to you.
             </p>
           </div>
         </div>
@@ -175,7 +175,7 @@ export default function ContactSupportPage() {
           </div>
         </div>
 
-        {/* Module picker — bug reports only */}
+        {/* Module picker, bug reports only */}
         {isBug && (
           <div className="mt-4">
             <label className={labelClass}>Which module?</label>
@@ -185,7 +185,7 @@ export default function ContactSupportPage() {
               required
               className={fieldClass}
             >
-              <option value="">— Select a module —</option>
+              <option value="">Select a module</option>
               {MODULES.map((m) => (
                 <option key={m} value={m}>
                   {m}
@@ -204,7 +204,7 @@ export default function ContactSupportPage() {
             rows={6}
             placeholder={
               isBug
-                ? "Describe the bug — what you did, what you expected, and what actually happened."
+                ? "Describe the bug: what you did, what you expected, and what actually happened."
                 : "Share your feedback or let us know how we can help."
             }
             className={`${fieldClass} resize-y min-h-[140px] leading-relaxed`}

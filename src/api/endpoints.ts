@@ -1,5 +1,5 @@
 // src/api/endpoints.ts
-// NOTE: VITE_API_BASE already includes /api/v1 — do NOT add /v1 here.
+// NOTE: VITE_API_BASE already includes /api/v1, so do NOT add /v1 here.
 
 export const AuthEndpoints = {
   login: "/User/Login",
@@ -19,11 +19,11 @@ export const EventsEndpoints = {
   byId: (id: string) => `/event/${id}`,
   create: "/event/Create",
   update: `/event/Update`,
-  updateTableQuantity: `/event/UpdateTableQuantity`, // TODO: not in backend docs — verify with backend team
+  updateTableQuantity: `/event/UpdateTableQuantity`, // TODO: not in backend docs, verify with backend team
   activateEvent: (id: string) => `/event/Activate/${id}`,
   deactivateEvent: (id: string) => `/event/Deactivate/${id}`,
   previewEvent: `/event/Preview`, // TODO: no backend endpoint yet
-  delete: (id: string) => `/events/${id}`, // TODO: no backend endpoint — use Deactivate instead
+  delete: (id: string) => `/events/${id}`, // TODO: no backend endpoint, use Deactivate instead
   importRsvps: (eventId: string) => `/events/${eventId}/rsvps/import`, // TODO: no backend endpoint yet
   exportRsvps: (eventId: string) => `/events/${eventId}/rsvps/export`, // TODO: no backend endpoint yet
   eventRsvpInternal: (eventGuid: string) => `/event/eventRsvpInternal/${eventGuid}`,
@@ -50,7 +50,7 @@ export const TablesEndpoints = {
   updateLayout: (id: string) => `/tables/${id}/layout`, // TODO: no backend endpoint (DragDropUpdate returns 500)
   tableGuests: (tableId: string) => `/Guest/ByTable/${tableId}`, // Fixed: was wrong path
   reassignGuest: (tableId: string, guestId: string) =>
-    `/tables/${tableId}/guests/${guestId}/reassign`, // TODO: no backend endpoint — use Guest AssignTable + UnassignTable
+    `/tables/${tableId}/guests/${guestId}/reassign`, // TODO: no backend endpoint, use Guest AssignTable + UnassignTable
 };
 
 export const GuestEndpoints = {
@@ -64,7 +64,7 @@ export const GuestEndpoints = {
   gift: (guestId: string) => `/Guest/${guestId}/Gift`,
 };
 
-// TODO: No backend Seating API exists — these are stubs. Seating feature pages will 404.
+// TODO: No backend Seating API exists, so these are stubs. Seating feature pages will 404.
 export const SeatingEndpoints = {
   all: "/seating",
   byId: (id: string) => `/seating/${id}`,
@@ -84,7 +84,7 @@ export const UsersEndpoints = {
   updateRole: (id: number) => `/User/UpdateRole?id=${id}`,
 };
 
-// Backend routes are still under /Wallet — the backend entity hasn't been renamed.
+// Backend routes are still under /Wallet, since the backend entity hasn't been renamed.
 export const BudgetEndpoints = {
   getByEvent: (eventGuid: string) => `/Wallet/GetWalletByEvent/${eventGuid}`,
   getByGuid: (walletGuid: string, eventGuid: string) => `/Wallet/${walletGuid}?eventGuid=${eventGuid}`,
@@ -130,9 +130,9 @@ export const PublicEventEndpoints = {
 
 export const RsvpDesignEndpoints = {
   get: (eventGuid: string) => `/RsvpDesign/${eventGuid}/design`,
-  /** POST — creates a new version (auto-incremented) */
+  /** POST: creates a new version (auto-incremented) */
   save: (eventGuid: string) => `/RsvpDesign/${eventGuid}/design`,
-  /** PUT — updates an existing version in place */
+  /** PUT: updates an existing version in place */
   update: (eventGuid: string, version: number) => `/RsvpDesign/${eventGuid}/design/${version}`,
   publish: (eventGuid: string, version: number) => `/RsvpDesign/${eventGuid}/design/${version}/publish`,
   shareToken: (eventGuid: string, version: number) => `/RsvpDesign/${eventGuid}/design/${version}/share-token`,

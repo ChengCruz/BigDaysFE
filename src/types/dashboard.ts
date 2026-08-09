@@ -165,7 +165,7 @@ export function toDashboardSummary(api: ApiDashboardSummary): DashboardSummary {
       status: budgetStatusMap[api.budgetStats.status] || 'under_budget',
     },
     // Zeroed rather than left undefined when the backend predates the field, so
-    // consumers only ever branch on totalItems === 0 — which is also the normal
+    // consumers only ever branch on totalItems === 0, which is also the normal
     // "no checklist seeded yet" case.
     checklistStats: {
       totalItems: api.checklistStats?.totalItems ?? 0,
