@@ -6,7 +6,7 @@
 // to log in and check anyone in. This is the offline answer: one sheet, a tick
 // box per party, sorted the way someone actually works a door.
 //
-// Printing is driven by the `.print-sheet` rules in index.css — the global
+// Printing is driven by the `.print-sheet` rules in index.css: the global
 // print block hides everything else on the page, so the app chrome never
 // reaches the paper.
 
@@ -72,7 +72,7 @@ export default function GuestCheckInPrintView() {
         <div>
           <h1 className="font-display text-3xl font-semibold text-primary">Check-in sheet</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Print this and keep it at the door — it works even when the venue Wi-Fi doesn't.
+            Print this and keep it at the door, since it works even when the venue Wi-Fi doesn't.
           </p>
         </div>
         <div className="flex gap-2">
@@ -87,7 +87,7 @@ export default function GuestCheckInPrintView() {
         </div>
       </div>
 
-      {/* The sheet itself — the only thing that reaches the printer. */}
+      {/* The sheet itself: the only thing that reaches the printer. */}
       <div className="print-sheet rounded-xl border border-gray-200 bg-white p-6 text-black dark:border-white/10">
         <div className="mb-4 border-b border-gray-300 pb-3">
           <h2 className="text-2xl font-semibold">{event?.title ?? "Guest check-in"}</h2>

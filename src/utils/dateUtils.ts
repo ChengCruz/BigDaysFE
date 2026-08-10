@@ -14,7 +14,7 @@
  * is enforced in one place and future developers know where to look.
  *
  * DO NOT use `new Date().toLocaleDateString()` or rely on the browser's local
- * timezone — the user's machine may be set to a different region and will
+ * timezone: the user's machine may be set to a different region and will
  * produce wrong results.
  */
 
@@ -126,7 +126,7 @@ export function gmt8ToUtcParts(
  * as a calendar date in GMT+8) into a UTC ISO string for the backend.
  *
  * We use GMT+8 midnight as the canonical time so the calendar date is preserved
- * regardless of when the user saves — e.g. "2025-09-04" → "2025-09-03T16:00:00.000Z".
+ * regardless of when the user saves, e.g. "2025-09-04" → "2025-09-03T16:00:00.000Z".
  *
  * Use this for fields like transactionDate, dueDate, etc.
  *

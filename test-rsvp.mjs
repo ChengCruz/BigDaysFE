@@ -69,7 +69,7 @@ async function run() {
   // Check if there's an event selected
   const noEventState = await page.$('text=No Event');
   if (noEventState) {
-    console.log('WARNING: No event selected — designer shows "No Event" state');
+    console.log('WARNING: No event selected, designer shows "No Event" state');
     console.log('Need to set localStorage eventId first');
 
     // Try to find events

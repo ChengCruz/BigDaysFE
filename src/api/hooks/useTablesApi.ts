@@ -5,7 +5,7 @@ import type { Rsvp } from "./useRsvpsApi";
 import { normalizeTable } from "../../utils/tableUtils";
 
 //
-// ——— Types ——————————————————————————————————————————————————————————
+// --- Types --------------------------------------------------------------
 //
 
 export interface TableBase {
@@ -22,7 +22,7 @@ export interface TableWithGuests extends TableBase {
 }
 
 //
-// ——— QUERIES —————————————————————————————————————————————————————————
+// --- QUERIES --------------------------------------------------------------
 //
 
 // List all tables (lightweight)
@@ -61,7 +61,7 @@ export function useTableApi(tableId: string) {
 }
 
 //
-// ——— MUTATIONS ————————————————————————————————————————————————————————
+// --- MUTATIONS --------------------------------------------------------------
 //
 
 function invalidate(qc: ReturnType<typeof useQueryClient>, tableId?: string, eventId?: string) {

@@ -45,7 +45,7 @@ export default function ContactPage() {
             Let's begin a <em style={{ color: '#B4543A' }}>conversation.</em>
           </h1>
           <p style={{ color: '#6B5D50', fontSize: '1.25rem', maxWidth: '36rem', margin: '0 auto', lineHeight: 1.7 }}>
-            Questions, feedback, or ideas — send them our way and we'll get back to you.
+            Questions, feedback, or ideas? Send them our way and we'll get back to you.
           </p>
         </div>
       </section>

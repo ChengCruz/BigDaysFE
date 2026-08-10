@@ -1,11 +1,12 @@
-import { useNavigate } from "react-router";
+import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router";
 
 const features = [
   {
     num: "01",
     category: "RSVP",
     title: <>Beautiful <em style={{ color: '#B4543A' }}>RSVP pages</em></>,
-    desc: "Send guests a branded RSVP page — no logins, no apps, just one tap to respond. Track every reply in real time as it comes in.",
+    desc: "Send guests a branded RSVP page: no logins, no apps, just one tap to respond. Track every reply in real time as it comes in.",
     points: ["Custom-designed RSVP forms", "Real-time response tracking", "Dietary & plus-one capture"],
   },
   {
@@ -26,14 +27,14 @@ const features = [
     num: "04",
     category: "Check-In",
     title: <>QR <em style={{ color: '#B4543A' }}>check-in</em></>,
-    desc: "Scan guests in at the door with QR codes. No clipboards, no confusion — just a clean, instant record of who has arrived.",
+    desc: "Scan guests in at the door with QR codes. No clipboards, no confusion, just a clean, instant record of who has arrived.",
     points: ["Instant QR scanning", "Live arrival dashboard", "Guest self-service lookup"],
   },
   {
     num: "05",
     category: "Planning",
     title: <>Events & <em style={{ color: '#B4543A' }}>budgeting</em></>,
-    desc: "Keep every event, vendor, and cost in one place — from the engagement party to the honeymoon. Nothing slips through the cracks.",
+    desc: "Keep every event, vendor, and cost in one place, from the engagement party to the honeymoon. Nothing slips through the cracks.",
     points: ["Multi-event dashboard", "Budget & expense tracking", "Vendor notes & details"],
   },
   {
@@ -45,25 +46,28 @@ const features = [
   },
 ];
 
-// Real product screenshots — captured from the live app (see tests/showcase-capture.spec.ts)
+// Real product screenshots captured from the live app (see tests/showcase-capture.spec.ts)
 const showcase = [
   {
+    id: "rsvp-designer",
     category: "RSVP Designer",
     img: "/showcase/rsvp.png",
     alt: "The RSVP designer building a branded wedding invite with a live phone preview",
     title: <>Design a <em style={{ color: '#B4543A' }}>stunning RSVP page</em></>,
-    desc: "Drag blocks, pick a theme, drop in a countdown — build a branded invite that looks custom-made. Guests reply in one tap, no login required.",
-    points: ["Live drag-and-drop canvas", "Countdown, maps & event details", "Share one link — replies land instantly"],
+    desc: "Drag blocks, pick a theme, drop in a countdown, and build a branded invite that looks custom-made. Guests reply in one tap, no login required.",
+    points: ["Live drag-and-drop canvas", "Countdown, maps & event details", "Share one link: replies land instantly"],
   },
   {
+    id: "seating-floor-plan",
     category: "Seating & Floor Plan",
     img: "/showcase/floorplan.png",
     alt: "The visual floor plan editor with round tables, a stage, dance floor and guest assignment panel",
     title: <>Plan every seat, <em style={{ color: '#B4543A' }}>visually</em></>,
-    desc: "Lay out your room exactly as it will be on the day — tables, stage, dance floor and all. Assign guests by dragging them straight into place.",
+    desc: "Lay out your room exactly as it will be on the day: tables, stage, dance floor and all. Assign guests by dragging them straight into place.",
     points: ["Round, long & square tables", "Add a stage, dance floor & décor", "Drag guests onto their tables"],
   },
   {
+    id: "budget",
     category: "Budget",
     img: "/showcase/budget.png",
     alt: "The budget dashboard showing total budget, spending by category and a transaction history",
@@ -72,17 +76,25 @@ const showcase = [
     points: ["Live budget vs. spend", "Spending broken down by category", "Payment status on every expense"],
   },
   {
+    id: "guest-management",
     category: "Guest Management",
     img: "/showcase/guests.png",
     alt: "The guest list showing guest cards with headcount, table seating and RSVP status",
     title: <>Your whole guest list, <em style={{ color: '#B4543A' }}>organised</em></>,
-    desc: "One live view of everyone — headcount, table, dietary notes and RSVP status. Reach any guest on WhatsApp in a single tap.",
+    desc: "One live view of everyone: headcount, table, dietary notes and RSVP status. Reach any guest on WhatsApp in a single tap.",
     points: ["Live headcount & seating status", "Groups, VIPs & dietary notes", "One-tap WhatsApp & QR check-in"],
   },
 ];
 
 export default function FeaturesPage() {
   const navigate = useNavigate();
+  const { hash } = useLocation();
+
+  useEffect(() => {
+    if (!hash) return;
+    const el = document.getElementById(hash.slice(1));
+    el?.scrollIntoView({ behavior: 'smooth' });
+  }, [hash]);
 
   return (
     <div style={{ fontFamily: 'var(--font-serif)', color: '#2A221E', overflowX: 'hidden' }}>
@@ -105,7 +117,7 @@ export default function FeaturesPage() {
             Every tool for your <em style={{ color: '#B4543A' }}>big day.</em>
           </h1>
           <p style={{ color: '#6B5D50', fontSize: '1.25rem', maxWidth: '38rem', margin: '0 auto', lineHeight: 1.7 }}>
-            From the first RSVP to the final dance — one calm, organised platform that handles the details so you can focus on the moments.
+            From the first RSVP to the final dance, one calm, organised platform that handles the details so you can focus on the moments.
           </p>
         </div>
       </section>
@@ -162,7 +174,7 @@ export default function FeaturesPage() {
         </div>
       </section>
 
-      {/* Feature showcase — real product screenshots */}
+      {/* Feature showcase: real product screenshots */}
       <section style={{ background: '#F5EFE6', padding: '8rem 2.5rem', borderTop: '1px solid #EDE4D3' }}>
         <div style={{ maxWidth: '1180px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
@@ -176,8 +188,9 @@ export default function FeaturesPage() {
             {showcase.map((s, i) => (
               <div
                 key={i}
+                id={s.id}
                 className="grid md:grid-cols-2 items-center"
-                style={{ gap: '3.5rem' }}
+                style={{ gap: '3.5rem', scrollMarginTop: '6rem' }}
               >
                 {/* Screenshot (framed like an app window) */}
                 <div className={i % 2 === 1 ? 'md:order-2' : ''}>
@@ -233,7 +246,7 @@ export default function FeaturesPage() {
             See it all come <em style={{ color: '#B4543A' }}>together.</em>
           </h2>
           <p style={{ color: '#6B5D50', maxWidth: '32rem', margin: '0 auto 2.5rem', fontSize: '1.2rem', lineHeight: 1.7 }}>
-            Create a free account and set up your first event in minutes — no commitment, no credit card.
+            Create a free account and set up your first event in minutes, no commitment, no credit card.
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <button className="landing-btn" onClick={() => navigate('/login')}>Get Started →</button>

@@ -1,5 +1,5 @@
 /**
- * Tables page tests — Read, Create, Edit, Delete, filtering, and empty state.
+ * Tables page tests covering Read, Create, Edit, Delete, filtering, and empty state.
  */
 import { test, expect } from '@playwright/test';
 import { gotoAuthenticated, mockApi, setMockAuth, MOCK_EVENT_GUID } from './helpers';
@@ -35,7 +35,7 @@ const MOCK_GUEST = {
 /** Set up mock API with tables and guests data */
 async function mockTablesApi(page: Parameters<typeof mockApi>[0]) {
   await mockApi(page);
-  // Override tables and guests endpoints (LIFO — runs first)
+  // Override tables and guests endpoints (LIFO, runs first)
   await page.route('**/__mock_api__/**', async route => {
     const url = route.request().url();
     const method = route.request().method();
@@ -94,7 +94,7 @@ async function mockTablesApi(page: Parameters<typeof mockApi>[0]) {
 
 // ── Read (list) ────────────────────────────────────────────────────────────────
 
-test.describe('Tables — Read (list)', () => {
+test.describe('Tables: Read (list)', () => {
   test.beforeEach(async ({ page }) => {
     await mockTablesApi(page);
     await page.goto('/login');
@@ -169,7 +169,7 @@ test.describe('Tables — Read (list)', () => {
 
 // ── Create ─────────────────────────────────────────────────────────────────────
 
-test.describe('Tables — Create', () => {
+test.describe('Tables: Create', () => {
   test.beforeEach(async ({ page }) => {
     await mockTablesApi(page);
     await page.goto('/login');
@@ -187,7 +187,7 @@ test.describe('Tables — Create', () => {
   test('"Create Single Table" option opens create modal', async ({ page }) => {
     await page.click('button:has-text("+ New Table")');
     await page.click('text=Create Single Table');
-    // Modal should open — look for a form modal heading or name field
+    // Modal should open; look for a form modal heading or name field
     await expect(page.locator('input[placeholder*="Table"], input[placeholder*="table"], input[name="name"], [role="dialog"]').first()).toBeVisible({ timeout: 3000 });
   });
 
@@ -207,7 +207,7 @@ test.describe('Tables — Create', () => {
 
 // ── Delete ─────────────────────────────────────────────────────────────────────
 
-test.describe('Tables — Delete', () => {
+test.describe('Tables: Delete', () => {
   test.beforeEach(async ({ page }) => {
     await mockTablesApi(page);
     await page.goto('/login');
@@ -240,7 +240,7 @@ test.describe('Tables — Delete', () => {
 
 // ── Filter ─────────────────────────────────────────────────────────────────────
 
-test.describe('Tables — Filter', () => {
+test.describe('Tables: Filter', () => {
   test.beforeEach(async ({ page }) => {
     await mockTablesApi(page);
     await page.goto('/login');
@@ -270,7 +270,7 @@ test.describe('Tables — Filter', () => {
 
 // ── Empty state ────────────────────────────────────────────────────────────────
 
-test.describe('Tables — Empty state', () => {
+test.describe('Tables: Empty state', () => {
   test.beforeEach(async ({ page }) => {
     await mockApi(page);
     // Override tables to return empty list
@@ -307,7 +307,7 @@ test.describe('Tables — Empty state', () => {
 
 // ── Error state ────────────────────────────────────────────────────────────────
 
-test.describe('Tables — Error state', () => {
+test.describe('Tables: Error state', () => {
   test('shows error message when tables API fails', async ({ page }) => {
     await mockApi(page);
     await page.route('**/__mock_api__/**', async route => {
@@ -328,7 +328,7 @@ test.describe('Tables — Error state', () => {
 
 // ── Assignment (drag-and-drop) ────────────────────────────────────────────────
 
-test.describe('Tables — Assignment', () => {
+test.describe('Tables: Assignment', () => {
   test('dragging a guest onto a table calls AssignTable, updates seat count, and removes guest from unassigned panel', async ({ page }) => {
     let assigned = false;
 
@@ -497,7 +497,7 @@ test.describe('Tables — Assignment', () => {
 
 // ── No event state ─────────────────────────────────────────────────────────────
 
-test.describe('Tables — No event state', () => {
+test.describe('Tables: No event state', () => {
   test('shows no events message when no event is selected', async ({ page }) => {
     await mockApi(page);
     await page.route('**/__mock_api__/**', async route => {

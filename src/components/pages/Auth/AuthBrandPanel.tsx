@@ -1,6 +1,6 @@
 // src/components/pages/Auth/AuthBrandPanel.tsx
 // Shared branded left panel for the auth pages (/login and /crew-login).
-// Purely presentational — keeps the two pages visually consistent.
+// Purely presentational; keeps the two pages visually consistent.
 import { Link } from "react-router";
 
 export default function AuthBrandPanel() {
@@ -15,7 +15,7 @@ export default function AuthBrandPanel() {
       }}
       className="justify-start md:justify-between gap-8 md:gap-0 px-6 py-8 md:p-12"
     >
-      {/* Botanical overlay — gold line art on cream */}
+      {/* Botanical overlay: gold line art on cream */}
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 600 800"
@@ -40,7 +40,7 @@ export default function AuthBrandPanel() {
         </g>
       </svg>
 
-      {/* Top: brand mark — latest logo, sits naturally on the cream surface */}
+      {/* Top: brand mark (latest logo), sits naturally on the cream surface */}
       <div style={{ position: 'relative', zIndex: 2 }}>
         <Link to="/" aria-label="Go to homepage" style={{ display: 'inline-block' }}>
           <img
@@ -73,7 +73,7 @@ export default function AuthBrandPanel() {
           <em style={{ fontStyle: 'italic', color: '#B4543A' }}>one place.</em>
         </h2>
         <p className="hidden md:block" style={{ color: '#6B5D50', fontSize: '1.1rem', maxWidth: '28rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
-          Access your events, guest lists, seating charts, and RSVP responses — everything built together, whenever you need it.
+          Access your events, guest lists, seating charts, and RSVP responses: everything built together, whenever you need it.
         </p>
       </div>
 

@@ -36,7 +36,7 @@ const labelStyle: React.CSSProperties = {
   marginBottom: '0.6rem',
 };
 
-// Cream-palette strength colours (inline hex — matches the botanical/underline aesthetic).
+// Cream-palette strength colours (inline hex, matches the botanical/underline aesthetic).
 const STRENGTH_COLORS = ['#DC2626', '#EA580C', '#CA8A04', '#2563EB', '#16A34A'];
 const STRENGTH_WIDTHS = ['20%', '40%', '60%', '80%', '100%'];
 
@@ -90,7 +90,7 @@ export default function RegisterPage() {
       });
       navigate("/verify-email", { state: { email: formData.email } });
     } catch (err: any) {
-      // Token is single-use — refresh the widget so the user can retry.
+      // Token is single-use; refresh the widget so the user can retry.
       setCaptchaToken(null);
       setCaptchaNonce((n) => n + 1);
       if (err.response?.status === 409) {
@@ -126,7 +126,7 @@ export default function RegisterPage() {
         }}
         className="hidden md:flex"
       >
-        {/* Botanical overlay — gold line art on cream */}
+        {/* Botanical overlay: gold line art on cream */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 600 800"
@@ -184,7 +184,7 @@ export default function RegisterPage() {
             <em style={{ fontStyle: 'italic', color: '#B4543A' }}>plan.</em>
           </h2>
           <p style={{ color: '#6B5D50', fontSize: '1.1rem', maxWidth: '28rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)' }}>
-            Create your account to build guest lists, seating charts, and RSVP pages — all in one place, made for your big day.
+            Create your account to build guest lists, seating charts, and RSVP pages, all in one place, made for your big day.
           </p>
         </div>
 
@@ -424,7 +424,7 @@ export default function RegisterPage() {
           </form>
         </div>
 
-        {/* Mobile-only footer — brand context the desktop left panel already provides */}
+        {/* Mobile-only footer: brand context the desktop left panel already provides */}
         <footer
           className="md:hidden"
           style={{

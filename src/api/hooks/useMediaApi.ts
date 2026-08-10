@@ -1,5 +1,5 @@
 // src/api/hooks/useMediaApi.ts
-// Media upload hook — uploads images to BE cloud storage for the RSVP designer.
+// Media upload hook: uploads images to BE cloud storage for the RSVP designer.
 // Returns a stable HTTPS URL that can be saved in the design JSON and viewed by guests.
 import { useMutation } from "@tanstack/react-query";
 import client from "../client";

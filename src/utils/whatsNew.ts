@@ -8,13 +8,13 @@
 // Dismissal works the same way as the export reminder (utils/exportReminder.ts):
 // a plain close only quiets the announcement for the rest of this browser
 // session, and it comes back next time. The ONLY thing that retires a release
-// permanently is the "don't show this again" tick — or reading the full history
+// permanently is the "don't show this again" tick, or reading the full history
 // at /app/whats-new, which is a stronger signal than closing a modal.
 //
 // The announcement still goes quiet on its own once `announceUntil` passes, so
 // nothing nags forever.
 //
-// A first-ever login is NOT a special case — a live release fires there too.
+// A first-ever login is NOT a special case: a live release fires there too.
 //
 // Everyone sees the same notes. An earlier version filtered items by UI mode;
 // it was dropped because a change now lands in both views, so the split only
@@ -30,7 +30,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 interface WhatsNewState {
   /** Epoch ms of this browser's first look. Informational. */
   firstSeenAt: number;
-  /** Release ids retired for good — the "don't show again" tick, or the page. */
+  /** Release ids retired for good: the "don't show again" tick, or the page. */
   seen: string[];
 }
 
@@ -98,7 +98,7 @@ function isLive(release: Release, now: number): boolean {
  * only alternative is that the first release they ever hear about is the
  * *second* one we ship.
  *
- * The one place this stays quiet is an account with no event yet — AppLayout
+ * The one place this stays quiet is an account with no event yet, since AppLayout
  * doesn't mount the announcer during that onboarding (see routes.tsx).
  */
 export function getPendingRelease(): Release | null {
@@ -117,7 +117,7 @@ export function getPendingRelease(): Release | null {
 }
 
 /**
- * Quiets a release for the rest of this browser session — a plain close, or
+ * Quiets a release for the rest of this browser session: a plain close, or
  * following a "Show me" link. It returns next session, which is the point:
  * closing a modal is not the same as saying you've read it.
  */
@@ -127,7 +127,7 @@ export function dismissForSession(id: string): void {
     map[id] = true;
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(map));
   } catch {
-    /* ignore — worst case the modal reappears on the next route change */
+    /* ignore; worst case the modal reappears on the next route change */
   }
 }
 
@@ -142,7 +142,7 @@ export function markSeen(id: string): void {
 /**
  * Whether the What's New link deserves a dot.
  *
- * Covers quiet releases too — those never open the modal, so this is the only
+ * Covers quiet releases too: those never open the modal, so this is the only
  * signal a user gets that the page has something new on it.
  */
 export function hasUnseenRelease(): boolean {
@@ -151,7 +151,7 @@ export function hasUnseenRelease(): boolean {
   return RELEASES.some((release) => !seen.includes(release.id));
 }
 
-/** Marks every release as read — what opening the page means. */
+/** Marks every release as read: what opening the page means. */
 export function markAllSeen(): void {
   const state = readState() ?? { firstSeenAt: Date.now(), seen: [] };
   const merged = [...new Set([...state.seen, ...RELEASES.map((r) => r.id)])];

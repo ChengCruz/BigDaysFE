@@ -127,7 +127,7 @@ export function DesignToolbar({
 
         {!publicLink && (
           <div className="px-5 py-3 text-xs text-gray-400">
-            No link generated yet — click <span className="font-semibold text-gray-500">Generate link</span> above.
+            No link generated yet. Click <span className="font-semibold text-gray-500">Generate link</span> above.
           </div>
         )}
       </div>

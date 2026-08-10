@@ -4,7 +4,7 @@ export default function TableDetail() {
 
   return (
     <div className="space-y-4">
-      {/* you can also pull name/capacity here if you like—but summary will do it */}
+      {/* you can also pull name/capacity here if you like, but summary will do it */}
       <nav className="border-b pb-2 flex space-x-4">
         {[
           ["","Summary"],

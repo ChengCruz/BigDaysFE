@@ -11,7 +11,7 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        {/* Inside AuthProvider — the default mode is derived from the user's role. */}
+        {/* Inside AuthProvider: the default mode is derived from the user's role. */}
         <UiModeProvider>
           <EventProvider>
             <BrowserRouter>

@@ -3,8 +3,8 @@
 // The announcement itself. Mounted only when a release is actually pending
 // (see WhatsNewAnnouncer).
 //
-// Closing this is not the same as reading it. A plain close — "Got it" or the
-// X — only quiets the release for the rest of this browser session; it returns
+// Closing this is not the same as reading it. A plain close ("Got it" or the
+// X) only quiets the release for the rest of this browser session; it returns
 // next time. The "don't show this again" tick is the only thing here that
 // retires it for good.
 //
@@ -50,7 +50,7 @@ export function WhatsNewModal({ release, onClose }: WhatsNewModalProps) {
           <SparklesIcon className="h-5 w-5 flex-shrink-0 text-primary" />
           <div>
             {/* One step above the body text, one below the modal's own "What's
-                new" heading — the release name is the thing to read first. */}
+                new" heading; the release name is the thing to read first. */}
             <p className="text-base font-bold text-text dark:text-white">{release.title}</p>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               {release.intro ?? "Here's what changed since you were last here."}

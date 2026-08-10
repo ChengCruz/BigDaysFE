@@ -7,7 +7,7 @@
 // list, no QR tokens). Everything lives in localStorage.
 //
 // A checked-in demo guest automatically reverts to "Pending" after
-// PRACTICE_RESET_MS (a few hours). This auto-reset is INTENTIONAL — it keeps
+// PRACTICE_RESET_MS (a few hours). This auto-reset is INTENTIONAL: it keeps
 // the demo repeatable and stops it leaving stale "checked in" state lying
 // around. It is NOT a bug, and the UI tells the user so.
 // ---------------------------------------------------------------------------
@@ -22,7 +22,7 @@ export interface PracticeGuest {
   name: string;
   phoneNo: string;
   pax: number;
-  /** Family | Friend | VIP | Other — mirrors the real guest "flag". */
+  /** Family | Friend | VIP | Other, mirroring the real guest "flag". */
   guestType: string;
   /**
    * Stable demo QR payload for this guest. Rendered as a scannable QR in the
@@ -33,7 +33,7 @@ export interface PracticeGuest {
 }
 
 /**
- * Static, sandboxed demo roster. The same three guests are reused everywhere —
+ * Static, sandboxed demo roster. The same three guests are reused everywhere;
  * they are never persisted to the backend and never appear in real stats.
  */
 export const PRACTICE_GUESTS: PracticeGuest[] = [

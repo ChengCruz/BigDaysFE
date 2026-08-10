@@ -1,15 +1,15 @@
 /**
- * Role-based access tests — sidebar visibility, events list filtering, and page-level functionality.
+ * Role-based access tests covering sidebar visibility, events list filtering, and page-level functionality.
  *
  * How event filtering works:
- *   The backend filters /event/GetEventsListByUser by the JWT token — admin gets all events,
+ *   The backend filters /event/GetEventsListByUser by the JWT token: admin gets all events,
  *   member gets only their own. The frontend renders whatever the API returns with no extra
  *   role check. These tests mock the API to simulate that backend behaviour.
  *
  * Roles under test:
- *   Admin (2)  — all sidebar links, sees every member's events
- *   Member (3) — all sidebar links, sees only their own event
- *   Staff (6)  — restricted to Check-in / Guests / Tables in sidebar
+ *   Admin (2): all sidebar links, sees every member's events
+ *   Member (3): all sidebar links, sees only their own event
+ *   Staff (6): restricted to Check-in / Guests / Tables in sidebar
  */
 import { test, expect } from '@playwright/test';
 import {
@@ -24,9 +24,9 @@ import {
   MOCK_STAFF_USER,
 } from './helpers';
 
-// ── Sidebar — Admin ───────────────────────────────────────────────────────────
+// -- Sidebar: Admin -------------------------------------------------------------
 
-test.describe('Sidebar — Admin role', () => {
+test.describe('Sidebar: Admin role', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/events');
   });
@@ -50,9 +50,9 @@ test.describe('Sidebar — Admin role', () => {
   });
 });
 
-// ── Sidebar — Member ──────────────────────────────────────────────────────────
+// -- Sidebar: Member --------------------------------------------------------------
 
-test.describe('Sidebar — Member role', () => {
+test.describe('Sidebar: Member role', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticatedAsMember(page, '/app/events');
   });
@@ -76,9 +76,9 @@ test.describe('Sidebar — Member role', () => {
   });
 });
 
-// ── Sidebar — Staff ───────────────────────────────────────────────────────────
+// -- Sidebar: Staff ---------------------------------------------------------------
 
-test.describe('Sidebar — Staff role', () => {
+test.describe('Sidebar: Staff role', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticatedAsStaff(page, '/app/checkin');
   });
@@ -107,13 +107,13 @@ test.describe('Sidebar — Staff role', () => {
   });
 });
 
-// ── Events — Admin sees all member events ─────────────────────────────────────
+// -- Events: Admin sees all member events -----------------------------------------
 
-test.describe('Events page — Admin sees all member events', () => {
+test.describe('Events page: Admin sees all member events', () => {
   test.beforeEach(async ({ page }) => {
     // Log in as admin, then override events mock to return multiple members' events
     await gotoAuthenticated(page, '/app/events');
-    await mockApiMultipleEvents(page); // LIFO — runs before base mockApi handler
+    await mockApiMultipleEvents(page); // LIFO, runs before base mockApi handler
     await page.goto('/app/events');
     await page.waitForLoadState('networkidle');
   });
@@ -146,7 +146,7 @@ test.describe('Events page — Admin sees all member events', () => {
   });
 
   test('filters the list by owner name', async ({ page }) => {
-    // Scope to the card list — the active event also appears in the switcher
+    // Scope to the card list; the active event also appears in the switcher
     // trigger and the "Active event" banner, neither of which is filtered.
     const list = page.locator('[data-tour="events-list"]');
     await page.fill('input[type="search"]', MOCK_MEMBER_USER.fullName);
@@ -155,12 +155,12 @@ test.describe('Events page — Admin sees all member events', () => {
   });
 });
 
-// ── Event switcher — owner attribution for admins ─────────────────────────────
+// -- Event switcher: owner attribution for admins -----------------------------------
 
-test.describe('Event switcher — Admin owner attribution', () => {
+test.describe('Event switcher: Admin owner attribution', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/events');
-    await mockApiMultipleEvents(page); // LIFO — runs before base mockApi handler
+    await mockApiMultipleEvents(page); // LIFO, runs before base mockApi handler
     await page.goto('/app/events');
     await page.waitForLoadState('networkidle');
     await page.getByRole('button', { name: /active event|pick one/i }).click();
@@ -183,9 +183,9 @@ test.describe('Event switcher — Admin owner attribution', () => {
   });
 });
 
-// ── Event switcher — members see no owner attribution ─────────────────────────
+// -- Event switcher: members see no owner attribution -------------------------------
 
-test.describe('Event switcher — Member sees no owner attribution', () => {
+test.describe('Event switcher: Member sees no owner attribution', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticatedAsMember(page, '/app/events');
   });
@@ -199,11 +199,11 @@ test.describe('Event switcher — Member sees no owner attribution', () => {
   });
 });
 
-// ── Events — Member sees only their own event ─────────────────────────────────
+// -- Events: Member sees only their own event ---------------------------------------
 
-test.describe('Events page — Member sees only their event', () => {
+test.describe('Events page: Member sees only their event', () => {
   test.beforeEach(async ({ page }) => {
-    // Default mockApi returns [MOCK_EVENT] only — simulates backend filtering for member
+    // Default mockApi returns [MOCK_EVENT] only, simulating backend filtering for member
     await gotoAuthenticatedAsMember(page, '/app/events');
   });
 
@@ -216,9 +216,9 @@ test.describe('Events page — Member sees only their event', () => {
   });
 });
 
-// ── Users page — Admin vs Member ──────────────────────────────────────────────
+// -- Users page: Admin vs Member ----------------------------------------------------
 
-test.describe('Users page — Admin', () => {
+test.describe('Users page: Admin', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/users');
   });
@@ -234,7 +234,7 @@ test.describe('Users page — Admin', () => {
   });
 });
 
-test.describe('Users page — Member', () => {
+test.describe('Users page: Member', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticatedAsMember(page, '/app/users');
   });

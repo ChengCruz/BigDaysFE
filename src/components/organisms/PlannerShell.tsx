@@ -1,6 +1,6 @@
 // src/components/organisms/PlannerShell.tsx
 //
-// The planner-facing chrome — today's fourteen-item sidebar and navbar, moved
+// The planner-facing chrome: today's fourteen-item sidebar and navbar, moved
 // into a wrapper without behavioural change. This is the default for every role
 // except Member, so anyone running other people's events sees exactly what they
 // saw before couple mode existed.

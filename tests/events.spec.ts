@@ -1,10 +1,10 @@
 /**
- * Events CRUD tests — Create, Read, Update (Edit), Archive/Activate.
+ * Events CRUD tests: Create, Read, Update (Edit), Archive/Activate.
  */
 import { test, expect } from '@playwright/test';
 import { gotoAuthenticated, mockApi, setMockAuth, MOCK_EVENT } from './helpers';
 
-test.describe('Events — Read (list)', () => {
+test.describe('Events: Read (list)', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/events');
   });
@@ -34,7 +34,7 @@ test.describe('Events — Read (list)', () => {
 
   test('active event stat card shows count of 1', async ({ page }) => {
     // 1 active event (MOCK_EVENT.isDeleted=false)
-    // StatsCard: label <p> is inside a child div; value <p> is a sibling — go up two levels to reach the row
+    // StatsCard: label <p> is inside a child div; value <p> is a sibling, so go up two levels to reach the row
     const activeCard = page.locator('text=Active Events').locator('..').locator('..');
     await expect(activeCard.locator('text=1')).toBeVisible();
   });
@@ -77,7 +77,7 @@ test.describe('Events — Read (list)', () => {
   });
 });
 
-test.describe('Events — Error state', () => {
+test.describe('Events: Error state', () => {
   test('shows error message when events API fails', async ({ page }) => {
     await mockApi(page);
     await page.route('**/__mock_api__/**', async route => {
@@ -94,7 +94,7 @@ test.describe('Events — Error state', () => {
   });
 });
 
-test.describe('Events — Create', () => {
+test.describe('Events: Create', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/events?new=1');
   });
@@ -115,16 +115,16 @@ test.describe('Events — Create', () => {
     await expect(page.locator('text=New Event')).not.toBeVisible({ timeout: 3000 });
   });
 
-  test('validation — Create button stays disabled or form stays open on empty submit', async ({ page }) => {
+  test('validation: Create button stays disabled or form stays open on empty submit', async ({ page }) => {
     await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
     await page.click('button:has-text("Create")');
     // Modal should still be visible (validation prevents close)
     await expect(page.locator('text=New Event')).toBeVisible();
   });
 
-  test('validation — shows error when title is empty', async ({ page }) => {
+  test('validation: shows error when title is empty', async ({ page }) => {
     await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
-    // Fill everything except title (nth(0)) — text inputs: nth(0)=Title, nth(1)=Description, nth(2)=Location
+    // Fill everything except title (nth(0)); text inputs: nth(0)=Title, nth(1)=Description, nth(2)=Location
     await page.fill('input[type="date"]', '2026-12-01');
     await page.locator('form select').first().selectOption('12');
     await page.locator('form select').nth(1).selectOption('00');
@@ -135,7 +135,7 @@ test.describe('Events — Create', () => {
     await expect(page.locator('text=New Event')).toBeVisible();
   });
 
-  test('validation — shows error when date is empty', async ({ page }) => {
+  test('validation: shows error when date is empty', async ({ page }) => {
     await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
     await page.locator('input[type="text"]').first().fill('My Test Wedding');
     // Leave date empty
@@ -148,7 +148,7 @@ test.describe('Events — Create', () => {
     await expect(page.locator('text=New Event')).toBeVisible();
   });
 
-  test('validation — shows error when time is empty', async ({ page }) => {
+  test('validation: shows error when time is empty', async ({ page }) => {
     await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
     await page.locator('input[type="text"]').first().fill('My Test Wedding');
     await page.fill('input[type="date"]', '2026-12-01');
@@ -160,7 +160,7 @@ test.describe('Events — Create', () => {
     await expect(page.locator('text=New Event')).toBeVisible();
   });
 
-  test('validation — shows error when number of tables is 0', async ({ page }) => {
+  test('validation: shows error when number of tables is 0', async ({ page }) => {
     await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
     await page.locator('input[type="text"]').first().fill('My Test Wedding');
     await page.fill('input[type="date"]', '2026-12-01');
@@ -173,7 +173,7 @@ test.describe('Events — Create', () => {
     await expect(page.locator('text=New Event')).toBeVisible();
   });
 
-  test('validation — shows error when location is empty', async ({ page }) => {
+  test('validation: shows error when location is empty', async ({ page }) => {
     await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
     await page.locator('input[type="text"]').first().fill('My Test Wedding');
     await page.fill('input[type="date"]', '2026-12-01');
@@ -186,7 +186,7 @@ test.describe('Events — Create', () => {
     await expect(page.locator('text=New Event')).toBeVisible();
   });
 
-  test('validation — all field errors shown on completely empty submit', async ({ page }) => {
+  test('validation: all field errors shown on completely empty submit', async ({ page }) => {
     await expect(page.locator('text=New Event')).toBeVisible({ timeout: 3000 });
     await page.click('button:has-text("Create")');
     await expect(page.locator('text=Title cannot be empty.')).toBeVisible();
@@ -209,7 +209,7 @@ test.describe('Events — Create', () => {
   });
 });
 
-test.describe('Events — Edit', () => {
+test.describe('Events: Edit', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/events');
   });
@@ -229,7 +229,7 @@ test.describe('Events — Edit', () => {
   });
 });
 
-test.describe('Events — Archive / Activate', () => {
+test.describe('Events: Archive / Activate', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/events');
   });
@@ -254,10 +254,10 @@ test.describe('Events — Archive / Activate', () => {
   });
 });
 
-test.describe('Events — Empty state', () => {
+test.describe('Events: Empty state', () => {
   test.beforeEach(async ({ page }) => {
     await mockApi(page);
-    // Override events GET to return empty list (LIFO — runs first)
+    // Override events GET to return empty list (LIFO, runs first)
     await page.route('**/__mock_api__/**', async route => {
       if (/\/event\//i.test(route.request().url()) && route.request().method() === 'GET') {
         return route.fulfill({ status: 200, json: { isSuccess: true, data: [] } });
@@ -284,7 +284,7 @@ test.describe('Events — Empty state', () => {
   });
 });
 
-test.describe('Events — Navigation persists across pages', () => {
+test.describe('Events: Navigation persists across pages', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/events');
   });

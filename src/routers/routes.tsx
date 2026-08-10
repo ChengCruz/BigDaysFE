@@ -40,7 +40,7 @@ function AppLayout() {
   const onContactRoute = location.pathname.startsWith("/app/contact");
   const showEmptyState = mustChooseEvent && !onEventsRoute && !onContactRoute;
 
-  // Both shells render the same content — only the chrome around it differs, so
+  // Both shells render the same content; only the chrome around it differs, so
   // no page component is duplicated. Role picks the default mode; the account
   // menu can override it. See docs/COUPLE_MODE.md.
   const Shell = mode === "couple" ? CoupleShell : PlannerShell;
@@ -51,19 +51,19 @@ function AppLayout() {
       {/* Planner only. Two reasons, both real:
           1. Couple mode swaps in Couple* page components on the SAME paths
              (see the mode checks below), but none of them carry `data-tour`
-             attributes — so findTourForPath() matches a tour by route and then
+             attributes, so findTourForPath() matches a tour by route and then
              Joyride has nothing to anchor to. Guests, Seating and Money would
              offer a tour with 0 of its steps mountable.
           2. `fixed bottom-6 right-6` lands the bubble on top of CoupleShell's
              mobile tab bar, covering the "Big Day" tab.
           Couples still reach support via "Get help" in the account menu.
-          Re-enable once couple-specific tours exist — see docs/COUPLE_MODE.md. */}
+          Re-enable once couple-specific tours exist; see docs/COUPLE_MODE.md. */}
       {mode === "planner" && <HelpBubble />}
       {/* Nudges the user to take an offline copy of their guest list as the
           big day approaches. Skipped until they actually have an event. */}
       {!showEmptyState && <ExportBackupReminder />}
       {/* Announces newly shipped features once. Skipped while the user is
-          mid-onboarding with no event, and for crew (role 6) — they reach this
+          mid-onboarding with no event, and for crew (role 6), since they reach this
           layout on /app/checkin, and helpers don't need product news. */}
       {!showEmptyState && userRole !== 6 && <WhatsNewAnnouncer />}
     </TourProvider>
@@ -192,7 +192,7 @@ export default function AppRoutes() {
 
   return (
     <Routes>
-      {/* ─── STANDALONE PROTECTED (no sidebar/navbar — full viewport) ─── */}
+      {/* ─── STANDALONE PROTECTED (no sidebar/navbar, full viewport) ─── */}
       <Route path="/app/tables/fullscreen" element={<RequireAuth><TablesFullscreenPage /></RequireAuth>} />
 
       {/* ─── STANDALONE PUBLIC (no navbar/footer) ───────── */}
@@ -202,7 +202,7 @@ export default function AppRoutes() {
 
       {/* ─── AUTH (standalone, no navbar/footer) ─────────── */}
       <Route path="/login" element={<LoginPage />} />
-      {/* Dedicated crew (event-day staff) sign-in — shared via invite, kept out of the public nav */}
+      {/* Dedicated crew (event-day staff) sign-in, shared via invite, kept out of the public nav */}
       <Route path="/crew-login" element={<CrewLoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
@@ -225,7 +225,7 @@ export default function AppRoutes() {
       <Route path="/app" element={<RequireAuth><AppLayout /></RequireAuth>}>
         <Route index element={<Navigate to="dashboard" replace />} />
 
-        {/* DASHBOARD — body varies by UI mode, route does not */}
+        {/* DASHBOARD: body varies by UI mode, route does not */}
         <Route path="dashboard" element={<HomeRoute />} />
 
         {/* EVENTS */}
@@ -250,7 +250,7 @@ export default function AppRoutes() {
           <Route path=":id/edit" element={<EditRsvpModal />} />
         </Route>
 
-        {/* GUESTS — body varies by UI mode, route does not */}
+        {/* GUESTS: body varies by UI mode, route does not */}
         <Route path="guests" element={<Outlet />}>
           <Route index element={<GuestsRoute />} />
           <Route path="print" element={<GuestCheckInPrintView />} />
@@ -291,7 +291,7 @@ export default function AppRoutes() {
         {/* CHECKLIST */}
         <Route path="checklist" element={<ChecklistPage />} />
 
-        {/* CHECK-IN — body varies by UI mode, route does not */}
+        {/* CHECK-IN: body varies by UI mode, route does not */}
         <Route path="checkin" element={<BigDayRoute />} />
 
         {/* BUDGET */}
@@ -301,7 +301,7 @@ export default function AppRoutes() {
         {/* TUTORIAL */}
         <Route path="tutorial" element={<TutorialPage />} />
 
-        {/* WHAT'S NEW — the full release history behind the announcement modal */}
+        {/* WHAT'S NEW: the full release history behind the announcement modal */}
         <Route path="whats-new" element={<WhatsNewPage />} />
 
         {/* CONTACT / SUPPORT */}

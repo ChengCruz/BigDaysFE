@@ -13,7 +13,7 @@ export interface GuestCardProps {
   };
   onDragStart?: (guestId: string) => void;
   onDragEnd?: () => void;
-  /** Tap/click to pick this guest up — alternate to drag (mobile-friendly). */
+  /** Tap/click to pick this guest up, an alternative to drag (mobile-friendly). */
   onPick?: (guestId: string) => void;
   isDragging?: boolean;
   /** Highlights this card as the currently-picked guest. */

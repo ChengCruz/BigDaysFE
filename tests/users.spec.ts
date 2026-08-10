@@ -1,5 +1,5 @@
 /**
- * Users CRUD tests — Profile view, Change Password, Admin: Create/Edit/Delete users.
+ * Users CRUD tests covering Profile view, Change Password, and Admin Create/Edit/Delete users.
  */
 import { test, expect } from '@playwright/test';
 import { gotoAuthenticated, gotoAuthenticatedAsMember, mockApi, setMockAuth, MOCK_MEMBER_USER, MOCK_USER_LIST } from './helpers';
@@ -7,7 +7,7 @@ import { gotoAuthenticated, gotoAuthenticatedAsMember, mockApi, setMockAuth, MOC
 // ── My Profile (non-admin view) ───────────────────────────────────────────────
 // Uses Member role so UsersPage renders the profile + change password view (not admin list)
 
-test.describe('Users — My Profile', () => {
+test.describe('Users: My Profile', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticatedAsMember(page, '/app/users');
   });
@@ -18,7 +18,7 @@ test.describe('Users — My Profile', () => {
   });
 
   test('Change Password section is visible', async ({ page }) => {
-    // h4 text is "Change Password" — CSS applies uppercase display, DOM text is mixed case
+    // h4 text is "Change Password"; CSS applies uppercase display, DOM text is mixed case
     await expect(page.locator('text=Change Password')).toBeVisible();
   });
 
@@ -36,7 +36,7 @@ test.describe('Users — My Profile', () => {
 
 // ── Change Password validation ────────────────────────────────────────────────
 
-test.describe('Users — Change Password validation', () => {
+test.describe('Users: Change Password validation', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticatedAsMember(page, '/app/users');
     await expect(page.locator('text=Change Password')).toBeVisible();
@@ -69,14 +69,14 @@ test.describe('Users — Change Password validation', () => {
   });
 });
 
-// ── Admin — All Users list ────────────────────────────────────────────────────
+// -- Admin: All Users list --------------------------------------------------
 
-test.describe('Users — Admin: All Users list', () => {
+test.describe('Users, Admin: All Users list', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/users');
     // Click "View All Users" to switch from profile view to list view. UsersPage renders
     // only a PageLoader until the profile query lands, so wait for the button rather than
-    // probing for it — a conditional skip here leaves every test in this block silently
+    // probing for it, since a conditional skip here leaves every test in this block silently
     // asserting against the profile view instead of the list.
     const viewAllBtn = page.locator('button:has-text("View All Users")');
     await expect(viewAllBtn).toBeVisible();
@@ -99,7 +99,7 @@ test.describe('Users — Admin: All Users list', () => {
   test('account status badge reflects isActive from the API', async ({ page }) => {
     for (const user of MOCK_USER_LIST) {
       const card = page.locator('li').filter({ hasText: user.email });
-      // exact: true matters — "Inactive" contains "Active" as a substring.
+      // exact: true matters, since "Inactive" contains "Active" as a substring.
       await expect(card.getByText(user.isActive ? 'Active' : 'Inactive', { exact: true })).toBeVisible();
     }
   });
@@ -115,7 +115,7 @@ test.describe('Users — Admin: All Users list', () => {
 
 // ── Error state ───────────────────────────────────────────────────────────────
 
-test.describe('Users — Error state', () => {
+test.describe('Users: Error state', () => {
   test('shows error message when user profile API fails', async ({ page }) => {
     await mockApi(page);
     // Override user fetch to return 500
@@ -140,9 +140,9 @@ test.describe('Users — Error state', () => {
   });
 });
 
-// ── Admin — Create User ───────────────────────────────────────────────────────
+// -- Admin: Create User -------------------------------------------------------
 
-test.describe('Users — Admin: Create User', () => {
+test.describe('Users, Admin: Create User', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/users');
     const viewAllBtn = page.locator('button:has-text("View All Users")');
@@ -161,13 +161,13 @@ test.describe('Users — Admin: Create User', () => {
     await expect(page.locator('text=New User')).not.toBeVisible({ timeout: 3000 });
   });
 
-  test('validation — stays open on empty submit', async ({ page }) => {
+  test('validation: stays open on empty submit', async ({ page }) => {
     await page.click('button:has-text("Create")');
     await expect(page.locator('text=New User')).toBeVisible();
   });
 
   test('fills name and email and submits → modal closes', async ({ page }) => {
-    // UserFormModal Name field has no placeholder — target by type (first text input in modal)
+    // UserFormModal Name field has no placeholder, so target by type (first text input in modal)
     await page.locator('input[type="text"]').first().fill('New Member');
     await page.fill('input[type="email"]', 'newmember@test.com');
     await page.click('button:has-text("Create")');
@@ -175,9 +175,9 @@ test.describe('Users — Admin: Create User', () => {
   });
 });
 
-// ── Admin — Edit User ─────────────────────────────────────────────────────────
+// -- Admin: Edit User ----------------------------------------------------------
 
-test.describe('Users — Admin: Edit User', () => {
+test.describe('Users, Admin: Edit User', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/users');
     const viewAllBtn = page.locator('button:has-text("View All Users")');
@@ -209,16 +209,16 @@ test.describe('Users — Admin: Edit User', () => {
   test('edits user name and saves', async ({ page }) => {
     await page.locator('button:has-text("Edit")').first().click();
     await expect(page.locator('text=Edit User')).toBeVisible({ timeout: 3000 });
-    // UserFormModal Name field has no placeholder — target by type (first text input in modal)
+    // UserFormModal Name field has no placeholder, so target by type (first text input in modal)
     await page.locator('input[type="text"]').first().fill('Updated Name');
     await page.click('button:has-text("Save")');
     await expect(page.locator('text=Profile saved successfully')).toBeVisible({ timeout: 5000 });
   });
 });
 
-// ── Admin — Delete User ───────────────────────────────────────────────────────
+// -- Admin: Delete User --------------------------------------------------------
 
-test.describe('Users — Admin: Delete User', () => {
+test.describe('Users, Admin: Delete User', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/users');
     const viewAllBtn = page.locator('button:has-text("View All Users")');

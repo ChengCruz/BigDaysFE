@@ -273,8 +273,8 @@ export const FloorTableItem: React.FC<Props> = ({
             key={idx}
             title={
               occupied
-                ? `${guest.name} — click for options`
-                : `Seat ${idx + 1} — click to assign`
+                ? `${guest.name}: click for options`
+                : `Seat ${idx + 1}: click to assign`
             }
             onClick={(e) => {
               e.stopPropagation();
@@ -384,11 +384,11 @@ export const FloorTableItem: React.FC<Props> = ({
         >
           {canAcceptDrop
             ? `Drop to assign (${draggedGuest.pax} pax → ${assigned + draggedGuest.pax}/${capacity})`
-            : `Not enough seats — need ${draggedGuest.pax}, ${Math.max(0, availableSeats)} open`}
+            : `Not enough seats: need ${draggedGuest.pax}, ${Math.max(0, availableSeats)} open`}
         </div>
       )}
 
-      {/* Hover tooltip — guest list */}
+      {/* Hover tooltip (guest list) */}
       {hovered && !dragging.current && !isDragOver && tooltipAnchor &&
         createPortal(
           (() => {

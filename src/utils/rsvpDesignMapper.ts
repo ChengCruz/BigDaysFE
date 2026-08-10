@@ -368,7 +368,7 @@ export function mapToBackendPayload(
       layout: {
         // Encode contentWidth as layout.width so the backend preserves it
         // (backend theme DTO doesn't persist contentWidth/layoutStyle/fontFamily).
-        // The number IS the device viewport width — 360 / 393 / 440.
+        // The number IS the device viewport width: 360 / 393 / 440.
         width: contentWidthToLayoutPx(frontendDesign.contentWidth),
         // Encode layoutStyle (1s digit) + blockMarginX (100s) + blockMarginY (10000s) so
         // values survive even if the backend strips unknown theme fields.

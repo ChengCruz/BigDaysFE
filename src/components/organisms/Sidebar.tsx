@@ -75,13 +75,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const displayRole = userRole != null ? getRoleLabel(userRole) : null;
 
   // Recomputed on every route change (NavLink re-renders this on navigation),
-  // which is exactly when the dot needs to clear — visiting the page marks the
+  // which is exactly when the dot needs to clear: visiting the page marks the
   // releases read.
   const hasUnseenNews = hasUnseenRelease();
 
   // Everyone except crew can try the simple view. It used to be gated on
   // `defaultMode === "couple" || override !== null`, which left an admin who
-  // had never switched with no way in at all — and the What's New note now
+  // had never switched with no way in at all, and the What's New note now
   // tells every reader the switch exists, so it has to.
   //
   // Crew stay out: AppLayout confines them to check-in, and CoupleShell's tabs
@@ -160,7 +160,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           </div>
 
-          {/* Nav links — scrollable middle */}
+          {/* Nav links: scrollable middle */}
           <div className={`flex-1 overflow-y-auto py-3 ${collapsed ? "md:px-2" : "px-3"}`} data-tour="sidebar-nav">
             {/* Navigation links */}
             <nav className="space-y-0.5">
@@ -228,7 +228,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           {/* Footer: release notes + back to couple view + profile + version */}
           <div className="border-t border-primary/10 dark:border-white/10 p-3">
-            {/* Kept out of the nav list above — that list is the fourteen items
+            {/* Kept out of the nav list above; that list is the fourteen items
                 couple mode exists to escape, and this is an app-level page, not
                 part of running an event. Mirrors the couple rail footer, which
                 puts it beside "Get help". */}

@@ -24,7 +24,7 @@
   "include": ["src"],
   /*
    * Retired RSVP designers. V1 (RsvpDesignPage) and V2 are not routed and have
-   * no importers — the one live export, FullPagePreview, was moved to
+   * no importers; the one live export, FullPagePreview, was moved to
    * ./src/components/pages/RSVPs/FullPagePreview.tsx. They are kept on disk for
    * reference but excluded from typechecking so their pre-migration
    * contentWidth unions ("full" is retired, see utils/rsvpContentWidths.ts)

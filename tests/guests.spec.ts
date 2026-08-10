@@ -1,5 +1,5 @@
 /**
- * Guests page tests — Read, Filter, Edit, Assign/Unassign, Empty states.
+ * Guests page tests: read, filter, edit, assign/unassign, empty states.
  */
 import { test, expect } from '@playwright/test';
 import {
@@ -11,7 +11,7 @@ import {
   MOCK_TABLE,
 } from './helpers';
 
-test.describe('Guests — Read (list)', () => {
+test.describe('Guests: Read (list)', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/guests');
   });
@@ -111,7 +111,7 @@ test.describe('Guests — Read (list)', () => {
   });
 });
 
-test.describe('Guests — Error state', () => {
+test.describe('Guests: Error state', () => {
   test('shows error message when guests API fails', async ({ page }) => {
     await mockApi(page);
     await page.route('**/__mock_api__/**', async route => {
@@ -130,7 +130,7 @@ test.describe('Guests — Error state', () => {
   });
 });
 
-test.describe('Guests — Filters', () => {
+test.describe('Guests: Filters', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/guests');
   });
@@ -175,7 +175,7 @@ test.describe('Guests — Filters', () => {
   });
 });
 
-test.describe('Guests — Edit modal', () => {
+test.describe('Guests: Edit modal', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/guests');
   });
@@ -186,12 +186,12 @@ test.describe('Guests — Edit modal', () => {
 
   test('clicking "Edit" opens the guest form modal', async ({ page }) => {
     await page.locator('button:has-text("Edit")').first().click();
-    // Modal should appear — look for a close/cancel action or modal container
+    // Modal should appear; look for a close/cancel action or modal container
     await expect(page.locator('[role="dialog"], .modal, button:has-text("Cancel")').first()).toBeVisible({ timeout: 3000 });
   });
 });
 
-test.describe('Guests — Assign Table modal', () => {
+test.describe('Guests: Assign Table modal', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/guests');
   });
@@ -213,7 +213,7 @@ test.describe('Guests — Assign Table modal', () => {
   });
 });
 
-test.describe('Guests — Empty state (no guests)', () => {
+test.describe('Guests: Empty state (no guests)', () => {
   test.beforeEach(async ({ page }) => {
     await mockApi(page);
     // Override guests GET to return empty list
@@ -238,7 +238,7 @@ test.describe('Guests — Empty state (no guests)', () => {
   });
 });
 
-test.describe('Guests — No event selected', () => {
+test.describe('Guests: No event selected', () => {
   test.beforeEach(async ({ page }) => {
     await mockApi(page);
     await page.route('**/__mock_api__/**', async route => {

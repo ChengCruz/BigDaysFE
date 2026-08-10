@@ -145,14 +145,14 @@ export interface RsvpDesign {
   /** Layout style: "cards" (V1/V2 default) renders blocks in rounded cards with gaps.
    *  "flush" (V3) renders blocks as full-width sections edge-to-edge. */
   layoutStyle?: "cards" | "flush";
-  /** Width of the guest page's invitation card — a REAL PHONE VIEWPORT.
+  /** Width of the guest page's invitation card: a REAL PHONE VIEWPORT.
    *  "compact" = 360px (Android), "standard" = 393px (iPhone 15/16, default),
    *  "wide" = 440px (iPhone Pro Max). Pixel values and labels live in
-   *  utils/rsvpContentWidths — read them from there, never re-hardcode.
+   *  utils/rsvpContentWidths; read them from there, never re-hardcode.
    *
    *  "full" (edge-to-edge) is RETIRED: accepted on read for old designs, coerced
    *  to the default by normalizeContentWidth, and not selectable. Do not
-   *  reintroduce it — see utils/rsvpContentWidths for why. */
+   *  reintroduce it; see utils/rsvpContentWidths for why. */
   contentWidth?: "compact" | "standard" | "wide" | "full";
   /** Horizontal inset (px) applied to the content column in canvas/preview/public.
    *  0 = edge-to-edge (default). Useful for giving blocks breathing room against the page background. */
@@ -171,7 +171,7 @@ export interface RsvpDesign {
   previewBackdropColor?: string;
   /** Background image URL shown outside the 375px mobile frame in the designer preview */
   previewBackdropImage?: string;
-  /** Stable label key for the preview backdrop preset — persisted to backend instead of the hashed Vite URL */
+  /** Stable label key for the preview backdrop preset, persisted to backend instead of the hashed Vite URL */
   previewBackdropLabel?: string;
 }
 
@@ -234,7 +234,7 @@ export interface ApiBlock {
   
   // Form field
   formFieldId?: number; // Numeric ID (legacy)
-  questionId?: string;  // String GUID — primary identifier
+  questionId?: string;  // String GUID, primary identifier
   placeholder?: string;
   required?: boolean;
   hint?: string;
@@ -253,7 +253,7 @@ export interface ApiBlock {
   // Guest details field toggles
   showFields?: Record<string, boolean>;
 
-  // Guest details — custom questions embedded inside the block
+  // Guest details: custom questions embedded inside the block
   customQuestions?: Array<{
     id: string;
     questionId?: string;
@@ -294,7 +294,7 @@ export interface ApiTheme {
   blockMarginX?: number;
   /** Vertical gap (px) between consecutive blocks */
   blockMarginY?: number;
-  /** Stable label key for the preview backdrop — round-trips via backend without hashed URLs */
+  /** Stable label key for the preview backdrop, round-trips via backend without hashed URLs */
   previewBackdropLabel?: string;
 }
 

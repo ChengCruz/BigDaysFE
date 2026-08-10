@@ -7,7 +7,7 @@
 // offline, so as the big day approaches we nag the user into taking an offline
 // copy of their guest list.
 //
-// The nag is deliberately persistent — it returns every browser session until
+// The nag is deliberately persistent: it returns every browser session until
 // the user acts. The only way to quiet it is the "don't show again" tick, which
 // is a 15-day SNOOZE rather than a permanent opt-out: someone who dismisses at
 // 30 days out gets one more prompt at the 15-day mark, which is exactly when
@@ -41,7 +41,7 @@ function readSnoozes(): StateMap {
     if (!raw) return {};
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== "object") return {};
-    // Keep only well-formed entries — a corrupt blob must not wedge the modal
+    // Keep only well-formed entries, since a corrupt blob must not wedge the modal
     // permanently open or permanently shut.
     const out: StateMap = {};
     for (const [id, value] of Object.entries(parsed as Record<string, unknown>)) {
@@ -79,7 +79,7 @@ function readSessionDismissals(): Record<string, true> {
 /**
  * Which stage to show right now, or null when the reminder stays hidden.
  *
- * Nothing fires on the event day itself or after it — by then a paper backup
+ * Nothing fires on the event day itself or after it: by then a paper backup
  * can no longer be printed in time, so the prompt would only be noise.
  */
 export function getDueStage(
@@ -103,7 +103,7 @@ export function dismissForSession(eventId: string): void {
     map[eventId] = true;
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(map));
   } catch {
-    /* ignore — worst case the modal reappears on the next route change */
+    /* ignore; worst case the modal reappears on the next route change */
   }
 }
 

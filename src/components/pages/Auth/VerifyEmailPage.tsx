@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 
 const VERIFIED_EMAILS_KEY = "mbd_verified_emails";
 
-/** Matches the backend resend cooldown — a second request inside this window is a silent no-op. */
+/** Matches the backend resend cooldown: a second request inside this window is a silent no-op. */
 const RESEND_COOLDOWN_SECONDS = 60;
 
 function getVerifiedEmails(): string[] {
@@ -25,7 +25,7 @@ function markEmailVerified(email: string) {
       localStorage.setItem(VERIFIED_EMAILS_KEY, JSON.stringify([...emails, normalized].slice(-10)));
     }
   } catch {
-    // localStorage unavailable — worst case the form just shows again
+    // localStorage unavailable, so worst case the form just shows again
   }
 }
 
@@ -69,7 +69,7 @@ export default function VerifyEmailPage() {
 
   useEffect(() => {
     if (alreadyVerified) {
-      toast.success("Your account is already verified — please sign in.");
+      toast.success("Your account is already verified. Please sign in.");
       navigate("/login", { replace: true });
     }
   }, [alreadyVerified, navigate]);

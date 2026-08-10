@@ -28,7 +28,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
   initial,
   className = "",
 }) => {
-  // Event date/time is stored as local (GMT+8) in the DB — use raw values directly.
+  // Event date/time is stored as local (GMT+8) in the DB, so use raw values directly.
   const [title, setTitle] = useState(initial?.title || "");
   const [date, setDate] = useState<string>(initial?.date?.slice(0, 10) ?? "");
   const [time, setTime] = useState<string>(initial?.time?.slice(0, 5) ?? "");
@@ -80,7 +80,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
       return;
     }
     setFieldErrors({});
-    // Event date/time is stored as local (GMT+8) in the DB — send values as-is.
+    // Event date/time is stored as local (GMT+8) in the DB, so send values as-is.
     try {
       if (isEdit && initial) {
         const updated = await updateEvt.mutateAsync({

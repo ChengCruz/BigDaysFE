@@ -1,5 +1,5 @@
 // src/components/pages/RSVPs/RsvpDesignV3Page.tsx
-// RSVP Designer V3 — Optimized full-screen builder with advanced UX.
+// RSVP Designer V3: optimized full-screen builder with advanced UX.
 // Improvements over V2:
 //   - useReducer for consolidated state (replaces 15+ useState)
 //   - Undo / Redo (Ctrl+Z / Ctrl+Y)
@@ -392,7 +392,7 @@ function CountdownDisplay({
 // ─── Canvas block renderer ──────────────────────────────────────────────────
 
 /**
- * The canvas mock for a linked question's input — was a single generic
+ * The canvas mock for a linked question's input used to be a single generic
  * placeholder box regardless of type, so checkbox/select/radio questions
  * previewed identically to a plain text field. Mirrors the actual controls
  * guests get in RsvpFormRenderer (checkbox → tick list, select/radio →
@@ -490,7 +490,7 @@ function fieldLinkStatus(
 
 /**
  * The canvas used to render a formField block identically whether its linked
- * question was active, hidden, or deleted — a couple could stare at the live
+ * question was active, hidden, or deleted, so a couple could stare at the live
  * design and have no idea a field wouldn't actually reach guests. This is the
  * ONLY on-canvas signal; BlockEditor.tsx's side panel has its own (textual)
  * version of the same status, but that requires opening the block first.
@@ -725,7 +725,7 @@ function renderSectionContent(
         ? (() => { try { return new Date(rawDate).toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); } catch { return rawDate; } })()
         : "Date TBC";
       const rawTime = event?.raw?.eventTime ?? "";
-      // The date above is formatted for guests, so the time must be too —
+      // The date above is formatted for guests, so the time must be too:
       // printing rawTime verbatim showed invitees "18:00:00".
       const formattedTime = formatEventTime(rawDate, rawTime) || "Time TBC";
       const location = event?.location ?? event?.raw?.eventLocation ?? "Venue TBC";
@@ -791,7 +791,7 @@ function renderSectionContent(
   }
 }
 
-// ─── Canvas block wrapper (V3 — with drop zone + duplicate) ─────────────────
+// ─── Canvas block wrapper (V3, with drop zone + duplicate) ─────────────────
 
 function V3CanvasBlock({
   block, isSelected, accentColor, globalIsLight, event, questions, askedQuestions, isFirstGuestDetailsBlock, isFirst, isLast,
@@ -818,7 +818,7 @@ function V3CanvasBlock({
         draggable
         onDragStart={(e) => e.dataTransfer.setData("text/plain", block.id)}
       >
-        {/* Drop zone — absolute so it adds no layout height (keeps canvas spacing identical to preview/public) */}
+        {/* Drop zone: absolute so it adds no layout height (keeps canvas spacing identical to preview/public) */}
         <div
           className={`absolute left-4 right-4 rounded-full transition-all duration-150 z-20 ${dropHighlight ? "bg-primary/60 h-1.5" : "h-2"}`}
           style={{ top: -4 }}
@@ -842,7 +842,7 @@ function V3CanvasBlock({
           </div>
         )}
 
-        {/* V3 Action bar — includes Duplicate */}
+        {/* V3 Action bar, includes Duplicate */}
         {isSelected && (
           <div className="absolute z-20 flex bg-white border border-gray-200 shadow-md rounded-t overflow-hidden" style={{ top: -24, right: 0 }} onClick={(e) => e.stopPropagation()}>
             {[
@@ -961,7 +961,7 @@ export default function RsvpDesignV3Page() {
   const copyResetRef = useRef<number | null>(null);
   useEffect(() => () => { if (copyResetRef.current) window.clearTimeout(copyResetRef.current); }, []);
 
-  // GetQuestions deliberately returns hidden questions too — the Questions page
+  // GetQuestions deliberately returns hidden questions too, since the Questions page
   // needs them to offer "unhide". The designer must not: a hidden question is not
   // on the invite, so offering it to link would create a field guests never see.
   const availableQuestions = useMemo<FormFieldConfig[]>(
@@ -1124,7 +1124,7 @@ export default function RsvpDesignV3Page() {
 
       // Restore share link. Prefer the slug URL (public, reflects latest design)
       // over /rsvp/submit/:token which depends on a backend share-token endpoint
-      // that is currently unreliable — see .claude/todo/rsvp-v3-preview-public-sync.md.
+      // that is currently unreliable; see .claude/todo/rsvp-v3-preview-public-sync.md.
       if (savedDesign.shareToken) {
         setShareToken(savedDesign.shareToken);
       }
@@ -1157,7 +1157,7 @@ export default function RsvpDesignV3Page() {
       if (event.date) { try { parts.push(new Date(event.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })); } catch { parts.push(event.date); } }
       if (event.time) parts.push(event.time);
       if (event.location) parts.push(event.location);
-      const subtitle = parts.length > 0 ? `Save the date — ${parts.join(" · ")}` : "Save the date and RSVP below";
+      const subtitle = parts.length > 0 ? `Save the date: ${parts.join(" · ")}` : "Save the date and RSVP below";
       // The starter design is a static constant, so it used to open with the
       // built-in name/phone/pax fields and none of the couple's own questions --
       // even when they had written them before ever opening the designer.
@@ -1299,7 +1299,7 @@ export default function RsvpDesignV3Page() {
           // renderer reads `block.required ?? cfg.isRequired`, and `false` is not
           // nullish, so a copied `false` would permanently pin the field optional.
           //
-          // "Label override" in BlockEditor still writes block.label — an override
+          // "Label override" in BlockEditor still writes block.label: an override
           // the couple typed deliberately is kept and still wins.
           label: undefined,
           required: undefined,
@@ -1329,7 +1329,7 @@ export default function RsvpDesignV3Page() {
       else valid.push(file);
     }
     if (rejected.length === 1) toast.error(rejected[0]);
-    else if (rejected.length > 1) toast.error(`${rejected.length} files skipped — use JPG, PNG or WebP up to ${MAX_UPLOAD_MB}MB.`);
+    else if (rejected.length > 1) toast.error(`${rejected.length} files skipped. Use JPG, PNG or WebP up to ${MAX_UPLOAD_MB}MB.`);
     return Promise.all(valid.map(toImageAsset));
   };
 
@@ -1429,7 +1429,7 @@ export default function RsvpDesignV3Page() {
   // ── Save ──────────────────────────────────────────────────────────────────
   // Resolves to the version number the server assigned to this save, or null if
   // it failed. Callers must use the returned value rather than reading `version`
-  // or `saveResponse` — those are render-closure state and are still stale on the
+  // or `saveResponse`, since those are render-closure state and are still stale on the
   // line after `await handleSave()`.
   const handleSave = async (): Promise<number | null> => {
     if (!eventId) return null;
@@ -1523,7 +1523,7 @@ export default function RsvpDesignV3Page() {
   };
 
   // ── Guest link ──────────────────────────────────────────────────────────────
-  // The guest link is the event's slug URL (/rsvp/:slug) — a permanent public
+  // The guest link is the event's slug URL (/rsvp/:slug), a permanent public
   // endpoint that always reflects the latest saved design. There is nothing to
   // rotate or regenerate, so this only derives and reveals it.
   // The share-token branch below is a fallback for slug-less events only; note
@@ -1588,10 +1588,10 @@ export default function RsvpDesignV3Page() {
   const globalIsLight = globalBackgroundType === "color" && isLightColor(globalBackgroundColor);
 
   // The canvas IS the device: its width is the selected phone viewport, so the
-  // couple composes against exactly what a guest will hold. No inner cap — the
+  // couple composes against exactly what a guest will hold. No inner cap: the
   // card edge is the viewport edge, mirroring preview/public.
   const widthOption = contentWidthOption(contentWidth);
-  // No grey bezel ring here either — rounded corners only. See rsvpContentWidths.
+  // No grey bezel ring here either; rounded corners only. See rsvpContentWidths.
   const canvasClass = "rounded-[2.5rem] shadow-[0_22px_64px_-14px_rgba(15,23,42,0.45)]";
 
   const chevronSvg = (open: boolean) => (
@@ -1639,7 +1639,7 @@ export default function RsvpDesignV3Page() {
 
         <div className="w-px h-6 bg-gray-200 shrink-0" />
 
-        {/* Device switcher — the canvas, preview and guest page all follow this.
+        {/* Device switcher: the canvas, preview and guest page all follow this.
             Previously a hardcoded "430 px" label that lied about the real width. */}
         <div className="flex items-center gap-0.5" role="group" aria-label="Preview device width">
           {CONTENT_WIDTH_ORDER.map((key) => {
@@ -1650,7 +1650,7 @@ export default function RsvpDesignV3Page() {
                 key={key}
                 onClick={() => dispatch({ type: "SET_GLOBAL", payload: { contentWidth: key } })}
                 aria-pressed={active}
-                title={`${opt.device} — ${opt.px}px · ${opt.hint}`}
+                title={`${opt.device}: ${opt.px}px · ${opt.hint}`}
                 className={`px-2 py-1 text-[11px] font-medium rounded-md transition ${
                   active ? "bg-primary/10 text-primary" : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                 }`}
@@ -1670,20 +1670,20 @@ export default function RsvpDesignV3Page() {
 
         <div className="w-px h-6 bg-gray-200 shrink-0" />
 
-        {/* Status badge — reflects the server-owned publish flag, not just same-session Publish.
+        {/* Status badge: reflects the server-owned publish flag, not just same-session Publish.
             The guest page serves the latest PUBLISHED version, so a draft stays private
             until Save & Publish. */}
         {isLoadingDesign && <span className="flex items-center gap-1.5 text-xs text-gray-400"><Spinner /> Loading...</span>}
         {!isLoadingDesign && isPublished && !isSaving && !isUploadingForSave && (
           <span
-            title="Published — this is the version your guests see at the RSVP link."
+            title="Published. This is the version your guests see at the RSVP link."
             className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
             Published{version !== undefined ? ` v${version}` : ""}
           </span>
         )}
         {!isLoadingDesign && !isPublished && (isSaveSuccess || version !== undefined) && !isSaveError && !isSaving && !isUploadingForSave && (
           <span
-            title="Draft saved — guests still see your last published version. Click Save & Publish to make these edits live."
+            title="Draft saved. Guests still see your last published version. Click Save & Publish to make these edits live."
             className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
             Draft{version !== undefined ? ` v${version}` : ""} · not live
           </span>
@@ -1757,7 +1757,7 @@ export default function RsvpDesignV3Page() {
             ))}
           </div>
 
-          {/* Search — shown in blocks tab */}
+          {/* Search: shown in blocks tab */}
           {leftTab === "blocks" && (
             <div className="px-2 pt-2 pb-1 shrink-0">
               <input type="text" placeholder="Search blocks..." value={blockSearch} onChange={(e) => setBlockSearch(e.target.value)}
@@ -1888,7 +1888,7 @@ export default function RsvpDesignV3Page() {
               </p>
             </div>
 
-            {/* Invitation card — width = the selected device viewport. */}
+            {/* Invitation card: width = the selected device viewport. */}
             <div className={`relative transition-all duration-300 overflow-hidden ${canvasClass}`}
               style={{ ...frameBg, width: widthOption.px, minHeight: 700, fontFamily: globalFontFamily || "Georgia, 'Times New Roman', serif" }}
               onClick={(e) => { if (e.currentTarget === e.target) dispatch({ type: "SELECT", payload: null }); }}>
@@ -1904,7 +1904,7 @@ export default function RsvpDesignV3Page() {
                 <div className="absolute inset-0 pointer-events-none" style={{ background: `rgba(15,23,42,${globalOverlay})` }} />
               )}
 
-              {/* Blocks — no inner cap; the card edge is the viewport edge, same as preview/public */}
+              {/* Blocks: no inner cap; the card edge is the viewport edge, same as preview/public */}
               <div
                 className="relative z-10 mx-auto flex flex-col w-full"
                 style={{
@@ -2062,13 +2062,13 @@ export default function RsvpDesignV3Page() {
             className="fixed top-4 right-4 z-[101] flex items-center gap-1.5 rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm hover:bg-black/80 transition">
             Close Preview
           </button>
-          {/* Invitation card — device width on desktop, full-bleed on a real phone.
+          {/* Invitation card: device width on desktop, full-bleed on a real phone.
               Matches RsvpFormRenderer exactly so preview == guest page. */}
           <div className={`relative mx-auto w-full ${widthOption.cardClass} sm:rounded-[2.5rem] sm:shadow-[0_22px_64px_-14px_rgba(15,23,42,0.45)] overflow-hidden`}>
-          {/* Mobile content — backgrounds scoped inside card frame */}
+          {/* Mobile content: backgrounds scoped inside card frame */}
           <div className="relative w-full min-h-[600px] overflow-hidden"
             style={frameBg}>
-            {/* Background layers — scoped to mobile container */}
+            {/* Background layers: scoped to mobile container */}
             {globalBackgroundType === "image" && globalBackgroundAsset && (
               <div className="absolute inset-0 bg-cover bg-center pointer-events-none" style={{ backgroundImage: `url(${globalBackgroundAsset})` }} />
             )}

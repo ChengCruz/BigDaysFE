@@ -1,5 +1,5 @@
 /**
- * Debug Playwright script — no Playwright MCP needed, run directly via Node.
+ * Debug Playwright script, no Playwright MCP needed, run directly via Node.
  * Tests: (1) guest submit flow, (2) admin designer question linking.
  *
  * Run: node e2e-debug.mjs
@@ -99,7 +99,7 @@ function mockApiServer() {
       });
       return;
     }
-    // Public design by token — intentionally 404 to force eventGuid fallback
+    // Public design by token: intentionally 404 to force eventGuid fallback
     if (url.includes("/RsvpDesign/public/")) {
       res.writeHead(404);
       res.end(JSON.stringify({ isSuccess: false, message: "Not found" }));
@@ -125,7 +125,7 @@ function mockApiServer() {
 // ─── Tests ────────────────────────────────────────────────────────────────────
 const RESULTS = [];
 function pass(name) { console.log(`  ✅ PASS: ${name}`); RESULTS.push({ name, pass: true }); }
-function fail(name, reason) { console.error(`  ❌ FAIL: ${name} — ${reason}`); RESULTS.push({ name, pass: false, reason }); }
+function fail(name, reason) { console.error(`  ❌ FAIL: ${name}: ${reason}`); RESULTS.push({ name, pass: false, reason }); }
 
 async function testGuestSubmit(page, baseUrl) {
   console.log("\n── Test: Guest submit flow ──────────────────────────────────────");
@@ -193,14 +193,14 @@ async function testGuestSubmit(page, baseUrl) {
   if (successVisible) {
     pass("Form submits successfully → success screen shown");
   } else if (toastError) {
-    fail("Form submit", "Toast error appeared — submit failed");
+    fail("Form submit", "Toast error appeared, submit failed");
     // Find what API call was made
     const submitCall = apiCalls.find(c => c.url.includes("Create") || c.url.includes("public"));
     console.log("  Submit API call:", submitCall);
     const submitResp = apiResponses.find(r => r.url.includes("Create") || r.url.includes("public"));
     console.log("  Submit API response:", submitResp);
   } else {
-    fail("Form submit", "Neither success screen nor error toast — check console");
+    fail("Form submit", "Neither success screen nor error toast; check console");
   }
 
   // Report all API calls
@@ -273,7 +273,7 @@ async function testQuestionLinking(page, baseUrl) {
   // Check that the block's questionId was updated (look for the green "Linked" indicator)
   const linkedIndicator = await page.locator("text=Linked").isVisible().catch(() => false);
   if (linkedIndicator) {
-    pass("Question linked — 'Linked' indicator shown");
+    pass("Question linked: 'Linked' indicator shown");
   } else {
     fail("Question linking", "'✓ Linked' indicator not shown after selecting question");
     // Dump block state

@@ -16,7 +16,7 @@ export interface GuestExportInput {
   tables: TableBase[];
   /** guestCode → gift amount, joined from budget transactions. */
   giftMap: Map<string, number>;
-  /** Empty when the event has no budget set up — the column still renders. */
+  /** Empty when the event has no budget set up, but the column still renders. */
   currencySymbol: string;
 }
 

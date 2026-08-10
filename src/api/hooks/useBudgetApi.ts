@@ -186,7 +186,7 @@ export function useUpdateBudget() {
       return budget;
     },
     onSuccess: (_data, variables) => {
-      // Update API returns bool, not budget — just invalidate to trigger a fresh GET
+      // Update API returns bool, not budget, so just invalidate to trigger a fresh GET
       queryClient.invalidateQueries({ queryKey: ["budget", variables.eventGuid] });
     },
   });

@@ -6,8 +6,8 @@
  * nags, the export saves a copy, the sheet is the paper fallback.
  *
  * The date maths and the reminder state machine are pure functions and were
- * verified directly. What only a browser can check — and what this file is
- * for — is the wiring: that the dropdown items fire real downloads, that the
+ * verified directly. What only a browser can check, and what this file is
+ * for, is the wiring: that the dropdown items fire real downloads, that the
  * print stylesheet reveals the right element, and that the modal appears and
  * dismisses on the right days.
  *
@@ -23,7 +23,7 @@ import { gotoAuthenticated, mockApi, MOCK_EVENT, MOCK_EVENT_GUID } from './helpe
  * A YYYY-MM-DD date `n` days from today, built from LOCAL calendar parts.
  *
  * Deliberately not toISOString().slice(0,10): that is UTC, and in GMT+8 it
- * lands a day early for most of the evening — the exact off-by-one that
+ * lands a day early for most of the evening: the exact off-by-one that
  * daysUntilEvent() documents and avoids (eventUtils.ts:6-11).
  */
 function dateNDaysAway(n: number): string {
@@ -39,7 +39,7 @@ function dateNDaysAway(n: number): string {
  * driven from a test.
  *
  * The override is registered AFTER gotoAuthenticated (which installs mockApi),
- * because handlers run last-registered-first — same ordering the role helpers
+ * because handlers run last-registered-first, the same ordering the role helpers
  * in helpers.ts rely on. The reload is what makes EventContext pick up the new
  * date.
  */
@@ -70,7 +70,7 @@ const reminderModal = (page: Page) =>
 
 // ─── Export dropdown ─────────────────────────────────────────────────────────
 
-test.describe('Guests — export dropdown', () => {
+test.describe('Guests: export dropdown', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/guests');
   });
@@ -122,7 +122,7 @@ test.describe('Check-in print sheet', () => {
 
   test('counts parties and pax separately in the header', async ({ page }) => {
     // 2 parties, 3 people (Alice brings 2, Bob 1). A party is the atomic unit
-    // here — see docs/COUPLE_MODE.md, "The Guest / RSVP model".
+    // here; see docs/COUPLE_MODE.md, "The Guest / RSVP model".
     await expect(page.locator('.print-sheet')).toContainText('2 parties');
     await expect(page.locator('.print-sheet')).toContainText('3 pax');
   });
@@ -150,7 +150,7 @@ test.describe('Check-in print sheet', () => {
   });
 });
 
-test.describe('Floor plan print — unchanged by the sheet rules', () => {
+test.describe('Floor plan print: unchanged by the sheet rules', () => {
   // Section 7 of index.css piggybacks on the floor plan's global hide rule.
   // If adding .print-sheet ever broke .floor-canvas, this is where it shows.
   test('print media still reveals the floor canvas', async ({ page }) => {
@@ -171,7 +171,7 @@ test.describe('Export backup reminder', () => {
 
   test('stays quiet outside the 30-day window', async ({ page }) => {
     await gotoWithEventInDays(page, 40);
-    await page.waitForTimeout(2000); // past OPEN_DELAY_MS — it must not appear
+    await page.waitForTimeout(2000); // past OPEN_DELAY_MS; it must not appear
     await expect(reminderModal(page)).toBeHidden();
   });
 
@@ -209,13 +209,13 @@ test.describe('Export backup reminder', () => {
     await page.click('button:has-text("Close")');
     await expect(reminderModal(page)).toBeHidden();
 
-    // Same session (sessionStorage intact) — a reload must not bring it back.
+    // Same session (sessionStorage intact): a reload must not bring it back.
     await page.reload();
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     await expect(reminderModal(page)).toBeHidden();
 
-    // A new browser session — the nag is deliberately persistent until acted on.
+    // A new browser session: the nag is deliberately persistent until acted on.
     await page.evaluate(() => sessionStorage.clear());
     await page.reload();
     await expect(reminderModal(page)).toBeVisible({ timeout: REMINDER_TIMEOUT });

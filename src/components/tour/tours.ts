@@ -1,5 +1,5 @@
 // Tour definitions for the in-app help walkthroughs.
-// Targets reference DOM via stable `data-tour="<page>-<element>"` attributes —
+// Targets reference DOM via stable `data-tour="<page>-<element>"` attributes;
 // never use CSS classes here (refactor-safe; greppable).
 import type { Step } from "react-joyride";
 
@@ -37,7 +37,7 @@ export const TOURS: TourDefinition[] = [
     routePath: "/app/dashboard",
     title: "Dashboard",
     description:
-      "Your event command centre — countdown, key stats, quick actions and recent activity all in one place.",
+      "Your event command centre: countdown, key stats, quick actions and recent activity all in one place.",
     icon: "home",
     steps: [
       {
@@ -45,7 +45,7 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="event-switcher"]',
         title: "Change your active event",
         content:
-          "Plan more than one big day? Use this dropdown to switch between events — everything on screen updates to the one you pick.",
+          "Plan more than one big day? Use this dropdown to switch between events; everything on screen updates to the one you pick.",
         placement: "bottom",
       },
       {
@@ -67,14 +67,14 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="dashboard-quick-actions"]',
         title: "Quick actions",
         content:
-          "Shortcuts to the things you do most — add an RSVP, send invites, arrange seats or check in guests.",
+          "Shortcuts to the things you do most: add an RSVP, send invites, arrange seats or check in guests.",
       },
       {
         ...commonStepProps,
         target: '[data-tour="dashboard-recent-activity"]',
         title: "Recent activity",
         content:
-          "Live feed of what's happening with your event — new RSVPs, gifts received, check-ins and more. Keep tabs on momentum at a glance.",
+          "Live feed of what's happening with your event: new RSVPs, gifts received, check-ins and more. Keep tabs on momentum at a glance.",
       },
       {
         ...commonStepProps,
@@ -90,7 +90,7 @@ export const TOURS: TourDefinition[] = [
     routePath: "/app/events",
     title: "Events",
     description:
-      "Create, edit and archive your events. The 'active' event drives everything else — RSVPs, guests, tables and budget.",
+      "Create, edit and archive your events. The 'active' event drives everything else: RSVPs, guests, tables and budget.",
     icon: "calendar",
     steps: [
       {
@@ -152,7 +152,7 @@ export const TOURS: TourDefinition[] = [
     openInNewTab: true,
     title: "RSVP Designer",
     description:
-      "Build and style your RSVP page visually — drag blocks, customise colours and fonts, then publish a shareable link for guests.",
+      "Build and style your RSVP page visually: drag blocks, customise colours and fonts, then publish a shareable link for guests.",
     icon: "rsvp-designer",
     steps: [
       {
@@ -168,7 +168,7 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="designer-left-panel"]',
         title: "Block library",
         content:
-          "Pick a block from the left panel and click it to add it to your design — headings, event details, the RSVP form, images, countdowns and more. Switch to the Layers tab to reorder blocks by dragging.",
+          "Pick a block from the left panel and click it to add it to your design: headings, event details, the RSVP form, images, countdowns and more. Switch to the Layers tab to reorder blocks by dragging.",
         placement: "right",
       },
       {
@@ -184,7 +184,7 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="designer-right-panel"]',
         title: "Block & page settings",
         content:
-          'The "Block" tab shows settings for the selected block (text, colours, layout). The "Page" tab controls global settings — background, font, accent colour and the preview backdrop.',
+          'The "Block" tab shows settings for the selected block (text, colours, layout). The "Page" tab controls global settings: background, font, accent colour and the preview backdrop.',
         placement: "left",
       },
       {
@@ -192,7 +192,7 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="designer-save"]',
         title: "Save & publish",
         content:
-          '"Save draft" keeps your work private — guests still see your last published version. "Save & Publish" saves and pushes it live to your guest link in one step.',
+          '"Save draft" keeps your work private; guests still see your last published version. "Save & Publish" saves and pushes it live to your guest link in one step.',
         placement: "bottom",
       },
     ],
@@ -202,7 +202,7 @@ export const TOURS: TourDefinition[] = [
     pathPattern: /^\/app\/(form-fields|events\/[^/]+\/form-fields)\/?$/,
     title: "RSVP Questions",
     description:
-      "Customise the questions on your RSVP form — start from a template or write your own.",
+      "Customise the questions on your RSVP form: start from a template or write your own.",
     icon: "questions",
     steps: [
       {
@@ -225,7 +225,7 @@ export const TOURS: TourDefinition[] = [
     routePath: "/app/guests",
     title: "Guests",
     description:
-      "Your guest list — assign tables, generate QR codes and send WhatsApp invites.",
+      "Your guest list: assign tables, generate QR codes and send WhatsApp invites.",
     icon: "guests",
     steps: [
       {
@@ -284,7 +284,7 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="tables-fullscreen"]',
         title: "Got 100+ guests?",
         content:
-          "Open fullscreen mode for a roomier layout — guest list, table grid and detail panel side-by-side. Much easier for big weddings.",
+          "Open fullscreen mode for a roomier layout: guest list, table grid and detail panel side-by-side. Much easier for big weddings.",
       },
     ],
   },
@@ -293,7 +293,7 @@ export const TOURS: TourDefinition[] = [
     pathPattern: /^\/app\/tables\/floorplan\/?$/,
     title: "Floor Plan",
     description:
-      "Design your venue layout visually — drag tables, drop stages or dance floors, and assign guests right on the floor.",
+      "Design your venue layout visually: drag tables, drop stages or dance floors, and assign guests right on the floor.",
     icon: "floorplan",
     steps: [
       {
@@ -308,7 +308,7 @@ export const TOURS: TourDefinition[] = [
         target: ".floor-canvas",
         title: "The canvas",
         content:
-          "Drag tables and decorations to position them. Click a table to select it — then assign guests, resize, change shape or delete. Drag guests from the panel on the right to seat them.",
+          "Drag tables and decorations to position them. Click a table to select it, then assign guests, resize, change shape or delete. Drag guests from the panel on the right to seat them.",
         placement: "top",
       },
       {
@@ -316,7 +316,7 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="floorplan-guest-panel"]',
         title: "Guest list",
         content:
-          "Unassigned guests are listed at the top — drag one onto a table to seat them. Assigned guests are grouped below; collapse that section to keep things tidy.",
+          "Unassigned guests are listed at the top: drag one onto a table to seat them. Assigned guests are grouped below; collapse that section to keep things tidy.",
         placement: "left",
       },
       {
@@ -371,7 +371,7 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="checkin-practice"]',
         title: "New here? Practise first",
         content:
-          "Tap Practice to rehearse check-in on demo guests — scan a demo QR code or check in from the list, exactly like the real thing but without touching your real guest list. Note: a demo guest you check in auto-resets to Pending after a few hours (that's on purpose, not a bug).",
+          "Tap Practice to rehearse check-in on demo guests: scan a demo QR code or check in from the list, exactly like the real thing but without touching your real guest list. Note: a demo guest you check in auto-resets to Pending after a few hours (that's on purpose, not a bug).",
         placement: "bottom",
       },
       {
@@ -401,7 +401,7 @@ export const TOURS: TourDefinition[] = [
     routePath: "/app/users",
     title: "Users & Profile",
     description:
-      "View your profile, change your password and — if you're an admin — manage all user accounts.",
+      "View your profile, change your password and (if you're an admin) manage all user accounts.",
     icon: "users",
     steps: [
       {
@@ -409,7 +409,7 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="users-stats"]',
         title: "Account overview",
         content:
-          "A quick count of all users broken down by role — total, admins, members and staff. Only visible to admins.",
+          "A quick count of all users broken down by role: total, admins, members and staff. Only visible to admins.",
       },
       {
         ...commonStepProps,
@@ -430,7 +430,7 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="users-password"]',
         title: "Change your password",
         content:
-          "Update your password anytime — enter your current one, then your new one twice to confirm.",
+          "Update your password anytime: enter your current one, then your new one twice to confirm.",
       },
     ],
   },
@@ -468,7 +468,7 @@ export const TOURS: TourDefinition[] = [
     routePath: "/app/checklist",
     title: "Checklist",
     description:
-      "Track every wedding to-do from venue booking to final fittings — add items, set due dates and tick them off as you go.",
+      "Track every wedding to-do from venue booking to final fittings: add items, set due dates and tick them off as you go.",
     icon: "checklist",
     steps: [
       {
@@ -491,7 +491,7 @@ export const TOURS: TourDefinition[] = [
         target: '[data-tour="checklist-filters"]',
         title: "Filter by category",
         content:
-          "Tap a category pill to focus on just that area — Venue, Catering, Attire, Photography and more. Only categories that have items show up here.",
+          "Tap a category pill to focus on just that area: Venue, Catering, Attire, Photography and more. Only categories that have items show up here.",
       },
       {
         ...commonStepProps,

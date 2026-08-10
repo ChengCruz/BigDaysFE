@@ -1,7 +1,7 @@
 // src/components/pages/Dashboard/CoupleHomePage.tsx
 //
 // Couple-mode Home. Same single endpoint as MemberDashboardPage
-// (GET /Dashboard/summary via useDashboardApi) — no new endpoint, no extra
+// (GET /Dashboard/summary via useDashboardApi): no new endpoint, no extra
 // query, no backend change. What changes is that the page answers one question
 // ("what do we do next?") instead of laying out six equal panels.
 //
@@ -21,7 +21,7 @@
 //
 // `tableStats.occupiedSeats` is deliberately unused. The backend assigns it
 // `= assignedGuests` (DashboardHandler.cs:199, comment "Assuming 1 guest = 1
-// seat"), so it is a party count wearing a seat label — pairing it with
+// seat"), so it is a party count wearing a seat label; pairing it with
 // `totalSeats` in one ratio would mix units and under-report. The seating
 // meter below is parties/parties instead, which is unit-clean and needs
 // nothing from the backend.
@@ -118,7 +118,7 @@ interface NextAction {
   title: string;
   body: string;
   cta?: { label: string; to: string };
-  /** Parties seated / parties total — only set when the action is seating. */
+  /** Parties seated / parties total; only set when the action is seating. */
   meter?: { done: number; total: number; caption: string };
 }
 
@@ -129,7 +129,7 @@ export default function CoupleHomePage() {
 
   // A minute tick drives both the countdown tiles and the overnight rollover of
   // `days`. Both are read fresh on every render rather than memoised, so the
-  // tick is the only thing they need — memoising on eventDate alone would have
+  // tick is the only thing they need, since memoising on eventDate alone would have
   // frozen them for as long as the page stayed open.
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -141,12 +141,12 @@ export default function CoupleHomePage() {
   const eventTime = dashboard?.eventStats?.eventTime;
 
   // Whole calendar days, for the next-action ladder below. Slices YYYY-MM-DD and
-  // anchors to UTC midnight — parsing the raw API string lands a day early in
+  // anchors to UTC midnight; parsing the raw API string lands a day early in
   // GMT+8 (see eventUtils.ts:6-11).
   const days = daysUntilEvent(eventDate);
 
   // The display countdown, which counts to the ceremony time rather than to
-  // midnight. It can read one day lower than `days` late in the evening — that
+  // midnight. It can read one day lower than `days` late in the evening; that
   // is correct, and why the ladder does not use it.
   const countdown = countdownToEvent(eventDate, eventTime);
 
@@ -215,7 +215,7 @@ export default function CoupleHomePage() {
         tone: "amber",
         Icon: MailIcon,
         title: `${r.pendingCount} ${plural(r.pendingCount, "invite is", "invites are")} still waiting on a reply`,
-        body: "A gentle nudge usually does it — you can see who hasn't answered on your guest list.",
+        body: "A gentle nudge usually does it. You can see who hasn't answered on your guest list.",
         cta: { label: "See who's pending", to: "/app/guests" },
       };
 
@@ -244,7 +244,7 @@ export default function CoupleHomePage() {
     return (
       <NoEventsState
         title={<>Welcome to <BrandWordmark /> ✨</>}
-        message="Create your wedding to start planning — your countdown, guest list and seating all live here."
+        message="Create your wedding to start planning: your countdown, guest list and seating all live here."
       />
     );
   }
@@ -389,8 +389,8 @@ export default function CoupleHomePage() {
 
       {/* ─── How ready you are ────────────────────────────────────────────── */}
       {/* totalItems === 0 is the normal state for an event whose checklist was
-          never seeded — POST /Checklist/Seed is manual, nothing seeds on event
-          creation — so it gets an invitation rather than a demoralising 0%. */}
+          never seeded (POST /Checklist/Seed is manual, nothing seeds on event
+          creation), so it gets an invitation rather than a demoralising 0%. */}
       <button
         type="button"
         onClick={() => navigate("/app/checklist")}
@@ -428,7 +428,7 @@ export default function CoupleHomePage() {
 
       {/* ─── Where things stand ───────────────────────────────────────────── */}
       {/* Replies and parties are row counts; "people coming" is the backend's
-          own SUM(NoOfPax). Labelled separately on purpose — see
+          own SUM(NoOfPax). Labelled separately on purpose; see
           docs/COUPLE_MODE.md, open question 1. */}
       <div className="grid grid-cols-3 gap-3">
         <StatsCard
@@ -439,7 +439,7 @@ export default function CoupleHomePage() {
         />
         <StatsCard label="People coming" value={r.totalGuestsConfirmed} variant="success" size="sm" />
         {/* `unassignedGuests` is a guest-row count in the backend, so this is a
-            party count — same label and units as the guests page. */}
+            party count, same label and units as the guests page. */}
         <StatsCard
           label="No table yet"
           value={t.unassignedGuests}

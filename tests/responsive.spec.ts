@@ -1,8 +1,8 @@
 /**
- * Responsive design tests — verifies layout at mobile (375px), tablet (768px), desktop (1280px).
+ * Responsive design tests: verifies layout at mobile (375px), tablet (768px), desktop (1280px).
  *
- * Sections 1–3 (page-level layout) are KIV — skipped until responsive layout is finalised.
- * Section 4+ (modal responsive) are ACTIVE — every popup modal must fit the viewport at all
+ * Sections 1-3 (page-level layout) are KIV, skipped until responsive layout is finalised.
+ * Section 4+ (modal responsive) are ACTIVE: every popup modal must fit the viewport at all
  * breakpoints and must not cause horizontal document overflow.
  *
  * These run automatically against each viewport via playwright.config.ts projects.
@@ -36,7 +36,7 @@ async function assertModalPanelFitsViewport(page: Page) {
 }
 
 /**
- * On mobile viewports (≤ 480 px), the modal panel should have side margins — it must not
+ * On mobile viewports (≤ 480 px), the modal panel should have side margins; it must not
  * fill edge-to-edge.  This catches the common Modal.tsx bug where `w-full` without `mx-4`
  * causes the panel to press hard against both sides of the screen.
  */
@@ -82,8 +82,8 @@ async function assertModalButtonsFitViewport(page: Page) {
 
 // ── Public pages (KIV) ────────────────────────────────────────────────────────
 
-test.describe('Responsive — public pages', () => {
-  test.skip(true, 'KIV — page-level responsive layout not yet finalised');
+test.describe('Responsive: public pages', () => {
+  test.skip(true, 'KIV: page-level responsive layout not yet finalised');
 
   test.beforeEach(async ({ page }) => {
     await mockApi(page);
@@ -117,8 +117,8 @@ test.describe('Responsive — public pages', () => {
 
 // ── Dashboard pages (KIV) ─────────────────────────────────────────────────────
 
-test.describe('Responsive — dashboard pages', () => {
-  test.skip(true, 'KIV — page-level responsive layout not yet finalised');
+test.describe('Responsive: dashboard pages', () => {
+  test.skip(true, 'KIV: page-level responsive layout not yet finalised');
 
   test.beforeEach(async ({ page }) => {
     await mockApi(page);
@@ -157,8 +157,8 @@ test.describe('Responsive — dashboard pages', () => {
 
 // ── Viewport screenshots (KIV) ────────────────────────────────────────────────
 
-test.describe('Responsive — viewport screenshots', () => {
-  test.skip(true, 'KIV — page-level responsive layout not yet finalised');
+test.describe('Responsive: viewport screenshots', () => {
+  test.skip(true, 'KIV: page-level responsive layout not yet finalised');
 
   test.beforeEach(async ({ page }) => {
     await mockApi(page);
@@ -182,12 +182,12 @@ test.describe('Responsive — viewport screenshots', () => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Modal responsive tests — ACTIVE at all viewports
+// Modal responsive tests: ACTIVE at all viewports
 // ══════════════════════════════════════════════════════════════════════════════
 
 // ── EventFormModal ─────────────────────────────────────────────────────────────
 
-test.describe('Responsive — EventFormModal', () => {
+test.describe('Responsive: EventFormModal', () => {
   test.beforeEach(async ({ page }) => {
     // ?new=1 triggers setModal({ open: true }) via useEffect in EventsPage
     await gotoAuthenticated(page, '/app/events?new=1');
@@ -223,7 +223,7 @@ test.describe('Responsive — EventFormModal', () => {
 
 // ── UserFormModal (create) ────────────────────────────────────────────────────
 
-test.describe('Responsive — UserFormModal (create)', () => {
+test.describe('Responsive: UserFormModal (create)', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/users');
     await page.getByRole('button', { name: 'New User' }).click();
@@ -251,9 +251,9 @@ test.describe('Responsive — UserFormModal (create)', () => {
   });
 });
 
-// ── UserFormModal (edit — tall / scrollable content) ─────────────────────────
+// ── UserFormModal (edit: tall / scrollable content) ─────────────────────────
 
-test.describe('Responsive — UserFormModal (edit)', () => {
+test.describe('Responsive: UserFormModal (edit)', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/users');
     await page.getByRole('button', { name: 'Edit' }).first().click();
@@ -300,7 +300,7 @@ test.describe('Responsive — UserFormModal (edit)', () => {
 
 // ── TableFormModal (create single) ───────────────────────────────────────────
 
-test.describe('Responsive — TableFormModal (create)', () => {
+test.describe('Responsive: TableFormModal (create)', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/tables');
     await page.getByRole('button', { name: /New Table/i }).click();
@@ -329,11 +329,11 @@ test.describe('Responsive — TableFormModal (create)', () => {
   });
 });
 
-// ── QuickSetupModal (bulk create — wide grid layout) ─────────────────────────
+// ── QuickSetupModal (bulk create: wide grid layout) ─────────────────────────
 // NOTE: QuickSetupModal uses `!max-w-4xl` and a `grid-cols-12` layout, making it
 // particularly susceptible to horizontal overflow on mobile and tablet viewports.
 
-test.describe('Responsive — QuickSetupModal (bulk create)', () => {
+test.describe('Responsive: QuickSetupModal (bulk create)', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/tables');
     await page.getByRole('button', { name: /New Table/i }).click();
@@ -392,7 +392,7 @@ test.describe('Responsive — QuickSetupModal (bulk create)', () => {
 
 // ── RsvpFormModal ─────────────────────────────────────────────────────────────
 
-test.describe('Responsive — RsvpFormModal', () => {
+test.describe('Responsive: RsvpFormModal', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/rsvps');
     await page.getByRole('button', { name: /New RSVP/i }).click();
@@ -431,10 +431,10 @@ test.describe('Responsive — RsvpFormModal', () => {
 });
 
 // ── DeleteConfirmationModal ───────────────────────────────────────────────────
-// DeleteConfirmationModal has its own responsive layout (mx-4 on panel) —
+// DeleteConfirmationModal has its own responsive layout (mx-4 on panel);
 // these tests confirm it stays correct after any future refactoring.
 
-test.describe('Responsive — DeleteConfirmationModal', () => {
+test.describe('Responsive: DeleteConfirmationModal', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/users');
     await page.getByRole('button', { name: 'Delete' }).first().click();
@@ -454,7 +454,7 @@ test.describe('Responsive — DeleteConfirmationModal', () => {
   });
 
   test('modal has side margins on mobile viewport', async ({ page }) => {
-    // DeleteConfirmationModal uses mx-4, so this should pass — acts as a regression guard
+    // DeleteConfirmationModal uses mx-4, so this should pass; acts as a regression guard
     await assertModalHasSideMarginsOnMobile(page);
   });
 
@@ -467,7 +467,7 @@ test.describe('Responsive — DeleteConfirmationModal', () => {
 
 // ── GuestFormModal (edit) ─────────────────────────────────────────────────────
 
-test.describe('Responsive — GuestFormModal (edit)', () => {
+test.describe('Responsive: GuestFormModal (edit)', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/guests');
     await page.getByRole('button', { name: 'Edit' }).first().click();
@@ -497,9 +497,9 @@ test.describe('Responsive — GuestFormModal (edit)', () => {
 
 // ── Guest Table-Assignment modal (inline) ─────────────────────────────────────
 // This modal is rendered inline in GuestsPage (not via Modal.tsx) but uses the
-// same fixed-overlay pattern — verify it is also responsive.
+// same fixed-overlay pattern; verify it is also responsive.
 
-test.describe('Responsive — Guest Table-Assignment modal', () => {
+test.describe('Responsive: Guest Table-Assignment modal', () => {
   test.beforeEach(async ({ page }) => {
     await gotoAuthenticated(page, '/app/guests');
     // MOCK_GUEST (Alice) has no tableId → "Assign Table" button is shown
@@ -516,7 +516,7 @@ test.describe('Responsive — Guest Table-Assignment modal', () => {
   });
 
   test('modal has side margins on mobile viewport', async ({ page }) => {
-    // This inline modal uses `p-4` on the overlay — should pass as a regression guard
+    // This inline modal uses `p-4` on the overlay; should pass as a regression guard
     await assertModalHasSideMarginsOnMobile(page);
   });
 });

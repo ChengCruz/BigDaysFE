@@ -19,7 +19,7 @@ export interface Event {
   eventCode?: string;
   rsvpDueDate?: string | null;
   isExpired?: boolean;
-  /** GUID of the owning user — used by admins to tell whose event this is. */
+  /** GUID of the owning user, used by admins to tell whose event this is. */
   ownerGuid?: string;
   raw?: ApiEvent;
 }
@@ -205,7 +205,7 @@ export function useEventRsvpInternal(eventId?: string) {
       return questions.map((q: any) => ({
         questionId: String(q.questionId ?? q.id ?? ""),
         id: String(q.questionId ?? q.id ?? ""),
-        // The Guid, never the int eventId beside it — see useFormFieldsApi.
+        // The Guid, never the int eventId beside it; see useFormFieldsApi.
         eventGuid: q.eventGuid,
         label: q.label ?? q.text ?? q.name ?? "",
         name: q.name ?? (q.label ?? q.text ?? "").toLowerCase().replace(/\s+/g, "_"),
