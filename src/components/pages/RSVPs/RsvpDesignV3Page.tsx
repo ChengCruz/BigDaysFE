@@ -199,6 +199,22 @@ function getMoveGroup(blocks: RsvpBlock[], index: number): [number, number] {
   return [index, index];
 }
 
+/**
+ * Cloning a guestDetails block always produces a broken copy: only the block
+ * matching `firstGuestDetailsBlockId` renders the couple's live questions
+ * (see askedQuestions / isFirstGuestDetailsBlock), so a duplicate silently
+ * ships with none. Blocked here the same way the "RSVP Form" preset button
+ * is blocked once a form already exists. Its paired submit CTA is blocked
+ * alongside it for the same reason getMoveGroup pairs them -- duplicating
+ * just the button orphaned from "its" form is not a meaningful action.
+ */
+function isFormPairBlock(blocks: RsvpBlock[], index: number): boolean {
+  const block = blocks[index];
+  if (block.type === "guestDetails") return true;
+  if (isSubmitCta(block) && blocks[index - 1]?.type === "guestDetails") return true;
+  return false;
+}
+
 function designReducer(state: DesignState, action: DesignAction): DesignState {
   switch (action.type) {
     case "LOAD_DESIGN":
@@ -225,12 +241,20 @@ function designReducer(state: DesignState, action: DesignAction): DesignState {
         ),
       };
 
-    case "REMOVE_BLOCK":
+    case "REMOVE_BLOCK": {
+      const i = state.blocks.findIndex((b) => b.id === action.payload);
+      if (i === -1) return state;
+      // Remove the form and its submit button together -- same pairing as
+      // MOVE_BLOCK/REORDER_BLOCKS above, so deleting one never strands the
+      // other with nothing to click, or nothing to submit.
+      const [start, end] = getMoveGroup(state.blocks, i);
+      const removedIds = new Set(state.blocks.slice(start, end + 1).map((b) => b.id));
       return {
         ...state,
-        blocks: state.blocks.filter((b) => b.id !== action.payload),
-        selectedId: state.selectedId === action.payload ? null : state.selectedId,
+        blocks: state.blocks.filter((b) => !removedIds.has(b.id)),
+        selectedId: state.selectedId && removedIds.has(state.selectedId) ? null : state.selectedId,
       };
+    }
 
     case "DUPLICATE_BLOCK": {
       const idx = state.blocks.findIndex((b) => b.id === action.payload);
@@ -794,12 +818,12 @@ function renderSectionContent(
 // ─── Canvas block wrapper (V3, with drop zone + duplicate) ─────────────────
 
 function V3CanvasBlock({
-  block, isSelected, accentColor, globalIsLight, event, questions, askedQuestions, isFirstGuestDetailsBlock, isFirst, isLast,
+  block, isSelected, accentColor, globalIsLight, event, questions, askedQuestions, isFirstGuestDetailsBlock, isFirst, isLast, duplicateDisabled,
   onSelect, onMoveUp, onMoveDown, onRemove, onDuplicate, onDropAbove,
 }: {
   block: RsvpBlock; isSelected: boolean; accentColor: string; globalIsLight: boolean;
   event?: Event; questions?: FormFieldConfig[]; askedQuestions?: FormFieldConfig[]; isFirstGuestDetailsBlock?: boolean;
-  isFirst: boolean; isLast: boolean;
+  isFirst: boolean; isLast: boolean; duplicateDisabled?: boolean;
   onSelect: () => void; onMoveUp: () => void; onMoveDown: () => void;
   onRemove: () => void; onDuplicate: () => void;
   onDropAbove: (sourceId: string) => void;
@@ -848,7 +872,7 @@ function V3CanvasBlock({
             {[
               { label: "↑", title: "Move up",    fn: onMoveUp,    disabled: isFirst },
               { label: "↓", title: "Move down",  fn: onMoveDown,  disabled: isLast },
-              { label: "⧉", title: "Duplicate (Ctrl+D)", fn: onDuplicate },
+              { label: "⧉", title: duplicateDisabled ? "Can't duplicate the RSVP form" : "Duplicate (Ctrl+D)", fn: onDuplicate, disabled: duplicateDisabled },
               { label: "✕", title: "Remove (Del)",       fn: onRemove },
             ].map(({ label, title, fn, disabled }, i, arr) => (
               <button key={label} title={title} onClick={disabled ? undefined : fn}
@@ -884,10 +908,10 @@ function BlockItem({ icon, label, desc, onAdd }: { icon: string; label: string; 
 // ─── Left panel layer row ───────────────────────────────────────────────────
 
 function LayerRow({
-  block, index, isSelected, isDragging, accentColor,
+  block, index, isSelected, isDragging, accentColor, duplicateDisabled,
   onSelect, onDragStart, onDragOver, onDragEnd, onMoveUp, onMoveDown, onRemove, onDuplicate,
 }: {
-  block: RsvpBlock; index: number; isSelected: boolean; isDragging: boolean; accentColor: string;
+  block: RsvpBlock; index: number; isSelected: boolean; isDragging: boolean; accentColor: string; duplicateDisabled?: boolean;
   onSelect: () => void; onDragStart: React.DragEventHandler; onDragOver: React.DragEventHandler;
   onDragEnd: () => void; onMoveUp: () => void; onMoveDown: () => void; onRemove: () => void; onDuplicate: () => void;
 }) {
@@ -909,7 +933,9 @@ function LayerRow({
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition" onClick={(e) => e.stopPropagation()}>
         <button onClick={onMoveUp}    title="Move up"    className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:bg-gray-200 hover:text-gray-600 text-xs transition">↑</button>
         <button onClick={onMoveDown}  title="Move down"  className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:bg-gray-200 hover:text-gray-600 text-xs transition">↓</button>
-        <button onClick={onDuplicate} title="Duplicate"  className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:bg-primary/10 hover:text-primary text-xs transition">⧉</button>
+        <button onClick={duplicateDisabled ? undefined : onDuplicate} disabled={duplicateDisabled}
+          title={duplicateDisabled ? "Can't duplicate the RSVP form" : "Duplicate"}
+          className={`w-5 h-5 flex items-center justify-center rounded text-xs transition ${duplicateDisabled ? "text-gray-200 cursor-not-allowed" : "text-gray-400 hover:bg-primary/10 hover:text-primary"}`}>⧉</button>
         <button onClick={onRemove}    title="Remove"     className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:bg-rose-50 hover:text-rose-500 text-xs transition">✕</button>
       </div>
     </div>
@@ -1001,6 +1027,14 @@ export default function RsvpDesignV3Page() {
     [availableQuestions, formFieldBlockQuestionIds]
   );
 
+  // Drives the "RSVP Form" preset button's disabled state. Reads live `blocks`
+  // rather than `savedDesign`/`isDesignLoaded`, so it's correct with no extra
+  // cases to special-case: a brand-new, never-saved design still starts from
+  // initialState's seeded guestDetails block (see line ~138), so this is
+  // already truthy on first render, before any fetch resolves and before the
+  // couple has saved anything -- the preset stays disabled from the start
+  // instead of only after a save. It only goes empty once a *loaded* design
+  // genuinely has no guestDetails block (couple deleted it, saved or not).
   const firstGuestDetailsBlockId = useMemo(
     () => blocks.find((b) => b.type === "guestDetails")?.id,
     [blocks]
@@ -1201,9 +1235,13 @@ export default function RsvpDesignV3Page() {
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) { e.preventDefault(); undo(); return; }
       if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) { e.preventDefault(); redo(); return; }
 
-      // Ctrl+D = Duplicate selected block
+      // Ctrl+D = Duplicate selected block (blocked for the RSVP form / its
+      // submit CTA -- see isFormPairBlock, same rule as the toolbar button)
       if ((e.ctrlKey || e.metaKey) && e.key === "d" && selectedId) {
-        e.preventDefault(); pushSnapshot(); dispatch({ type: "DUPLICATE_BLOCK", payload: selectedId }); return;
+        e.preventDefault();
+        const idx = blocks.findIndex((b) => b.id === selectedId);
+        if (idx === -1 || isFormPairBlock(blocks, idx)) return;
+        pushSnapshot(); dispatch({ type: "DUPLICATE_BLOCK", payload: selectedId }); return;
       }
 
       // Delete / Backspace = Remove selected block
@@ -1219,7 +1257,7 @@ export default function RsvpDesignV3Page() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selectedId, undo, redo, pushSnapshot]);
+  }, [selectedId, undo, redo, pushSnapshot, blocks]);
 
   // Close share panel on outside click
   useEffect(() => {
@@ -1800,12 +1838,13 @@ export default function RsvpDesignV3Page() {
                 </button>
                 {presetsOpen && (
                   <>
-                    <button type="button" onClick={addRsvpFormPreset}
-                      className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left border border-dashed border-gray-200 hover:border-rose-200 hover:bg-rose-50 cursor-pointer group transition">
+                    <button type="button" onClick={addRsvpFormPreset} disabled={!!firstGuestDetailsBlockId}
+                      title={firstGuestDetailsBlockId ? "This design already has an RSVP form block. Delete it to add another." : undefined}
+                      className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left border border-dashed border-gray-200 hover:border-rose-200 hover:bg-rose-50 cursor-pointer group transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:bg-transparent">
                       <div className="w-7 h-7 rounded-md bg-gray-100 flex items-center justify-center text-sm shrink-0 group-hover:bg-rose-100 transition">📋</div>
                       <div>
                         <p className="text-[13px] font-medium text-gray-500 group-hover:text-[#c0415a] leading-tight">RSVP Form</p>
-                        <p className="text-[10px] text-gray-400">Guest details + questions + submit</p>
+                        <p className="text-[10px] text-gray-400">{firstGuestDetailsBlockId ? "Already added to this design" : "Guest details + questions + submit"}</p>
                       </div>
                     </button>
                     <label className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left border border-dashed border-gray-200 hover:border-rose-200 hover:bg-rose-50 cursor-pointer group transition mt-1.5">
@@ -1840,7 +1879,7 @@ export default function RsvpDesignV3Page() {
                 blocks.map((block, i) => (
                   <LayerRow key={block.id} block={block} index={i}
                     isSelected={selectedId === block.id} isDragging={draggingId === block.id}
-                    accentColor={accentColor}
+                    accentColor={accentColor} duplicateDisabled={isFormPairBlock(blocks, i)}
                     onSelect={() => { dispatch({ type: "SELECT", payload: block.id }); setRightTab("block"); }}
                     onDragStart={(e) => { setDraggingId(block.id); e.dataTransfer.setData("text/plain", block.id); }}
                     onDragOver={(e) => { e.preventDefault(); if (draggingId && draggingId !== block.id) reorderBlocks(draggingId, block.id); }}
@@ -1932,7 +1971,7 @@ export default function RsvpDesignV3Page() {
                     accentColor={accentColor} globalIsLight={globalIsLight}
                     event={event} questions={allQuestions}
                     askedQuestions={askedQuestions} isFirstGuestDetailsBlock={block.id === firstGuestDetailsBlockId}
-                    isFirst={i === 0} isLast={i === blocks.length - 1}
+                    isFirst={i === 0} isLast={i === blocks.length - 1} duplicateDisabled={isFormPairBlock(blocks, i)}
                     onSelect={() => { dispatch({ type: "SELECT", payload: block.id }); setRightTab("block"); }}
                     onMoveUp={() => moveBlock(block.id, "up")}
                     onMoveDown={() => moveBlock(block.id, "down")}

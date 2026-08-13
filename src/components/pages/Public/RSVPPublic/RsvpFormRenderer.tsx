@@ -567,7 +567,8 @@ export default function RsvpFormRenderer({
               const fieldLabel = q.label || cfg.label || cfg.text || "Custom field";
               const fieldRequired = q.required ?? cfg.isRequired ?? false;
               const isCheckboxGroup = fieldType === "checkbox" && !!opts && opts.length > 0;
-              const isSelect = fieldType === "select" || fieldType === "radio";
+              const isRadioGroup = fieldType === "radio" && !!opts && opts.length > 0;
+              const isSelect = fieldType === "select";
               const currentAnswer = answers[qid];
               const checkedValues: string[] = Array.isArray(currentAnswer)
                 ? currentAnswer
@@ -589,6 +590,22 @@ export default function RsvpFormRenderer({
                             checked={checkedValues.includes(opt)}
                             onChange={() => toggleCheckboxAnswer(qid, opt)}
                             className="h-4 w-4 rounded"
+                            style={{ accentColor }}
+                          />
+                          <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : isRadioGroup ? (
+                    <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                      {opts!.map((opt) => (
+                        <label key={opt} className="flex cursor-pointer items-center gap-2">
+                          <input
+                            type="radio"
+                            name={qid}
+                            checked={currentAnswer === opt}
+                            onChange={() => setAnswer(qid, opt)}
+                            className="h-4 w-4"
                             style={{ accentColor }}
                           />
                           <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
@@ -726,7 +743,8 @@ export default function RsvpFormRenderer({
                 const fieldType = fc.typeKey ?? "text";
                 const fieldLabel = fc.label || fc.text || "Question";
                 const isCheckboxGroup = fieldType === "checkbox" && !!opts && opts.length > 0;
-                const isSelect = fieldType === "select" || fieldType === "radio";
+                const isRadioGroup = fieldType === "radio" && !!opts && opts.length > 0;
+                const isSelect = fieldType === "select";
                 const currentAnswer = answers[qid];
                 const checkedValues: string[] = Array.isArray(currentAnswer)
                   ? currentAnswer
@@ -748,6 +766,22 @@ export default function RsvpFormRenderer({
                               checked={checkedValues.includes(opt)}
                               onChange={() => toggleCheckboxAnswer(qid, opt)}
                               className="h-4 w-4 rounded"
+                              style={{ accentColor }}
+                            />
+                            <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
+                          </label>
+                        ))}
+                      </div>
+                    ) : isRadioGroup ? (
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                        {opts!.map((opt) => (
+                          <label key={opt} className="flex cursor-pointer items-center gap-2">
+                            <input
+                              type="radio"
+                              name={qid}
+                              checked={currentAnswer === opt}
+                              onChange={() => setAnswer(qid, opt)}
+                              className="h-4 w-4"
                               style={{ accentColor }}
                             />
                             <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
@@ -808,7 +842,8 @@ export default function RsvpFormRenderer({
       const fieldRequired = block.required ?? cfg.isRequired ?? false;
 
       const isCheckboxGroup = fieldType === "checkbox" && !!opts && opts.length > 0;
-      const isSelect = fieldType === "select" || fieldType === "radio";
+      const isRadioGroup = fieldType === "radio" && !!opts && opts.length > 0;
+      const isSelect = fieldType === "select";
       const currentAnswer = answers[block.questionId];
       const checkedValues: string[] = Array.isArray(currentAnswer)
         ? currentAnswer
@@ -830,6 +865,25 @@ export default function RsvpFormRenderer({
                     checked={checkedValues.includes(opt)}
                     onChange={() => toggleCheckboxAnswer(block.questionId!, opt)}
                     className="h-4 w-4 rounded"
+                    style={{ accentColor }}
+                  />
+                  <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
+                </label>
+              ))}
+              {errors[block.questionId] && (
+                <p className="w-full text-[11px] text-rose-400">{errors[block.questionId]}</p>
+              )}
+            </div>
+          ) : isRadioGroup ? (
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              {opts!.map((opt) => (
+                <label key={opt} className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="radio"
+                    name={block.questionId}
+                    checked={currentAnswer === opt}
+                    onChange={() => setAnswer(block.questionId!, opt)}
+                    className="h-4 w-4"
                     style={{ accentColor }}
                   />
                   <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
@@ -956,10 +1010,10 @@ export default function RsvpFormRenderer({
         </div>
       );
     } else if (block.type === "countdown") {
-      const targetDate = block.targetDate;
+      const targetDate = block.targetDate ?? eventDate;
       inner = <CountdownDisplay targetDate={targetDate} label={block.label} accentColor={accentColor} headingColor={clr.heading} bodyColor={clr.body} />;
     } else if (block.type === "map") {
-      const address = block.address ?? "";
+      const address = block.address ?? eventLocation ?? "";
       const mapLabel = block.mapLabel ?? "Venue";
       const showDirections = block.showDirections ?? true;
       const hasAddress = !!address;
@@ -1125,10 +1179,8 @@ export default function RsvpFormRenderer({
                     ? rawOpts.split(",").map((s) => s.trim())
                     : undefined;
                   const isCheckboxGroup = fieldType === "checkbox" && !!opts && opts.length > 0;
-                  // radio is rendered as a select here too, matching the formField and
-                  // guestDetails custom-question branches above (kept in sync 6 Aug 2026;
-                  // this branch used to be the only one of the three that handled radio).
-                  const isSelect = fieldType === "select" || fieldType === "radio";
+                  const isRadioGroup = fieldType === "radio" && !!opts && opts.length > 0;
+                  const isSelect = fieldType === "select";
                   const currentAnswer = answers[id];
                   const checkedValues: string[] = Array.isArray(currentAnswer)
                     ? currentAnswer
@@ -1152,6 +1204,23 @@ export default function RsvpFormRenderer({
                                 checked={checkedValues.includes(opt)}
                                 onChange={() => toggleCheckboxAnswer(id, opt)}
                                 className="h-4 w-4 rounded"
+                                style={{ accentColor }}
+                              />
+                              <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
+                            </label>
+                          ))}
+                          {errors[id] && <p className="w-full text-[11px] text-rose-400">{errors[id]}</p>}
+                        </div>
+                      ) : isRadioGroup ? (
+                        <div className="flex flex-wrap gap-x-4 gap-y-2">
+                          {opts!.map((opt) => (
+                            <label key={opt} className="flex cursor-pointer items-center gap-2">
+                              <input
+                                type="radio"
+                                name={id}
+                                checked={currentAnswer === opt}
+                                onChange={() => setAnswer(id, opt)}
+                                className="h-4 w-4"
                                 style={{ accentColor }}
                               />
                               <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
