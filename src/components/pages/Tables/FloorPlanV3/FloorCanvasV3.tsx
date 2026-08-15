@@ -254,7 +254,7 @@ export const FloorCanvasV3: React.FC<Props> = ({
         onMouseDown={handleMinimapMouseDown}
       >
         <div className="px-2 py-0.5 text-[8px] text-gray-400 dark:text-gray-500 uppercase tracking-wider border-b border-gray-100 dark:border-gray-700/50 bg-gray-50/80 dark:bg-slate-900/50 font-medium select-none">
-          Overview — drag to navigate
+          Overview: drag to navigate
         </div>
         <div className="relative" style={{ height: minimapH }}>
           {floorItems.map((item) => {

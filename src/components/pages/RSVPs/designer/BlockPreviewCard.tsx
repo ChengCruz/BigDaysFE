@@ -123,7 +123,7 @@ export function BlockPreviewCard({
         <p className="truncate text-xs text-gray-400">{preview}</p>
       </div>
 
-      {/* Thumbnail — only if image is set */}
+      {/* Thumbnail: only if image is set */}
       {thumb ? (
         <img
           src={thumb.src}

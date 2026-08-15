@@ -47,7 +47,7 @@ export const FloorObstacleItem: React.FC<Props> = ({ item, zoom, selected, selec
       } else {
         onSelect(item.id, e.shiftKey);
         // Compute grab-offset in world coords against the item's stored x/y, not the
-        // DOM bbox — getBoundingClientRect() returns the rotated axis-aligned bbox
+        // DOM bbox, since getBoundingClientRect() returns the rotated axis-aligned bbox
         // and would jump on drag-start for rotated items.
         const canvas = document.getElementById("floor-canvas-content");
         const canvasRect = canvas?.getBoundingClientRect();

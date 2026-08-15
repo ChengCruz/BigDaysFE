@@ -14,9 +14,9 @@ import { TYPE_KEY_MAP } from "../../utils/eventUtils";
  * design endpoint using eventGuid.
  *
  * Auth reality (verified 2026-04-18):
- *   - GET /RsvpDesign/share/{token}        — intended public, currently 404s
+ *   - GET /RsvpDesign/share/{token}        : intended public, currently 404s
  *     (endpoint not documented in backend-context; see .claude/todo/rsvp-v3-preview-public-sync.md).
- *   - GET /RsvpDesign/{eventGuid}/design   — requires JWT (returns 401 without it).
+ *   - GET /RsvpDesign/{eventGuid}/design   : requires JWT (returns 401 without it).
  *     The fallback therefore only works when the caller is a logged-in admin in
  *     the same browser; real guests fall through to null and see "Invalid link".
  *   - Public guests should use the slug URL (/rsvp/:slug → useEventBySlug), which
@@ -44,12 +44,12 @@ export function usePublicRsvpDesign(
             return design;
           }
         } catch {
-          // API unavailable or 404 — fall through
+          // API unavailable or 404, so fall through
         }
       }
 
       // 2. Admin-only fallback via eventGuid.
-      // NOTE: GET /RsvpDesign/{eventGuid}/design requires JWT (401 without it) —
+      // NOTE: GET /RsvpDesign/{eventGuid}/design requires JWT (401 without it);
       // this path only succeeds when a logged-in admin is previewing in the same
       // browser. For real public guests, prefer the slug URL instead.
       if (eventGuid) {
@@ -85,7 +85,7 @@ export function usePublicRsvpDesign(
             return design;
           }
         } catch {
-          // Design not accessible — fall through to null
+          // Design not accessible, so fall through to null
         }
       }
 

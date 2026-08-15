@@ -2,10 +2,10 @@
 // Client-side image preparation for the RSVP designer.
 // Large camera photos are downscaled and re-encoded to WebP *before* they are
 // cached and uploaded, so we never ship full-resolution files to storage.
-// GIFs are intentionally rejected — animation can't survive a canvas re-encode.
+// GIFs are intentionally rejected, since animation can't survive a canvas re-encode.
 
-/** Output settings — the real storage lever lives here, not in the upload size cap. */
-const MAX_EDGE = 2000; // longest side, px — retina-safe for a phone-width RSVP
+/** Output settings: the real storage lever lives here, not in the upload size cap. */
+const MAX_EDGE = 2000; // longest side, px, retina-safe for a phone-width RSVP
 const WEBP_QUALITY = 0.82; // 0..1 lossy quality
 const OUTPUT_TYPE = "image/webp";
 
@@ -18,7 +18,7 @@ export const MAX_UPLOAD_MB = 25;
 
 /** Validates a chosen image. Returns a human-readable error fragment, or null if OK. */
 export function validateImageFile(file: File): string | null {
-  if (file.type === "image/gif") return "GIFs aren't supported — use a JPG, PNG or WebP.";
+  if (file.type === "image/gif") return "GIFs aren't supported; use a JPG, PNG or WebP.";
   if (!RESIZABLE.has(file.type)) return "must be a JPG, PNG or WebP image.";
   if (file.size > MAX_UPLOAD_BYTES) return `is too large (max ${MAX_UPLOAD_MB}MB).`;
   return null;
@@ -39,7 +39,7 @@ export async function resizeImageToWebp(file: File): Promise<File> {
 
   const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
 
-  // Already-optimized WebP at native size — don't re-encode (avoids quality loss).
+  // Already-optimized WebP at native size, so don't re-encode (avoids quality loss).
   if (file.type === OUTPUT_TYPE && scale === 1) {
     bitmap.close?.();
     return file;

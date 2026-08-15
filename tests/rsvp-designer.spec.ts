@@ -1,5 +1,5 @@
 /**
- * RSVP Designer page tests — /app/rsvps/designer
+ * RSVP Designer page tests: /app/rsvps/designer
  * Covers: page load, toolbar actions, block management, share link, preview modal.
  */
 import { test, expect } from '@playwright/test';
@@ -13,7 +13,7 @@ async function gotoDesigner(page: Parameters<typeof gotoAuthenticated>[0]) {
 
 // ── Page load ─────────────────────────────────────────────────────────────────
 
-test.describe('RSVP Designer — Page load', () => {
+test.describe('RSVP Designer: Page load', () => {
   test.beforeEach(async ({ page }) => {
     await gotoDesigner(page);
   });
@@ -50,7 +50,7 @@ test.describe('RSVP Designer — Page load', () => {
 
 // ── Default blocks ─────────────────────────────────────────────────────────────
 
-test.describe('RSVP Designer — Default blocks', () => {
+test.describe('RSVP Designer: Default blocks', () => {
   test.beforeEach(async ({ page }) => {
     await gotoDesigner(page);
   });
@@ -70,7 +70,7 @@ test.describe('RSVP Designer — Default blocks', () => {
 
 // ── Add block menu ─────────────────────────────────────────────────────────────
 
-test.describe('RSVP Designer — Add block menu', () => {
+test.describe('RSVP Designer: Add block menu', () => {
   test.beforeEach(async ({ page }) => {
     await gotoDesigner(page);
   });
@@ -115,7 +115,7 @@ test.describe('RSVP Designer — Add block menu', () => {
 
 // ── Toolbar actions ────────────────────────────────────────────────────────────
 
-test.describe('RSVP Designer — Toolbar actions', () => {
+test.describe('RSVP Designer: Toolbar actions', () => {
   test.beforeEach(async ({ page }) => {
     await gotoDesigner(page);
   });
@@ -150,7 +150,7 @@ test.describe('RSVP Designer — Toolbar actions', () => {
 
 // ── Preview modal ──────────────────────────────────────────────────────────────
 
-test.describe('RSVP Designer — Preview modal', () => {
+test.describe('RSVP Designer: Preview modal', () => {
   test.beforeEach(async ({ page }) => {
     await gotoDesigner(page);
   });
@@ -185,7 +185,7 @@ test.describe('RSVP Designer — Preview modal', () => {
 
 // ── No-event state ─────────────────────────────────────────────────────────────
 
-test.describe('RSVP Designer — No event state', () => {
+test.describe('RSVP Designer: No event state', () => {
   test.beforeEach(async ({ page }) => {
     await mockApi(page);
     // Override events to return empty list

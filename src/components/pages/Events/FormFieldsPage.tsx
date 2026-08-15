@@ -1,7 +1,7 @@
 // src/components/pages/Events/FormFieldsPage.tsx
 //
 // Planner-mode question builder. Couple mode renders CoupleQuestionsPage from the
-// same route against the same hooks — see routes.tsx:FormFieldsRoute.
+// same route against the same hooks (see routes.tsx:FormFieldsRoute).
 //
 // Every write here goes through runWrite() because the question endpoints report
 // refusals inside a HTTP 200 envelope rather than as a 4xx (utils/apiEnvelope):
@@ -50,8 +50,8 @@ export default function FormFieldsPage() {
   const [isAddingTemplates, setIsAddingTemplates] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
   // Save/edit failures (e.g. backend refusing an edit to an answered question) show
-  // inside the modal itself rather than on this page banner — see FormFieldModal's
-  // onSave below, which keeps the modal open until the write actually lands.
+  // inside the modal itself rather than on this page banner (see FormFieldModal's
+  // onSave below), which keeps the modal open until the write actually lands.
   const [modalError, setModalError] = useState<string | null>(null);
 
   const [editWarning, setEditWarning] = useState<{
@@ -82,7 +82,7 @@ export default function FormFieldsPage() {
 
   /**
    * Single funnel for every question write. A resolved mutation is not proof the
-   * write landed — the refusal may be inside the envelope — so the result is
+   * write landed, since the refusal may be inside the envelope, so the result is
    * checked before the caller reports success. Returns false when it failed.
    */
   async function runWrite(write: () => Promise<unknown>, fallback: string): Promise<boolean> {
@@ -137,7 +137,7 @@ export default function FormFieldsPage() {
         </div>
       </div>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-        Once a guest has answered a question, it can’t be edited — hide it instead if you no longer want to ask it.
+        Once a guest has answered a question, it can’t be edited; hide it instead if you no longer want to ask it.
       </p>
 
       {/* Surfaces the 200-with-the-refusal-inside case described at the top of the file. */}
@@ -219,7 +219,7 @@ export default function FormFieldsPage() {
         </ul>
       )}
 
-      {/* Edit warning — shown when a question already has answers */}
+      {/* Edit warning: shown when a question already has answers */}
       {editWarning.open && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
@@ -299,7 +299,7 @@ export default function FormFieldsPage() {
         </p>
       </DeleteConfirmationModal>
 
-      {/* Delete confirmation — permanent, cannot be referenced back */}
+      {/* Delete confirmation: permanent, cannot be referenced back */}
       <DeleteConfirmationModal
         isOpen={deleteWarning.open}
         isDeleting={deleteField.isPending}
@@ -351,7 +351,7 @@ export default function FormFieldsPage() {
             if (!eventId) return;
 
             // Build the payload the API expects (QuestionDto shape). Every field,
-            // every time — Update is a full replace, so an omitted one is wiped to
+            // every time: Update is a full replace, so an omitted one is wiped to
             // its CLR default.
             const payload: QuestionPayload = {
               text: dto.text ?? "",

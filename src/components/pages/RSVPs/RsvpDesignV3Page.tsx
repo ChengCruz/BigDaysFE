@@ -1,5 +1,5 @@
 // src/components/pages/RSVPs/RsvpDesignV3Page.tsx
-// RSVP Designer V3 — Optimized full-screen builder with advanced UX.
+// RSVP Designer V3: optimized full-screen builder with advanced UX.
 // Improvements over V2:
 //   - useReducer for consolidated state (replaces 15+ useState)
 //   - Undo / Redo (Ctrl+Z / Ctrl+Y)
@@ -199,6 +199,22 @@ function getMoveGroup(blocks: RsvpBlock[], index: number): [number, number] {
   return [index, index];
 }
 
+/**
+ * Cloning a guestDetails block always produces a broken copy: only the block
+ * matching `firstGuestDetailsBlockId` renders the couple's live questions
+ * (see askedQuestions / isFirstGuestDetailsBlock), so a duplicate silently
+ * ships with none. Blocked here the same way the "RSVP Form" preset button
+ * is blocked once a form already exists. Its paired submit CTA is blocked
+ * alongside it for the same reason getMoveGroup pairs them -- duplicating
+ * just the button orphaned from "its" form is not a meaningful action.
+ */
+function isFormPairBlock(blocks: RsvpBlock[], index: number): boolean {
+  const block = blocks[index];
+  if (block.type === "guestDetails") return true;
+  if (isSubmitCta(block) && blocks[index - 1]?.type === "guestDetails") return true;
+  return false;
+}
+
 function designReducer(state: DesignState, action: DesignAction): DesignState {
   switch (action.type) {
     case "LOAD_DESIGN":
@@ -225,12 +241,20 @@ function designReducer(state: DesignState, action: DesignAction): DesignState {
         ),
       };
 
-    case "REMOVE_BLOCK":
+    case "REMOVE_BLOCK": {
+      const i = state.blocks.findIndex((b) => b.id === action.payload);
+      if (i === -1) return state;
+      // Remove the form and its submit button together -- same pairing as
+      // MOVE_BLOCK/REORDER_BLOCKS above, so deleting one never strands the
+      // other with nothing to click, or nothing to submit.
+      const [start, end] = getMoveGroup(state.blocks, i);
+      const removedIds = new Set(state.blocks.slice(start, end + 1).map((b) => b.id));
       return {
         ...state,
-        blocks: state.blocks.filter((b) => b.id !== action.payload),
-        selectedId: state.selectedId === action.payload ? null : state.selectedId,
+        blocks: state.blocks.filter((b) => !removedIds.has(b.id)),
+        selectedId: state.selectedId && removedIds.has(state.selectedId) ? null : state.selectedId,
       };
+    }
 
     case "DUPLICATE_BLOCK": {
       const idx = state.blocks.findIndex((b) => b.id === action.payload);
@@ -392,7 +416,7 @@ function CountdownDisplay({
 // ─── Canvas block renderer ──────────────────────────────────────────────────
 
 /**
- * The canvas mock for a linked question's input — was a single generic
+ * The canvas mock for a linked question's input used to be a single generic
  * placeholder box regardless of type, so checkbox/select/radio questions
  * previewed identically to a plain text field. Mirrors the actual controls
  * guests get in RsvpFormRenderer (checkbox → tick list, select/radio →
@@ -490,7 +514,7 @@ function fieldLinkStatus(
 
 /**
  * The canvas used to render a formField block identically whether its linked
- * question was active, hidden, or deleted — a couple could stare at the live
+ * question was active, hidden, or deleted, so a couple could stare at the live
  * design and have no idea a field wouldn't actually reach guests. This is the
  * ONLY on-canvas signal; BlockEditor.tsx's side panel has its own (textual)
  * version of the same status, but that requires opening the block first.
@@ -725,7 +749,7 @@ function renderSectionContent(
         ? (() => { try { return new Date(rawDate).toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); } catch { return rawDate; } })()
         : "Date TBC";
       const rawTime = event?.raw?.eventTime ?? "";
-      // The date above is formatted for guests, so the time must be too —
+      // The date above is formatted for guests, so the time must be too:
       // printing rawTime verbatim showed invitees "18:00:00".
       const formattedTime = formatEventTime(rawDate, rawTime) || "Time TBC";
       const location = event?.location ?? event?.raw?.eventLocation ?? "Venue TBC";
@@ -791,15 +815,15 @@ function renderSectionContent(
   }
 }
 
-// ─── Canvas block wrapper (V3 — with drop zone + duplicate) ─────────────────
+// ─── Canvas block wrapper (V3, with drop zone + duplicate) ─────────────────
 
 function V3CanvasBlock({
-  block, isSelected, accentColor, globalIsLight, event, questions, askedQuestions, isFirstGuestDetailsBlock, isFirst, isLast,
+  block, isSelected, accentColor, globalIsLight, event, questions, askedQuestions, isFirstGuestDetailsBlock, isFirst, isLast, duplicateDisabled,
   onSelect, onMoveUp, onMoveDown, onRemove, onDuplicate, onDropAbove,
 }: {
   block: RsvpBlock; isSelected: boolean; accentColor: string; globalIsLight: boolean;
   event?: Event; questions?: FormFieldConfig[]; askedQuestions?: FormFieldConfig[]; isFirstGuestDetailsBlock?: boolean;
-  isFirst: boolean; isLast: boolean;
+  isFirst: boolean; isLast: boolean; duplicateDisabled?: boolean;
   onSelect: () => void; onMoveUp: () => void; onMoveDown: () => void;
   onRemove: () => void; onDuplicate: () => void;
   onDropAbove: (sourceId: string) => void;
@@ -818,7 +842,7 @@ function V3CanvasBlock({
         draggable
         onDragStart={(e) => e.dataTransfer.setData("text/plain", block.id)}
       >
-        {/* Drop zone — absolute so it adds no layout height (keeps canvas spacing identical to preview/public) */}
+        {/* Drop zone: absolute so it adds no layout height (keeps canvas spacing identical to preview/public) */}
         <div
           className={`absolute left-4 right-4 rounded-full transition-all duration-150 z-20 ${dropHighlight ? "bg-primary/60 h-1.5" : "h-2"}`}
           style={{ top: -4 }}
@@ -842,13 +866,13 @@ function V3CanvasBlock({
           </div>
         )}
 
-        {/* V3 Action bar — includes Duplicate */}
+        {/* V3 Action bar, includes Duplicate */}
         {isSelected && (
           <div className="absolute z-20 flex bg-white border border-gray-200 shadow-md rounded-t overflow-hidden" style={{ top: -24, right: 0 }} onClick={(e) => e.stopPropagation()}>
             {[
               { label: "↑", title: "Move up",    fn: onMoveUp,    disabled: isFirst },
               { label: "↓", title: "Move down",  fn: onMoveDown,  disabled: isLast },
-              { label: "⧉", title: "Duplicate (Ctrl+D)", fn: onDuplicate },
+              { label: "⧉", title: duplicateDisabled ? "Can't duplicate the RSVP form" : "Duplicate (Ctrl+D)", fn: onDuplicate, disabled: duplicateDisabled },
               { label: "✕", title: "Remove (Del)",       fn: onRemove },
             ].map(({ label, title, fn, disabled }, i, arr) => (
               <button key={label} title={title} onClick={disabled ? undefined : fn}
@@ -884,10 +908,10 @@ function BlockItem({ icon, label, desc, onAdd }: { icon: string; label: string; 
 // ─── Left panel layer row ───────────────────────────────────────────────────
 
 function LayerRow({
-  block, index, isSelected, isDragging, accentColor,
+  block, index, isSelected, isDragging, accentColor, duplicateDisabled,
   onSelect, onDragStart, onDragOver, onDragEnd, onMoveUp, onMoveDown, onRemove, onDuplicate,
 }: {
-  block: RsvpBlock; index: number; isSelected: boolean; isDragging: boolean; accentColor: string;
+  block: RsvpBlock; index: number; isSelected: boolean; isDragging: boolean; accentColor: string; duplicateDisabled?: boolean;
   onSelect: () => void; onDragStart: React.DragEventHandler; onDragOver: React.DragEventHandler;
   onDragEnd: () => void; onMoveUp: () => void; onMoveDown: () => void; onRemove: () => void; onDuplicate: () => void;
 }) {
@@ -909,7 +933,9 @@ function LayerRow({
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition" onClick={(e) => e.stopPropagation()}>
         <button onClick={onMoveUp}    title="Move up"    className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:bg-gray-200 hover:text-gray-600 text-xs transition">↑</button>
         <button onClick={onMoveDown}  title="Move down"  className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:bg-gray-200 hover:text-gray-600 text-xs transition">↓</button>
-        <button onClick={onDuplicate} title="Duplicate"  className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:bg-primary/10 hover:text-primary text-xs transition">⧉</button>
+        <button onClick={duplicateDisabled ? undefined : onDuplicate} disabled={duplicateDisabled}
+          title={duplicateDisabled ? "Can't duplicate the RSVP form" : "Duplicate"}
+          className={`w-5 h-5 flex items-center justify-center rounded text-xs transition ${duplicateDisabled ? "text-gray-200 cursor-not-allowed" : "text-gray-400 hover:bg-primary/10 hover:text-primary"}`}>⧉</button>
         <button onClick={onRemove}    title="Remove"     className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:bg-rose-50 hover:text-rose-500 text-xs transition">✕</button>
       </div>
     </div>
@@ -961,7 +987,7 @@ export default function RsvpDesignV3Page() {
   const copyResetRef = useRef<number | null>(null);
   useEffect(() => () => { if (copyResetRef.current) window.clearTimeout(copyResetRef.current); }, []);
 
-  // GetQuestions deliberately returns hidden questions too — the Questions page
+  // GetQuestions deliberately returns hidden questions too, since the Questions page
   // needs them to offer "unhide". The designer must not: a hidden question is not
   // on the invite, so offering it to link would create a field guests never see.
   const availableQuestions = useMemo<FormFieldConfig[]>(
@@ -1001,6 +1027,14 @@ export default function RsvpDesignV3Page() {
     [availableQuestions, formFieldBlockQuestionIds]
   );
 
+  // Drives the "RSVP Form" preset button's disabled state. Reads live `blocks`
+  // rather than `savedDesign`/`isDesignLoaded`, so it's correct with no extra
+  // cases to special-case: a brand-new, never-saved design still starts from
+  // initialState's seeded guestDetails block (see line ~138), so this is
+  // already truthy on first render, before any fetch resolves and before the
+  // couple has saved anything -- the preset stays disabled from the start
+  // instead of only after a save. It only goes empty once a *loaded* design
+  // genuinely has no guestDetails block (couple deleted it, saved or not).
   const firstGuestDetailsBlockId = useMemo(
     () => blocks.find((b) => b.type === "guestDetails")?.id,
     [blocks]
@@ -1124,7 +1158,7 @@ export default function RsvpDesignV3Page() {
 
       // Restore share link. Prefer the slug URL (public, reflects latest design)
       // over /rsvp/submit/:token which depends on a backend share-token endpoint
-      // that is currently unreliable — see .claude/todo/rsvp-v3-preview-public-sync.md.
+      // that is currently unreliable; see .claude/todo/rsvp-v3-preview-public-sync.md.
       if (savedDesign.shareToken) {
         setShareToken(savedDesign.shareToken);
       }
@@ -1157,7 +1191,7 @@ export default function RsvpDesignV3Page() {
       if (event.date) { try { parts.push(new Date(event.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })); } catch { parts.push(event.date); } }
       if (event.time) parts.push(event.time);
       if (event.location) parts.push(event.location);
-      const subtitle = parts.length > 0 ? `Save the date — ${parts.join(" · ")}` : "Save the date and RSVP below";
+      const subtitle = parts.length > 0 ? `Save the date: ${parts.join(" · ")}` : "Save the date and RSVP below";
       // The starter design is a static constant, so it used to open with the
       // built-in name/phone/pax fields and none of the couple's own questions --
       // even when they had written them before ever opening the designer.
@@ -1201,9 +1235,13 @@ export default function RsvpDesignV3Page() {
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) { e.preventDefault(); undo(); return; }
       if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) { e.preventDefault(); redo(); return; }
 
-      // Ctrl+D = Duplicate selected block
+      // Ctrl+D = Duplicate selected block (blocked for the RSVP form / its
+      // submit CTA -- see isFormPairBlock, same rule as the toolbar button)
       if ((e.ctrlKey || e.metaKey) && e.key === "d" && selectedId) {
-        e.preventDefault(); pushSnapshot(); dispatch({ type: "DUPLICATE_BLOCK", payload: selectedId }); return;
+        e.preventDefault();
+        const idx = blocks.findIndex((b) => b.id === selectedId);
+        if (idx === -1 || isFormPairBlock(blocks, idx)) return;
+        pushSnapshot(); dispatch({ type: "DUPLICATE_BLOCK", payload: selectedId }); return;
       }
 
       // Delete / Backspace = Remove selected block
@@ -1219,7 +1257,7 @@ export default function RsvpDesignV3Page() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selectedId, undo, redo, pushSnapshot]);
+  }, [selectedId, undo, redo, pushSnapshot, blocks]);
 
   // Close share panel on outside click
   useEffect(() => {
@@ -1299,7 +1337,7 @@ export default function RsvpDesignV3Page() {
           // renderer reads `block.required ?? cfg.isRequired`, and `false` is not
           // nullish, so a copied `false` would permanently pin the field optional.
           //
-          // "Label override" in BlockEditor still writes block.label — an override
+          // "Label override" in BlockEditor still writes block.label: an override
           // the couple typed deliberately is kept and still wins.
           label: undefined,
           required: undefined,
@@ -1329,7 +1367,7 @@ export default function RsvpDesignV3Page() {
       else valid.push(file);
     }
     if (rejected.length === 1) toast.error(rejected[0]);
-    else if (rejected.length > 1) toast.error(`${rejected.length} files skipped — use JPG, PNG or WebP up to ${MAX_UPLOAD_MB}MB.`);
+    else if (rejected.length > 1) toast.error(`${rejected.length} files skipped. Use JPG, PNG or WebP up to ${MAX_UPLOAD_MB}MB.`);
     return Promise.all(valid.map(toImageAsset));
   };
 
@@ -1429,7 +1467,7 @@ export default function RsvpDesignV3Page() {
   // ── Save ──────────────────────────────────────────────────────────────────
   // Resolves to the version number the server assigned to this save, or null if
   // it failed. Callers must use the returned value rather than reading `version`
-  // or `saveResponse` — those are render-closure state and are still stale on the
+  // or `saveResponse`, since those are render-closure state and are still stale on the
   // line after `await handleSave()`.
   const handleSave = async (): Promise<number | null> => {
     if (!eventId) return null;
@@ -1523,7 +1561,7 @@ export default function RsvpDesignV3Page() {
   };
 
   // ── Guest link ──────────────────────────────────────────────────────────────
-  // The guest link is the event's slug URL (/rsvp/:slug) — a permanent public
+  // The guest link is the event's slug URL (/rsvp/:slug), a permanent public
   // endpoint that always reflects the latest saved design. There is nothing to
   // rotate or regenerate, so this only derives and reveals it.
   // The share-token branch below is a fallback for slug-less events only; note
@@ -1588,10 +1626,10 @@ export default function RsvpDesignV3Page() {
   const globalIsLight = globalBackgroundType === "color" && isLightColor(globalBackgroundColor);
 
   // The canvas IS the device: its width is the selected phone viewport, so the
-  // couple composes against exactly what a guest will hold. No inner cap — the
+  // couple composes against exactly what a guest will hold. No inner cap: the
   // card edge is the viewport edge, mirroring preview/public.
   const widthOption = contentWidthOption(contentWidth);
-  // No grey bezel ring here either — rounded corners only. See rsvpContentWidths.
+  // No grey bezel ring here either; rounded corners only. See rsvpContentWidths.
   const canvasClass = "rounded-[2.5rem] shadow-[0_22px_64px_-14px_rgba(15,23,42,0.45)]";
 
   const chevronSvg = (open: boolean) => (
@@ -1639,7 +1677,7 @@ export default function RsvpDesignV3Page() {
 
         <div className="w-px h-6 bg-gray-200 shrink-0" />
 
-        {/* Device switcher — the canvas, preview and guest page all follow this.
+        {/* Device switcher: the canvas, preview and guest page all follow this.
             Previously a hardcoded "430 px" label that lied about the real width. */}
         <div className="flex items-center gap-0.5" role="group" aria-label="Preview device width">
           {CONTENT_WIDTH_ORDER.map((key) => {
@@ -1650,7 +1688,7 @@ export default function RsvpDesignV3Page() {
                 key={key}
                 onClick={() => dispatch({ type: "SET_GLOBAL", payload: { contentWidth: key } })}
                 aria-pressed={active}
-                title={`${opt.device} — ${opt.px}px · ${opt.hint}`}
+                title={`${opt.device}: ${opt.px}px · ${opt.hint}`}
                 className={`px-2 py-1 text-[11px] font-medium rounded-md transition ${
                   active ? "bg-primary/10 text-primary" : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                 }`}
@@ -1670,20 +1708,20 @@ export default function RsvpDesignV3Page() {
 
         <div className="w-px h-6 bg-gray-200 shrink-0" />
 
-        {/* Status badge — reflects the server-owned publish flag, not just same-session Publish.
+        {/* Status badge: reflects the server-owned publish flag, not just same-session Publish.
             The guest page serves the latest PUBLISHED version, so a draft stays private
             until Save & Publish. */}
         {isLoadingDesign && <span className="flex items-center gap-1.5 text-xs text-gray-400"><Spinner /> Loading...</span>}
         {!isLoadingDesign && isPublished && !isSaving && !isUploadingForSave && (
           <span
-            title="Published — this is the version your guests see at the RSVP link."
+            title="Published. This is the version your guests see at the RSVP link."
             className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
             Published{version !== undefined ? ` v${version}` : ""}
           </span>
         )}
         {!isLoadingDesign && !isPublished && (isSaveSuccess || version !== undefined) && !isSaveError && !isSaving && !isUploadingForSave && (
           <span
-            title="Draft saved — guests still see your last published version. Click Save & Publish to make these edits live."
+            title="Draft saved. Guests still see your last published version. Click Save & Publish to make these edits live."
             className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
             Draft{version !== undefined ? ` v${version}` : ""} · not live
           </span>
@@ -1757,7 +1795,7 @@ export default function RsvpDesignV3Page() {
             ))}
           </div>
 
-          {/* Search — shown in blocks tab */}
+          {/* Search: shown in blocks tab */}
           {leftTab === "blocks" && (
             <div className="px-2 pt-2 pb-1 shrink-0">
               <input type="text" placeholder="Search blocks..." value={blockSearch} onChange={(e) => setBlockSearch(e.target.value)}
@@ -1800,12 +1838,13 @@ export default function RsvpDesignV3Page() {
                 </button>
                 {presetsOpen && (
                   <>
-                    <button type="button" onClick={addRsvpFormPreset}
-                      className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left border border-dashed border-gray-200 hover:border-rose-200 hover:bg-rose-50 cursor-pointer group transition">
+                    <button type="button" onClick={addRsvpFormPreset} disabled={!!firstGuestDetailsBlockId}
+                      title={firstGuestDetailsBlockId ? "This design already has an RSVP form block. Delete it to add another." : undefined}
+                      className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left border border-dashed border-gray-200 hover:border-rose-200 hover:bg-rose-50 cursor-pointer group transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:bg-transparent">
                       <div className="w-7 h-7 rounded-md bg-gray-100 flex items-center justify-center text-sm shrink-0 group-hover:bg-rose-100 transition">📋</div>
                       <div>
                         <p className="text-[13px] font-medium text-gray-500 group-hover:text-[#c0415a] leading-tight">RSVP Form</p>
-                        <p className="text-[10px] text-gray-400">Guest details + questions + submit</p>
+                        <p className="text-[10px] text-gray-400">{firstGuestDetailsBlockId ? "Already added to this design" : "Guest details + questions + submit"}</p>
                       </div>
                     </button>
                     <label className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left border border-dashed border-gray-200 hover:border-rose-200 hover:bg-rose-50 cursor-pointer group transition mt-1.5">
@@ -1840,7 +1879,7 @@ export default function RsvpDesignV3Page() {
                 blocks.map((block, i) => (
                   <LayerRow key={block.id} block={block} index={i}
                     isSelected={selectedId === block.id} isDragging={draggingId === block.id}
-                    accentColor={accentColor}
+                    accentColor={accentColor} duplicateDisabled={isFormPairBlock(blocks, i)}
                     onSelect={() => { dispatch({ type: "SELECT", payload: block.id }); setRightTab("block"); }}
                     onDragStart={(e) => { setDraggingId(block.id); e.dataTransfer.setData("text/plain", block.id); }}
                     onDragOver={(e) => { e.preventDefault(); if (draggingId && draggingId !== block.id) reorderBlocks(draggingId, block.id); }}
@@ -1888,7 +1927,7 @@ export default function RsvpDesignV3Page() {
               </p>
             </div>
 
-            {/* Invitation card — width = the selected device viewport. */}
+            {/* Invitation card: width = the selected device viewport. */}
             <div className={`relative transition-all duration-300 overflow-hidden ${canvasClass}`}
               style={{ ...frameBg, width: widthOption.px, minHeight: 700, fontFamily: globalFontFamily || "Georgia, 'Times New Roman', serif" }}
               onClick={(e) => { if (e.currentTarget === e.target) dispatch({ type: "SELECT", payload: null }); }}>
@@ -1904,7 +1943,7 @@ export default function RsvpDesignV3Page() {
                 <div className="absolute inset-0 pointer-events-none" style={{ background: `rgba(15,23,42,${globalOverlay})` }} />
               )}
 
-              {/* Blocks — no inner cap; the card edge is the viewport edge, same as preview/public */}
+              {/* Blocks: no inner cap; the card edge is the viewport edge, same as preview/public */}
               <div
                 className="relative z-10 mx-auto flex flex-col w-full"
                 style={{
@@ -1932,7 +1971,7 @@ export default function RsvpDesignV3Page() {
                     accentColor={accentColor} globalIsLight={globalIsLight}
                     event={event} questions={allQuestions}
                     askedQuestions={askedQuestions} isFirstGuestDetailsBlock={block.id === firstGuestDetailsBlockId}
-                    isFirst={i === 0} isLast={i === blocks.length - 1}
+                    isFirst={i === 0} isLast={i === blocks.length - 1} duplicateDisabled={isFormPairBlock(blocks, i)}
                     onSelect={() => { dispatch({ type: "SELECT", payload: block.id }); setRightTab("block"); }}
                     onMoveUp={() => moveBlock(block.id, "up")}
                     onMoveDown={() => moveBlock(block.id, "down")}
@@ -2062,13 +2101,13 @@ export default function RsvpDesignV3Page() {
             className="fixed top-4 right-4 z-[101] flex items-center gap-1.5 rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm hover:bg-black/80 transition">
             Close Preview
           </button>
-          {/* Invitation card — device width on desktop, full-bleed on a real phone.
+          {/* Invitation card: device width on desktop, full-bleed on a real phone.
               Matches RsvpFormRenderer exactly so preview == guest page. */}
           <div className={`relative mx-auto w-full ${widthOption.cardClass} sm:rounded-[2.5rem] sm:shadow-[0_22px_64px_-14px_rgba(15,23,42,0.45)] overflow-hidden`}>
-          {/* Mobile content — backgrounds scoped inside card frame */}
+          {/* Mobile content: backgrounds scoped inside card frame */}
           <div className="relative w-full min-h-[600px] overflow-hidden"
             style={frameBg}>
-            {/* Background layers — scoped to mobile container */}
+            {/* Background layers: scoped to mobile container */}
             {globalBackgroundType === "image" && globalBackgroundAsset && (
               <div className="absolute inset-0 bg-cover bg-center pointer-events-none" style={{ backgroundImage: `url(${globalBackgroundAsset})` }} />
             )}

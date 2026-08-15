@@ -166,7 +166,7 @@ export const GuestFormModal: React.FC<Props> = ({
       title={guest ? "Edit Guest" : "New Guest"}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* RSVP decoupling notice — edit mode only */}
+        {/* RSVP decoupling notice, edit mode only */}
         {guest && (
           <p className="text-xs text-slate-400 dark:text-slate-500">
             Changes here only update guest details and won't affect the original RSVP.
@@ -216,7 +216,7 @@ export const GuestFormModal: React.FC<Props> = ({
           step={1}
         />
 
-        {/* Guest Type (flag) — edit only */}
+        {/* Guest Type (flag), edit only */}
         {guest && (
           <div>
             <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">

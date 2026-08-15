@@ -1,6 +1,6 @@
 // src/utils/formFieldTemplates.ts
 // Predefined wedding-specific RSVP question templates.
-// "Will you attend?" is excluded — it is a system default question.
+// "Will you attend?" is excluded because it is a system default question.
 
 export interface QuestionTemplate {
   label: string;          // display name in the picker UI

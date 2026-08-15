@@ -163,7 +163,7 @@ export default function GuestsPage() {
     });
   };
 
-  // Exports every guest, not the filtered view — this is a backup, and a
+  // Exports every guest, not the filtered view: this is a backup, and a
   // partial one is worse than useless.
   const exportRows = () => buildGuestRows({ guests, tables, giftMap, currencySymbol });
 
@@ -265,7 +265,7 @@ export default function GuestsPage() {
               {generateQr.isPending ? "Generating..." : "Generate QR"}
             </Button>
           )}
-          {/* Export stays available to crew — reading and printing the list is
+          {/* Export stays available to crew: reading and printing the list is
               exactly what they need at the door. */}
           <Dropdown trigger={<Button variant="secondary">Export ▾</Button>}>
             <DropdownItem onClick={handleExportXlsx}>Export as XLSX</DropdownItem>
@@ -360,7 +360,7 @@ export default function GuestsPage() {
                     : "bg-orange-50 dark:bg-orange-900/10 border-2 border-orange-200 dark:border-orange-800"
                 }`}
               >
-                {/* Gift badge — top left */}
+                {/* Gift badge, top left */}
                 {(() => {
                   const giftAmt = giftMap.get(guest.guestCode ?? "");
                   if (giftAmt == null) return null;
@@ -410,7 +410,7 @@ export default function GuestsPage() {
                     </p>
                   </div>
 
-                  {/* Guest Type + QR Status — same row */}
+                  {/* Guest Type + QR Status, same row */}
                   <div className="flex flex-wrap gap-2 items-center">
                     <span
                       className={`inline-block px-2 py-0.5 rounded-full text-sm font-medium border-2 ${
@@ -465,7 +465,7 @@ export default function GuestsPage() {
                   )}
                 </div>
 
-                {/* Action Buttons — hidden for Staff (read-only) */}
+                {/* Action Buttons, hidden for Staff (read-only) */}
                 {!isReadOnly && (() => {
                   const qrToken = qrMap.get(guest.guestId ?? guest.id);
                   const qrStatus = getQrStatus(qrToken);

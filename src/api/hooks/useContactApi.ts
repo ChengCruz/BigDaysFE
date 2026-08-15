@@ -8,7 +8,7 @@ export type ContactType = "Bug Report" | "Feedback" | "Other";
 export interface ContactSupportPayload {
   /** What the message is about. "Bug Report" also carries a `module`. */
   type: ContactType;
-  /** Which app area the bug is in — sent for "Bug Report" only. */
+  /** Which app area the bug is in; sent for "Bug Report" only. */
   module?: string;
   /** Sender's display name. The login email is resolved server-side from the JWT. */
   name: string;
@@ -22,7 +22,7 @@ export interface ContactSupportPayload {
 
 /**
  * Send a Contact Us message. The backend resolves the sender's email from the
- * authenticated user (JWT) and emails it to the support inboxes — nothing is
+ * authenticated user (JWT) and emails it to the support inboxes; nothing is
  * persisted to the database.
  */
 export function useSendSupportMessage() {

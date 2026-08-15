@@ -132,7 +132,7 @@ export default function RsvpsPage() {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="md:ml-auto w-full md:w-64 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
-        {/* View toggle hidden — only grid view is implemented. Re-enable when list/Q&A layout is ready. */}
+        {/* View toggle hidden: only grid view is implemented. Re-enable when list/Q&A layout is ready. */}
       </div>
 
       {/* ─── EMPTY STATE ──────────────────────────────────────────────── */}

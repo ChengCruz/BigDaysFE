@@ -1,7 +1,7 @@
 // src/components/pages/WhatsNew/WhatsNewPage.tsx
 //
 // The full history, so dismissing the announcement modal never loses anything.
-// Lists quiet releases too — the ones that were never worth interrupting anyone
+// Lists quiet releases too: the ones that were never worth interrupting anyone
 // for still belong on the record.
 
 import { useEffect } from "react";
@@ -24,7 +24,7 @@ function formatDate(iso: string): string {
 export default function WhatsNewPage() {
   const releases = RELEASES;
 
-  // Reading the page counts as reading everything on it — this is what clears
+  // Reading the page counts as reading everything on it, which is what clears
   // the dot on the link that got you here.
   useEffect(() => {
     markAllSeen();
@@ -57,7 +57,7 @@ export default function WhatsNewPage() {
                   <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
                     {formatDate(release.date)}
                   </p>
-                  {/* No fallback here — the modal needs a line under the title,
+                  {/* No fallback here: the modal needs a line under the title,
                       a card in a list does not. */}
                   {release.intro && (
                     <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">

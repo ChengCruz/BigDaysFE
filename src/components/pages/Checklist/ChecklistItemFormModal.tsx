@@ -113,7 +113,7 @@ export function ChecklistItemFormModal({
             onChange={(e) => setCategory(e.target.value)}
             className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-accent text-text dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
-            <option value="">— No category —</option>
+            <option value="">No category</option>
             {CHECKLIST_CATEGORIES.map((c) => (
               <option key={c} value={c}>
                 {c}

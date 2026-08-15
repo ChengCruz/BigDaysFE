@@ -117,7 +117,7 @@ export function useFloorPlanState(
         const side = Math.max(90, 50 + Math.ceil(capacity / 4) * 20);
         return { width: side, height: side };
       }
-      // round — diameter scales with seats
+      // round: diameter scales with seats
       const d = Math.max(100, 60 + capacity * 6);
       return { width: d, height: d };
     },
@@ -125,7 +125,7 @@ export function useFloorPlanState(
   );
 
   /** Ensure every API table has a floor item; add missing ones.
-   *  @param placement — when exactly one table is being added, drop it centered
+   *  @param placement when exactly one table is being added, drop it centered
    *    on this world-coord point (from a click-to-place) instead of the grid. */
   const syncTables = useCallback(
     (
@@ -193,8 +193,8 @@ export function useFloorPlanState(
 
   /**
    * Set every table to the same shape, and optionally the same size.
-   * - sizeMode "byCapacity" — each table keeps its own capacity-based dimensions
-   * - sizeMode "uniform" — all tables get the dimensions of the largest-capacity table
+   * - sizeMode "byCapacity": each table keeps its own capacity-based dimensions
+   * - sizeMode "uniform": all tables get the dimensions of the largest-capacity table
    * Returns the number of tables affected.
    */
   const standardizeTables = useCallback(

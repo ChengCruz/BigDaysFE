@@ -15,7 +15,7 @@ import { DEFAULT_BACKDROP_COLOR } from "../../../../utils/rsvpBackdrops";
 import { formatEventTime } from "../../../../utils/eventUtils";
 
 // Same list/order as the admin RSVP and Guest modals (RsvpFormModal.tsx,
-// GuestFormModal.tsx) — Malaysia first (this app's home market), then the
+// GuestFormModal.tsx): Malaysia first (this app's home market), then the
 // two next-closest markets, then the rest.
 const COUNTRY_CODES = [
   { code: "+60", label: "🇲🇾 +60" },
@@ -178,7 +178,7 @@ export default function RsvpFormRenderer({
   // handset still uses its full width. See utils/rsvpContentWidths.
   const maxWidthCls = contentWidthClass(contentWidth);
 
-  // Adaptive color scheme — matches V3 designer canvas
+  // Adaptive color scheme, matches V3 designer canvas
   const globalIsLight = globalBackgroundType === "color" && isLightColor(globalBackgroundColor);
 
   // ── Auto-insert defaults for backward compat ──────────────────────────
@@ -313,7 +313,7 @@ export default function RsvpFormRenderer({
       const cfg = formFields.find((f) => (f.questionId ?? f.id) === block.questionId);
       // Must mirror renderBlock: a block whose question is hidden or deleted is not
       // rendered, so validating it would demand an answer to an invisible field and
-      // wedge the form shut — older designs can still carry `required: true` on it.
+      // wedge the form shut (older designs can still carry `required: true` on it).
       if (!cfg) return;
       const required = block.required ?? cfg.isRequired ?? false;
 
@@ -337,7 +337,7 @@ export default function RsvpFormRenderer({
         block.customQuestions.forEach((q) => {
           if (!q.questionId) return;
           const cfg = formFields.find((f) => (f.questionId ?? f.id) === q.questionId);
-          if (!cfg) return;   // hidden or deleted — not rendered, so not validated
+          if (!cfg) return;   // hidden or deleted, so not rendered and not validated
           const required = q.required ?? cfg.isRequired ?? false;
           if (!required) return;
           const val = answers[q.questionId];
@@ -400,7 +400,7 @@ export default function RsvpFormRenderer({
       eventId,
       guestName: guestName.trim(),
       noOfPax,
-      // Digits-only, no "+" — matches the format the admin RSVP/Guest modals write
+      // Digits-only, no "+", matching the format the admin RSVP/Guest modals write
       // (RsvpFormModal.tsx, GuestFormModal.tsx parse both this and the legacy "+"-prefixed form).
       phoneNo: phoneNumber.trim() ? `${countryCode.replace(/^\+/, "")}${phoneNumber.trim()}` : "",
       remarks: remarks.trim(),
@@ -413,7 +413,7 @@ export default function RsvpFormRenderer({
   const inputCls = "w-full rounded-xl px-4 py-3 text-[13px] bg-transparent outline-none placeholder:opacity-40";
 
   // A mobile browser's expanded <option> list is a native OS popup that always
-  // renders on the OS's own light background — it can't be dark-themed. Every
+  // renders on the OS's own light background, so it can't be dark-themed. Every
   // <select> here sets color: clr.heading (white on the dark card), which the
   // <option>s inherit; on that native white popup the text became invisible.
   // Options need their own explicit dark color regardless of the card's theme.
@@ -504,7 +504,7 @@ export default function RsvpFormRenderer({
         </div>
       );
     } else if (block.type === "attendance") {
-      // Attendance (status) is not supported by the API — skip rendering
+      // Attendance (status) is not supported by the API, so skip rendering
       return null;
     } else if (block.type === "guestDetails") {
       // Captured once, narrowed to the guestDetails variant -- TypeScript's
@@ -534,7 +534,7 @@ export default function RsvpFormRenderer({
             </p>
             {legacyCustomQuestions.map((q) => {
               if (!q.questionId) {
-                // Free-form question with no linked config — render as plain text input
+                // Free-form question with no linked config, so render as plain text input
                 // (won't be submitted because there's no questionId to key against)
                 return (
                   <div key={q.id} className="space-y-1.5">
@@ -554,7 +554,7 @@ export default function RsvpFormRenderer({
 
               const qid = q.questionId;
               const cfg = formFields.find((f) => (f.questionId ?? f.id) === qid);
-              // Hidden or deleted — same reasoning as the formField block above.
+              // Hidden or deleted, same reasoning as the formField block above.
               if (!cfg) return null;
 
               const rawOpts = cfg.options ?? undefined;
@@ -567,7 +567,8 @@ export default function RsvpFormRenderer({
               const fieldLabel = q.label || cfg.label || cfg.text || "Custom field";
               const fieldRequired = q.required ?? cfg.isRequired ?? false;
               const isCheckboxGroup = fieldType === "checkbox" && !!opts && opts.length > 0;
-              const isSelect = fieldType === "select" || fieldType === "radio";
+              const isRadioGroup = fieldType === "radio" && !!opts && opts.length > 0;
+              const isSelect = fieldType === "select";
               const currentAnswer = answers[qid];
               const checkedValues: string[] = Array.isArray(currentAnswer)
                 ? currentAnswer
@@ -589,6 +590,22 @@ export default function RsvpFormRenderer({
                             checked={checkedValues.includes(opt)}
                             onChange={() => toggleCheckboxAnswer(qid, opt)}
                             className="h-4 w-4 rounded"
+                            style={{ accentColor }}
+                          />
+                          <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : isRadioGroup ? (
+                    <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                      {opts!.map((opt) => (
+                        <label key={opt} className="flex cursor-pointer items-center gap-2">
+                          <input
+                            type="radio"
+                            name={qid}
+                            checked={currentAnswer === opt}
+                            onChange={() => setAnswer(qid, opt)}
+                            className="h-4 w-4"
                             style={{ accentColor }}
                           />
                           <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
@@ -726,7 +743,8 @@ export default function RsvpFormRenderer({
                 const fieldType = fc.typeKey ?? "text";
                 const fieldLabel = fc.label || fc.text || "Question";
                 const isCheckboxGroup = fieldType === "checkbox" && !!opts && opts.length > 0;
-                const isSelect = fieldType === "select" || fieldType === "radio";
+                const isRadioGroup = fieldType === "radio" && !!opts && opts.length > 0;
+                const isSelect = fieldType === "select";
                 const currentAnswer = answers[qid];
                 const checkedValues: string[] = Array.isArray(currentAnswer)
                   ? currentAnswer
@@ -748,6 +766,22 @@ export default function RsvpFormRenderer({
                               checked={checkedValues.includes(opt)}
                               onChange={() => toggleCheckboxAnswer(qid, opt)}
                               className="h-4 w-4 rounded"
+                              style={{ accentColor }}
+                            />
+                            <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
+                          </label>
+                        ))}
+                      </div>
+                    ) : isRadioGroup ? (
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                        {opts!.map((opt) => (
+                          <label key={opt} className="flex cursor-pointer items-center gap-2">
+                            <input
+                              type="radio"
+                              name={qid}
+                              checked={currentAnswer === opt}
+                              onChange={() => setAnswer(qid, opt)}
+                              className="h-4 w-4"
                               style={{ accentColor }}
                             />
                             <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
@@ -789,7 +823,7 @@ export default function RsvpFormRenderer({
       const cfg = formFields.find((f) => (f.questionId ?? f.id) === block.questionId);
       // The question was hidden or deleted after this block was laid out. The
       // backend already excludes it from the questions it serves, so a missing
-      // config IS the signal to drop the field — rendering on regardless is what
+      // config IS the signal to drop the field: rendering on regardless is what
       // put hidden questions back in front of guests, and stripped select/radio
       // blocks of their options (they live on the question, not the block).
       //
@@ -808,7 +842,8 @@ export default function RsvpFormRenderer({
       const fieldRequired = block.required ?? cfg.isRequired ?? false;
 
       const isCheckboxGroup = fieldType === "checkbox" && !!opts && opts.length > 0;
-      const isSelect = fieldType === "select" || fieldType === "radio";
+      const isRadioGroup = fieldType === "radio" && !!opts && opts.length > 0;
+      const isSelect = fieldType === "select";
       const currentAnswer = answers[block.questionId];
       const checkedValues: string[] = Array.isArray(currentAnswer)
         ? currentAnswer
@@ -830,6 +865,25 @@ export default function RsvpFormRenderer({
                     checked={checkedValues.includes(opt)}
                     onChange={() => toggleCheckboxAnswer(block.questionId!, opt)}
                     className="h-4 w-4 rounded"
+                    style={{ accentColor }}
+                  />
+                  <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
+                </label>
+              ))}
+              {errors[block.questionId] && (
+                <p className="w-full text-[11px] text-rose-400">{errors[block.questionId]}</p>
+              )}
+            </div>
+          ) : isRadioGroup ? (
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              {opts!.map((opt) => (
+                <label key={opt} className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="radio"
+                    name={block.questionId}
+                    checked={currentAnswer === opt}
+                    onChange={() => setAnswer(block.questionId!, opt)}
+                    className="h-4 w-4"
                     style={{ accentColor }}
                   />
                   <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
@@ -956,10 +1010,10 @@ export default function RsvpFormRenderer({
         </div>
       );
     } else if (block.type === "countdown") {
-      const targetDate = block.targetDate;
+      const targetDate = block.targetDate ?? eventDate;
       inner = <CountdownDisplay targetDate={targetDate} label={block.label} accentColor={accentColor} headingColor={clr.heading} bodyColor={clr.body} />;
     } else if (block.type === "map") {
-      const address = block.address ?? "";
+      const address = block.address ?? eventLocation ?? "";
       const mapLabel = block.mapLabel ?? "Venue";
       const showDirections = block.showDirections ?? true;
       const hasAddress = !!address;
@@ -1023,7 +1077,7 @@ export default function RsvpFormRenderer({
 
   // ── Layout ────────────────────────────────────────────────────────────
   return (
-    // Backdrop — full screen, shows on desktop around the phone frame
+    // Backdrop: full screen, shows on desktop around the phone frame
     <div
       className="min-h-screen sm:py-8"
       style={{
@@ -1034,7 +1088,7 @@ export default function RsvpFormRenderer({
         fontFamily: design.globalFontFamily || "Georgia, 'Times New Roman', serif",
       }}
     >
-      {/* Invitation card — sized to a real phone viewport on desktop, full-bleed
+      {/* Invitation card, sized to a real phone viewport on desktop, full-bleed
           on an actual phone. Deliberately NO grey bezel ring: the rounded corners
           read as a printed card, the ring read as a device mock. */}
       <div
@@ -1125,10 +1179,8 @@ export default function RsvpFormRenderer({
                     ? rawOpts.split(",").map((s) => s.trim())
                     : undefined;
                   const isCheckboxGroup = fieldType === "checkbox" && !!opts && opts.length > 0;
-                  // radio is rendered as a select here too, matching the formField and
-                  // guestDetails custom-question branches above (kept in sync 6 Aug 2026 —
-                  // this branch used to be the only one of the three that handled radio).
-                  const isSelect = fieldType === "select" || fieldType === "radio";
+                  const isRadioGroup = fieldType === "radio" && !!opts && opts.length > 0;
+                  const isSelect = fieldType === "select";
                   const currentAnswer = answers[id];
                   const checkedValues: string[] = Array.isArray(currentAnswer)
                     ? currentAnswer
@@ -1152,6 +1204,23 @@ export default function RsvpFormRenderer({
                                 checked={checkedValues.includes(opt)}
                                 onChange={() => toggleCheckboxAnswer(id, opt)}
                                 className="h-4 w-4 rounded"
+                                style={{ accentColor }}
+                              />
+                              <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
+                            </label>
+                          ))}
+                          {errors[id] && <p className="w-full text-[11px] text-rose-400">{errors[id]}</p>}
+                        </div>
+                      ) : isRadioGroup ? (
+                        <div className="flex flex-wrap gap-x-4 gap-y-2">
+                          {opts!.map((opt) => (
+                            <label key={opt} className="flex cursor-pointer items-center gap-2">
+                              <input
+                                type="radio"
+                                name={id}
+                                checked={currentAnswer === opt}
+                                onChange={() => setAnswer(id, opt)}
+                                className="h-4 w-4"
                                 style={{ accentColor }}
                               />
                               <span className="text-[13px]" style={{ color: clr.body }}>{opt}</span>
@@ -1194,7 +1263,7 @@ export default function RsvpFormRenderer({
             </section>
           )}
 
-          {/* ── CAPTCHA + submit — only when the design has no submit cta block
+          {/* ── CAPTCHA + submit: only when the design has no submit cta block
                  of its own, otherwise both render inline at that block ── */}
           {!submitCtaId && (
             <>

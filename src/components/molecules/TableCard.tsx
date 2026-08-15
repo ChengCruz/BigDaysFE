@@ -4,8 +4,8 @@ import { XIcon, PencilIcon, TrashIcon, PlusIcon } from "@heroicons/react/solid";
 
 const categoryDisplayNames: Record<string, string> = {
   vip: "VIP",
-  "family-bride": "Family — Bride",
-  "family-groom": "Family — Groom",
+  "family-bride": "Family: Bride",
+  "family-groom": "Family: Groom",
   friends: "Friends",
   colleagues: "Colleagues",
 };

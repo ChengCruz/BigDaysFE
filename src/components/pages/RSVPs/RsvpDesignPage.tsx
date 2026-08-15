@@ -1,5 +1,5 @@
 // src/components/pages/RSVPs/RsvpDesignPage.tsx
-// Admin RSVP designer — orchestrates all designer sub-components.
+// Admin RSVP designer: orchestrates all designer sub-components.
 // Exports PhonePreview + FullPagePreview (used by RsvpSharePreviewPage).
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useEventContext } from "../../../context/EventContext";
@@ -210,7 +210,7 @@ function renderBlockPreview(block: RsvpBlock, accentColor: string, mode: "thumb"
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PhonePreview — used in the admin preview modal + exported for SharePreviewPage
+// PhonePreview: used in the admin preview modal + exported for SharePreviewPage
 // ─────────────────────────────────────────────────────────────────────────────
 export function PhonePreview({
   blocks,
@@ -297,7 +297,7 @@ export function PhonePreview({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FullPagePreview — exported for RsvpSharePreviewPage
+// FullPagePreview: exported for RsvpSharePreviewPage
 // ─────────────────────────────────────────────────────────────────────────────
 export function FullPagePreview({
   blocks,
@@ -379,7 +379,7 @@ export function FullPagePreview({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RsvpDesignPage — main orchestrator
+// RsvpDesignPage: main orchestrator
 // ─────────────────────────────────────────────────────────────────────────────
 export default function RsvpDesignPage() {
   const { event, eventId, eventsLoading } = useEventContext() ?? {};
@@ -854,7 +854,7 @@ export default function RsvpDesignPage() {
           />
         </div>
 
-        {/* Right: global settings + block editor — sticky so it stays visible while scrolling blocks */}
+        {/* Right: global settings + block editor, sticky so it stays visible while scrolling blocks */}
         <div className="space-y-5 xl:col-span-2 xl:sticky xl:top-4 xl:max-h-[calc(100vh-5rem)] xl:overflow-y-auto xl:pb-2">
           <GlobalSettingsPanel
             globalBackgroundType={globalBackgroundType}

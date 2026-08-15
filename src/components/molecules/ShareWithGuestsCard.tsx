@@ -1,5 +1,5 @@
 // src/components/molecules/ShareWithGuestsCard.tsx
-// Reusable "Share with guests" card — generates & copies the public RSVP link.
+// Reusable "Share with guests" card: generates & copies the public RSVP link.
 import { useEffect, useState } from "react";
 import { Button } from "../atoms/Button";
 import { useRsvpDesign } from "../../api/hooks/useRsvpDesignApi";
@@ -83,7 +83,7 @@ export function ShareWithGuestsCard({ eventId }: Props) {
         </div>
       ) : (
         <div className="px-5 py-3 text-xs text-gray-400">
-          No link generated yet — click{" "}
+          No link generated yet. Click{" "}
           <span className="font-semibold text-gray-500">Generate link</span> above.
         </div>
       )}

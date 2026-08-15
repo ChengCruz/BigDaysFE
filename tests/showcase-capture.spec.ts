@@ -1,5 +1,5 @@
 /**
- * Showcase screenshot capture — NOT a test, a capture utility.
+ * Showcase screenshot capture: NOT a test, a capture utility.
  *
  * Logs in via the mock API, seeds richer-than-default data so each feature
  * looks full, and writes marketing PNGs to public/showcase/.
@@ -24,7 +24,7 @@ const OUT = 'public/showcase';
 // Capture at a generous desktop size for crisp marketing shots.
 test.use({ viewport: { width: 1440, height: 900 } });
 
-// Branded identity for the screenshots — the sidebar shows the JWT-decoded
+// Branded identity for the screenshots; the sidebar shows the JWT-decoded
 // email, so login must return a token carrying admin@bigdaysmanager.com.
 // (JWT payload: { sub, email: admin@bigdaysmanager.com, role: Admin, exp: 9999999999 })
 const BRAND_JWT =
@@ -32,7 +32,7 @@ const BRAND_JWT =
 const BRAND_USER = { ...MOCK_USER, email: 'admin@bigdaysmanager.com' };
 
 /** The event shown in every capture. helpers.MOCK_EVENT is deliberately
- *  generic ("Test Wedding" at "Test Venue") because assertions depend on it —
+ *  generic ("Test Wedding" at "Test Venue") because assertions depend on it;
  *  these are marketing shots, so the navbar and page headers need a real-
  *  looking celebration instead. Names match the RSVP design headline below and
  *  the venue matches the "Venue Deposit" vendor in TRANSACTIONS. */
@@ -52,7 +52,7 @@ const SHOWCASE_EVENT = {
  *  email so the sidebar reads admin@bigdaysmanager.com. */
 async function loginBranded(page: Page) {
   await mockApi(page);
-  // Overlay branded auth/profile (LIFO — runs before the generic mockApi handler).
+  // Overlay branded auth/profile (LIFO, runs before the generic mockApi handler).
   await page.route('**/__mock_api__/**', async (route: Route) => {
     const url = route.request().url();
     const method = route.request().method();
@@ -94,7 +94,7 @@ async function hideHelpHint(page: Page) {
 const EVENT_WITH_SLUG = { ...SHOWCASE_EVENT, slug: 'sarah-and-james' };
 
 /** A fuller RSVP design: hero headline over a dark theme + event details, an
- *  attendance toggle, a guest-details card and a CTA — enough to look real. */
+ *  attendance toggle, a guest-details card and a CTA, enough to look real. */
 const RSVP_DESIGN = {
   rsvpDesignId: 1,
   eventGuid: MOCK_EVENT_GUID,
@@ -231,7 +231,7 @@ const GUESTS = [
 
 // ── Captures ────────────────────────────────────────────────────────────────
 
-test('capture — RSVP designer v3', async ({ page }) => {
+test('capture: RSVP designer v3', async ({ page }) => {
   await loginBranded(page);
   await hideHelpHint(page);
   await page.route('**/__mock_api__/**', async (route: Route) => {
@@ -254,7 +254,7 @@ test('capture — RSVP designer v3', async ({ page }) => {
   await page.screenshot({ path: `${OUT}/rsvp.png` });
 });
 
-test('capture — Floor plan', async ({ page }) => {
+test('capture: Floor plan', async ({ page }) => {
   await loginBranded(page);
   await hideHelpHint(page);
   await page.route('**/__mock_api__/**', async (route: Route) => {
@@ -277,7 +277,7 @@ test('capture — Floor plan', async ({ page }) => {
   await page.screenshot({ path: `${OUT}/floorplan.png` });
 });
 
-test('capture — Budget', async ({ page }) => {
+test('capture: Budget', async ({ page }) => {
   await loginBranded(page);
   await hideHelpHint(page);
   await page.route('**/__mock_api__/**', async (route: Route) => {
@@ -301,7 +301,7 @@ test('capture — Budget', async ({ page }) => {
   await page.screenshot({ path: `${OUT}/budget.png` });
 });
 
-test('capture — Guests', async ({ page }) => {
+test('capture: Guests', async ({ page }) => {
   await loginBranded(page);
   await hideHelpHint(page);
   await page.route('**/__mock_api__/**', async (route: Route) => {

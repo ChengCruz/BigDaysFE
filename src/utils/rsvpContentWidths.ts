@@ -3,8 +3,8 @@
 //
 // The width is a REAL PHONE VIEWPORT, not an abstract size: the desktop card is
 // sized to a device so what a couple designs is literally what a guest holds.
-// Three surfaces must agree on it — the designer canvas, the designer preview
-// overlay, and the public guest page — so they all read these values.
+// Three surfaces must agree on it (the designer canvas, the designer preview
+// overlay, and the public guest page), so they all read these values.
 //
 // The stored keys stay "compact" | "standard" | "wide" for backwards
 // compatibility (they're already persisted in saved designs and in the shared
@@ -12,14 +12,14 @@
 //   compact  384 → 360   standard 512 → 393   wide 672 → 440
 //
 // `full` (edge-to-edge) is accepted on read for old designs but is NOT
-// selectable — full-bleed content was reviewed and rejected. Deleting the cap
+// selectable: full-bleed content was reviewed and rejected. Deleting the cap
 // gives guests a ~1376px-wide "Full name" input, and a full-bleed image block at
 // 16/7 stands 630px tall. Do not reintroduce it.
 
 /** Selectable widths. */
 export type ContentWidthKey = "compact" | "standard" | "wide";
 
-/** What may arrive from a saved design — includes the retired "full". */
+/** What may arrive from a saved design; includes the retired "full". */
 export type StoredContentWidth = ContentWidthKey | "full";
 
 export const DEFAULT_CONTENT_WIDTH: ContentWidthKey = "standard";
@@ -29,7 +29,7 @@ export interface ContentWidthOption {
   /** CSS viewport width in px. */
   px: number;
   /**
-   * Desktop-only max-width. The `sm:` prefix is load-bearing — below Tailwind's
+   * Desktop-only max-width. The `sm:` prefix is load-bearing: below Tailwind's
    * 640px breakpoint the card must stay fluid so a 440px handset uses all 440px
    * instead of getting a 393px column with dead space either side.
    * Written as literals so Tailwind's scanner can see them.
@@ -97,7 +97,7 @@ const LAYOUT_PX_TO_KEY: Record<number, ContentWidthKey> = {
   360: "compact",
   393: "standard",
   440: "wide",
-  // legacy — pre-device widths
+  // legacy, pre-device widths
   384: "compact",
   512: "standard",
   672: "wide",

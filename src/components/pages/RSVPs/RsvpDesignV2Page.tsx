@@ -1,5 +1,5 @@
 // src/components/pages/RSVPs/RsvpDesignV2Page.tsx
-// RSVP Designer V2 — Full-screen builder.
+// RSVP Designer V2: full-screen builder.
 // Same state / hooks / block types / save logic as V1 (RsvpDesignPage).
 // Renders as a fixed full-screen overlay so it takes the whole tab.
 
@@ -49,7 +49,7 @@ const CONTENT_BLOCKS: { type: RsvpBlock["type"]; icon: string; label: string; de
   { type: "headline",     icon: "Hₜ", label: "Headline",      desc: "Title & subtitle banner" },
   { type: "text",         icon: "¶",  label: "Text",          desc: "Body paragraph" },
   { type: "info",         icon: "ⓘ",  label: "Info badge",    desc: "Pill with label & value" },
-  // { type: "attendance",   icon: "✓",  label: "Attendance",    desc: "Yes / No / Maybe picker" }, // hidden — not in use
+  // { type: "attendance",   icon: "✓",  label: "Attendance",    desc: "Yes / No / Maybe picker" }, // hidden, not in use
   { type: "guestDetails", icon: "👤", label: "Guest details", desc: "Name · phone · pax" },
   { type: "formField",    icon: "✎",  label: "Form field",    desc: "Linked RSVP question" },
   { type: "cta",          icon: "→",  label: "CTA button",    desc: "Call-to-action button" },
@@ -166,7 +166,7 @@ function renderSectionContent(
   isLight: boolean,
   event?: Event
 ): React.ReactNode {
-  // Adaptive palette — flips between dark-on-light and light-on-dark
+  // Adaptive palette, flips between dark-on-light and light-on-dark
   const clr = {
     heading:    isLight ? "#1e293b" : "#ffffff",
     body:       isLight ? "#475569" : "rgba(255,255,255,0.75)",
@@ -457,7 +457,7 @@ function renderSectionContent(
       return (
         <div className="relative overflow-hidden" style={{ aspectRatio: "16 / 7" }}>
           {hasAddress ? (
-            /* Real embedded map — pointer-events:none keeps canvas clicks on the block */
+            /* Real embedded map: pointer-events:none keeps canvas clicks on the block */
             <iframe
               title="Venue map"
               src={embedUrl}
@@ -894,7 +894,7 @@ export default function RsvpDesignV2Page() {
       if (savedDesign.globalFontFamily)   setGlobalFontFamily(savedDesign.globalFontFamily);
       if (savedDesign.version !== undefined) setVersion(savedDesign.version);
     } else if (event?.title) {
-      // No saved design yet — seed the headline block with real event data
+      // No saved design yet, so seed the headline block with real event data
       toast("No RSVP design has been created for this event yet. Start building one below!", { icon: "ℹ️" });
       const parts: string[] = [];
       if (event.date) {
@@ -906,7 +906,7 @@ export default function RsvpDesignV2Page() {
       }
       if (event.time) parts.push(event.time);
       if (event.location) parts.push(event.location);
-      const subtitle = parts.length > 0 ? `Save the date — ${parts.join(" · ")}` : "Save the date and RSVP below";
+      const subtitle = parts.length > 0 ? `Save the date: ${parts.join(" · ")}` : "Save the date and RSVP below";
       setBlocks((prev) =>
         prev.map((b) =>
           b.type === "headline" ? { ...b, title: event.title, subtitle } : b
@@ -931,7 +931,7 @@ export default function RsvpDesignV2Page() {
   // ── Helpers ──────────────────────────────────────────────────────────────
   const isBlob = (url: string) => url.startsWith("blob:");
 
-  // Strip blob URLs from blocks before saving/loading — blobs are session-only
+  // Strip blob URLs from blocks before saving/loading, since blobs are session-only
   // and become invalid after page reload, causing ERR_FILE_NOT_FOUND in preview.
   const sanitizeBlocks = (rawBlocks: RsvpBlock[]): RsvpBlock[] =>
     rawBlocks.map((b) => ({
@@ -1205,7 +1205,7 @@ export default function RsvpDesignV2Page() {
       }
 
       // --- Upload each cached image; build id→cdnUrl swap map ---
-      // Cache entries are NOT removed here — removal happens only after saveDesign confirms success.
+      // Cache entries are NOT removed here; removal happens only after saveDesign confirms success.
       const urlSwaps: Record<string, string> = {};
       const uploadedCacheIds: string[] = [];
       await Promise.all(
@@ -1324,7 +1324,7 @@ export default function RsvpDesignV2Page() {
     globalBackgroundType === "color" && isLightColor(globalBackgroundColor);
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Full-screen builder — fixed overlay covering the entire viewport.
+  // Full-screen builder: fixed overlay covering the entire viewport.
   // Opens in a new tab (see RsvpsPage link) so the dashboard is irrelevant.
   // ─────────────────────────────────────────────────────────────────────────────
   return (
@@ -1420,7 +1420,7 @@ export default function RsvpDesignV2Page() {
       </header>
 
       {/* ════════════════════════════════════════════════════════
-          MAIN — left panel + canvas + right panel
+          MAIN: left panel + canvas + right panel
       ════════════════════════════════════════════════════════ */}
       <div className="flex flex-1 overflow-hidden">
 
@@ -1573,7 +1573,7 @@ export default function RsvpDesignV2Page() {
           className="flex-1 overflow-y-auto"
           style={{ background: "#eaecf0" }}
         >
-        {/* Inner wrapper — NOT overflow, just layout. Scroll happens on <main>. */}
+        {/* Inner wrapper, NOT overflow, just layout. Scroll happens on <main>. */}
         <div
           className="p-6 flex flex-col items-center"
           onClick={(e) => {
@@ -1801,7 +1801,7 @@ export default function RsvpDesignV2Page() {
         </span>
       </footer>
 
-      {/* Full-screen preview overlay — shows current in-memory state */}
+      {/* Full-screen preview overlay: shows current in-memory state */}
       {showPreview && (
         <div className="fixed inset-0 z-[100] overflow-auto">
           <button

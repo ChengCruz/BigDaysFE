@@ -8,7 +8,7 @@ interface ApiUser {
   email?: string;
 }
 
-/** GUIDs come back from the API with inconsistent casing — normalise before comparing. */
+/** GUIDs come back from the API with inconsistent casing, so normalise before comparing. */
 const norm = (guid?: string | null) => (guid ?? "").trim().toLowerCase();
 
 /**
@@ -16,7 +16,7 @@ const norm = (guid?: string | null) => (guid ?? "").trim().toLowerCase();
  *
  * The events list endpoint returns every user's events to Admin/SuperAdmin but
  * only carries a raw `userGuid`, so we join it against the admin-only users
- * list to get a display name. Non-admins never fetch the users list — they only
+ * list to get a display name. Non-admins never fetch the users list: they only
  * ever see their own events, so there is nothing to disambiguate.
  */
 export function useEventOwners() {

@@ -335,7 +335,7 @@ export default function TablesPageV3() {
         )}
       </div>
 
-      {/* Stats overview — collapsible */}
+      {/* Stats overview (collapsible) */}
       <div className="mb-5">
         <div className="flex items-center justify-between mb-2">
           <button
@@ -349,7 +349,7 @@ export default function TablesPageV3() {
             data-tour="tables-fullscreen"
             onClick={() => window.open("/app/tables/fullscreen", "_blank")}
             className="group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50/70 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-900/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors text-[11px] font-medium text-indigo-700 dark:text-indigo-300"
-            title="Open in fullscreen mode — better for 100+ guests"
+            title="Open in fullscreen mode: better for 100+ guests"
           >
             <ArrowsExpandIcon className="w-3 h-3 text-indigo-500 dark:text-indigo-400" />
             <span>Fullscreen mode</span>
@@ -531,7 +531,7 @@ export default function TablesPageV3() {
       <div
         className={`fixed inset-0 z-50 transition-all duration-300 ${showUnassignedSheet ? "visible" : "invisible pointer-events-none"}`}
       >
-        {/* Backdrop — mobile only */}
+        {/* Backdrop (mobile only) */}
         <div
           className={`absolute inset-0 bg-black/40 transition-opacity duration-300 lg:hidden ${showUnassignedSheet ? "opacity-100" : "opacity-0"}`}
           onClick={() => setShowUnassignedSheet(false)}
@@ -539,7 +539,7 @@ export default function TablesPageV3() {
         <div
           className={`absolute bottom-0 left-0 right-0 lg:left-auto lg:right-4 lg:bottom-4 lg:w-80 lg:rounded-2xl bg-white dark:bg-accent rounded-t-2xl shadow-xl transition-transform duration-300 max-h-[72vh] flex flex-col ${showUnassignedSheet ? "translate-y-0" : "translate-y-full"}`}
         >
-          {/* Drag handle — mobile only */}
+          {/* Drag handle (mobile only) */}
           <div className="lg:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
             <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
           </div>

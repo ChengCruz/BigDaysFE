@@ -49,7 +49,7 @@ function loadTurnstileScript(): Promise<void> {
 export interface TurnstileWidgetProps {
   /** Called with a fresh token when the challenge is solved. */
   onVerify: (token: string) => void;
-  /** Called when a previously-issued token expires — clear any stored token. */
+  /** Called when a previously-issued token expires; clear any stored token. */
   onExpire?: () => void;
   /** Called when the widget hard-errors (e.g. script blocked, network). */
   onError?: () => void;
@@ -107,7 +107,7 @@ export default function TurnstileWidget({
         });
       })
       .catch(() => {
-        // Script blocked/unreachable — surface as a hard error so the form can
+        // Script blocked or unreachable: surface as a hard error so the form can
         // show a fallback and stay gated.
         onErrorRef.current?.();
       });

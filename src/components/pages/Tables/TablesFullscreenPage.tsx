@@ -1,5 +1,5 @@
 // src/components/pages/Tables/TablesFullscreenPage.tsx
-// Full-screen table assignment builder — covers the whole viewport (fixed inset-0 z-50),
+// Full-screen table assignment builder, covers the whole viewport (fixed inset-0 z-50),
 // same pattern as RsvpDesignV2Page. Opens in a new tab.
 
 import { useState, useMemo } from "react";
@@ -315,11 +315,11 @@ export default function TablesFullscreenPage() {
       </header>
 
       {/* ══════════════════════════════════════════════════════════
-          MAIN — left panel | center grid | right detail
+          MAIN: left panel | center grid | right detail
       ══════════════════════════════════════════════════════════ */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* ── LEFT PANEL — unassigned guest list ───────────────── */}
+        {/* ── LEFT PANEL: unassigned guest list ───────────────── */}
         <aside
           className="flex flex-col overflow-hidden bg-background border-r border-primary/10 shrink-0"
           style={{ width: 240 }}
@@ -378,7 +378,7 @@ export default function TablesFullscreenPage() {
           </div>
         </aside>
 
-        {/* ── CENTER — toolbar + scrollable table grid ─────────── */}
+        {/* ── CENTER: toolbar + scrollable table grid ─────────── */}
         <div className="flex flex-1 flex-col overflow-hidden">
 
           {/* Sub-toolbar */}
@@ -568,7 +568,7 @@ export default function TablesFullscreenPage() {
           </div>
         </div>
 
-        {/* ── RIGHT PANEL — table detail (slides in on tile click) ─ */}
+        {/* ── RIGHT PANEL: table detail (slides in on tile click) ─ */}
         {openTable && (
           <aside
             className="flex flex-col overflow-hidden bg-background border-l border-primary/10 shrink-0"

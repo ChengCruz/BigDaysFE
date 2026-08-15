@@ -9,7 +9,7 @@ import {
   UserIcon,
 } from "@heroicons/react/solid";
 
-// Inline SVGs used in place of heroicons PlusIcon / SearchIcon — the deploy
+// Inline SVGs used in place of heroicons PlusIcon / SearchIcon. The deploy
 // CI's heroicons resolution rejected those specific exports, so we avoid them.
 const PlusIconSvg = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">

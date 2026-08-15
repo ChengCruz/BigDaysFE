@@ -4,8 +4,8 @@
 // collapsible left rail on desktop.
 //
 // Secondary destinations (your account, get help) and the switch back to
-// planner view live in the rail footer — the same place planner mode puts them
-// — with a mirror in the avatar menu because mobile has no rail. Day-of helpers
+// planner view live in the rail footer (the same place planner mode puts them),
+// with a mirror in the avatar menu because mobile has no rail. Day-of helpers
 // are NOT here; they belong to the Big Day tab (see CoupleBigDayPage).
 //
 // Renders the same <Outlet /> content as PlannerShell; only the chrome differs.
@@ -41,10 +41,10 @@ function initialsFor(email?: string): string {
 }
 
 /**
- * Secondary destinations. Deliberately NOT tabs — a couple visits these rarely.
+ * Secondary destinations. Deliberately NOT tabs, since a couple visits these rarely.
  *
  * All are app-level and event-independent. `/app/users` is the signed-in user's
- * own profile and password, plus an admin-only list — it is an account page, not
+ * own profile and password, plus an admin-only list. It is an account page, not
  * a "share access" page, so it is labelled accordingly.
  *
  * `/app/crew` ("Your helpers") deliberately does NOT live here. It is
@@ -222,7 +222,7 @@ export function CoupleShell({ children }: { children: ReactNode }) {
               What's new{hasUnseenNews ? " ·" : ""}
             </DropdownItem>
             <DropdownItem onClick={togglePalette}>
-              Colours — {palette === "rose" ? "Rose" : "Slate"}
+              Colours: {palette === "rose" ? "Rose" : "Slate"}
             </DropdownItem>
             <DropdownItem onClick={() => setMode("planner")} className="md:hidden">
               Switch to advanced view

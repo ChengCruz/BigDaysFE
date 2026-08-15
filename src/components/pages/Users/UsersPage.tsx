@@ -24,8 +24,8 @@ function formatDate(dateStr?: string) {
 }
 
 /**
- * Deliberately says "Active", not "Verified". The backend has no email-verified column —
- * verifying flips `IsActive`, and the Deactivate button on this page flips the same bit —
+ * Deliberately says "Active", not "Verified". The backend has no email-verified column;
+ * verifying flips `IsActive`, and the Deactivate button on this page flips the same bit,
  * so an inactive row is "never verified their email" *or* "an admin switched them off",
  * and nothing on the wire tells the two apart. Same pill as CrewPage's status column.
  */
@@ -389,7 +389,7 @@ export default function UsersPage() {
             />
           </div>
 
-          {/* Rich profile card — same layout as member */}
+          {/* Rich profile card, same layout as member */}
           {currentUser && (
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
               <div data-tour="users-profile" className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-6">

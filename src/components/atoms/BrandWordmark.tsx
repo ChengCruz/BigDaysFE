@@ -10,8 +10,8 @@ interface BrandWordmarkProps {
 
 /**
  * The "MY BigDay" wordmark, styled to match the logo:
- *   - "MY"     — champagne gold, uppercase
- *   - "BigDay" — dusty rose, title case
+ *   - "MY"     : champagne gold, uppercase
+ *   - "BigDay" : dusty rose, title case
  * Uses the display serif so it reads as the brand mark, not body copy.
  * Render this anywhere the brand name appears as text (footer, headings, etc.).
  */

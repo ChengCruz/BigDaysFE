@@ -4,10 +4,10 @@
 // bar on mobile) or the planner-facing one (today's fourteen-item sidebar).
 //
 // The role picks the default; the user can always override it and the choice
-// sticks in localStorage. Nobody is locked out of planner features — see
+// sticks in localStorage. Nobody is locked out of planner features; see
 // docs/COUPLE_MODE.md.
 //
-// NOTE — the UI calls these "simple view" and "advanced view"; the code keeps
+// NOTE: the UI calls these "simple view" and "advanced view"; the code keeps
 // "couple" and "planner". The stored value is a persisted user preference, so
 // renaming the union would silently reset everyone's saved choice to the role
 // default. Change labels, not identifiers.
@@ -26,7 +26,7 @@ const STORAGE_KEY = "uiMode";
  *
  * Members are couples planning their own event, so they get couple mode.
  * Everyone else runs other people's events and defaults to planner mode.
- * Role 6 (Crew) never reaches a shell — AppLayout redirects it to check-in.
+ * Role 6 (Crew) never reaches a shell; AppLayout redirects it to check-in.
  */
 const MEMBER_ROLE = 3;
 
@@ -73,7 +73,7 @@ export function UiModeProvider({ children }: { children: ReactNode }) {
       if (override) localStorage.setItem(STORAGE_KEY, override);
       else localStorage.removeItem(STORAGE_KEY);
     } catch {
-      /* private browsing — the in-memory value still applies for this session */
+      /* private browsing; the in-memory value still applies for this session */
     }
   }, [override]);
 

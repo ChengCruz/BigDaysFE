@@ -71,7 +71,7 @@ interface Party {
   key: string;
   name: string;
   phoneNo?: string;
-  /** Seats this party takes — the guest included, not a plus-one count. */
+  /** Seats this party takes, the guest included, not a plus-one count. */
   pax: number;
   remarks?: string;
   /** Absent for guest rows that were added without going through an RSVP. */
@@ -142,7 +142,7 @@ export default function CoupleGuestsPage() {
   const { data: formFields = [], isLoading: formFieldsLoading } =
     useEventRsvpInternal(eventId ?? undefined);
   // Read-only, purely so the export carries gift amounts like planner mode
-  // does — couples have a Money section, so the data is theirs.
+  // does, since couples have a Money section, so the data is theirs.
   const { data: budget } = useBudgetsApi(eventId!);
   const { data: transactions = [] } = useTransactionsApi(budget?.walletGuid ?? "", eventId!);
 
@@ -205,7 +205,7 @@ export default function CoupleGuestsPage() {
     }
 
     const fromRsvps: Party[] = rsvps.map((r) => {
-      // Guest.rsvpId holds the RSVP's *Guid*, not its int RsvpId — the list
+      // Guest.rsvpId holds the RSVP's *Guid*, not its int RsvpId; the list
       // endpoint returns both (RsvpDetailDto.RsvpId is an int, RsvpGuid is the
       // Guid), so joining on rsvpId misses every row and doubles the list.
       const rid = r.rsvpGuid ?? r.rsvpId ?? r.id;
@@ -254,7 +254,7 @@ export default function CoupleGuestsPage() {
 
   // Step 1's status line. The designer can only insert questions that already
   // exist, so an empty list is worth nudging about rather than stating flatly.
-  // Stays blank while loading so it never flashes "Not set up yet" wrongly —
+  // Stays blank while loading so it never flashes "Not set up yet" wrongly;
   // that blank is a non-breaking space, not "", or the card would shrink and
   // jitter the row height once the fetch lands.
   const questionsHint = useMemo(() => {
@@ -280,7 +280,7 @@ export default function CoupleGuestsPage() {
   }, [parties, filter, search]);
 
   // ─── Export ─────────────────────────────────────────────────────────────────
-  // Exports every guest, not the filtered view — this is a backup, and a
+  // Exports every guest, not the filtered view: this is a backup, and a
   // partial one is worse than useless.
   const exportRows = () => buildGuestRows({ guests, tables, giftMap, currencySymbol });
 
@@ -329,12 +329,12 @@ export default function CoupleGuestsPage() {
 
       {/* ─── The three steps of getting guests in ────────────────────────── */}
       {/* Every card carries a third line so the row stays even in height. Only
-          step 1 reflects real state — the designer has no "is it done" signal
+          step 1 reflects real state, since the designer has no "is it done" signal
           we can read here, so it states what its ↗ does instead of guessing. */}
       <div className="flex gap-2 overflow-x-auto pb-0.5">
         {/* Questions come first: the designer inserts them as blocks, so they
             have to exist before the invite can be laid out. */}
-        {/* /app/form-fields, not /app/events/:id/form-fields — the :id segment
+        {/* /app/form-fields, not /app/events/:id/form-fields: the :id segment
             is decorative (the page reads eventId from context, and every write
             sends it in the body), and only this path matches the Guests section
             in coupleSections.ts. The other one highlights Home. */}
@@ -387,7 +387,7 @@ export default function CoupleGuestsPage() {
         />
         {/* "Replies" and "No table yet" are party counts, matching planner's
             "Total Guests" and "Unassigned". This one is a pax sum, so the
-            label has to say so — planner writes "(pax)", couple says people. */}
+            label has to say so: planner writes "(pax)", couple says people. */}
         <StatsCard
           label="People coming"
           value={stats.coming}
@@ -395,7 +395,7 @@ export default function CoupleGuestsPage() {
           size="sm"
           icon={<CheckCircleIcon className="h-4 w-4" />}
         />
-        {/* A party count, like planner's "Unassigned" — not the seating page's
+        {/* A party count, like planner's "Unassigned", not the seating page's
             "Seats needed", which sums pax. Different names on purpose. */}
         <StatsCard
           label="No table yet"
@@ -478,7 +478,7 @@ export default function CoupleGuestsPage() {
                       {party.name}
                     </span>
                     <span className="block text-[12.5px] text-text/55">
-                      {/* `pax` is the whole party, the guest included — so it
+                      {/* `pax` is the whole party, the guest included, so it
                           is a seat count, not a plus-one count. "Bringing 1"
                           read as "them plus one". Matches the seating page. */}
                       {party.state === "notComing"
@@ -572,7 +572,7 @@ export default function CoupleGuestsPage() {
         </Button>
       )}
 
-      {/* Deletion stays in planner mode — it goes through the RSVP module, which
+      {/* Deletion stays in planner mode: it goes through the RSVP module, which
           also soft-deletes the Guest row and unseats the party. */}
       <p className="text-center text-[11.5px] text-text/40">
         Need bulk import, exports, or to remove someone? Switch to advanced view from your account

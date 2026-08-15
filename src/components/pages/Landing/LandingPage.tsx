@@ -27,12 +27,12 @@ const howItWorksSteps = [
   {
     num: "02",
     title: "Share Your RSVP Link",
-    desc: "Guests receive a beautiful, branded RSVP page. No logins needed — just one tap to respond.",
+    desc: "Guests receive a beautiful, branded RSVP page. No logins needed, just one tap to respond.",
   },
   {
     num: "03",
     title: "Manage Guests & Seating",
-    desc: "Track every response, dietary need, and table assignment — all in one real-time view.",
+    desc: "Track every response, dietary need, and table assignment, all in one real-time view.",
   },
   {
     num: "04",
@@ -46,19 +46,22 @@ const services = [
     num: "01",
     category: "RSVP",
     title: <>Guest RSVPs &amp; <em>Responses</em></>,
-    desc: "Create beautiful RSVP pages, track guest responses in real time, and manage dietary preferences — automatically.",
+    desc: "Create beautiful RSVP pages, track guest responses in real time, and manage dietary preferences automatically.",
+    href: "/features#rsvp-designer",
   },
   {
     num: "02",
     category: "Seating",
     title: <>Tables &amp; <em>Seating Charts</em></>,
     desc: "Design seating arrangements with an intuitive interface. Assign guests, print charts, and rearrange with ease.",
+    href: "/features#seating-floor-plan",
   },
   {
     num: "03",
     category: "Planning",
     title: <>Events &amp; <em>Budgeting</em></>,
-    desc: "Keep every event, vendor, and budget item in one place. From engagement party to honeymoon — nothing gets lost.",
+    desc: "Keep every event, vendor, and budget item in one place. From engagement party to honeymoon, nothing gets lost.",
+    href: "/features#budget",
   },
 ];
 
@@ -178,7 +181,7 @@ export default function LandingPage() {
                 lineHeight: 1.7,
               }}
             >
-              From beautiful RSVP pages to seating charts and guest management — everything for your perfect day, beautifully organised in one place.
+              From beautiful RSVP pages to seating charts and guest management: everything for your perfect day, beautifully organised in one place.
             </p>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
               <button
@@ -326,7 +329,7 @@ export default function LandingPage() {
               </h2>
             </div>
             <p style={{ color: '#6B5D50', fontSize: '1.2rem', maxWidth: '32rem', lineHeight: 1.7, fontFamily: 'var(--font-serif)' }}>
-              We handle every tool you need — whether you're just getting engaged or putting the finishing touches on your seating chart.
+              We handle every tool you need, whether you're just getting engaged or putting the finishing touches on your seating chart.
             </p>
           </div>
 
@@ -338,13 +341,19 @@ export default function LandingPage() {
             {services.map((s, i) => (
               <div
                 key={i}
+                role="link"
+                tabIndex={0}
+                onClick={() => navigate(s.href)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') navigate(s.href);
+                }}
                 style={{
                   background: '#FAF6EF',
                   padding: '3rem 2.5rem',
                   border: '1px solid #EDE4D3',
                   position: 'relative',
                   transition: 'all 0.4s ease',
-                  cursor: 'default',
+                  cursor: 'pointer',
                 }}
                 onMouseEnter={e => {
                   (e.currentTarget as HTMLElement).style.transform = 'translateY(-8px)';

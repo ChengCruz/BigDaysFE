@@ -1,5 +1,5 @@
 /**
- * Auth tests — Login & Register (CRUD-equivalent: Create session, validate inputs).
+ * Auth tests: Login & Register (CRUD-equivalent: Create session, validate inputs).
  */
 import { test, expect } from '@playwright/test';
 import { mockApi, mockApiLoginFail, MOCK_EVENT_GUID } from './helpers';
@@ -58,7 +58,7 @@ test.describe('Login', () => {
     // Step 3: navigate to /login as if the user typed it in the address bar
     await page.goto('/login');
 
-    // Should redirect away — never show the login form
+    // Should redirect away; never show the login form
     await expect(page).not.toHaveURL(/\/login/, { timeout: 5000 });
     await expect(page.locator('input[type="email"]')).not.toBeVisible();
   });
@@ -124,7 +124,7 @@ test.describe('Register', () => {
 
 // ── Verify Email ──────────────────────────────────────────────────────────────
 
-test.describe('Verify Email — resend code', () => {
+test.describe('Verify Email: resend code', () => {
   test.beforeEach(async ({ page }) => {
     await mockApi(page);
     // Reached directly (no router state), so the page renders its own email field.

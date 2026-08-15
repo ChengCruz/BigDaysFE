@@ -25,8 +25,8 @@ client.interceptors.request.use(cfg => {
   const apiKey = import.meta.env.VITE_API_KEY;
   if (apiKey) cfg.headers!["apiKey"] = apiKey;
   // Fall back to env var author only when not logged in. The BE's
-  // HeaderValidatorMiddleware rejects any request without an `author` header —
-  // including [AllowAnonymous] endpoints like ForgotPassword — so never leave it
+  // HeaderValidatorMiddleware rejects any request without an `author` header,
+  // including [AllowAnonymous] endpoints like ForgotPassword, so never leave it
   // unset just because the env var is missing or empty.
   if (!cfg.headers!["author"]) {
     cfg.headers!["author"] = import.meta.env.VITE_API_AUTHOR || ANONYMOUS_AUTHOR;
@@ -75,7 +75,7 @@ client.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      // No body needed — the HttpOnly cookie is sent automatically
+      // No body needed; the HttpOnly cookie is sent automatically
       const { data } = await client.post(AuthEndpoints.refreshToken);
 
       const newToken = data.data?.accessToken ?? data.accessToken;

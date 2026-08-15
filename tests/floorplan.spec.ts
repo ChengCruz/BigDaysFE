@@ -1,5 +1,5 @@
 /**
- * Floor Plan page tests — /app/tables/floorplan
+ * Floor Plan page tests: /app/tables/floorplan
  * Covers: render, toolbar controls, header actions, zoom, snap, and table modal.
  */
 import { test, expect } from '@playwright/test';
@@ -15,7 +15,7 @@ async function gotoFloorPlan(page: Parameters<typeof gotoAuthenticated>[0]) {
 /** Navigate to floor plan with tables + guests seeded in mock API. */
 async function gotoFloorPlanWithData(page: Parameters<typeof gotoAuthenticated>[0]) {
   await mockApi(page);
-  // Override tables and guests endpoints (LIFO — runs first)
+  // Override tables and guests endpoints (LIFO, so this runs first)
   await page.route('**/__mock_api__/**', async (route) => {
     const url = route.request().url();
     const method = route.request().method();
@@ -40,7 +40,7 @@ async function gotoFloorPlanWithData(page: Parameters<typeof gotoAuthenticated>[
 
 // ── Read (render) ─────────────────────────────────────────────────────────────
 
-test.describe('Floor Plan — Render', () => {
+test.describe('Floor Plan: Render', () => {
   test.beforeEach(async ({ page }) => {
     await gotoFloorPlan(page);
   });
@@ -64,7 +64,7 @@ test.describe('Floor Plan — Render', () => {
 
 // ── Header action buttons ─────────────────────────────────────────────────────
 
-test.describe('Floor Plan — Header buttons', () => {
+test.describe('Floor Plan: Header buttons', () => {
   test.beforeEach(async ({ page }) => {
     await gotoFloorPlan(page);
   });
@@ -83,7 +83,7 @@ test.describe('Floor Plan — Header buttons', () => {
 
   test('"New Table" button opens the table form modal', async ({ page }) => {
     await page.click('button:has-text("New Table")');
-    // Modal should appear — look for a heading or label inside it
+    // Modal should appear; look for a heading or label inside it
     await expect(
       page.locator('[role="dialog"], .modal, form').first()
     ).toBeVisible({ timeout: 3000 });
@@ -98,7 +98,7 @@ test.describe('Floor Plan — Header buttons', () => {
 
 // ── Toolbar ───────────────────────────────────────────────────────────────────
 
-test.describe('Floor Plan — Toolbar', () => {
+test.describe('Floor Plan: Toolbar', () => {
   test.beforeEach(async ({ page }) => {
     await gotoFloorPlan(page);
   });
@@ -134,7 +134,7 @@ test.describe('Floor Plan — Toolbar', () => {
 
 // ── Zoom & view controls ──────────────────────────────────────────────────────
 
-test.describe('Floor Plan — Zoom & view controls', () => {
+test.describe('Floor Plan: Zoom & view controls', () => {
   test.beforeEach(async ({ page }) => {
     await gotoFloorPlan(page);
   });
@@ -163,7 +163,7 @@ test.describe('Floor Plan — Zoom & view controls', () => {
   test('Snap button is visible and toggleable', async ({ page }) => {
     const snapBtn = page.locator('button[title^="Snap to grid"]');
     await expect(snapBtn).toBeVisible();
-    // Initially ON — click to toggle OFF
+    // Initially ON, click to toggle OFF
     await snapBtn.click();
     await expect(page.locator('button[title="Snap to grid: OFF"]')).toBeVisible();
     // Click again to restore ON
@@ -182,13 +182,13 @@ test.describe('Floor Plan — Zoom & view controls', () => {
 
 // ── With seeded data ──────────────────────────────────────────────────────────
 
-test.describe('Floor Plan — With table & guest data', () => {
+test.describe('Floor Plan: With table & guest data', () => {
   test.beforeEach(async ({ page }) => {
     await gotoFloorPlanWithData(page);
   });
 
   test('tables count badge reflects seeded table', async ({ page }) => {
-    // MOCK_TABLE is the single table returned — badge shows "1 tables"
+    // MOCK_TABLE is the single table returned; badge shows "1 tables"
     await expect(page.locator('text=/1 tables?/')).toBeVisible();
   });
 
@@ -203,7 +203,7 @@ test.describe('Floor Plan — With table & guest data', () => {
   });
 
   test('seated count shows 1 assigned guest (matching MOCK_GUEST_ASSIGNED)', async ({ page }) => {
-    // MOCK_GUEST_ASSIGNED has tableId set — 1 assigned out of 2 guests
+    // MOCK_GUEST_ASSIGNED has tableId set, so 1 assigned out of 2 guests
     await expect(page.locator('text=/1\\/\\d+ seated/')).toBeVisible();
   });
 
@@ -215,7 +215,7 @@ test.describe('Floor Plan — With table & guest data', () => {
 
 // ── No event selected ─────────────────────────────────────────────────────────
 
-test.describe('Floor Plan — No event selected', () => {
+test.describe('Floor Plan: No event selected', () => {
   test('shows "No Event Selected" message when eventId is missing', async ({ page }) => {
     await mockApi(page);
     await page.goto('/login');

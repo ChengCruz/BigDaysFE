@@ -36,7 +36,7 @@ const errorMessages: Record<CheckInErrorCode | "UNKNOWN", string> = {
   TOKEN_REVOKED: "QR code has been revoked",
   WRONG_DAY: "QR not valid today",
   TOKEN_NOT_FOUND: "Unknown QR code",
-  UNKNOWN: "Unexpected error — try again",
+  UNKNOWN: "Unexpected error, try again",
 };
 
 function mapError(err: unknown): CheckInErrorCode | "UNKNOWN" {
@@ -132,7 +132,7 @@ export default function CheckInPage() {
   const checkInRef = useRef(checkIn.mutateAsync.bind(checkIn));
   useEffect(() => { checkInRef.current = checkIn.mutateAsync.bind(checkIn); });
 
-  // Crew land straight on Check-in after logging in — nudge them to rehearse on
+  // Crew land straight on Check-in after logging in, so nudge them to rehearse on
   // the practice sandbox once per session so they're confident before real
   // guests arrive. They can reopen it anytime via the Practice button.
   useEffect(() => {
@@ -140,7 +140,7 @@ export default function CheckInPage() {
     try {
       if (sessionStorage.getItem(CREW_PRACTICE_SEEN_KEY)) return;
       sessionStorage.setItem(CREW_PRACTICE_SEEN_KEY, "1");
-    } catch { /* sessionStorage unavailable — still show the nudge */ }
+    } catch { /* sessionStorage unavailable, still show the nudge */ }
     setPracticeOpen(true);
   }, [userRole]);
 
@@ -296,7 +296,7 @@ export default function CheckInPage() {
       vibrate(80);
       toast.success(`${result.guestName} · ${result.noOfPax} pax checked in`);
     } catch {
-      setManualError("Force check-in failed — try again.");
+      setManualError("Force check-in failed, try again.");
     } finally {
       setForceGuestId(null);
     }
@@ -529,7 +529,7 @@ export default function CheckInPage() {
       {recentScans.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
-            Recent — {recentScans.length}
+            Recent: {recentScans.length}
           </h3>
           <ul className="divide-y divide-gray-100 dark:divide-gray-700">
             {recentScans.map((s) => (

@@ -109,8 +109,8 @@ export function ExportBackupReminderModal({
       showCloseButton
       title={
         isFinal
-          ? `Last reminder — ${dayLabel} to your big day`
-          : `${dayLabel} to go — save an offline copy`
+          ? `Last reminder: ${dayLabel} to your big day`
+          : `${dayLabel} to go: save an offline copy`
       }
       className="max-w-xl"
     >
@@ -131,7 +131,7 @@ export function ExportBackupReminderModal({
 
         <div className="space-y-2">
           {/* Dropdown's root is inline-block, so w-full has to go on the
-              wrapper — putting it on the Button alone leaves it shrink-wrapped. */}
+              wrapper; putting it on the Button alone leaves it shrink-wrapped. */}
           <Dropdown
             className="w-full"
             trigger={

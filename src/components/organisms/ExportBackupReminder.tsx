@@ -5,8 +5,8 @@
 //
 // Deliberately hook-free beyond the event context: it renders on every
 // authenticated page, so it must cost nothing for the ~majority of users who
-// aren't inside the reminder window. The modal body — which is where the API
-// hooks live — is only mounted once the reminder is actually due.
+// aren't inside the reminder window. The modal body (which is where the API
+// hooks live) is only mounted once the reminder is actually due.
 
 import { useEffect, useState } from "react";
 
@@ -25,7 +25,7 @@ export function ExportBackupReminder() {
   const daysLeft = daysUntilEvent(event?.date ?? event?.raw?.eventDate);
   const stage = getDueStage(eventId, daysLeft);
 
-  // No need to reset `open` when the stage clears — the render guard below
+  // No need to reset `open` when the stage clears: the render guard below
   // already hides the modal, and closing it re-runs getDueStage (which now
   // sees the dismissal) so this effect won't re-arm the timer.
   useEffect(() => {

@@ -1,5 +1,5 @@
 /**
- * RSVP Designer V3 — /app/rsvps/designer-v3
+ * RSVP Designer V3: /app/rsvps/designer-v3
  *
  * Covers the edit → save draft → publish → public slug flow:
  *   - Draft badge shows the server-owned version and a "not live" hint.
@@ -100,7 +100,7 @@ async function mockDesignerV3(
     const url = route.request().url();
     const method = route.request().method();
 
-    // Event list / by-id — include slug so the V3 page picks the slug URL
+    // Event list / by-id, including slug so the V3 page picks the slug URL
     if (/\/event\/GetEventByGuid\//i.test(url) && method === 'GET') {
       return route.fulfill({
         status: 200,
@@ -114,7 +114,7 @@ async function mockDesignerV3(
       });
     }
 
-    // RSVP design GET — the designer always loads the newest version (the draft)
+    // RSVP design GET: the designer always loads the newest version (the draft)
     if (/\/RsvpDesign\/[^/]+\/design$/i.test(url) && method === 'GET') {
       return route.fulfill({
         status: 200,
@@ -124,7 +124,7 @@ async function mockDesignerV3(
         },
       });
     }
-    // RSVP design POST (save draft) — bumps version, persists a distinct headline
+    // RSVP design POST (save draft): bumps version, persists a distinct headline
     if (/\/RsvpDesign\/[^/]+\/design$/i.test(url) && method === 'POST') {
       currentVersion += 1;
       saveCount += 1;
@@ -137,12 +137,12 @@ async function mockDesignerV3(
         },
       });
     }
-    // Publish PUT — promotes the current draft to the version guests see
+    // Publish PUT: promotes the current draft to the version guests see
     if (/\/RsvpDesign\/[^/]+\/design\/\d+\/publish$/i.test(url) && method === 'PUT') {
       live = { version: currentVersion, headline: currentHeadline };
       return route.fulfill({ status: 200, json: { isSuccess: true, data: true } });
     }
-    // Public slug fetch — serves the published design, else the latest draft.
+    // Public slug fetch: serves the published design, else the latest draft.
     // Shape matches the backend's EventRsvpTemplateDto: { event, rsvpDesign, questions }.
     if (/\/event\/eventRsvp\/slug\//i.test(url) && method === 'GET') {
       const served = live ?? { version: currentVersion, headline: currentHeadline };
@@ -163,7 +163,7 @@ async function mockDesignerV3(
   });
 }
 
-test.describe('RSVP Designer V3 — save draft + public slug link', () => {
+test.describe('RSVP Designer V3: save draft + public slug link', () => {
   test('shows "Draft vN · not live" badge and a slug-based Guest Link', async ({ page }) => {
     // Authenticate first (registers generic mockApi), THEN overlay V3-specific
     // routes (LIFO-last wins), THEN navigate to the designer.
@@ -176,7 +176,7 @@ test.describe('RSVP Designer V3 — save draft + public slug link', () => {
     await page.waitForLoadState('networkidle');
 
     // Draft badge reflects server-owned version (isPublished=false → draft).
-    // Scoped to the toolbar — the footer mirrors the same status text.
+    // Scoped to the toolbar; the footer mirrors the same status text.
     await expect(TOOLBAR(page).getByText(/Draft v\d+ · not live/)).toBeVisible({ timeout: 10_000 });
 
     // Guest Link panel opens with a slug-based URL (not /rsvp/submit/:token)
@@ -199,7 +199,7 @@ test.describe('RSVP Designer V3 — save draft + public slug link', () => {
     await page.goto('/app/rsvps/designer-v3');
     await page.waitForLoadState('networkidle');
 
-    // One click — no "save first" error, no second click needed. Publish must use
+    // One click, no "save first" error, no second click needed. Publish must use
     // the version the save just returned, not stale component state.
     await page.getByRole('button', { name: /Save & Publish/ }).click();
     await expect(TOOLBAR(page).getByText(/Published v4/)).toBeVisible({ timeout: 10_000 });
@@ -222,14 +222,14 @@ test.describe('RSVP Designer V3 — save draft + public slug link', () => {
     await page.getByRole('button', { name: /Save & Publish/ }).click();
     await expect(TOOLBAR(page).getByText(/Published v4/)).toBeVisible({ timeout: 10_000 });
 
-    // The publish toast renders top-center, over the toolbar — clear it so the
+    // The publish toast renders top-center, over the toolbar; clear it so the
     // next click lands on the button rather than the toast.
     await page.locator('[data-rht-toaster]').evaluate((el) => el.remove());
 
     await page.getByRole('button', { name: /Save draft/ }).click();
     await expect(TOOLBAR(page).getByText(/Draft v5 · not live/)).toBeVisible({ timeout: 10_000 });
 
-    // Guests still see the published v4 — the unpublished v5 edits stay private
+    // Guests still see the published v4; the unpublished v5 edits stay private
     await page.goto(`/rsvp/${SLUG}`);
     await expect(page.getByText('PUBLISHED-COPY', { exact: true })).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText('PUBLISHED-COPY-2')).toHaveCount(0);
@@ -238,7 +238,7 @@ test.describe('RSVP Designer V3 — save draft + public slug link', () => {
   /**
    * The card is sized to a phone viewport, but the cap MUST be desktop-only.
    * Without the `sm:` prefix on max-width the cap also applies on a handset, so a
-   * 440px phone would render a 393px column with dead space either side — the
+   * 440px phone would render a 393px column with dead space either side, the
    * opposite of mirroring the device. Guards that regression from both ends.
    *
    * The fixture's `layout.width: 0` is the retired "full" encoding, so this also
@@ -256,7 +256,7 @@ test.describe('RSVP Designer V3 — save draft + public slug link', () => {
 
     const card = page.getByTestId('rsvp-card');
 
-    // Desktop — capped to the default 393px device width, centred on the backdrop
+    // Desktop: capped to the default 393px device width, centred on the backdrop
     await page.setViewportSize({ width: 1280, height: 800 });
     await expect(card).toHaveCSS('max-width', '393px');
     expect((await card.boundingBox())!.width).toBe(393);

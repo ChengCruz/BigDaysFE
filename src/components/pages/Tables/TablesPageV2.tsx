@@ -52,7 +52,7 @@ export default function TablesPageV2() {
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">New high-density design for large events</p>
       </div>
 
-      {/* Stats — collapsible */}
+      {/* Stats (collapsible) */}
       <div className="mb-6">
         <button
           className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 mb-2 transition-colors select-none"
@@ -82,7 +82,7 @@ export default function TablesPageV2() {
             Need a bigger screen for table arrangement?
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md leading-relaxed">
-            We've got you covered. Switch to full-screen mode for a distraction-free workspace —
+            We've got you covered. Switch to full-screen mode for a distraction-free workspace:
             compact guest list on the left, tile-based table grid in the center, and an instant
             detail panel on the right. Perfect for large events with 100+ guests and 20+ tables.
           </p>
