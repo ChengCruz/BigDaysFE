@@ -3,6 +3,7 @@ import axios from "axios";
 import { tokenStore } from "../utils/tokenStore";
 import { decodeJwt } from "../utils/jwtUtils";
 import { AuthEndpoints } from "./endpoints";
+import { installDemoAdapter } from "../demo";
 
 /** Author sent on calls made before login, when there is no JWT to derive one from. */
 const ANONYMOUS_AUTHOR = "anonymous";
@@ -96,5 +97,11 @@ client.interceptors.response.use(
     }
   }
 );
+
+// Demo mode serves a sample wedding from sessionStorage instead of the network.
+// The adapter checks per request and delegates to the stock one whenever demo
+// mode is inactive, which includes always when a real token exists — so this is
+// a no-op for every signed-in user. See src/demo/README.md.
+installDemoAdapter(client);
 
 export default client;

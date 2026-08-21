@@ -60,6 +60,8 @@ import { useTransactionsApi } from "../../../api/hooks/useTransactionApi";
 import type { QrToken, QrStatus } from "../../../types/qr";
 import { CURRENCY_CONFIG } from "../../../types/budget";
 import type { Currency } from "../../../types/budget";
+import { isDemoActive, exitDemo, DemoGate } from "../../../demo";
+import { trackEvent } from "../../../utils/analytics";
 import { buildGuestRows } from "../../../utils/guestExport";
 import { downloadCsv, downloadXlsx } from "../../../utils/exportUtils";
 
@@ -89,7 +91,9 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "all", label: "Everyone" },
   { key: "coming", label: "Coming" },
   { key: "needsSeat", label: "No table yet" },
-  { key: "notComing", label: "Can’t come" },
+  // Matches the row badge below, which already said "Can’t make it". One phrase
+  // for one state; the filter chip was the odd one out.
+  { key: "notComing", label: "Can’t make it" },
 ];
 
 function qrStatusOf(token: QrToken | undefined): QrStatus {
@@ -284,8 +288,19 @@ export default function CoupleGuestsPage() {
   // partial one is worse than useless.
   const exportRows = () => buildGuestRows({ guests, tables, giftMap, currencySymbol });
 
-  const handleExportXlsx = () => downloadXlsx(exportRows(), `guests-event-${eventId}.xlsx`, "Guests");
-  const handleExportCsv = () => downloadCsv(exportRows(), `guests-event-${eventId}.csv`);
+  // A demo visitor gets the prompt instead of the file. This is the one place
+  // the demo withholds something that technically works, and it is deliberate:
+  // the guest list is the thing worth keeping, so it is the honest moment to
+  // ask for an account. Everything else they can see, they can use.
+  const [exportGate, setExportGate] = useState(false);
+  const demo = isDemoActive();
+
+  const handleExportXlsx = () =>
+    demo
+      ? setExportGate(true)
+      : downloadXlsx(exportRows(), `guests-event-${eventId}.xlsx`, "Guests");
+  const handleExportCsv = () =>
+    demo ? setExportGate(true) : downloadCsv(exportRows(), `guests-event-${eventId}.csv`);
 
   // ─── Guards ─────────────────────────────────────────────────────────────────
 
@@ -350,20 +365,44 @@ export default function CoupleGuestsPage() {
           <span className="text-[13px] font-semibold text-text">What to ask</span>
           <span className={`text-[10.5px] ${questionsHint.tone}`}>{questionsHint.label}</span>
         </button>
-        {/* The designer must open in a new tab, never an in-app navigation. */}
-        <a
-          href="/app/rsvps/designer-v3"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex min-w-[128px] flex-1 flex-col gap-0.5 rounded-xl border border-primary/15
-                     bg-white px-3 py-2.5 transition-colors hover:border-primary/40"
-        >
-          <span className="text-[9.5px] font-extrabold uppercase tracking-widest text-text/40">
-            Step 2
-          </span>
-          <span className="text-[13px] font-semibold text-text">Design invite ↗</span>
-          <span className="text-[10.5px] text-text/40">Opens in a new tab</span>
-        </a>
+        {/* In the demo this points at signup instead of the designer. The
+            designer must open in a new tab (see below), and a new tab is a new
+            sessionStorage, so it would never carry the demo flag and the visitor
+            would land on /login with no explanation. Pointing it at /register is
+            both honest about what's needed and a prompt at a moment of intent. */}
+        {demo ? (
+          <button
+            type="button"
+            onClick={() => {
+              trackEvent("demo_cta_click", { from: "design_invite" });
+              exitDemo();
+              navigate("/register");
+            }}
+            className="flex min-w-[128px] flex-1 flex-col gap-0.5 rounded-xl border border-primary/15
+                       bg-white px-3 py-2.5 text-left transition-colors hover:border-primary/40"
+          >
+            <span className="text-[9.5px] font-extrabold uppercase tracking-widest text-text/40">
+              Step 2
+            </span>
+            <span className="text-[13px] font-semibold text-text">Design invite</span>
+            <span className="text-[10.5px] text-primary">Free account needed</span>
+          </button>
+        ) : (
+          /* The designer must open in a new tab, never an in-app navigation. */
+          <a
+            href="/app/rsvps/designer-v3"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex min-w-[128px] flex-1 flex-col gap-0.5 rounded-xl border border-primary/15
+                       bg-white px-3 py-2.5 transition-colors hover:border-primary/40"
+          >
+            <span className="text-[9.5px] font-extrabold uppercase tracking-widest text-text/40">
+              Step 2
+            </span>
+            <span className="text-[13px] font-semibold text-text">Design invite ↗</span>
+            <span className="text-[10.5px] text-text/40">Opens in a new tab</span>
+          </a>
+        )}
         <span
           className="flex min-w-[128px] flex-1 flex-col gap-0.5 rounded-xl border border-sect-guests
                      bg-sect-guests/10 px-3 py-2.5"
@@ -573,11 +612,23 @@ export default function CoupleGuestsPage() {
       )}
 
       {/* Deletion stays in planner mode: it goes through the RSVP module, which
-          also soft-deletes the Guest row and unseats the party. */}
-      <p className="text-center text-[11.5px] text-text/40">
-        Need bulk import, exports, or to remove someone? Switch to advanced view from your account
-        menu.
-      </p>
+          also soft-deletes the Guest row and unseats the party.
+          Hidden in the demo, where CoupleShell removes the advanced-view switch —
+          the hint would point at a control that isn't on screen. */}
+      {!demo && (
+        <p className="text-center text-[11.5px] text-text/40">
+          Need bulk import, exports, or to remove someone? Switch to advanced view from your account
+          menu.
+        </p>
+      )}
+
+      <DemoGate
+        isOpen={exportGate}
+        onClose={() => setExportGate(false)}
+        action="export your guest list"
+        reason="Exports pull your real guest list out of My Big Days as a spreadsheet, so there has to be an account holding it."
+        source="guest_export"
+      />
 
       <RsvpFormModal
         isOpen={modal.open}

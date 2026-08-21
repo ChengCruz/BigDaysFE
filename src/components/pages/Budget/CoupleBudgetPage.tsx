@@ -40,6 +40,7 @@ import {
 } from "../../../types/transaction";
 import { getCategoryConfig } from "../../../utils/categoryConfig";
 import { formatAmount } from "../../../utils/transactionUtils";
+import { isDemoActive } from "../../../demo";
 
 type Tab = "budget" | "payments" | "gifts";
 
@@ -427,9 +428,13 @@ export default function CoupleBudgetPage() {
         </>
       )}
 
-      <p className="text-center text-[11.5px] text-text/40">
-        Need reports or to edit the budget itself? Switch to advanced view from your account menu.
-      </p>
+      {/* Hidden in the demo, where CoupleShell removes the advanced-view switch —
+          the hint would point at a control that isn't on screen. */}
+      {!isDemoActive() && (
+        <p className="text-center text-[11.5px] text-text/40">
+          Need reports or to edit the budget itself? Switch to advanced view from your account menu.
+        </p>
+      )}
 
       <TransactionFormModal
         isOpen={txnModal.open}

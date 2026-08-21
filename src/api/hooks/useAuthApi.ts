@@ -4,6 +4,8 @@ import client from "../client";
 import { AuthEndpoints, CrewEndpoints } from "../endpoints";
 import { tokenStore, sessionHint, crewTokenStore, crewEventGuidStore } from "../../utils/tokenStore";
 import { turnstileHeaders } from "../../utils/turnstile";
+import { trackEvent } from "../../utils/analytics";
+import { clearDemoArtifacts } from "../../demo";
 
 export interface LoginPayload {
   email: string;
@@ -68,13 +70,22 @@ export function useAuthApi() {
     onSuccess: (data) => {
       tokenStore.set(data.accessToken);
       sessionHint.set();
+      // A real session invalidates demo mode; drop any leftovers before the
+      // event query runs, so the adapter never serves sample data to this user.
+      clearDemoArtifacts();
       qc.invalidateQueries({ queryKey: ["me"] });
+      trackEvent("login", { method: "password" });
     },
   });
 
   const register = useMutation<{ data: number; message: string; isSuccess: boolean }, Error, RegisterPayload>({
     mutationFn: ({ captchaToken, ...data }: RegisterPayload) =>
       client.post(AuthEndpoints.register, data, { headers: turnstileHeaders(captchaToken) }).then(r => r.data),
+    onSuccess: (res) => {
+      // The BE returns some failures as HTTP 200 with isSuccess:false, so a
+      // resolved mutation is not proof the account was created.
+      if (res?.isSuccess !== false) trackEvent("sign_up_submitted");
+    },
   });
 
   const forgotPassword = useMutation<{ data: boolean; message: string; isSuccess: boolean }, Error, ForgotPasswordPayload>({
@@ -109,6 +120,7 @@ export function useAuthApi() {
       localStorage.removeItem("eventId");
       const walletKeys = Object.keys(localStorage).filter(k => k.startsWith("wallet-budget-"));
       walletKeys.forEach(k => localStorage.removeItem(k));
+      clearDemoArtifacts();
     },
   });
 

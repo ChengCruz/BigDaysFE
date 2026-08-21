@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useMemo, type ReactNode
 import { useEventsApi, useEventApi, type Event } from "../api/hooks/useEventsApi";
 import { AuthContext } from "./AuthProvider";
 import { crewEventGuidStore } from "../utils/tokenStore";
+import { isDemoActive } from "../demo";
 
 interface EventContextValue {
   eventId?: string;
@@ -33,8 +34,13 @@ export function EventProvider({ children }: { children: ReactNode }) {
   // events-list endpoint entirely and use the guid stored in sessionStorage.
   const crewEventGuid = isCrew ? (crewEventGuidStore.get() ?? undefined) : undefined;
 
+  // Demo mode has no user, so the query would stay disabled and every page would
+  // sit on "no event". Enabling it lets the demo adapter answer with the sample
+  // event, after which everything downstream works unmodified: autoSelectedId
+  // picks it, `event` resolves from the list, and mustChooseEvent stays false
+  // because it still requires isAuthenticated. See src/demo/README.md.
   const { data: events, isLoading: eventsLoading } = useEventsApi(false, {
-    enabled: isAuthenticated && !isCrew,
+    enabled: (isAuthenticated || isDemoActive()) && !isCrew,
   });
 
   const [eventId, _setEventId] = useState<string | undefined>(
