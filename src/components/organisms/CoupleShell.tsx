@@ -31,6 +31,7 @@ import { useAuth } from "../../api/hooks/useAuth";
 import { useTheme } from "../../context/ThemeContext";
 import { useUiMode } from "../../context/UiModeContext";
 import { hasUnseenRelease } from "../../utils/whatsNew";
+import { DemoBanner, isDemoActive } from "../../demo";
 
 function initialsFor(email?: string): string {
   if (!email) return "··";
@@ -71,6 +72,19 @@ export function CoupleShell({ children }: { children: ReactNode }) {
 
   const [collapsed, setCollapsed] = React.useState(false);
   const active = sectionForPath(pathname);
+
+  /*
+   * A demo visitor sees the five sections and nothing else.
+   *
+   * Every secondary destination is either meaningless or broken for them:
+   * "What's new" has no "since you were last here", "Get help" and "Your
+   * account" hit /Contact and /User, which the demo adapter deliberately passes
+   * through to the real backend, and "Sign out" ends a session that was never
+   * started. "Switch to advanced view" is the worst of them — it drops a
+   * first-time visitor into the fourteen-item planner sidebar, which is the
+   * first impression docs/COUPLE_MODE.md exists to avoid.
+   */
+  const demo = isDemoActive();
 
   return (
     <div className="flex h-screen bg-background text-text">
@@ -130,7 +144,7 @@ export function CoupleShell({ children }: { children: ReactNode }) {
 
         {/* ─── Rail footer: secondary links + mode switch ─────────────── */}
         <div className="border-t border-primary/10 p-3">
-          {SECONDARY.map(({ to, label, Icon }) => (
+          {(demo ? [] : SECONDARY).map(({ to, label, Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -158,17 +172,19 @@ export function CoupleShell({ children }: { children: ReactNode }) {
             </NavLink>
           ))}
 
-          <button
-            onClick={() => setMode("planner")}
-            title="Switch to advanced view"
-            className={`mt-1 flex w-full items-center gap-3 rounded-lg py-2.5 text-sm text-text/60
-                        transition-colors hover:bg-primary/5 hover:text-text ${
-                          collapsed ? "justify-center px-2" : "px-3"
-                        }`}
-          >
-            <SwitchHorizontalIcon className="h-5 w-5 flex-shrink-0 text-primary" />
-            {!collapsed && <span>Switch to advanced view</span>}
-          </button>
+          {!demo && (
+            <button
+              onClick={() => setMode("planner")}
+              title="Switch to advanced view"
+              className={`mt-1 flex w-full items-center gap-3 rounded-lg py-2.5 text-sm text-text/60
+                          transition-colors hover:bg-primary/5 hover:text-text ${
+                            collapsed ? "justify-center px-2" : "px-3"
+                          }`}
+            >
+              <SwitchHorizontalIcon className="h-5 w-5 flex-shrink-0 text-primary" />
+              {!collapsed && <span>Switch to advanced view</span>}
+            </button>
+          )}
 
           {!collapsed && (
             <p className="select-none pt-1.5 text-center text-[10px] tabular-nums text-text/25">
@@ -190,48 +206,61 @@ export function CoupleShell({ children }: { children: ReactNode }) {
 
           <div className="flex-1" />
 
-          <button
-            onClick={togglePalette}
-            aria-label={`Switch to ${palette === "rose" ? "Slate" : "Rose"} colours`}
-            title={`Switch to ${palette === "rose" ? "Slate" : "Rose"}`}
-            className="hidden flex-shrink-0 rounded-lg p-2 text-text/50 transition
-                       hover:bg-primary/5 hover:text-text md:block"
-          >
-            <Palette className="h-5 w-5" weight={palette === "slate" ? "fill" : "regular"} />
-          </button>
-
-          {/* Mirrors the rail footer, because mobile has no rail. */}
-          <Dropdown
-            trigger={
-              <span
-                className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-xs font-bold
-                           text-primary transition-colors hover:bg-primary/20"
-                title={user?.email ?? "Account"}
-                aria-label="Account"
+          {/* Palette toggle and account menu are both account-shaped chrome, so
+              both are hidden in the demo. With Colours gone the menu has no items
+              left at all, hence dropping the avatar trigger too rather than
+              letting it open empty. */}
+          {!demo && (
+            <>
+              <button
+                onClick={togglePalette}
+                aria-label={`Switch to ${palette === "rose" ? "Slate" : "Rose"} colours`}
+                title={`Switch to ${palette === "rose" ? "Slate" : "Rose"}`}
+                className="hidden flex-shrink-0 rounded-lg p-2 text-text/50 transition
+                           hover:bg-primary/5 hover:text-text md:block"
               >
-                {initialsFor(user?.email)}
-              </span>
-            }
-          >
-            <DropdownItem onClick={() => navigate("/app/contact")} className="md:hidden">
-              Get help
-            </DropdownItem>
-            <DropdownItem onClick={() => navigate("/app/users")}>Your account</DropdownItem>
-            {/* Mobile has no rail, so this is the only way to the release notes there. */}
-            <DropdownItem onClick={() => navigate("/app/whats-new")} className="md:hidden">
-              What's new{hasUnseenNews ? " ·" : ""}
-            </DropdownItem>
-            <DropdownItem onClick={togglePalette}>
-              Colours: {palette === "rose" ? "Rose" : "Slate"}
-            </DropdownItem>
-            <DropdownItem onClick={() => setMode("planner")} className="md:hidden">
-              Switch to advanced view
-            </DropdownItem>
-            <DropdownItem onClick={logout} className="text-secondary">
-              Sign out
-            </DropdownItem>
-          </Dropdown>
+                <Palette className="h-5 w-5" weight={palette === "slate" ? "fill" : "regular"} />
+              </button>
+
+              {/* Mirrors the rail footer, because mobile has no rail. */}
+              <Dropdown
+                trigger={
+                  <span
+                    className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-xs font-bold
+                               text-primary transition-colors hover:bg-primary/20"
+                    title={user?.email ?? "Account"}
+                    aria-label="Account"
+                  >
+                    {initialsFor(user?.email)}
+                  </span>
+                }
+              >
+                <DropdownItem onClick={() => navigate("/app/contact")} className="md:hidden">
+                  Get help
+                </DropdownItem>
+                <DropdownItem onClick={() => navigate("/app/users")}>Your account</DropdownItem>
+                {/* Mobile has no rail, so this is the only way to the release notes there. */}
+                <DropdownItem onClick={() => navigate("/app/whats-new")} className="md:hidden">
+                  What's new{hasUnseenNews ? " ·" : ""}
+                </DropdownItem>
+                <DropdownItem onClick={togglePalette}>
+                  Colours: {palette === "rose" ? "Rose" : "Slate"}
+                </DropdownItem>
+                <DropdownItem onClick={() => setMode("planner")} className="md:hidden">
+                  Switch to advanced view
+                </DropdownItem>
+                <DropdownItem onClick={logout} className="text-secondary">
+                  Sign out
+                </DropdownItem>
+              </Dropdown>
+            </>
+          )}
         </header>
+
+        {/* Outside <main>, which is the scroll container. As a sticky child
+            of it the bar floated over the page and left headings half-
+            covered; as chrome it simply sits in the frame. */}
+        {demo && <DemoBanner />}
 
         <main className="flex-1 overflow-auto p-4 pb-24 md:p-6 md:pb-6">{children}</main>
 

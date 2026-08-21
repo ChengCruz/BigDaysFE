@@ -1,29 +1,22 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router";
 
-type GtagArguments = [command: string, ...args: unknown[]];
+import { measurementId, trackPageView } from "../../utils/analytics";
 
-declare global {
-  interface Window {
-    dataLayer?: unknown[];
-    gtag?: (...args: GtagArguments) => void;
-  }
-}
-
-const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID?.trim();
-
-// Do not send authenticated pages or URLs containing user/event access tokens.
+// Never send URLs that carry a credential or a guest-identifying token in the
+// path or query. `/app` is deliberately NOT in this list: authenticated usage is
+// the majority of real activity, and excluding it left us blind to activation and
+// retention. Its identifier segments are stripped by normalizePath() in
+// utils/analytics.ts before anything is sent.
 const PRIVATE_PATH_PREFIXES = [
-  "/app",
-  "/reset-password",
-  "/verify-email",
-  "/qr/lookup",
+  "/reset-password", // ?email=&token= password-reset deep link
+  "/verify-email",   // carries the address being verified
+  "/qr/lookup",      // guest self-service, /qr/lookup/:eventId
 ];
 
-let initializedMeasurementId: string | undefined;
-
 function isTrackablePath(pathname: string): boolean {
-  // Track the generic /rsvp marketing page, but never event-specific RSVP URLs.
+  // Track the generic /rsvp marketing page, but never event-specific RSVP URLs
+  // (/rsvp/:slug, /rsvp/submit/:token, /rsvp/share/:token).
   if (pathname.startsWith("/rsvp/")) return false;
 
   return !PRIVATE_PATH_PREFIXES.some(
@@ -31,51 +24,21 @@ function isTrackablePath(pathname: string): boolean {
   );
 }
 
-function initializeGoogleAnalytics(id: string): void {
-  if (initializedMeasurementId === id) return;
-
-  window.dataLayer = window.dataLayer ?? [];
-  window.gtag =
-    window.gtag ??
-    function gtag(..._args: GtagArguments) {
-      // Match Google's canonical snippet: gtag queues its arguments object.
-      window.dataLayer?.push(arguments);
-    };
-
-  window.gtag("js", new Date());
-  window.gtag("config", id, { send_page_view: false });
-
-  if (!document.getElementById("google-analytics-gtag")) {
-    const script = document.createElement("script");
-    script.id = "google-analytics-gtag";
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`;
-    document.head.appendChild(script);
-  }
-
-  initializedMeasurementId = id;
-}
-
 export function GoogleAnalytics() {
   const { pathname } = useLocation();
   const lastTrackedPath = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    if (!measurementId || !/^G-[A-Z0-9]+$/i.test(measurementId)) return;
+    if (!measurementId) return;
     if (!isTrackablePath(pathname)) {
       lastTrackedPath.current = undefined;
       return;
     }
+    // Dedupe on the raw pathname, not the normalized one: moving between two
+    // different events is two pageviews even though both report as :id.
     if (lastTrackedPath.current === pathname) return;
 
-    initializeGoogleAnalytics(measurementId);
-    window.gtag?.("event", "page_view", {
-      send_to: measurementId,
-      debug_mode: new URLSearchParams(window.location.search).get("ga_debug") === "1",
-      page_title: document.title,
-      page_location: `${window.location.origin}${pathname}`,
-      page_path: pathname,
-    });
+    trackPageView(pathname);
     lastTrackedPath.current = pathname;
   }, [pathname]);
 

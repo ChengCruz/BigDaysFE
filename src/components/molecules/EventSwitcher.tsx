@@ -26,6 +26,7 @@ import { useEventContext } from "../../context/EventContext";
 import { useAuth } from "../../api/hooks/useAuth";
 import { useEventOwners } from "../../api/hooks/useEventOwners";
 import { formatEventDate, formatEventTime } from "../../utils/eventUtils";
+import { isDemoActive } from "../../demo";
 
 /**
  * Compact event switcher for the top navbar.
@@ -294,22 +295,28 @@ export function EventSwitcher() {
             )}
           </ul>
 
-          <div className="border-t border-gray-100 dark:border-white/10 p-1.5 flex flex-col gap-0.5">
-            <button
-              onClick={handleCreateNew}
-              className="w-full text-left rounded-lg px-3 py-2 text-sm text-primary font-medium hover:bg-primary/5 dark:hover:bg-white/5 transition flex items-center gap-2"
-            >
-              <PlusIconSvg className="h-4 w-4" />
-              Create new event
-            </button>
-            <button
-              onClick={handleManage}
-              className="w-full text-left rounded-lg px-3 py-2 text-sm text-text/70 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5 transition flex items-center gap-2"
-            >
-              <SwitchHorizontalIcon className="h-4 w-4" />
-              Manage all events
-            </button>
-          </div>
+          {/* Hidden in the demo. There is exactly one sample event and no
+              account behind it, so "create" would fabricate a second fictional
+              wedding and "manage all" leads to the planner events table — both
+              dead ends that invite the visitor away from the tour. */}
+          {!isDemoActive() && (
+            <div className="border-t border-gray-100 dark:border-white/10 p-1.5 flex flex-col gap-0.5">
+              <button
+                onClick={handleCreateNew}
+                className="w-full text-left rounded-lg px-3 py-2 text-sm text-primary font-medium hover:bg-primary/5 dark:hover:bg-white/5 transition flex items-center gap-2"
+              >
+                <PlusIconSvg className="h-4 w-4" />
+                Create new event
+              </button>
+              <button
+                onClick={handleManage}
+                className="w-full text-left rounded-lg px-3 py-2 text-sm text-text/70 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5 transition flex items-center gap-2"
+              >
+                <SwitchHorizontalIcon className="h-4 w-4" />
+                Manage all events
+              </button>
+            </div>
+          )}
         </div>,
         document.body
       )}

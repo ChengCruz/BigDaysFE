@@ -15,6 +15,7 @@
 import { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "../api/hooks/useAuth";
+import { isDemoActive } from "../demo";
 
 export type UiMode = "couple" | "planner";
 
@@ -66,7 +67,17 @@ export function UiModeProvider({ children }: { children: ReactNode }) {
   const [override, setOverride] = useState<UiMode | null>(readOverride);
 
   const defaultMode: UiMode = userRole === MEMBER_ROLE ? "couple" : "planner";
-  const mode = override ?? defaultMode;
+  // A demo visitor has no role, so the role default would put them in planner
+  // mode's fourteen-item sidebar — the exact "too enterprise" first impression
+  // docs/COUPLE_MODE.md was written to avoid.
+  //
+  // This wins over a stored override, not merely over the role default, because
+  // CoupleShell hides the "advanced view" switch in the demo: a returning
+  // planner whose browser has uiMode=planner would otherwise be dropped into
+  // planner mode with no control to leave it. It deliberately does not WRITE to
+  // localStorage, so their real saved preference is untouched when they return.
+  const demo = isDemoActive();
+  const mode: UiMode = demo ? "couple" : (override ?? defaultMode);
 
   useEffect(() => {
     try {
@@ -78,9 +89,13 @@ export function UiModeProvider({ children }: { children: ReactNode }) {
   }, [override]);
 
   const setMode = useCallback((m: UiMode | null) => setOverride(m), []);
+  // Flips the mode actually on screen. Reading `mode` rather than
+  // `override ?? defaultMode` matters wherever the two differ — in the demo the
+  // role default is planner while couple is what's rendered, so deriving from
+  // the default would make the first click a visual no-op.
   const toggle = useCallback(
-    () => setOverride((prev) => ((prev ?? defaultMode) === "couple" ? "planner" : "couple")),
-    [defaultMode]
+    () => setOverride(mode === "couple" ? "planner" : "couple"),
+    [mode]
   );
 
   const value = useMemo(
