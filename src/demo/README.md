@@ -36,7 +36,7 @@ and it can differ per environment.
 
 ## To remove it entirely
 
-Delete this folder, then fix the 13 places TypeScript complains about. They are the
+Delete this folder, then fix the 15 places TypeScript complains about. They are the
 complete integration surface, and each is a single conditional or call:
 
 | File | What to remove |
@@ -49,13 +49,28 @@ complete integration surface, and each is a single conditional or call:
 | `context/UiModeContext.tsx` | the forced `"couple"` branch |
 | `components/organisms/CoupleShell.tsx` | the `<DemoBanner />` mount, plus the `demo` guards on secondary links, the advanced-view switch and the palette / account-menu block |
 | `components/molecules/EventSwitcher.tsx` | the guard hiding "Create new event" / "Manage all events" |
-| `components/pages/Guests/CoupleGuestsPage.tsx` | the Step-2 "Design invite" branch, the export gate, and the advanced-view hint guard |
+| `components/pages/Guests/CoupleGuestsPage.tsx` | the Step-2 "Design invite" branch, the export and invite gates, and the advanced-view hint guard |
+| `components/pages/Events/CoupleQuestionsPage.tsx` | the add/examples gate and the hidden row actions |
+| `components/pages/CheckIn/CheckInPage.tsx` | the check-in gate, the hidden Practice button, and the unmounted practice modal |
 | `components/pages/Tables/FloorPlanPage.tsx` | the save gate (the canvas itself is never gated) |
 | `components/pages/Budget/CoupleBudgetPage.tsx` | the advanced-view hint guard |
 | `components/pages/Landing/LandingPage.tsx` | the two "See a live demo" CTAs |
 | `components/pages/Public/Features/FeaturesPage.tsx` | the "See a live demo" CTA |
 
 `grep -rn 'from "\(\.\./\)*demo"' src` finds all of them.
+
+### What the demo will not do
+
+Four gates, and they are not all the same kind. Export, saving a floor plan and
+publishing an invite are **honest** boundaries: each produces something that
+leaves the demo, so an account has to hold it.
+
+Check-in is the exception, and worth being straight about in the code. The
+Practice sandbox (`utils/practiceCheckIn.ts`) touches no API at all — hardcoded
+guests, hardcoded QR tokens, `localStorage` — so it would work perfectly well
+signed out. It is hidden anyway, along with the camera and manual check-in,
+because scanning guests in is judged the thing worth registering for. That is a
+product decision, not a technical limit, and `CheckInPage` says so.
 
 ### Why the shell has so many of them
 
@@ -84,13 +99,19 @@ independently of whether the demo survives.
 ## Conventions this has to respect
 
 - **Rows vs pax** (`CLAUDE.md`): one RSVP → one Guest row; `Guest.pax` is the party size
-  *including* the replier. The seed is 14 RSVPs · 12 guest rows · 32 pax. A declined RSVP
+  *including* the replier. The seed is 10 RSVPs · 9 guest rows · 27 pax. A declined RSVP
   (`noOfPax: 0`) has **no** Guest row, mirroring the backend's soft delete.
 - **Wire shapes only.** The hooks run `normalizeGuest` / `normalizeTable` / `toEvent` over
   whatever the adapter returns, so returning pre-normalized data would map it twice.
-- **Unknown routes resolve empty, never reject.** Unseeded surfaces (budget, checklist,
-  crew, QR, questions) already have empty states; a rejection would throw an error page
-  over the whole demo.
+- **Unknown routes resolve empty, never reject.** The last unseeded surface is QR
+  (`/Qr/ListByEvent`), empty on purpose — nobody has arrived at a wedding that has not
+  happened. A rejection would throw an error page over the whole demo.
+- **Read-only surfaces get a GET route and no writes.** Questions and crew are served
+  straight from the seed rather than through `DemoState`: nothing can edit them, so there
+  is nothing to persist, to validate on parse, or to reset.
+- **Table count tracks guest count.** Trimming the guest list without trimming tables
+  leaves the floor plan half empty, which reads as missing data rather than a small
+  wedding. 4 tables · 32 seats · 24 seated pax, about three quarters full.
 - The dashboard aggregate reproduces the backend's quirks rather than improving on them —
   notably `occupiedSeats = assignedGuests`. See the note in `demoAdapter.ts` and the
   contract at `CoupleHomePage.tsx:11-25`.

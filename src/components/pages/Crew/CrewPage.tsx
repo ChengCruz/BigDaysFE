@@ -8,6 +8,7 @@ import { useEventContext } from "../../../context/EventContext";
 import { useCrewListApi, useDeleteCrew, type CrewMember } from "../../../api/hooks/useCrewApi";
 import { CrewFormModal } from "./CrewFormModal";
 import { UserGroupIcon, PencilIcon, TrashIcon } from "@heroicons/react/solid";
+import { isDemoActive, DemoGate } from "../../../demo";
 import toast from "react-hot-toast";
 
 function formatDate(dateStr?: string) {
@@ -55,6 +56,19 @@ export default function CrewPage() {
     crew: null,
   });
 
+  /*
+   * The demo seeds crew so the Big Day tab has content, but everything that
+   * makes them USABLE is withheld — and the sign-in banner most of all.
+   *
+   * That banner hands out a working crew sign-in URL next to a real-looking
+   * Event Code, with a Copy button on each. In the demo those are an invitation
+   * to go and try them against the live crew login. Hidden rather than blurred:
+   * a blur says "there is something here worth reading" and gets squinted at,
+   * and the underlying text is in the DOM either way.
+   */
+  const demo = isDemoActive();
+  const [crewGate, setCrewGate] = useState(false);
+
   if (eventsLoading) return <PageLoader message="Loading..." />;
   if (!eventId) return <NoEventsState title="No Events for Crew Management" message="Create your first event to start adding crew members." />;
   if (isLoading) return <PageLoader message="Loading crew..." />;
@@ -84,38 +98,55 @@ export default function CrewPage() {
             <span className="font-medium text-text dark:text-white">{event?.title}</span>
           </p>
         </div>
-        <Button data-tour="crew-add" variant="primary" onClick={() => setModal({ open: true })}>
+        <Button
+          data-tour="crew-add"
+          variant="primary"
+          onClick={demo ? () => setCrewGate(true) : () => setModal({ open: true })}
+        >
           + Add Crew
         </Button>
       </div>
 
       {/* Info banner */}
       <div data-tour="crew-event-code" className="mb-6 px-4 py-3 bg-primary/5 border border-primary/20 rounded-xl text-sm text-primary space-y-2">
-        <p>
-          Crew members sign in at the <span className="font-medium">crew sign-in page</span> with
-          their <span className="font-medium">Crew ID</span>, <span className="font-medium">PIN</span>,
-          and the <span className="font-medium">Event Code</span> below. Use{" "}
-          <span className="font-medium">Copy Invite Message</span> when adding crew to send all three at once.
-        </p>
-        <p className="flex flex-wrap items-center gap-2">
-          <span className="text-primary/70">Sign-in link:</span>
-          <a
-            href={crewLoginUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="font-mono text-xs bg-white/70 border border-primary/20 rounded px-1.5 py-0.5 break-all underline underline-offset-2"
-          >
-            {crewLoginUrl}
-          </a>
-          <CopyButton value={crewLoginUrl} label="Sign-in link" />
-        </p>
-        <p className="flex flex-wrap items-center gap-2">
-          <span className="text-primary/70">Event Code:</span>
-          <code className="font-mono text-xs bg-white/70 border border-primary/20 rounded px-1.5 py-0.5 break-all">
-            {event?.eventCode ?? "—"}
-          </code>
-          <CopyButton value={event?.eventCode ?? ""} label="Event Code" />
-        </p>
+        {demo ? (
+          /* Same box, no credentials in it. Says what crew are FOR, which is
+             the part a visitor is here to learn, and leaves out the link and
+             the code, which are only useful for actually signing one in. */
+          <p>
+            On the day, your crew sign in on their own phones and check guests in for
+            you — no account of their own, just a Crew ID and a PIN you give them.
+            They only ever see the guest list, never the rest of your planning.
+          </p>
+        ) : (
+          <>
+            <p>
+              Crew members sign in at the <span className="font-medium">crew sign-in page</span> with
+              their <span className="font-medium">Crew ID</span>, <span className="font-medium">PIN</span>,
+              and the <span className="font-medium">Event Code</span> below. Use{" "}
+              <span className="font-medium">Copy Invite Message</span> when adding crew to send all three at once.
+            </p>
+            <p className="flex flex-wrap items-center gap-2">
+              <span className="text-primary/70">Sign-in link:</span>
+              <a
+                href={crewLoginUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-mono text-xs bg-white/70 border border-primary/20 rounded px-1.5 py-0.5 break-all underline underline-offset-2"
+              >
+                {crewLoginUrl}
+              </a>
+              <CopyButton value={crewLoginUrl} label="Sign-in link" />
+            </p>
+            <p className="flex flex-wrap items-center gap-2">
+              <span className="text-primary/70">Event Code:</span>
+              <code className="font-mono text-xs bg-white/70 border border-primary/20 rounded px-1.5 py-0.5 break-all">
+                {event?.eventCode ?? "—"}
+              </code>
+              <CopyButton value={event?.eventCode ?? ""} label="Event Code" />
+            </p>
+          </>
+        )}
       </div>
 
       {/* Empty state */}
@@ -123,7 +154,12 @@ export default function CrewPage() {
         <div data-tour="crew-list" className="text-center py-16">
           <UserGroupIcon className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
           <p className="text-gray-500 dark:text-gray-400 mb-4">No crew members yet.</p>
-          <Button variant="primary" onClick={() => setModal({ open: true })}>
+          {/* Unreachable in the demo, where three crew are always seeded, but
+              gated with the other entry point so the two can't drift apart. */}
+          <Button
+            variant="primary"
+            onClick={demo ? () => setCrewGate(true) : () => setModal({ open: true })}
+          >
             Add your first crew member
           </Button>
         </div>
@@ -163,7 +199,7 @@ export default function CrewPage() {
                   </td>
                   <td className="px-4 py-3 text-text/60 dark:text-white/40">{formatDate(member.createdDate)}</td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className={`flex items-center justify-end gap-2 ${demo ? "invisible" : ""}`}>
                       <button
                         title="Edit"
                         onClick={() => setModal({ open: true, crew: member })}
@@ -195,6 +231,14 @@ export default function CrewPage() {
         eventId={eventId}
         eventCode={event?.eventCode}
         eventName={event?.title}
+      />
+
+      <DemoGate
+        isOpen={crewGate}
+        onClose={() => setCrewGate(false)}
+        action="add your crew"
+        reason="Crew get a sign-in of their own that reaches your live guest list on the day, so they can only be created against a real event."
+        source="crew"
       />
 
       {/* Delete confirmation */}

@@ -60,8 +60,7 @@ import { useTransactionsApi } from "../../../api/hooks/useTransactionApi";
 import type { QrToken, QrStatus } from "../../../types/qr";
 import { CURRENCY_CONFIG } from "../../../types/budget";
 import type { Currency } from "../../../types/budget";
-import { isDemoActive, exitDemo, DemoGate } from "../../../demo";
-import { trackEvent } from "../../../utils/analytics";
+import { isDemoActive, DemoGate } from "../../../demo";
 import { buildGuestRows } from "../../../utils/guestExport";
 import { downloadCsv, downloadXlsx } from "../../../utils/exportUtils";
 
@@ -293,6 +292,7 @@ export default function CoupleGuestsPage() {
   // the guest list is the thing worth keeping, so it is the honest moment to
   // ask for an account. Everything else they can see, they can use.
   const [exportGate, setExportGate] = useState(false);
+  const [inviteGate, setInviteGate] = useState(false);
   const demo = isDemoActive();
 
   const handleExportXlsx = () =>
@@ -365,19 +365,17 @@ export default function CoupleGuestsPage() {
           <span className="text-[13px] font-semibold text-text">What to ask</span>
           <span className={`text-[10.5px] ${questionsHint.tone}`}>{questionsHint.label}</span>
         </button>
-        {/* In the demo this points at signup instead of the designer. The
-            designer must open in a new tab (see below), and a new tab is a new
-            sessionStorage, so it would never carry the demo flag and the visitor
-            would land on /login with no explanation. Pointing it at /register is
-            both honest about what's needed and a prompt at a moment of intent. */}
+        {/* In the demo this asks before leaving, instead of navigating away.
+            The designer must open in a new tab (see below), and a new tab is a
+            new sessionStorage, so it would never carry the demo flag and the
+            visitor would land on /login with no explanation. Signup is the
+            honest destination — but going there is a one-way door, since
+            exitDemo() clears the flag and their seating work with it, so it
+            takes a confirmation rather than a single stray click. */}
         {demo ? (
           <button
             type="button"
-            onClick={() => {
-              trackEvent("demo_cta_click", { from: "design_invite" });
-              exitDemo();
-              navigate("/register");
-            }}
+            onClick={() => setInviteGate(true)}
             className="flex min-w-[128px] flex-1 flex-col gap-0.5 rounded-xl border border-primary/15
                        bg-white px-3 py-2.5 text-left transition-colors hover:border-primary/40"
           >
@@ -628,6 +626,14 @@ export default function CoupleGuestsPage() {
         action="export your guest list"
         reason="Exports pull your real guest list out of My Big Days as a spreadsheet, so there has to be an account holding it."
         source="guest_export"
+      />
+
+      <DemoGate
+        isOpen={inviteGate}
+        onClose={() => setInviteGate(false)}
+        action="design your invite"
+        reason="The invite designer opens in its own tab and publishes a link guests can reply to, so it needs an account to publish from."
+        source="design_invite"
       />
 
       <RsvpFormModal

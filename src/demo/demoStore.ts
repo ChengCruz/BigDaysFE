@@ -20,6 +20,7 @@ import type { ApiEvent } from "../types/event";
 import type { BudgetApiResponse } from "../types/budget";
 import type { ApiTransaction } from "../types/transaction";
 import type { ChecklistItem } from "../api/hooks/useChecklistApi";
+import type { CrewMember } from "../api/hooks/useCrewApi";
 import type { FloorItem } from "../components/pages/Tables/useFloorPlanState";
 import { DEMO_EVENT_ID } from "./demoMode";
 import {
@@ -30,10 +31,25 @@ import {
   demoFloorPlan,
   demoBudget,
   demoTransactions,
+  demoGifts,
   demoChecklist,
+  demoQuestions,
+  demoCrew,
 } from "./demoSeed";
 
-const STATE_KEY = "bigdays.demo.state.v1";
+/**
+ * BUMP THIS WHENEVER demoSeed CHANGES.
+ *
+ * A tab that already holds a blob under the old key keeps using it: load()
+ * finds it, parse() only checks that the fields are the right *shape*, and so
+ * freshState() never runs. The visitor carries on with the previous sample
+ * wedding and the new seed looks like it silently failed to apply.
+ *
+ * v2: 10 parties / 4 tables, plus seeded gifts, questions and answers.
+ * v3: table 4 renamed off "Overflow".
+ * v4: table 4 renamed again, to "Bride — Wong Family".
+ */
+const STATE_KEY = "bigdays.demo.state.v4";
 
 export type Payload = Record<string, unknown>;
 export type DemoRsvp = Record<string, unknown>;
@@ -74,7 +90,11 @@ function freshState(): DemoState {
     rsvps: demoRsvps as DemoRsvp[],
     floorPlan: demoFloorPlan,
     budget: demoBudget,
-    transactions: demoTransactions,
+    // Spending and gifts share one wallet, exactly as the backend stores them:
+    // Debit rows and Credit rows in the same transaction list, told apart by
+    // `type`. Keeping them in one array is what lets the Money page's tabs and
+    // the guest list's gift column read the same seed.
+    transactions: [...demoTransactions, ...demoGifts],
     checklist: demoChecklist,
   });
 }
@@ -145,6 +165,13 @@ export const demoStore = {
   budget: (): BudgetApiResponse[] => [load().budget],
   transactions: (): ApiTransaction[] => load().transactions,
   checklist: (): ChecklistItem[] => load().checklist,
+
+  // Questions and crew are read-only in the demo: the pages that would change
+  // them are gated behind signup. So they come straight off the seed rather
+  // than through DemoState — nothing can edit them, so there is nothing to
+  // persist, nothing to validate on parse, and nothing to reset.
+  questions: () => demoQuestions,
+  crew: (): CrewMember[] => demoCrew,
 
   // ─── Writes ─────────────────────────────────────────────────────────────────
 
