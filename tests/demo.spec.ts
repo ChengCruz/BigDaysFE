@@ -5,17 +5,17 @@ import { test, expect, type Page } from '@playwright/test';
  *
  * Deliberately mocks nothing. The whole point of demo mode is that it swaps the
  * axios adapter and serves everything locally, so any request reaching the
- * network here would itself be the bug. The seed is fixed — 14 RSVPs, 12 guest
- * rows, 32 pax, 9 parties seated, 3 needing a table, 2 declined — so the numbers
+ * network here would itself be the bug. The seed is fixed — 10 RSVPs, 9 guest
+ * rows, 27 pax, 7 parties seated, 2 needing a table, 1 declined — so the numbers
  * asserted below are exact, not ranges.
  *
  * Requires VITE_DEMO_ENABLED=true (set in .env.test). CI has no .env.test, so
  * these are local-only, like most specs in this folder.
  */
 
-const SEEDED_TOTAL_PAX = 32;
-const SEEDED_SEATED_PAX = 27;
-const SEEDED_CAPACITY = 46;
+const SEEDED_TOTAL_PAX = 27;
+const SEEDED_SEATED_PAX = 24;
+const SEEDED_CAPACITY = 32;
 
 /**
  * /demo sets a sessionStorage flag and hands off with window.location.replace,
@@ -70,7 +70,7 @@ test.describe('Demo mode', () => {
     // "People coming" is the one genuine head count on the page: SUM(pax).
     await expect(body).toContainText(/PEOPLE COMING/i);
     await expect(body).toContainText(String(SEEDED_TOTAL_PAX));
-    // 14 RSVPs replied, of which 2 declined and so have no guest row.
+    // 10 RSVPs replied, of which 1 declined and so has no guest row.
     await expect(body).toContainText(/REPLIES/i);
     await expect(body).toContainText(/Not coming/i);
   });
@@ -86,7 +86,7 @@ test.describe('Demo mode', () => {
   test('seating a party moves the seat count and survives a reload', async ({ page }) => {
     await enterDemo(page);
     await page.goto('/app/tables/v3');
-    await expect(page.getByText(/3 still have no table/i)).toBeVisible();
+    await expect(page.getByText(/2 still have no table/i)).toBeVisible();
 
     await seatFirstUnseatedParty(page);
 
@@ -111,8 +111,8 @@ test.describe('Demo mode', () => {
   test('the dashboard aggregate agrees with the guests page', async ({ page }) => {
     await enterDemo(page);
     await page.goto('/app/dashboard');
-    // Parties, a row count: 9 of the 12 guest rows have a table.
-    await expect(page.getByText(/9 of 12 parties seated/i)).toBeVisible();
+    // Parties, a row count: 7 of the 9 guest rows have a table.
+    await expect(page.getByText(/7 of 9 parties seated/i)).toBeVisible();
     // Same head count the guests page shows, from the same seed.
     await expect(page.locator('body')).toContainText(String(SEEDED_TOTAL_PAX));
   });
@@ -131,9 +131,9 @@ test.describe('Demo mode', () => {
   test('Big Day is seeded and counts rows and pax separately', async ({ page }) => {
     await enterDemo(page);
     await page.goto('/app/checkin');
-    // 12 guest rows to check in, carrying 32 people between them.
-    await expect(page.getByText('0 / 12')).toBeVisible();
-    await expect(page.getByText(/0 \/ 32 pax/)).toBeVisible();
+    // 9 guest rows to check in, carrying 27 people between them.
+    await expect(page.getByText('0 / 9')).toBeVisible();
+    await expect(page.getByText(/0 \/ 27 pax/)).toBeVisible();
   });
 
   test('the checklist drives the readiness card', async ({ page }) => {
@@ -149,7 +149,7 @@ test.describe('Demo mode', () => {
     await page.goto('/app/dashboard');
     // Both dashboards print the `icon` field verbatim, so a name leaks as text.
     const body = page.locator('body');
-    await expect(body).toContainText(/Hui Xin replied/i);
+    await expect(body).toContainText(/Daniel Ooi replied/i);
     await expect(body).not.toContainText('user-add');
   });
 
@@ -161,6 +161,18 @@ test.describe('Demo mode', () => {
     );
     await expect(page.getByText(/STAGE/i).first()).toBeVisible();
   });
+
+  test('questions are seeded, and their answers reach the guest list', async ({ page }) => {
+    await enterDemo(page);
+    await page.goto('/app/form-fields');
+    // Three seeded questions, so the page shows a list rather than its empty state.
+    await expect(page.getByText('Any dietary requirements?')).toBeVisible();
+    await expect(page.getByText('Do you need step-free access?')).toBeVisible();
+    await expect(page.getByText(/A song that will get you on the dance floor/i)).toBeVisible();
+    await expect(page.getByText(/No questions yet/i)).toHaveCount(0);
+  });
+
+
 });
 
 test.describe('Demo mode isolation', () => {
@@ -207,10 +219,13 @@ test.describe('Demo mode isolation', () => {
 
   test('the designer step asks for an account instead of dead-ending on /login', async ({ page }) => {
     // The designer must open in a new tab, and a new tab has its own
-    // sessionStorage, so it could never carry the demo flag.
+    // sessionStorage, so it could never carry the demo flag. Signup is the
+    // honest destination — but it is a one-way door, so it confirms first.
     await enterDemo(page);
     await expect(page.getByText(/Free account needed/i)).toBeVisible();
     await page.getByRole('button', { name: /Design invite/i }).click();
+    await expect(page.getByText(/Create a free account to design your invite/i)).toBeVisible();
+    await page.getByRole('button', { name: /Start my own wedding/i }).last().click();
     await expect(page).toHaveURL(/\/register/);
   });
 
@@ -232,10 +247,26 @@ test.describe('Demo mode isolation', () => {
 });
 
 test.describe('Demo gates', () => {
-  // The demo withholds only what it cannot honestly deliver, or what is the
-  // thing worth keeping. Everything else stays usable — notably the floor plan
-  // itself, which is the most persuasive surface in the product and would be
-  // worthless behind a blur.
+  /** The one way out every gate offers. */
+  const gate = (page: Page) =>
+    page.getByRole('button', { name: /Start my own wedding/i }).last();
+
+  /*
+   * Two kinds of boundary live here, and the distinction is worth keeping.
+   *
+   * Most gates are honest: export, saving a layout, publishing an invite. They
+   * produce something that leaves the demo, so an account has to hold it.
+   * Check-in is the exception — Practice would work perfectly well signed out —
+   * and it is gated as a product decision rather than a technical one.
+   *
+   * Everything else stays usable, notably the floor plan canvas itself, which
+   * is the most persuasive surface in the product and would be worthless
+   * behind a blur.
+   *
+   * Each test asserts BOTH halves: the gate opens, and the thing behind it did
+   * not happen. A gate that appears while the action also fires is worse than
+   * no gate, so "still where I was" is the real assertion.
+   */
   test('export asks for an account instead of downloading', async ({ page }) => {
     await enterDemo(page);
     await page.getByRole('button', { name: /Export/i }).click();
@@ -270,5 +301,68 @@ test.describe('Demo gates', () => {
     await page.getByRole('button', { name: /Start my own wedding/i }).last().click();
     await expect(page).toHaveURL(/\/register/);
     expect(await page.evaluate(() => sessionStorage.getItem('bigdays.demo.v1'))).toBeNull();
+  });
+
+  test('Design invite asks before it ejects you from the demo', async ({ page }) => {
+    await enterDemo(page);
+    await page.getByText(/Design invite/i).first().click();
+
+    await expect(page.getByText(/Create a free account to design your invite/i)).toBeVisible();
+    // Declining leaves the visitor exactly where they were, demo flag intact.
+    await page.getByRole('button', { name: /Keep looking around/i }).click();
+    await expect(page).toHaveURL(/\/app\/guests/);
+    await expect(page.getByText(/Sample wedding/i)).toBeVisible();
+  });
+
+  test('adding a question is gated, and the seeded three stay read-only', async ({ page }) => {
+    await enterDemo(page);
+    await page.goto('/app/form-fields');
+
+    await page.getByRole('button', { name: /Add a question/i }).first().click();
+    await expect(page.getByText(/Create a free account to ask your own questions/i)).toBeVisible();
+    await page.getByRole('button', { name: /Keep looking around/i }).click();
+
+    // The row actions are gone entirely rather than gated one by one.
+    await expect(page.getByRole('button', { name: /^Edit /i })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^Delete /i })).toHaveCount(0);
+  });
+
+  test('check-in is visible but cannot be run', async ({ page }) => {
+    await enterDemo(page);
+    await page.goto('/app/checkin');
+
+    // Practice is hidden: it is a self-contained sandbox that would otherwise
+    // work signed out, so this is the product decision, not a broken feature.
+    await expect(page.getByRole('button', { name: /^Practice$/ })).toHaveCount(0);
+
+    await page.getByRole('button', { name: /Start Camera/i }).click();
+    await expect(page.getByText(/Create a free account to check guests in/i)).toBeVisible();
+    await page.getByRole('button', { name: /Keep looking around/i }).click();
+    // The camera never started, so the prompt to start it is still showing.
+    await expect(page.getByText(/Tap Start Camera to begin/i)).toBeVisible();
+  });
+
+  test('manual check-in raises the same gate as the camera', async ({ page }) => {
+    await enterDemo(page);
+    await page.goto('/app/checkin');
+    // No QR tokens are seeded, so every row offers the force-a-pass fallback.
+    await page.getByRole('button', { name: /No QR/i }).first().click();
+    await expect(page.getByText(/Create a free account to check guests in/i)).toBeVisible();
+    // Nobody was checked in behind the gate.
+    await page.getByRole('button', { name: /Keep looking around/i }).click();
+    await expect(page.getByText('0 / 9')).toBeVisible();
+  });
+
+  test('crew are seeded so Big Day is not an empty page', async ({ page }) => {
+    await enterDemo(page);
+    await page.goto('/app/crew');
+    await expect(page.getByText(/Farah \(door\)/i)).toBeVisible();
+  });
+
+  test('every gate offers the same way out', async ({ page }) => {
+    await enterDemo(page);
+    await page.goto('/app/checkin');
+    await page.getByRole('button', { name: /Start Camera/i }).click();
+    await expect(gate(page)).toBeVisible();
   });
 });

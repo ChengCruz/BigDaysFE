@@ -16,9 +16,10 @@
 //    normalizeTable, toEvent) over whatever we hand back, so pre-normalized data
 //    would be mapped twice.
 // 2. Unknown routes resolve EMPTY, never reject. Surfaces the demo doesn't seed
-//    (budget, checklist, crew, QR, questions) already render empty states, so a
-//    quiet empty envelope degrades gracefully where a 404 would throw a red
-//    error page over the whole demo.
+//    already render empty states, so a quiet empty envelope degrades gracefully
+//    where a 404 would throw a red error page over the whole demo. The only one
+//    left is QR, empty on purpose: nobody has arrived at a wedding that has not
+//    happened yet.
 
 import axios from "axios";
 import type { AxiosAdapter, AxiosResponse, InternalAxiosRequestConfig } from "axios";
@@ -143,10 +144,13 @@ function dashboardSummary(): ApiDashboardSummary {
     // (CoupleHomePage.tsx:462, MemberDashboardPage.tsx:378), so it must be an
     // emoji. An icon *name* here prints as literal text.
     recentActivity: [
+      // Every name here has to exist in demoSeed's PARTIES. An activity row for
+      // someone absent from the guest list is the kind of detail a visitor
+      // notices, and it makes the whole sample look assembled rather than real.
       {
         activityType: "rsvp",
-        description: "Hui Xin replied",
-        details: "2 seats · might be late",
+        description: "Daniel Ooi replied",
+        details: "1 seat",
         timestamp: new Date(Date.now() - 36e5).toISOString(),
         icon: "💌",
       },
@@ -160,7 +164,7 @@ function dashboardSummary(): ApiDashboardSummary {
       {
         activityType: "table",
         description: "The Wong Family seated",
-        details: "Overflow · over capacity",
+        details: "Bride — Wong Family · over capacity",
         timestamp: new Date(Date.now() - 26 * 36e5).toISOString(),
         icon: "🪑",
       },
@@ -218,7 +222,13 @@ export const demoAdapter: AxiosAdapter = async (config) => {
     if (re("/event/GetEventsListByUser").test(path) || re("/event/GetEventsList").test(path)) {
       return ok(demoStore.events());
     }
-    if (re(`/event/eventRsvpInternal/${ID}`).test(path)) return ok(null);
+    // The internal RSVP template: event + questions, no design. Only the
+    // questions are read from it (useEventRsvpInternal), and CoupleGuestsPage
+    // uses them to label the seeded answers — without this the answers render
+    // as bare text under no question.
+    if (re(`/event/eventRsvpInternal/${ID}`).test(path)) {
+      return ok({ questions: demoStore.questions() });
+    }
     if (re(`/event/${ID}`).test(path)) return ok(demoStore.event());
 
     if (re(`/Guest/ByEvent/${ID}`).test(path)) return ok(demoStore.guests());
@@ -240,7 +250,16 @@ export const demoAdapter: AxiosAdapter = async (config) => {
     if (re(`/Transaction/${ID}/transactions`).test(path)) return ok(demoStore.transactions());
     if (re(`/Checklist/ByEvent/${ID}`).test(path)) return ok(demoStore.checklist());
 
+    // Read-only surfaces. Both are served so the page has something to show;
+    // neither has a matching write route, because the controls that would call
+    // one are gated behind signup (see CoupleFormFieldsPage and CheckInPage).
+    if (re(`/question/GetQuestions/${ID}`).test(path)) return ok(demoStore.questions());
+    if (re(`/Crew/ByEvent/${ID}`).test(path)) return ok(demoStore.crew());
+
     // Seeded as empty on purpose — see rule 2 in the header.
+    // /Qr/ListByEvent lands here: nobody has arrived at a wedding that has not
+    // happened, so an empty token list is the honest answer, and check-in is
+    // gated anyway.
     return ok([]);
   }
 
