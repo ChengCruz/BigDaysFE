@@ -11,6 +11,7 @@ import { useAuthApi } from "../../../api/hooks/useAuthApi";
 import { BrandWordmark } from "../../atoms/BrandWordmark";
 import TurnstileWidget from "../../molecules/TurnstileWidget";
 import { isTurnstileEnabled } from "../../../utils/turnstile";
+import { trackEvent } from "../../../utils/analytics";
 import { EyeIcon, EyeOffIcon } from "@heroicons/react/solid";
 
 const inputStyle: React.CSSProperties = {
@@ -80,6 +81,11 @@ export default function RegisterPage() {
       setError("Please complete the CAPTCHA below.");
       return;
     }
+
+    // Fired after client-side validation passes, so it counts genuine attempts
+    // rather than typos. Paired with sign_up_submitted in useAuthApi, the gap
+    // between the two is the server-side failure rate.
+    trackEvent("sign_up_start");
 
     try {
       await register.mutateAsync({

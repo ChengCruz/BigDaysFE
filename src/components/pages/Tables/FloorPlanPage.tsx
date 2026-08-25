@@ -23,6 +23,7 @@ import { DeleteConfirmationModal } from "../../molecules/DeleteConfirmationModal
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { PageLoader } from "../../atoms/PageLoader";
 import { CollectionIcon, UserGroupIcon, UserIcon } from "@heroicons/react/solid";
+import { isDemoActive, DemoGate } from "../../../demo";
 
 let idCounter = 0;
 function uid() {
@@ -576,12 +577,23 @@ export default function FloorPlanPage() {
     }
   }, []);
 
+  // Demo visitors get the whole editor — dragging, shapes, seating, all of it —
+  // and meet the account only at the point of keeping the result. They have
+  // already seen why they'd want it, which is the opposite of blurring the
+  // canvas and asking them to sign up for something they can't see.
+  const [saveGate, setSaveGate] = useState(false);
+  const demo = isDemoActive();
+
   const handleSaveLayout = useCallback(() => {
+    if (demo) {
+      setSaveGate(true);
+      return;
+    }
     saveFloorPlan.mutate(floorItems, {
       onSuccess: () => toast.success("Layout saved"),
       onError: () => toast.error("Failed to save layout"),
     });
-  }, [saveFloorPlan, floorItems]);
+  }, [demo, saveFloorPlan, floorItems]);
 
   const fitToItems = useCallback((items: FloorItem[]) => {
     const tablesOnly = items.filter((i) => i.type === "table");
@@ -1299,6 +1311,14 @@ export default function FloorPlanPage() {
           </>,
           document.body
         )}
+
+      <DemoGate
+        isOpen={saveGate}
+        onClose={() => setSaveGate(false)}
+        action="save this layout"
+        reason="Table positions are stored against your event, so keeping this arrangement past today needs somewhere to keep it."
+        source="floorplan_save"
+      />
     </div>
   );
 }

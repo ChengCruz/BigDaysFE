@@ -46,6 +46,7 @@ import { QuestionTemplateModal } from "../../molecules/QuestionTemplateModal";
 import type { QuestionTemplate } from "../../../utils/formFieldTemplates";
 import { useEventContext } from "../../../context/EventContext";
 import { envelopeError } from "../../../utils/apiEnvelope";
+import { isDemoActive, DemoGate } from "../../../demo";
 
 /** Planner mode says "Short Text"; a couple is choosing how a guest answers. */
 const ANSWER_LABELS: Record<string, string> = {
@@ -84,6 +85,21 @@ export default function CoupleQuestionsPage() {
   // below) rather than on the page banner, so the refusal lands right where the
   // couple just clicked Save instead of behind a modal that already closed.
   const [modalError, setModalError] = useState<string | null>(null);
+
+  /*
+   * The demo serves three seeded questions and no write routes, so every
+   * control that would change one is closed off here: adding, the examples
+   * browser, and the per-row edit / hide / delete cluster.
+   *
+   * Adding routes through DemoGate rather than disappearing, because "add a
+   * question" is the whole point of the page and a visitor who came here to see
+   * how it works should get an answer, not a missing button. The row actions do
+   * disappear: three greyed clusters would be noise, and the questions still
+   * read fine without them.
+   */
+  const demo = isDemoActive();
+  const [questionGate, setQuestionGate] = useState(false);
+  const openAdd = () => { setModalError(null); setModal({ open: true }); };
 
   const fields = useMemo<FormFieldConfig[]>(
     () => (Array.isArray(fieldsRaw) ? [...fieldsRaw].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) : []),
@@ -148,7 +164,10 @@ export default function CoupleQuestionsPage() {
             want to ask it.
           </p>
         </div>
-        <Button onClick={() => { setModalError(null); setModal({ open: true }); }} className="whitespace-nowrap">
+        <Button
+          onClick={demo ? () => setQuestionGate(true) : openAdd}
+          className="whitespace-nowrap"
+        >
           <PlusIcon className="mr-1 h-4 w-4" />
           Add a question
         </Button>
@@ -173,8 +192,11 @@ export default function CoupleQuestionsPage() {
             like meal choice, song requests, or whether they need a room.
           </p>
           <div className="mt-1 flex flex-wrap justify-center gap-2">
-            <Button onClick={() => { setModalError(null); setModal({ open: true }); }}>Add a question</Button>
-            <Button variant="secondary" onClick={() => setTemplateModal(true)}>
+            <Button onClick={demo ? () => setQuestionGate(true) : openAdd}>Add a question</Button>
+            <Button
+              variant="secondary"
+              onClick={demo ? () => setQuestionGate(true) : () => setTemplateModal(true)}
+            >
               Start from examples
             </Button>
           </div>
@@ -216,6 +238,7 @@ export default function CoupleQuestionsPage() {
                     </p>
                   </div>
 
+                  {!demo && (
                   <div className="flex flex-shrink-0 gap-1">
                     <button
                       type="button"
@@ -259,20 +282,37 @@ export default function CoupleQuestionsPage() {
                       <TrashIcon className="h-4 w-4" />
                     </button>
                   </div>
+                  )}
                 </li>
               );
             })}
           </ul>
 
-          <Button variant="secondary" className="w-full" onClick={() => setTemplateModal(true)}>
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={demo ? () => setQuestionGate(true) : () => setTemplateModal(true)}
+          >
             Browse example questions
           </Button>
         </>
       )}
 
-      <p className="text-center text-[11.5px] text-text/40">
-        Hidden questions stay off your invite but keep every answer guests already gave.
-      </p>
+      {/* The hint describes hiding, which the demo removes along with the rest
+          of the row actions, so it would point at a control that isn't there. */}
+      {!demo && (
+        <p className="text-center text-[11.5px] text-text/40">
+          Hidden questions stay off your invite but keep every answer guests already gave.
+        </p>
+      )}
+
+      <DemoGate
+        isOpen={questionGate}
+        onClose={() => setQuestionGate(false)}
+        action="ask your own questions"
+        reason="Questions go out on your invite and collect real answers from your guests, so they belong to an account rather than a sample."
+        source="add_question"
+      />
 
       {/* ─── Hide confirmation ───────────────────────────────────────────── */}
       <DeleteConfirmationModal

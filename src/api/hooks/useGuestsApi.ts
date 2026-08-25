@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { GuestEndpoints } from "../endpoints";
 import { normalizeGuest } from "../../utils/guestUtils";
+import { trackEvent } from "../../utils/analytics";
 
 /**
  * Guest API Field Mapping (API → UI)
@@ -97,6 +98,7 @@ export function useCreateGuest(eventId: string) {
     }) => client.post(GuestEndpoints.create, payload).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["guests", eventId] });
+      trackEvent("guest_added");
     },
   });
 }
@@ -129,6 +131,7 @@ export function useAssignGuestToTable(eventId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["guests", eventId] });
       qc.invalidateQueries({ queryKey: ["tables", eventId] });
+      trackEvent("guest_seated");
     },
   });
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router";
 import { useAuthApi } from "../../../api/hooks/useAuthApi";
+import { trackEvent } from "../../../utils/analytics";
 import toast from "react-hot-toast";
 
 const VERIFIED_EMAILS_KEY = "mbd_verified_emails";
@@ -109,8 +110,11 @@ export default function VerifyEmailPage() {
       const result = await verifyEmail.mutateAsync({ email: email.trim(), code: code.trim() });
       if (result.isSuccess) {
         markEmailVerified(email);
+        trackEvent("email_verified");
         toast.success(result.message || "Email verified! You can now sign in.");
-        navigate("/login", { replace: true });
+        // Carry the address forward so the login form is prefilled instead of
+        // asking for something they typed 30 seconds ago.
+        navigate("/login", { replace: true, state: { email: email.trim() } });
       } else {
         setError(result.message || "Invalid or expired verification code. Please check your email and try again.");
       }

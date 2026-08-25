@@ -20,6 +20,7 @@ import { TourProvider } from "../components/tour/TourProvider";
 import { NoEventsState } from "../components/molecules/NoEventsState";
 import { useEventContext } from "../context/EventContext";
 import { useUiMode } from "../context/UiModeContext";
+import { DemoEntryPage, isDemoActive } from "../demo";
 
 const CREW_ALLOWED_PATHS = ["/app/checkin", "/app/guests", "/app/tables"];
 
@@ -28,6 +29,7 @@ function AppLayout() {
   const { userRole } = useAuth();
   const { mode } = useUiMode();
   const location = useLocation();
+  const demo = isDemoActive();
 
   if (userRole === 6 && !CREW_ALLOWED_PATHS.some(p => location.pathname.startsWith(p))) {
     return <Navigate to="/app/checkin" replace />;
@@ -61,11 +63,14 @@ function AppLayout() {
       {mode === "planner" && <HelpBubble />}
       {/* Nudges the user to take an offline copy of their guest list as the
           big day approaches. Skipped until they actually have an event. */}
-      {!showEmptyState && <ExportBackupReminder />}
+      {!showEmptyState && !demo && <ExportBackupReminder />}
       {/* Announces newly shipped features once. Skipped while the user is
           mid-onboarding with no event, and for crew (role 6), since they reach this
           layout on /app/checkin, and helpers don't need product news. */}
-      {!showEmptyState && userRole !== 6 && <WhatsNewAnnouncer />}
+      {/* …and never in the demo: a first-time visitor has no "since you were
+          last here" to speak of, and a backup nudge about fictional guests is
+          noise on top of the demo banner. */}
+      {!showEmptyState && userRole !== 6 && !demo && <WhatsNewAnnouncer />}
     </TourProvider>
   );
 }
@@ -196,6 +201,9 @@ export default function AppRoutes() {
       <Route path="/app/tables/fullscreen" element={<RequireAuth><TablesFullscreenPage /></RequireAuth>} />
 
       {/* ─── STANDALONE PUBLIC (no navbar/footer) ───────── */}
+      {/* Turns demo mode on and hands off to /app/guests with a sample wedding.
+          Redirects home when VITE_DEMO_ENABLED is off. See src/demo/README.md. */}
+      <Route path="/demo" element={<DemoEntryPage />} />
       <Route path="/rsvp/submit/:token" element={<RSVPPublicPage />} />
       <Route path="/rsvp/:slug" element={<RsvpBySlugPage />} />
       <Route path="/rsvp/share/:token" element={<RsvpSharePreviewPage />} />

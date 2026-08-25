@@ -5,6 +5,7 @@ import type { FormFieldConfig } from "./useFormFieldsApi";
 import type { ApiEvent } from "../../types/event";
 import type { ApiResponse } from "../../types/api";
 import { TYPE_KEY_MAP } from "../../utils/eventUtils";
+import { trackEvent } from "../../utils/analytics";
 
 // --- App-facing Event model ---
 export interface Event {
@@ -100,6 +101,7 @@ export function useCreateEvent() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["events"] });
+      trackEvent("event_created");
     },
   });
 }

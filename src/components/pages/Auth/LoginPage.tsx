@@ -54,7 +54,11 @@ export default function LoginPage() {
   };
   const from = FULLSCREEN_FALLBACKS[rawFrom] ?? rawFrom;
 
-  const [email, setEmail] = useState("");
+  // Prefilled when /verify-email hands the user over after a successful verify,
+  // so they aren't asked for an address they typed thirty seconds earlier.
+  const [email, setEmail] = useState(
+    () => (location.state as { email?: string } | null)?.email ?? "",
+  );
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -262,7 +266,9 @@ export default function LoginPage() {
                     <p style={{ color: '#EF4444', fontSize: '0.9rem', fontFamily: 'var(--font-serif)' }}>
                       Your email isn't verified yet.
                       <br />
-                      <Link to="/verify-email" style={{ color: '#EF4444', borderBottom: '1px solid #EF4444', paddingBottom: '1px' }}>
+                      {/* Carry the address across so the verify page doesn't ask
+                          for it again; it falls back to its own input if absent. */}
+                      <Link to="/verify-email" state={{ email }} style={{ color: '#EF4444', borderBottom: '1px solid #EF4444', paddingBottom: '1px' }}>
                         Enter your verification code
                       </Link>
                     </p>

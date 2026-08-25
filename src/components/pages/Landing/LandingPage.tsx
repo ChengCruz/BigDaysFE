@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 
+import { isDemoEnabled } from "../../../demo";
+
 type Countdown = { days: string; hours: string; minutes: string; seconds: string };
 
 function formatDateInput(date: Date) {
@@ -190,6 +192,14 @@ export default function LandingPage() {
               >
                 Begin Your Story →
               </button>
+              {/* Secondary, and deliberately so: the demo is for visitors not yet
+                  ready to sign up. Full page load, not navigate(), because /demo
+                  sets a flag the providers only read on first render. */}
+              {isDemoEnabled && (
+                <a className="landing-btn landing-btn-outline" href="/demo">
+                  See a live demo
+                </a>
+              )}
             </div>
           </div>
 
@@ -540,6 +550,11 @@ export default function LandingPage() {
             <button className="landing-btn" onClick={() => navigate("/login")}>
               Start a New Event →
             </button>
+            {isDemoEnabled && (
+              <a className="landing-btn landing-btn-outline" href="/demo">
+                See a live demo
+              </a>
+            )}
           </div>
         </div>
       </section>

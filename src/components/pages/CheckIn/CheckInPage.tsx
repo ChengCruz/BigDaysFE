@@ -9,6 +9,7 @@ import { useAuth } from "../../../api/hooks/useAuth";
 import { PageLoader } from "../../atoms/PageLoader";
 import { NoEventsState } from "../../molecules/NoEventsState";
 import { PracticeCheckInModal } from "../../molecules/PracticeCheckInModal";
+import { isDemoActive, DemoGate } from "../../../demo";
 import toast from "react-hot-toast";
 
 // Backend role id for a Crew (Staff) login.
@@ -120,6 +121,26 @@ export default function CheckInPage() {
   const [undoGuestId, setUndoGuestId] = useState<string | null>(null);
   const [undoRecentId, setUndoRecentId] = useState<string | null>(null);
   const [practiceOpen, setPracticeOpen] = useState(false);
+
+  /*
+   * Check-in is the one section the demo shows but does not let you run.
+   *
+   * Every way in is closed: the camera, manual check-in, the force-a-pass
+   * fallback, and undo. Practice goes too — it is a self-contained sandbox that
+   * would work perfectly well signed out, so this is a product decision rather
+   * than a technical boundary: scanning guests in is the thing worth having an
+   * account for, and a visitor who can rehearse it has less reason to make one.
+   *
+   * They all raise the SAME gate. One boundary explained once reads as a rule;
+   * four separate walls read as a maze.
+   *
+   * The page itself stays visible — the stats, the guest list and the crew are
+   * all seeded — so the visitor can see what the night looks like without
+   * running it. /Qr/ListByEvent returns nothing in the demo, so every row falls
+   * to the "No QR · Force" branch; that button is gated with the rest.
+   */
+  const demo = isDemoActive();
+  const [checkInGate, setCheckInGate] = useState(false);
 
   const checkIn = useCheckInScanApi(eventId ?? "");
   const forceCheckIn = useForceCheckInApi(eventId ?? "");
@@ -330,15 +351,17 @@ export default function CheckInPage() {
           <h1 className="text-3xl font-display font-semibold text-primary">Guest Check-in</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Scan QR codes or manually check in guests</p>
         </div>
-        <Button
-          data-tour="checkin-practice"
-          variant="secondary"
-          className="flex-shrink-0 gap-1.5 whitespace-nowrap"
-          onClick={() => setPracticeOpen(true)}
-        >
-          <SparklesIcon className="h-4 w-4" />
-          Practice
-        </Button>
+        {!demo && (
+          <Button
+            data-tour="checkin-practice"
+            variant="secondary"
+            className="flex-shrink-0 gap-1.5 whitespace-nowrap"
+            onClick={() => setPracticeOpen(true)}
+          >
+            <SparklesIcon className="h-4 w-4" />
+            Practice
+          </Button>
+        )}
       </div>
 
       {/* Stats */}
@@ -377,7 +400,13 @@ export default function CheckInPage() {
 
             <Button
               variant={cameraActive ? "secondary" : "primary"}
-              onClick={() => cameraActive ? handleStopCamera() : setCameraActive(true)}
+              onClick={() =>
+                demo
+                  ? setCheckInGate(true)
+                  : cameraActive
+                  ? handleStopCamera()
+                  : setCameraActive(true)
+              }
             >
               {cameraActive ? "Stop Camera" : "Start Camera"}
             </Button>
@@ -487,7 +516,7 @@ export default function CheckInPage() {
                         </span>
                         <button
                           type="button"
-                          onClick={() => handleUndoGuest(g.id)}
+                          onClick={() => demo ? setCheckInGate(true) : handleUndoGuest(g.id)}
                           disabled={undoingGuest}
                           className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-800/40 disabled:opacity-50 transition-colors"
                         >
@@ -501,7 +530,7 @@ export default function CheckInPage() {
                     ) : noToken ? (
                       <button
                         type="button"
-                        onClick={() => handleForceCheckIn(g.id)}
+                        onClick={() => demo ? setCheckInGate(true) : handleForceCheckIn(g.id)}
                         disabled={forcing}
                         className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-800/40 disabled:opacity-50 transition-colors"
                       >
@@ -510,7 +539,7 @@ export default function CheckInPage() {
                     ) : (
                       <button
                         type="button"
-                        onClick={() => handleManualCheckIn(g.id)}
+                        onClick={() => demo ? setCheckInGate(true) : handleManualCheckIn(g.id)}
                         disabled={submitting}
                         className="text-[11px] px-2.5 py-0.5 rounded-full font-medium bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 transition-colors"
                       >
@@ -552,7 +581,21 @@ export default function CheckInPage() {
         </div>
       )}
 
-      <PracticeCheckInModal isOpen={practiceOpen} onClose={() => setPracticeOpen(false)} />
+      {/* Not mounted in the demo at all. The button is hidden and the crew
+          auto-open can't fire for a visitor with no role, but the sandbox runs
+          entirely on localStorage and would work if it ever did open, so the
+          decision is made here rather than left to the two guards above. */}
+      {!demo && (
+        <PracticeCheckInModal isOpen={practiceOpen} onClose={() => setPracticeOpen(false)} />
+      )}
+
+      <DemoGate
+        isOpen={checkInGate}
+        onClose={() => setCheckInGate(false)}
+        action="check guests in"
+        reason="Check-in scans the passes you sent your real guests and records who actually arrived, so it runs against a real guest list rather than a sample."
+        source="checkin"
+      />
     </div>
   );
 }

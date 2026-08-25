@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 
+import { isDemoEnabled } from "../../../../demo";
+
 const features = [
   {
     num: "01",
@@ -250,6 +252,9 @@ export default function FeaturesPage() {
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <button className="landing-btn" onClick={() => navigate('/login')}>Get Started →</button>
+            {isDemoEnabled && (
+              <a className="landing-btn landing-btn-outline" href="/demo">See a live demo</a>
+            )}
           </div>
         </div>
       </section>
