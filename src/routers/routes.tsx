@@ -9,6 +9,8 @@ import VerifyEmailPage from "../components/pages/Auth/VerifyEmailPage";
 import ResetPasswordPage from "../components/pages/Auth/ResetPasswordPage";
 import ContactPage from "../components/pages/Auth/ContactPage";
 import FeaturesPage from "../components/pages/Public/Features/FeaturesPage";
+import TermsPage from "../components/pages/Public/Legal/TermsPage";
+import PrivacyPage from "../components/pages/Public/Legal/PrivacyPage";
 
 import PublicTemplate from "../components/templates/PublicTemplate";
 import { CoupleShell } from "../components/organisms/CoupleShell";
@@ -225,6 +227,9 @@ export default function AppRoutes() {
         <Route path="/rsvp"    element={<RSVPPublicPage />} />
         <Route path="/features" element={<FeaturesPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        {/* Legal */}
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
         {/* Guest self-service QR lookup */}
         <Route path="/qr/lookup/:eventId" element={<QrLookupPage />} />
       </Route>

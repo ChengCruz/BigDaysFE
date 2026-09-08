@@ -54,6 +54,11 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  // Marketing consent is opt-in (PDPA): it must start false and only ever be set
+  // by a deliberate click. TODO(be): no field exists on the register payload yet,
+  // so this answer is currently DISCARDED on submit — wire it through before launch,
+  // otherwise we are showing a consent control whose result we cannot produce.
+  const [marketingConsent, setMarketingConsent] = useState(false);
   // Bumping this remounts the widget to obtain a fresh single-use token after a failed submit.
   const [captchaNonce, setCaptchaNonce] = useState(0);
 
@@ -93,6 +98,7 @@ export default function RegisterPage() {
         email: formData.email,
         password: formData.password,
         captchaToken: captchaToken ?? undefined,
+        // TODO(be): send `marketingConsent` here once the column lands.
       });
       navigate("/verify-email", { state: { email: formData.email } });
     } catch (err: any) {
@@ -420,6 +426,66 @@ export default function RegisterPage() {
             >
               {register.isPending ? "Creating Account…" : "Create Account →"}
             </button>
+
+            {/* Marketing consent — opt-in, unchecked by default */}
+            <label
+              htmlFor="marketingConsent"
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.75rem',
+                cursor: 'pointer',
+                color: '#6B5D50',
+                fontSize: '0.9rem',
+                lineHeight: 1.6,
+                fontFamily: 'var(--font-serif)',
+              }}
+            >
+              <input
+                id="marketingConsent"
+                name="marketingConsent"
+                type="checkbox"
+                checked={marketingConsent}
+                onChange={e => setMarketingConsent(e.target.checked)}
+                style={{
+                  width: '1.1rem',
+                  height: '1.1rem',
+                  marginTop: '0.15rem',
+                  accentColor: '#B4543A',
+                  flexShrink: 0,
+                  cursor: 'pointer',
+                }}
+              />
+              <span>
+                Send me planning tips, product updates and occasional offers. Optional, and you can
+                unsubscribe at any time.
+              </span>
+            </label>
+
+            {/* Consent notice */}
+            <p
+              style={{
+                textAlign: 'center',
+                color: '#6B5D50',
+                fontSize: '0.85rem',
+                lineHeight: 1.6,
+                fontFamily: 'var(--font-serif)',
+                margin: 0,
+                maxWidth: '46ch',
+                marginLeft: 'auto',
+                marginRight: 'auto',
+              }}
+            >
+              By creating an account, you agree to our{" "}
+              <Link to="/terms" style={{ color: '#B4543A', textDecoration: 'none', borderBottom: '1px solid #B4543A', paddingBottom: '1px' }}>
+                Terms &amp; Conditions
+              </Link>{" "}
+              and acknowledge that your personal data will be processed in accordance with our{" "}
+              <Link to="/privacy" style={{ color: '#B4543A', textDecoration: 'none', borderBottom: '1px solid #B4543A', paddingBottom: '1px' }}>
+                Privacy Notice
+              </Link>
+              .
+            </p>
 
             <div style={{ textAlign: 'center', color: '#6B5D50', fontSize: '1rem', fontFamily: 'var(--font-serif)' }}>
               Already have an account?{" "}
