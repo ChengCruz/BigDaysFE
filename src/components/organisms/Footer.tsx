@@ -58,6 +58,11 @@ export function Footer() {
         }}
       >
         <span style={{ textTransform: 'none', display: 'inline-flex', alignItems: 'baseline', gap: '0.4em' }}>© {new Date().getFullYear()} <BrandWordmark size="0.8rem" /></span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+          <NavLink to="/terms" style={linkStyle}>Terms</NavLink>
+          <NavLink to="/privacy" style={linkStyle}>Privacy</NavLink>
+        </span>
+
         <span>Planned with love</span>
       </div>
     </footer>
