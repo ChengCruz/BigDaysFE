@@ -8,6 +8,7 @@ import type {
   RsvpDesign,
 } from "../../types/rsvpDesign";
 import { mapToBackendPayload, mapToFrontendDesign } from "../../utils/rsvpDesignMapper";
+import { trackAction } from "../../utils/analytics";
 
 /**
  * Fetch RSVP Design for an event
@@ -79,8 +80,12 @@ export function useSaveRsvpDesign(eventGuid: string) {
 
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["rsvpDesign", eventGuid] });
+      // A save can itself be the publish (the caller passes isPublished), so
+      // split the two: a draft save is design effort, a published save is the
+      // invitation going live, and only the second belongs in a funnel.
+      trackAction("rsvp_design", vars.isPublished ? "published" : "saved");
     },
   });
 }
@@ -102,6 +107,7 @@ export function usePublishRsvpDesign(eventGuid: string) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["rsvpDesign", eventGuid] });
+      trackAction("rsvp_design", "published");
     },
   });
 }
@@ -118,6 +124,7 @@ export function useGenerateShareToken(eventGuid: string) {
       );
       return response.data?.data ?? response.data;
     },
+    onSuccess: () => trackAction("rsvp_design", "share_token_generated"),
   });
 }
 

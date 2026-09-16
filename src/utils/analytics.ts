@@ -57,6 +57,10 @@ function ensureInitialized(id: string): void {
   });
   window.gtag("js", new Date());
   window.gtag("config", id, { send_page_view: false });
+  // A login that happened before gtag loaded (the usual order: auth resolves
+  // from a stored token, then the first trackEvent pulls gtag in) would
+  // otherwise be attributed to an anonymous client.
+  applyUserId();
 
   if (!document.getElementById("google-analytics-gtag")) {
     const script = document.createElement("script");
@@ -90,6 +94,67 @@ function debugMode(): boolean {
   return new URLSearchParams(window.location.search).get("ga_debug") === "1";
 }
 
+// ─── Ambient context ────────────────────────────────────────────────────────
+//
+// Two things every event should carry, neither of which the call site knows.
+//
+// `ui_mode` matters more than it looks: couple and planner mode render
+// different components on the SAME routes (routes.tsx swaps Couple* pages in),
+// so without it `/app/dashboard` is two different pages reported as one, and
+// no usage number can be attributed to either shell.
+
+/**
+ * Merged into every event. Empty until the providers below report in.
+ *
+ * `is_demo` matters as much as `ui_mode`, and for a sharper reason: demo mode is
+ * an axios adapter (src/demo/demoAdapter.ts), so a demo visitor's writes resolve
+ * as successful mutations and every `onSuccess` in the app runs normally. Their
+ * clicking through the sample wedding would otherwise land in `feature_used`
+ * indistinguishable from a real couple seating their real guests, and the
+ * feature-usage table would mostly measure the demo. Filter it out in GA (§4).
+ */
+const ambient: { ui_mode?: string; is_demo?: boolean } = {};
+
+/** Kept so a login mid-session can be applied even if gtag loads later. */
+let pendingUserId: string | undefined;
+
+function applyUserId(): void {
+  if (!pendingUserId || !window.gtag) return;
+  // "set" rather than a fresh "config": config would re-register the stream and
+  // can re-trigger a page_view on some gtag versions, and we send those by hand.
+  window.gtag("set", { user_id: pendingUserId });
+}
+
+/**
+ * Which shell the user is in, and whether this is the sample wedding. Called by
+ * UiModeProvider, which is the only place that knows either: the effective mode
+ * includes the role-derived default and the demo override, neither of which
+ * localStorage records (UiModeContext.tsx stores an explicit override only).
+ */
+export function setAnalyticsContext(next: { ui_mode: string; is_demo: boolean }): void {
+  ambient.ui_mode = next.ui_mode;
+  ambient.is_demo = next.is_demo;
+}
+
+/**
+ * Ties this browser to an account, so a visitor who browsed anonymously and
+ * signed up later is one user rather than two. Pass the user GUID — never an
+ * email or a name; Google's terms prohibit sending PII, and a GUID is the
+ * pseudonymous id `user_id` is designed for.
+ *
+ * Pass null on logout so the next person on a shared laptop is not attributed
+ * to the previous one.
+ */
+export function setAnalyticsUser(userId: string | null): void {
+  if (!measurementId) return;
+  pendingUserId = userId ?? undefined;
+  if (!userId) {
+    window.gtag?.("set", { user_id: null });
+    return;
+  }
+  applyUserId();
+}
+
 const GUID_SEGMENT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const INT_SEGMENT = /^\d+$/;
 
@@ -115,8 +180,36 @@ export function trackEvent(name: string, params: Record<string, unknown> = {}): 
   window.gtag?.("event", name, {
     send_to: measurementId,
     debug_mode: debugMode(),
+    ...ambient,
     ...params,
   });
+}
+
+/**
+ * The usage inventory: one event name, `feature_used`, carrying `module` and
+ * `action`.
+ *
+ * Deliberately not one event name per action. There are ~60 write actions in
+ * this app; as distinct names they would be 60 rows to register, they would eat
+ * into GA4's 500-event-name cap, and — the real problem — an action nobody ever
+ * performs would simply never appear, so "which features are unused" could only
+ * be answered by remembering what you expected to see. As one event with two
+ * parameters it is a single breakdown table, and a zero row is visible as a
+ * zero.
+ *
+ * The named milestone events (`event_created`, `guest_added`, `guest_seated`,
+ * `sign_up_*`, `login`) still fire alongside this for the handful of steps that
+ * are funnel rungs and are already registered as key events in GA. That means a
+ * guest creation produces BOTH `guest_added` and a `feature_used` row — never
+ * add the two together. `feature_used` is the complete inventory; the named
+ * events are a labelled subset of it.
+ */
+export function trackAction(
+  module: string,
+  action: string,
+  params: Record<string, unknown> = {},
+): void {
+  trackEvent("feature_used", { module, action, ...params });
 }
 
 const ONCE_PREFIX = "bigdays.analyticsOnce.";
@@ -145,6 +238,7 @@ export function trackPageView(pathname: string): void {
   window.gtag?.("event", "page_view", {
     send_to: measurementId,
     debug_mode: debugMode(),
+    ...ambient,
     page_title: document.title,
     page_location: `${window.location.origin}${path}`,
     page_path: path,

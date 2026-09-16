@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { SeatingEndpoints } from "../endpoints";
+import { trackAction } from "../../utils/analytics";
 
 export function useSeatingApi() {
   return useQuery({
@@ -23,7 +24,10 @@ export function useCreateSeat() {
   return useMutation({
     mutationFn: async (data: { tableId: string; guestId: string }) =>
       (await client.post(SeatingEndpoints.create, data)).data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["seating"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["seating"] });
+      trackAction("seating", "seat_created");
+    },
   });
 }
 
@@ -32,7 +36,10 @@ export function useUpdateSeat(id: string) {
   return useMutation({
     mutationFn: async (data: { tableId: string; guestId: string }) =>
       (await client.put(SeatingEndpoints.update(id), data)).data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["seating"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["seating"] });
+      trackAction("seating", "seat_updated");
+    },
   });
 }
 
@@ -41,6 +48,9 @@ export function useDeleteSeat() {
   return useMutation({
     mutationFn: async (id: string) =>
       (await client.delete(SeatingEndpoints.delete(id))).data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["seating"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["seating"] });
+      trackAction("seating", "seat_deleted");
+    },
   });
 }

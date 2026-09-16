@@ -13,6 +13,7 @@ import { isRsvpTurnstileEnabled, TURNSTILE_SITE_KEY_RSVP } from "../../../../uti
 import { contentWidthClass } from "../../../../utils/rsvpContentWidths";
 import { DEFAULT_BACKDROP_COLOR } from "../../../../utils/rsvpBackdrops";
 import { formatEventTime } from "../../../../utils/eventUtils";
+import { trackEventOnce } from "../../../../utils/analytics";
 
 // Same list/order as the admin RSVP and Guest modals (RsvpFormModal.tsx,
 // GuestFormModal.tsx): Malaysia first (this app's home market), then the
@@ -153,6 +154,18 @@ export default function RsvpFormRenderer({
   onSubmit,
   isSubmitting,
 }: Props) {
+  // The other half of the RSVP funnel. Fired here rather than as a pageview
+  // because GoogleAnalytics.tsx excludes every /rsvp/:token URL on purpose --
+  // the token in that path is the guest's credential for this invitation, and
+  // it must not reach Google. An event carries no URL, so the step can be
+  // counted without the address ever leaving the browser.
+  //
+  // Once per tab: a guest who re-reads the invitation three times before
+  // replying is one guest considering it, not three arrivals.
+  useEffect(() => {
+    trackEventOnce("rsvp_form_viewed");
+  }, []);
+
   const {
     blocks: rawBlocks,
     globalBackgroundType,

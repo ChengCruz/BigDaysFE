@@ -63,6 +63,7 @@ import type { Currency } from "../../../types/budget";
 import { isDemoActive, DemoGate } from "../../../demo";
 import { buildGuestRows } from "../../../utils/guestExport";
 import { downloadCsv, downloadXlsx } from "../../../utils/exportUtils";
+import { trackAction } from "../../../utils/analytics";
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 
@@ -295,12 +296,19 @@ export default function CoupleGuestsPage() {
   const [inviteGate, setInviteGate] = useState(false);
   const demo = isDemoActive();
 
-  const handleExportXlsx = () =>
-    demo
-      ? setExportGate(true)
-      : downloadXlsx(exportRows(), `guests-event-${eventId}.xlsx`, "Guests");
-  const handleExportCsv = () =>
-    demo ? setExportGate(true) : downloadCsv(exportRows(), `guests-event-${eventId}.csv`);
+  // Tracked only on the branch that actually produces a file: a demo visitor
+  // hitting the gate is already counted as demo_cta_click, and counting it here
+  // too would inflate exports with downloads that never happened.
+  const handleExportXlsx = () => {
+    if (demo) return setExportGate(true);
+    trackAction("guests", "exported", { format: "xlsx" });
+    downloadXlsx(exportRows(), `guests-event-${eventId}.xlsx`, "Guests");
+  };
+  const handleExportCsv = () => {
+    if (demo) return setExportGate(true);
+    trackAction("guests", "exported", { format: "csv" });
+    downloadCsv(exportRows(), `guests-event-${eventId}.csv`);
+  };
 
   // ─── Guards ─────────────────────────────────────────────────────────────────
 

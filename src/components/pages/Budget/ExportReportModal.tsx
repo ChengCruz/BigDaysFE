@@ -7,6 +7,7 @@ import type { Transaction } from "../../../types/transaction";
 import type { Budget } from "../../../types/budget";
 import { getTransactionTypeLabel } from "../../../utils/transactionUtils";
 import { CURRENCY_CONFIG } from "../../../types/budget";
+import { trackAction } from "../../../utils/analytics";
 
 interface ExportReportModalProps {
   isOpen: boolean;
@@ -101,6 +102,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
     }
 
     saveAs(new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })]), `budget-report-${Date.now()}.xlsx`);
+    trackAction("budget", "report_exported", { format: "xlsx" });
     onClose();
   };
 
@@ -190,6 +192,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
     }
 
     // Create download
+    trackAction("budget", "report_exported", { format: "csv" });
     const blob = new Blob(["﻿", csv], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);

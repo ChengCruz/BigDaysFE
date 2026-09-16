@@ -4,6 +4,7 @@
 import { useMutation } from "@tanstack/react-query";
 import client from "../client";
 import { MediaEndpoints } from "../endpoints";
+import { trackAction } from "../../utils/analytics";
 
 interface UploadMediaPayload {
   file: File;
@@ -30,6 +31,11 @@ export function useUploadMedia() {
       );
       return res.data.data;
     },
+    // Filed under rsvp_design, not a module of its own: the only callers are
+    // RsvpDesignPage / V2 / V3, so a separate "media" row would imply an area of
+    // the app that a couple can reach on its own, and there is no such area.
+    // `context` stays in case a second caller ever appears with a different one.
+    onSuccess: (_d, vars) => trackAction("rsvp_design", "image_uploaded", { context: vars.context ?? "rsvp-design" }),
   });
 }
 
@@ -40,5 +46,6 @@ export function useDeleteMedia() {
     mutationFn: async ({ fileName }) => {
       await client.delete(MediaEndpoints.delete(fileName));
     },
+    onSuccess: () => trackAction("rsvp_design", "image_deleted"),
   });
 }

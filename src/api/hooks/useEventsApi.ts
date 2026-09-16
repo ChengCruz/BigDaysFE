@@ -6,6 +6,7 @@ import type { ApiEvent } from "../../types/event";
 import type { ApiResponse } from "../../types/api";
 import { TYPE_KEY_MAP } from "../../utils/eventUtils";
 import { trackEvent } from "../../utils/analytics";
+import { trackAction } from "../../utils/analytics";
 
 // --- App-facing Event model ---
 export interface Event {
@@ -102,6 +103,7 @@ export function useCreateEvent() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["events"] });
       trackEvent("event_created");
+      trackAction("events", "created");
     },
   });
 }
@@ -127,6 +129,7 @@ export function useUpdateEvent() {
       return res.data;
     },
     onSuccess: (_data, variables) => {
+      trackAction("events", "updated");
       qc.invalidateQueries({ queryKey: ["events"] });
       qc.invalidateQueries({ queryKey: ["event", variables.eventGuid] });
     },
@@ -160,6 +163,7 @@ export function useActivateEvent() {
       return res.data;
     },
     onSuccess: () => {
+      trackAction("events", "activated");
       qc.invalidateQueries({ queryKey: ["events"] });
     },
   });
@@ -174,6 +178,7 @@ export function useDeactivateEvent() {
       return res.data;
     },
     onSuccess: () => {
+      trackAction("events", "deactivated");
       qc.invalidateQueries({ queryKey: ["events"] });
     },
   });
@@ -188,6 +193,7 @@ export function useUpdateEventSlug() {
       return res.data;
     },
     onSuccess: (_data, variables) => {
+      trackAction("events", "slug_updated");
       qc.invalidateQueries({ queryKey: ["events"] });
       qc.invalidateQueries({ queryKey: ["event", variables.eventGuid] });
     },

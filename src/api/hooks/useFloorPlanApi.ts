@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { FloorPlanEndpoints } from "../endpoints";
 import type { FloorItem } from "../../components/pages/Tables/useFloorPlanState";
+import { trackAction } from "../../utils/analytics";
 
 export function useGetFloorPlan(eventId: string) {
   return useQuery<FloorItem[]>({
@@ -23,6 +24,7 @@ export function useSaveFloorPlan(eventId: string) {
     mutationFn: (items) =>
       client.put(FloorPlanEndpoints.save(eventId), { items }).then((r) => r.data),
     onSuccess: () => {
+      trackAction("floorplan", "saved");
       qc.invalidateQueries({ queryKey: ["floorplan", eventId] });
     },
   });

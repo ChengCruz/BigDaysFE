@@ -12,6 +12,7 @@ import {
   serializeTransactionForCreate,
   serializeTransactionForUpdate,
 } from "../../utils/transactionUtils";
+import { trackAction } from "../../utils/analytics";
 
 /**
  * Fetch all transactions for a budget (list query pattern)
@@ -98,6 +99,7 @@ export function useCreateTransaction() {
       return response.data?.data ?? response.data;
     },
     onSuccess: (_, variables) => {
+      trackAction("budget", "transaction_created");
       // Invalidate queries to refetch
       if (variables.walletGuid && variables.eventGuid) {
         queryClient.invalidateQueries({
@@ -128,6 +130,7 @@ export function useUpdateTransaction() {
       return response.data?.data ?? response.data;
     },
     onSuccess: (_, variables) => {
+      trackAction("budget", "transaction_updated");
       // Invalidate queries to refetch
       if (variables.walletGuid && variables.eventGuid) {
         queryClient.invalidateQueries({
@@ -156,6 +159,7 @@ export function useDeleteTransaction() {
       return response.data?.data ?? response.data;
     },
     onSuccess: (_, variables) => {
+      trackAction("budget", "transaction_deleted");
       // Invalidate queries to refetch
       queryClient.invalidateQueries({
         queryKey: ["transactions", variables.walletGuid],

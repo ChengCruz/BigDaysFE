@@ -7,6 +7,7 @@ import { turnstileHeaders } from "../../utils/turnstile";
 import type { RsvpDesign, ApiRsvpDesign } from "../../types/rsvpDesign";
 import { mapToFrontendDesign } from "../../utils/rsvpDesignMapper";
 import { TYPE_KEY_MAP } from "../../utils/eventUtils";
+import { trackEvent } from "../../utils/analytics";
 
 /**
  * Fetch RSVP design by share token.
@@ -156,5 +157,9 @@ export function useSubmitPublicRsvp() {
         )
         .then((r) => r.data);
     },
+    // The one event a guest generates. Deliberately carries no name, phone or
+    // answer text: the guest never agreed to be measured, and `pax` is the only
+    // thing here that is about the wedding rather than about a person.
+    onSuccess: (_d, vars) => trackEvent("rsvp_submitted", { pax: vars.noOfPax }),
   });
 }

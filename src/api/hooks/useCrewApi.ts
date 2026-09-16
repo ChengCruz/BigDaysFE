@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { CrewEndpoints } from "../endpoints";
+import { trackAction } from "../../utils/analytics";
 
 export interface CrewMember {
   crewGuid: string;
@@ -44,7 +45,10 @@ export function useCreateCrew() {
   return useMutation({
     mutationFn: (payload: CreateCrewPayload) =>
       client.post(CrewEndpoints.create, payload).then(r => r.data.data as CrewMember),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["crew"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["crew"] });
+      trackAction("crew", "created");
+    },
   });
 }
 
@@ -53,7 +57,10 @@ export function useUpdateCrew() {
   return useMutation({
     mutationFn: (payload: UpdateCrewPayload) =>
       client.put(CrewEndpoints.update, payload).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["crew"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["crew"] });
+      trackAction("crew", "updated");
+    },
   });
 }
 
@@ -62,6 +69,9 @@ export function useDeleteCrew() {
   return useMutation({
     mutationFn: (crewGuid: string) =>
       client.delete(CrewEndpoints.delete(crewGuid)).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["crew"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["crew"] });
+      trackAction("crew", "deleted");
+    },
   });
 }
