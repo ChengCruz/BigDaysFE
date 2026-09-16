@@ -8,6 +8,8 @@
 // which is the case for local, test and Playwright builds. That is deliberate:
 // nothing should have to guard its own trackEvent call.
 
+import { getAnalyticsConsent } from "./cookieConsent";
+
 type GtagArguments = [command: string, ...args: unknown[]];
 
 declare global {
@@ -25,7 +27,14 @@ export const measurementId =
 
 let initializedMeasurementId: string | undefined;
 
-/** Loads gtag.js on first use. Called lazily so untracked visits stay script-free. */
+/**
+ * Loads gtag.js on first use. Called lazily so untracked visits stay script-free.
+ *
+ * GA4 Consent Mode v2: default is "denied" until the cookie banner records a
+ * choice (LEGAL_TODO item 3), so the very first gtag call — even on a build
+ * with no prior decision — must set consent before "config" ever runs, or GA
+ * ends up storage-capable by default for a moment.
+ */
 function ensureInitialized(id: string): void {
   if (initializedMeasurementId === id) return;
 
@@ -42,6 +51,10 @@ function ensureInitialized(id: string): void {
       window.dataLayer?.push(arguments);
     };
 
+  window.gtag("consent", "default", {
+    analytics_storage: getAnalyticsConsent() === "granted" ? "granted" : "denied",
+    wait_for_update: 500,
+  });
   window.gtag("js", new Date());
   window.gtag("config", id, { send_page_view: false });
 
@@ -54,6 +67,22 @@ function ensureInitialized(id: string): void {
   }
 
   initializedMeasurementId = id;
+}
+
+/**
+ * Applies a fresh consent choice from the cookie banner (LEGAL_TODO item 3).
+ *
+ * A "denied" pick when gtag has never loaded is a no-op rather than a reason
+ * to load it: `ensureInitialized` would read the same "denied" straight back
+ * out of storage anyway, so loading gtag.js purely to tell it "denied" would
+ * make "Reject" the one choice that causes a network request — the opposite
+ * of what a genuine reject option is for.
+ */
+export function updateAnalyticsConsent(choice: "granted" | "denied"): void {
+  if (!measurementId) return;
+  if (choice === "denied" && !window.gtag) return;
+  ensureInitialized(measurementId);
+  window.gtag?.("consent", "update", { analytics_storage: choice });
 }
 
 /** Per-visit opt-in via ?ga_debug=1, so DebugView can be used without a build. */

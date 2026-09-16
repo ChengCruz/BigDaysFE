@@ -5,6 +5,7 @@ import { UiModeProvider } from "./context/UiModeContext";
 import { EventProvider } from "./context/EventContext";
 import Routes from "./routers/routes";
 import { GoogleAnalytics } from "./components/analytics/GoogleAnalytics";
+import { CookieConsentBanner } from "./components/organisms/CookieConsentBanner";
 import ScrollToTop from "./components/ScrollToTop";
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
               <GoogleAnalytics />
               <ScrollToTop />
               <Routes />
+              <CookieConsentBanner />
             </BrowserRouter>
           </EventProvider>
         </UiModeProvider>

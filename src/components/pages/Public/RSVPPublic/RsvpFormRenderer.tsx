@@ -247,6 +247,11 @@ export default function RsvpFormRenderer({
   const [countryCode, setCountryCode] = useState("+60");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [remarks, setRemarks] = useState("");
+  // LEGAL_TODO item 1: dietary/health/accessibility info is the most sensitive
+  // data collected here, from guests who never signed up for anything, so
+  // consent has to be captured at the point of collection rather than assumed
+  // from the Privacy Notice existing.
+  const [consentSensitiveData, setConsentSensitiveData] = useState(false);
 
   // ── Custom field answers: keyed by questionId, supports string[] for multi-select ─
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
@@ -304,6 +309,12 @@ export default function RsvpFormRenderer({
     if (showFields.name !== false && !guestName.trim()) errs.guestName = "Name is required";
     if (showFields.phone !== false && !phoneNumber.trim()) errs.phoneNo = "Phone number is required";
     if (showFields.pax !== false && (noOfPax == null || noOfPax < 0)) errs.noOfPax = "Please enter the number of guests";
+    // Consent is only demanded when there is something to consent to: the
+    // remarks field is optional and generic, so a guest with nothing sensitive
+    // to declare must still be able to submit without ticking anything.
+    if (showFields.remarks !== false && remarks.trim() && !consentSensitiveData) {
+      errs.consentSensitiveData = "Please confirm you consent to this being processed, or clear the field";
+    }
 
     // Validate formField blocks: required-ness, plus email format regardless
     // of required (an optional email question a guest chose to answer should
@@ -405,6 +416,9 @@ export default function RsvpFormRenderer({
       phoneNo: phoneNumber.trim() ? `${countryCode.replace(/^\+/, "")}${phoneNumber.trim()}` : "",
       remarks: remarks.trim(),
       answers,
+      // undefined (not false) when remarks is empty: nothing was offered, so
+      // there was nothing to consent to -- see RsvpSubmitPayload's doc comment.
+      consentSensitiveData: remarks.trim() ? consentSensitiveData : undefined,
       captchaToken: captchaToken ?? undefined,
     });
   };
@@ -713,11 +727,44 @@ export default function RsvpFormRenderer({
                 <input
                   type="text"
                   value={remarks}
-                  onChange={(e) => { setRemarks(e.target.value); clearError("remarks"); }}
-                  placeholder="Remarks"
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setRemarks(next);
+                    clearError("remarks");
+                    clearError("consentSensitiveData");
+                    // The tick is a record that consent was given for what was
+                    // typed, not a standing preference — clearing the field
+                    // must clear it too, or an empty remarks field could ship
+                    // with "consent: true" attached to nothing.
+                    if (!next.trim()) setConsentSensitiveData(false);
+                  }}
+                  placeholder="Remarks — dietary, allergies or accessibility needs (optional)"
                   className={inputCls}
                   style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.heading }}
                 />
+                <p className="text-[11px] mt-1.5 leading-snug" style={{ color: clr.body, opacity: 0.65 }}>
+                  Optional. If you share dietary, health or accessibility information, it's
+                  processed by the event organiser and MYBigDay only to manage your
+                  attendance and event arrangements.
+                </p>
+                {remarks.trim() && (
+                  <label className="mt-2 flex cursor-pointer items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={consentSensitiveData}
+                      onChange={(e) => { setConsentSensitiveData(e.target.checked); clearError("consentSensitiveData"); }}
+                      className="mt-0.5 h-4 w-4 rounded flex-shrink-0"
+                      style={{ accentColor }}
+                    />
+                    <span className="text-[12px]" style={{ color: clr.body }}>
+                      I consent to the processing of the dietary, health or
+                      accessibility information I provided above.
+                    </span>
+                  </label>
+                )}
+                {errors.consentSensitiveData && (
+                  <p className="text-[11px] mt-1 text-rose-400">{errors.consentSensitiveData}</p>
+                )}
               </div>
             )}
           </div>

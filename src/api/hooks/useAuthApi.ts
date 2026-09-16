@@ -18,6 +18,13 @@ export interface RegisterPayload {
   email: string;
   fullName: string;
   password: string;
+  /**
+   * PDPA opt-in (LEGAL_TODO item 2). Sent on every register call, but there is
+   * no column on the backend's CreateUserRequest/UserModel to persist it yet
+   * — confirm that lands before treating this as a producible consent record,
+   * and until then do not send marketing email off the back of this value.
+   */
+  marketingConsent: boolean;
   /** Cloudflare Turnstile token; sent as a header, not part of the body. */
   captchaToken?: string;
 }
