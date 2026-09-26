@@ -256,7 +256,19 @@ export default function RsvpFormRenderer({
 
   // ── Core fields ──────────────────────────────────────────────────────────
   const [guestName, setGuestName] = useState("");
-  const [noOfPax, setNoOfPax] = useState<number>(1);
+  // Raw digits the guest typed, not the resolved pax count -- keeping this a
+  // string (rather than a number bound straight to the input's value) lets
+  // the field stay empty so its "Number of guests" placeholder can actually
+  // show, the same way name/phone/remarks show theirs. A number defaults to
+  // 1 and never renders empty, so it always displayed "1" instead of the
+  // placeholder even before the guest touched the field.
+  const [noOfPaxInput, setNoOfPaxInput] = useState("");
+  // Distinguishes "never touched this field" from "typed something, then
+  // cleared it": noOfPax 0 is how a guest declines (backend soft-deletes the
+  // Guest row -- see demoSeed.ts), so an explicit clear must stay 0, not fall
+  // back to the default. Only an untouched field defaults to 1 pax.
+  const [paxTouched, setPaxTouched] = useState(false);
+  const noOfPax = !paxTouched ? 1 : noOfPaxInput === "" ? 0 : parseInt(noOfPaxInput, 10);
   const [countryCode, setCountryCode] = useState("+60");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [remarks, setRemarks] = useState("");
@@ -321,7 +333,7 @@ export default function RsvpFormRenderer({
 
     if (showFields.name !== false && !guestName.trim()) errs.guestName = "Name is required";
     if (showFields.phone !== false && !phoneNumber.trim()) errs.phoneNo = "Phone number is required";
-    if (showFields.pax !== false && (noOfPax == null || noOfPax < 0)) errs.noOfPax = "Please enter the number of guests";
+    if (showFields.pax !== false && (Number.isNaN(noOfPax) || noOfPax < 0 || noOfPax > 99)) errs.noOfPax = "Number of guests must be between 0 and 99";
     // Consent is only demanded when there is something to consent to: the
     // remarks field is optional and generic, so a guest with nothing sensitive
     // to declare must still be able to submit without ticking anything.
@@ -722,10 +734,10 @@ export default function RsvpFormRenderer({
                   type="text"
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  value={noOfPax}
+                  value={noOfPaxInput}
                   onChange={(e) => {
-                    const digitsOnly = e.target.value.replace(/\D/g, "");
-                    setNoOfPax(digitsOnly === "" ? 0 : parseInt(digitsOnly, 10));
+                    setNoOfPaxInput(e.target.value.replace(/\D/g, ""));
+                    setPaxTouched(true);
                     clearError("noOfPax");
                   }}
                   placeholder="Number of guests"
