@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { saveAs } from "file-saver";
 import { Modal } from "./Modal";
+import { trackAction } from "../../utils/analytics";
 
 interface Props {
   isOpen: boolean;
@@ -17,7 +18,9 @@ export default function QrImageModal({ isOpen, guestName, token, onClose }: Prop
     const canvas = canvasRef.current?.querySelector("canvas") as HTMLCanvasElement | null;
     if (!canvas) return;
     canvas.toBlob((blob) => {
-      if (blob) saveAs(blob, `${guestName}-qr.png`);
+      if (!blob) return;
+      trackAction("qr", "image_downloaded");
+      saveAs(blob, `${guestName}-qr.png`);
     });
   }
 

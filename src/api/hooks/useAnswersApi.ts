@@ -10,6 +10,10 @@ export interface AnswerItem {
 }
 
 export function useUpdateAnswer() {
+  // Not instrumented: nothing calls this hook (only its AnswerItem type is
+  // imported elsewhere). A trackAction here would add a module row that is
+  // guaranteed to read zero forever, and a zero is supposed to mean "nobody
+  // uses this feature", not "no code path can reach it".
   return useMutation({
     mutationFn: (payload: {
       answerId: string;

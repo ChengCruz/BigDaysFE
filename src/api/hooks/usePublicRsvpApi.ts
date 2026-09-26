@@ -7,6 +7,7 @@ import { turnstileHeaders } from "../../utils/turnstile";
 import type { RsvpDesign, ApiRsvpDesign } from "../../types/rsvpDesign";
 import { mapToFrontendDesign } from "../../utils/rsvpDesignMapper";
 import { TYPE_KEY_MAP } from "../../utils/eventUtils";
+import { trackEvent } from "../../utils/analytics";
 
 /**
  * Fetch RSVP design by share token.
@@ -105,6 +106,18 @@ export interface RsvpSubmitPayload {
   remarks?: string;
   /** Custom form field answers keyed by questionId */
   answers: Record<string, string | string[]>;
+  /**
+   * Consent to process dietary/health/accessibility data the guest volunteered
+   * in the `remarks` field (LEGAL_TODO item 1). Undefined when `remarks` was
+   * left empty, so there was nothing to consent to — a custom "askedQuestions"
+   * question (e.g. a couple-authored "Dietary restrictions" question) is a
+   * separate free-form answer this flag does not cover.
+   *
+   * TODO(be): sent on every submit already, but there is no column to persist
+   * it yet — confirm a field lands on the RSVP record before relying on this
+   * as a producible consent record.
+   */
+  consentSensitiveData?: boolean;
   /** Cloudflare Turnstile token; sent as a header, not part of the body. */
   captchaToken?: string;
 }
@@ -135,10 +148,18 @@ export function useSubmitPublicRsvp() {
             remarks: payload.remarks ?? "",
             createdBy: payload.guestName,
             answers,
+            // Omitted (not coerced to false) when nothing sensitive was
+            // offered, so a stored `false` always means "consent withheld"
+            // rather than "never asked" -- see the field's doc comment above.
+            consentSensitiveData: payload.consentSensitiveData,
           },
           { headers: turnstileHeaders(payload.captchaToken) },
         )
         .then((r) => r.data);
     },
+    // The one event a guest generates. Deliberately carries no name, phone or
+    // answer text: the guest never agreed to be measured, and `pax` is the only
+    // thing here that is about the wedding rather than about a person.
+    onSuccess: (_d, vars) => trackEvent("rsvp_submitted", { pax: vars.noOfPax }),
   });
 }

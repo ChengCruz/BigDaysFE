@@ -4,6 +4,7 @@ import client from "../client";
 import { GuestEndpoints } from "../endpoints";
 import { normalizeGuest } from "../../utils/guestUtils";
 import { trackEvent } from "../../utils/analytics";
+import { trackAction } from "../../utils/analytics";
 
 /**
  * Guest API Field Mapping (API → UI)
@@ -99,6 +100,7 @@ export function useCreateGuest(eventId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["guests", eventId] });
       trackEvent("guest_added");
+      trackAction("guests", "added");
     },
   });
 }
@@ -119,6 +121,7 @@ export function useUpdateGuest(eventId: string) {
     }) => client.put(GuestEndpoints.update, payload).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["guests", eventId] });
+      trackAction("guests", "updated");
     },
   });
 }
@@ -132,6 +135,7 @@ export function useAssignGuestToTable(eventId: string) {
       qc.invalidateQueries({ queryKey: ["guests", eventId] });
       qc.invalidateQueries({ queryKey: ["tables", eventId] });
       trackEvent("guest_seated");
+      trackAction("guests", "seated");
     },
   });
 }
@@ -144,6 +148,7 @@ export function useUnassignGuestFromTable(eventId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["guests", eventId] });
       qc.invalidateQueries({ queryKey: ["tables", eventId] });
+      trackAction("guests", "unseated");
     },
   });
 }
@@ -156,6 +161,7 @@ export function useAutoAssignGuests(eventId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["guests", eventId] });
       qc.invalidateQueries({ queryKey: ["tables", eventId] });
+      trackAction("guests", "auto_assigned");
     },
   });
 }
@@ -176,6 +182,7 @@ export function useRecordGift(eventId: string) {
         .put(GuestEndpoints.gift(guestId), { eventGuid, amount })
         .then((r) => r.data),
     onSuccess: (_, variables) => {
+      trackAction("guests", "gift_recorded");
       qc.invalidateQueries({ queryKey: ["guests", eventId] });
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["budget", variables.eventGuid] });

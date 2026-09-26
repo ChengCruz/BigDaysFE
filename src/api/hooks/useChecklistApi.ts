@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { ChecklistEndpoints } from "../endpoints";
+import { trackAction } from "../../utils/analytics";
 
 export interface ChecklistItem {
   id: string;
@@ -66,7 +67,10 @@ export function useCreateChecklistItem(eventGuid: string | undefined) {
   return useMutation({
     mutationFn: (payload: CreateChecklistItemPayload) =>
       client.post(ChecklistEndpoints.create, payload).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["checklist", eventGuid] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["checklist", eventGuid] });
+      trackAction("checklist", "item_created");
+    },
   });
 }
 
@@ -75,7 +79,10 @@ export function useUpdateChecklistItem(eventGuid: string | undefined) {
   return useMutation({
     mutationFn: (payload: UpdateChecklistItemPayload) =>
       client.put(ChecklistEndpoints.update, payload).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["checklist", eventGuid] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["checklist", eventGuid] });
+      trackAction("checklist", "item_updated");
+    },
   });
 }
 
@@ -84,7 +91,10 @@ export function useDeleteChecklistItem(eventGuid: string | undefined) {
   return useMutation({
     mutationFn: (id: string) =>
       client.delete(ChecklistEndpoints.delete(id)).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["checklist", eventGuid] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["checklist", eventGuid] });
+      trackAction("checklist", "item_deleted");
+    },
   });
 }
 
@@ -93,6 +103,9 @@ export function useSeedChecklist(eventGuid: string | undefined) {
   return useMutation({
     mutationFn: () =>
       client.post(ChecklistEndpoints.seed(eventGuid!)).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["checklist", eventGuid] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["checklist", eventGuid] });
+      trackAction("checklist", "seeded");
+    },
   });
 }

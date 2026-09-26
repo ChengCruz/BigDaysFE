@@ -13,6 +13,7 @@ import { isRsvpTurnstileEnabled, TURNSTILE_SITE_KEY_RSVP } from "../../../../uti
 import { contentWidthClass } from "../../../../utils/rsvpContentWidths";
 import { DEFAULT_BACKDROP_COLOR } from "../../../../utils/rsvpBackdrops";
 import { formatEventTime } from "../../../../utils/eventUtils";
+import { trackEventOnce } from "../../../../utils/analytics";
 
 // Same list/order as the admin RSVP and Guest modals (RsvpFormModal.tsx,
 // GuestFormModal.tsx): Malaysia first (this app's home market), then the
@@ -153,6 +154,18 @@ export default function RsvpFormRenderer({
   onSubmit,
   isSubmitting,
 }: Props) {
+  // The other half of the RSVP funnel. Fired here rather than as a pageview
+  // because GoogleAnalytics.tsx excludes every /rsvp/:token URL on purpose --
+  // the token in that path is the guest's credential for this invitation, and
+  // it must not reach Google. An event carries no URL, so the step can be
+  // counted without the address ever leaving the browser.
+  //
+  // Once per tab: a guest who re-reads the invitation three times before
+  // replying is one guest considering it, not three arrivals.
+  useEffect(() => {
+    trackEventOnce("rsvp_form_viewed");
+  }, []);
+
   const {
     blocks: rawBlocks,
     globalBackgroundType,
@@ -243,10 +256,27 @@ export default function RsvpFormRenderer({
 
   // ── Core fields ──────────────────────────────────────────────────────────
   const [guestName, setGuestName] = useState("");
-  const [noOfPax, setNoOfPax] = useState<number>(1);
+  // Raw digits the guest typed, not the resolved pax count -- keeping this a
+  // string (rather than a number bound straight to the input's value) lets
+  // the field stay empty so its "Number of guests" placeholder can actually
+  // show, the same way name/phone/remarks show theirs. A number defaults to
+  // 1 and never renders empty, so it always displayed "1" instead of the
+  // placeholder even before the guest touched the field.
+  const [noOfPaxInput, setNoOfPaxInput] = useState("");
+  // Distinguishes "never touched this field" from "typed something, then
+  // cleared it": noOfPax 0 is how a guest declines (backend soft-deletes the
+  // Guest row -- see demoSeed.ts), so an explicit clear must stay 0, not fall
+  // back to the default. Only an untouched field defaults to 1 pax.
+  const [paxTouched, setPaxTouched] = useState(false);
+  const noOfPax = !paxTouched ? 1 : noOfPaxInput === "" ? 0 : parseInt(noOfPaxInput, 10);
   const [countryCode, setCountryCode] = useState("+60");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [remarks, setRemarks] = useState("");
+  // LEGAL_TODO item 1: dietary/health/accessibility info is the most sensitive
+  // data collected here, from guests who never signed up for anything, so
+  // consent has to be captured at the point of collection rather than assumed
+  // from the Privacy Notice existing.
+  const [consentSensitiveData, setConsentSensitiveData] = useState(false);
 
   // ── Custom field answers: keyed by questionId, supports string[] for multi-select ─
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
@@ -303,7 +333,13 @@ export default function RsvpFormRenderer({
 
     if (showFields.name !== false && !guestName.trim()) errs.guestName = "Name is required";
     if (showFields.phone !== false && !phoneNumber.trim()) errs.phoneNo = "Phone number is required";
-    if (showFields.pax !== false && (noOfPax == null || noOfPax < 0)) errs.noOfPax = "Please enter the number of guests";
+    if (showFields.pax !== false && (Number.isNaN(noOfPax) || noOfPax < 0 || noOfPax > 99)) errs.noOfPax = "Number of guests must be between 0 and 99";
+    // Consent is only demanded when there is something to consent to: the
+    // remarks field is optional and generic, so a guest with nothing sensitive
+    // to declare must still be able to submit without ticking anything.
+    if (showFields.remarks !== false && remarks.trim() && !consentSensitiveData) {
+      errs.consentSensitiveData = "Please confirm you consent to this being processed, or clear the field";
+    }
 
     // Validate formField blocks: required-ness, plus email format regardless
     // of required (an optional email question a guest chose to answer should
@@ -405,6 +441,9 @@ export default function RsvpFormRenderer({
       phoneNo: phoneNumber.trim() ? `${countryCode.replace(/^\+/, "")}${phoneNumber.trim()}` : "",
       remarks: remarks.trim(),
       answers,
+      // undefined (not false) when remarks is empty: nothing was offered, so
+      // there was nothing to consent to -- see RsvpSubmitPayload's doc comment.
+      consentSensitiveData: remarks.trim() ? consentSensitiveData : undefined,
       captchaToken: captchaToken ?? undefined,
     });
   };
@@ -695,10 +734,10 @@ export default function RsvpFormRenderer({
                   type="text"
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  value={noOfPax}
+                  value={noOfPaxInput}
                   onChange={(e) => {
-                    const digitsOnly = e.target.value.replace(/\D/g, "");
-                    setNoOfPax(digitsOnly === "" ? 0 : parseInt(digitsOnly, 10));
+                    setNoOfPaxInput(e.target.value.replace(/\D/g, ""));
+                    setPaxTouched(true);
                     clearError("noOfPax");
                   }}
                   placeholder="Number of guests"
@@ -713,11 +752,44 @@ export default function RsvpFormRenderer({
                 <input
                   type="text"
                   value={remarks}
-                  onChange={(e) => { setRemarks(e.target.value); clearError("remarks"); }}
-                  placeholder="Remarks"
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setRemarks(next);
+                    clearError("remarks");
+                    clearError("consentSensitiveData");
+                    // The tick is a record that consent was given for what was
+                    // typed, not a standing preference — clearing the field
+                    // must clear it too, or an empty remarks field could ship
+                    // with "consent: true" attached to nothing.
+                    if (!next.trim()) setConsentSensitiveData(false);
+                  }}
+                  placeholder="Remarks — dietary, allergies or accessibility needs (optional)"
                   className={inputCls}
                   style={{ background: clr.inputBg, border: `1px solid ${clr.inputBdr}`, color: clr.heading }}
                 />
+                <p className="text-[11px] mt-1.5 leading-snug" style={{ color: clr.body, opacity: 0.65 }}>
+                  Optional. If you share dietary, health or accessibility information, it's
+                  processed by the event organiser and MYBigDay only to manage your
+                  attendance and event arrangements.
+                </p>
+                {remarks.trim() && (
+                  <label className="mt-2 flex cursor-pointer items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={consentSensitiveData}
+                      onChange={(e) => { setConsentSensitiveData(e.target.checked); clearError("consentSensitiveData"); }}
+                      className="mt-0.5 h-4 w-4 rounded flex-shrink-0"
+                      style={{ accentColor }}
+                    />
+                    <span className="text-[12px]" style={{ color: clr.body }}>
+                      I consent to the processing of the dietary, health or
+                      accessibility information I provided above.
+                    </span>
+                  </label>
+                )}
+                {errors.consentSensitiveData && (
+                  <p className="text-[11px] mt-1 text-rose-400">{errors.consentSensitiveData}</p>
+                )}
               </div>
             )}
           </div>

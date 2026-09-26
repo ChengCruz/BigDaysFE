@@ -10,6 +10,7 @@ import type {
   DeleteBudgetRequest,
 } from "../../types/budget";
 import { getBudget, saveBudget, removeBudget } from "../../utils/budgetStorage";
+import { trackAction } from "../../utils/analytics";
 
 /**
  * Helper: Map backend Wallet response to frontend Budget type
@@ -145,6 +146,7 @@ export function useCreateBudget() {
       return budget;
     },
     onSuccess: (data) => {
+      trackAction("budget", "created");
       // Invalidate all budget queries to refetch
       queryClient.invalidateQueries({ queryKey: ["budget"] });
       // Also refetch immediately
@@ -186,6 +188,7 @@ export function useUpdateBudget() {
       return budget;
     },
     onSuccess: (_data, variables) => {
+      trackAction("budget", "updated");
       // Update API returns bool, not budget, so just invalidate to trigger a fresh GET
       queryClient.invalidateQueries({ queryKey: ["budget", variables.eventGuid] });
     },
@@ -214,6 +217,7 @@ export function useDeleteBudget() {
       return budget;
     },
     onSuccess: (data) => {
+      trackAction("budget", "deleted");
       queryClient.invalidateQueries({ queryKey: ["budget", data.eventGuid] });
       queryClient.invalidateQueries({ queryKey: ["budget", data.walletGuid] });
       // Also invalidate transactions

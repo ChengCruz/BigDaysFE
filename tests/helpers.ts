@@ -228,6 +228,7 @@ export const MOCK_DASHBOARD = {
 
 /** Intercept all API calls and return mock responses. Call this in beforeEach. */
 export async function mockApi(page: Page) {
+  await silenceCookieBanner(page);
   await page.route('**/__mock_api__/**', async (route: Route) => {
     const url = route.request().url();
     const method = route.request().method();
@@ -529,6 +530,16 @@ async function silenceWhatsNew(page: Page) {
       );
     },
     { ids: RELEASES.map((r) => r.id), optInKey: WHATS_NEW_OPT_IN_KEY }
+  );
+}
+
+/** Stop the cookie consent banner covering the page under test (src/utils/cookieConsent.ts). */
+async function silenceCookieBanner(page: Page) {
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      'bigdays.cookieConsent.v1',
+      JSON.stringify({ analytics: 'denied', decidedAt: 1 })
+    )
   );
 }
 
