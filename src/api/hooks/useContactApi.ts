@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import client from "../client";
 import { ContactEndpoints } from "../endpoints";
 import { turnstileHeaders } from "../../utils/turnstile";
+import { trackAction } from "../../utils/analytics";
 
 export type ContactType = "Bug Report" | "Feedback" | "Other";
 
@@ -33,5 +34,9 @@ export function useSendSupportMessage() {
       });
       return res.data;
     },
+    // `type` is the Contact Us category ("Bug Report" / "Feedback" / "Other"),
+    // not an analytics field name -- it is passed through so support volume can
+    // be split by kind without opening the inbox.
+    onSuccess: (_d, vars) => trackAction("contact", "support_message_sent", { kind: vars.type }),
   });
 }

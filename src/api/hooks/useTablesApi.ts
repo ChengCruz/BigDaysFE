@@ -3,6 +3,7 @@ import client from "../client";
 import { TablesEndpoints, GuestEndpoints } from "../endpoints";
 import type { Rsvp } from "./useRsvpsApi";
 import { normalizeTable } from "../../utils/tableUtils";
+import { trackAction } from "../../utils/analytics";
 
 //
 // --- Types --------------------------------------------------------------
@@ -87,7 +88,10 @@ export function useCreateTable(eventId?: string) {
         tableName: name,
         maxSeats: capacity,
       }).then(r => r.data),
-    onSuccess: () => invalidate(qc, undefined, eventId),
+    onSuccess: () => {
+      invalidate(qc, undefined, eventId);
+      trackAction("tables", "created");
+    },
   });
 }
 
@@ -106,7 +110,10 @@ export function useBulkCreateTables(eventId?: string) {
         quantity,
         maxSeats,
       }).then(r => r.data),
-    onSuccess: () => invalidate(qc, undefined, eventId),
+    onSuccess: () => {
+      invalidate(qc, undefined, eventId);
+      trackAction("tables", "bulk_created");
+    },
   });
 }
 
@@ -119,7 +126,10 @@ export function useUpdateTableInfo(tableId: string, eventId?: string) {
         tableName: name,
         maxSeats: capacity,
       }).then(r => r.data),
-    onSuccess: () => invalidate(qc, tableId, eventId),
+    onSuccess: () => {
+      invalidate(qc, tableId, eventId);
+      trackAction("tables", "updated");
+    },
   });
 }
 
@@ -127,7 +137,10 @@ export function useDeleteTable(eventId?: string) {
   const qc = useQueryClient();
   return useMutation<void, Error, string>({
     mutationFn: id => client.delete(TablesEndpoints.delete(id)).then(r => r.data),
-    onSuccess: () => invalidate(qc, undefined, eventId),
+    onSuccess: () => {
+      invalidate(qc, undefined, eventId);
+      trackAction("tables", "deleted");
+    },
   });
 }
 
@@ -136,7 +149,10 @@ export function useBulkDeleteTables(eventId?: string) {
   return useMutation<void, Error, { tableIds: string[] }>({
     mutationFn: ({ tableIds }) =>
       client.post(TablesEndpoints.bulkDelete, { tableIds }).then(r => r.data),
-    onSuccess: () => invalidate(qc, undefined, eventId),
+    onSuccess: () => {
+      invalidate(qc, undefined, eventId);
+      trackAction("tables", "bulk_deleted");
+    },
   });
 }
 
@@ -154,7 +170,10 @@ export function useReassignGuest(tableId: string, eventId: string) {
           { newTableId }
         )
         .then(r => r.data),
-    onSuccess: () => invalidate(qc, tableId, eventId),
+    onSuccess: () => {
+      invalidate(qc, tableId, eventId);
+      trackAction("tables", "guest_reassigned");
+    },
   });
 }
 
@@ -168,7 +187,10 @@ export function useUpdateTableExtras(tableId: string, eventId?: string) {
         maxSeats: maxSeats,
         extraGuests: extraGuests,
       }).then(r => r.data),
-    onSuccess: () => invalidate(qc, tableId, eventId),
+    onSuccess: () => {
+      invalidate(qc, tableId, eventId);
+      trackAction("tables", "extras_updated");
+    },
   });
 }
 
@@ -178,7 +200,10 @@ export function useUpdateTableLayout(tableId: string, eventId?: string) {
     mutationFn: ({ layout }) =>
       client.put<TableWithGuests>(TablesEndpoints.updateLayout(tableId), { layout })
             .then(r => r.data),
-    onSuccess: () => invalidate(qc, tableId, eventId),
+    onSuccess: () => {
+      invalidate(qc, tableId, eventId);
+      trackAction("tables", "layout_updated");
+    },
   });
 }
 
@@ -188,7 +213,10 @@ export function useAssignGuestToTable(eventId: string) {
     mutationFn: ({ guestId, tableId }) =>
       client.post(GuestEndpoints.assignTable(guestId, tableId), {})
             .then(r => r.data),
-    onSuccess: () => invalidate(qc, undefined, eventId),
+    onSuccess: () => {
+      invalidate(qc, undefined, eventId);
+      trackAction("tables", "guest_assigned");
+    },
   });
 }
 

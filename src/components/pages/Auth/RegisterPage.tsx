@@ -55,9 +55,8 @@ export default function RegisterPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   // Marketing consent is opt-in (PDPA): it must start false and only ever be set
-  // by a deliberate click. TODO(be): no field exists on the register payload yet,
-  // so this answer is currently DISCARDED on submit — wire it through before launch,
-  // otherwise we are showing a consent control whose result we cannot produce.
+  // by a deliberate click. Sent on the register payload below; the backend
+  // side of persisting it is tracked in LEGAL_TODO item 2.
   const [marketingConsent, setMarketingConsent] = useState(false);
   // Bumping this remounts the widget to obtain a fresh single-use token after a failed submit.
   const [captchaNonce, setCaptchaNonce] = useState(0);
@@ -97,8 +96,8 @@ export default function RegisterPage() {
         fullName: formData.name,
         email: formData.email,
         password: formData.password,
+        marketingConsent,
         captchaToken: captchaToken ?? undefined,
-        // TODO(be): send `marketingConsent` here once the column lands.
       });
       navigate("/verify-email", { state: { email: formData.email } });
     } catch (err: any) {

@@ -16,6 +16,7 @@ import { createContext, useContext, useState, useEffect, useMemo, useCallback } 
 import type { ReactNode } from "react";
 import { useAuth } from "../api/hooks/useAuth";
 import { isDemoActive } from "../demo";
+import { setAnalyticsContext } from "../utils/analytics";
 
 export type UiMode = "couple" | "planner";
 
@@ -87,6 +88,15 @@ export function UiModeProvider({ children }: { children: ReactNode }) {
       /* private browsing; the in-memory value still applies for this session */
     }
   }, [override]);
+
+  // Every analytics event carries the mode, because couple and planner render
+  // different components on the same routes: without it `/app/dashboard` is two
+  // pages reported as one. Set here rather than at each call site, since this is
+  // the only place that knows the effective mode (the stored override alone
+  // misses both the role default and the demo override above).
+  useEffect(() => {
+    setAnalyticsContext({ ui_mode: mode, is_demo: demo });
+  }, [mode, demo]);
 
   const setMode = useCallback((m: UiMode | null) => setOverride(m), []);
   // Flips the mode actually on screen. Reading `mode` rather than

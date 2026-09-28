@@ -1,5 +1,6 @@
 import { NavLink } from "react-router";
 import { BrandWordmark } from "../atoms/BrandWordmark";
+import { OPEN_COOKIE_PREFERENCES_EVENT } from "./CookieConsentBanner";
 
 const linkStyle: React.CSSProperties = {
   color: 'rgba(237, 228, 211, 0.7)',
@@ -61,6 +62,13 @@ export function Footer() {
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
           <NavLink to="/terms" style={linkStyle}>Terms</NavLink>
           <NavLink to="/privacy" style={linkStyle}>Privacy</NavLink>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event(OPEN_COOKIE_PREFERENCES_EVENT))}
+            style={{ ...linkStyle, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          >
+            Cookie Preferences
+          </button>
         </span>
 
         <span>Planned with love</span>

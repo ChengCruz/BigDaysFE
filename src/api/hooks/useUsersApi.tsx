@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { UsersEndpoints } from "../endpoints";
+import { trackAction } from "../../utils/analytics";
 
 export function useUsersListApi(opts?: { enabled?: boolean }) {
   return useQuery({
@@ -27,7 +28,10 @@ export function useCreateUser() {
   return useMutation({
     mutationFn: async (data: { fullName: string; email: string; password?: string; role?: number }) =>
       (await client.post(UsersEndpoints.create, data)).data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      trackAction("users", "created");
+    },
   });
 }
 
@@ -36,7 +40,10 @@ export function useUpdateUser() {
   return useMutation({
     mutationFn: async (data: { id: string; fullName: string; email: string; role?: number }) =>
       (await client.post(UsersEndpoints.update, data)).data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      trackAction("users", "updated");
+    },
   });
 }
 
@@ -45,7 +52,10 @@ export function useDeactivateUser() {
   return useMutation({
     mutationFn: async (userId: number) =>
       (await client.put(UsersEndpoints.deactivate(userId))).data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      trackAction("users", "deactivated");
+    },
   });
 }
 
@@ -54,7 +64,10 @@ export function useActivateUser() {
   return useMutation({
     mutationFn: async (userId: number) =>
       (await client.put(UsersEndpoints.activate(userId))).data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      trackAction("users", "activated");
+    },
   });
 }
 

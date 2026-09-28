@@ -7,6 +7,7 @@ import { Button } from "../atoms/Button";
 import { Spinner } from "../atoms/Spinner";
 import { useCreateRsvp, useUpdateRsvp, type Rsvp } from "../../api/hooks/useRsvpsApi";
 import type { FormFieldConfig } from "../../api/hooks/useFormFieldsApi";
+import { trackAction } from "../../utils/analytics";
 
 interface ParsedRow {
   guestName: string;
@@ -87,6 +88,7 @@ export const ImportRsvpsModal: React.FC<Props> = ({
     const blob = new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
+    trackAction("rsvps", "import_template_downloaded");
     saveAs(blob, `rsvp-template-${safeName}.xlsx`);
   };
 

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { RsvpsEndpoints } from "../endpoints";
 import type { AnswerItem } from "./useAnswersApi";
+import { trackAction } from "../../utils/analytics";
 
 export interface Rsvp {
   // normalize API shape to what components expect
@@ -105,6 +106,7 @@ export function useCreateRsvp(eventId: string) {
     mutationFn: (data: any) =>
       client.post(RsvpsEndpoints.create(), data).then((r) => r.data),
     onSuccess: () => {
+      trackAction("rsvps", "created");
       qc.invalidateQueries({ queryKey: ["rsvps", eventId] });
       qc.invalidateQueries({ queryKey: ["guests", eventId] });
     },
@@ -135,6 +137,7 @@ export function useUpdateRsvp(eventId: string) {
       return res.data;
     },
     onSuccess: () => {
+      trackAction("rsvps", "updated");
       qc.invalidateQueries({ queryKey: ["rsvps", eventId] });
       qc.invalidateQueries({ queryKey: ["guests", eventId] });
     },
@@ -157,6 +160,7 @@ export function useDeleteRsvp(eventId: string) {
     mutationFn: (payload: { rsvpGuid: string; eventId: string }) =>
       client.post(RsvpsEndpoints.delete(), payload).then((r) => r.data),
     onSuccess: () => {
+      trackAction("rsvps", "deleted");
       qc.invalidateQueries({ queryKey: ["rsvps", eventId] });
       qc.invalidateQueries({ queryKey: ["guests", eventId] });
     },

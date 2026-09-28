@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { CheckInEndpoints, QrEndpoints } from "../endpoints";
 import type { CheckInResult, GenerateQrResult, QrToken } from "../../types/qr";
+import { trackAction } from "../../utils/analytics";
 
 export function useQrListApi(eventId: string) {
   return useQuery<QrToken[]>({
@@ -23,6 +24,7 @@ export function useGenerateQrApi() {
       return res.data?.data ?? res.data;
     },
     onSuccess: (_data, eventId) => {
+      trackAction("qr", "generated");
       qc.invalidateQueries({ queryKey: ["qr", eventId] });
     },
   });
@@ -35,6 +37,7 @@ export function useRevokeQrApi() {
       await client.patch(QrEndpoints.revoke(token));
     },
     onSuccess: (_data, { eventId }) => {
+      trackAction("qr", "revoked");
       qc.invalidateQueries({ queryKey: ["qr", eventId] });
     },
   });
@@ -48,6 +51,7 @@ export function useCheckInScanApi(eventId: string) {
       return res.data?.data ?? res.data;
     },
     onSuccess: () => {
+      trackAction("checkin", "scanned");
       qc.invalidateQueries({ queryKey: ["qr", eventId] });
     },
   });
@@ -70,6 +74,7 @@ export function useForceCheckInApi(eventId: string) {
       return { ...result, token: tokenRec.token };
     },
     onSuccess: () => {
+      trackAction("checkin", "forced");
       qc.invalidateQueries({ queryKey: ["qr", eventId] });
     },
   });
@@ -83,6 +88,7 @@ export function useUndoCheckInApi() {
       return res.data?.data ?? res.data;
     },
     onSuccess: (_data, { eventId }) => {
+      trackAction("checkin", "undone");
       qc.invalidateQueries({ queryKey: ["qr", eventId] });
     },
   });

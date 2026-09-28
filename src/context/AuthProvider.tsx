@@ -4,6 +4,7 @@ import { useAuthApi, useCrewLogin, type LoginPayload, type AuthResponse, type Cr
 import { AuthEndpoints } from "../api/endpoints";
 import { tokenStore, sessionHint, crewTokenStore, crewEventGuidStore } from "../utils/tokenStore";
 import { decodeJwt, getUserGuidFromToken, getUserRoleFromToken, isTokenExpired } from "../utils/jwtUtils";
+import { setAnalyticsUser } from "../utils/analytics";
 
 interface AuthUser {
   id: string;
@@ -136,6 +137,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.location.replace("/login");
     }
   };
+
+  // Stitch this browser to the account for GA. Done here rather than in the
+  // login mutation because this covers all three ways the guid changes: a fresh
+  // login, a reload that restores the session from a stored token (no mutation
+  // runs at all), and logout, which clears it so the next person on a shared
+  // laptop is not attributed to the previous one.
+  useEffect(() => {
+    setAnalyticsUser(userGuid);
+  }, [userGuid]);
 
   // tokenVersion is used only to trigger re-renders when token changes
   void tokenVersion;

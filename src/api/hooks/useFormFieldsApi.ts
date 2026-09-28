@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import { FormFieldsEndpoints } from "../endpoints";
 import { TYPE_KEY_MAP } from "../../utils/eventUtils";
+import { trackAction } from "../../utils/analytics";
 
 /** UI model for the modal / page */
 export interface FormFieldConfig {
@@ -79,8 +80,10 @@ export function useCreateFormField(eventId?: string) {
     // allow optional eventId closure so callers can pass id when they want
     mutationFn: (payload: QuestionPayload) =>
       client.post(FormFieldsEndpoints.create(), payload).then((r) => r.data),
-    onSuccess: (_d, vars) =>
-      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? (vars as any)?.eventId ?? (vars as any)?.eventGuid ?? (vars as any)?.eventGUID] }),
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? (vars as any)?.eventId ?? (vars as any)?.eventGuid ?? (vars as any)?.eventGUID] });
+      trackAction("form_fields", "created");
+    },
   });
 }
 
@@ -97,8 +100,10 @@ export function useUpdateFormField(eventId?: string) {
       delete body.id;
       return client.post(FormFieldsEndpoints.update(), body).then((r) => r.data);
     },
-    onSuccess: (_d, vars) =>
-      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? (vars as any)?.eventId ?? (vars as any)?.eventGuid ?? (vars as any)?.eventGUID] }),
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? (vars as any)?.eventId ?? (vars as any)?.eventGuid ?? (vars as any)?.eventGUID] });
+      trackAction("form_fields", "updated");
+    },
   });
 }
 
@@ -114,8 +119,10 @@ export function useDeactivateFormField(eventId?: string) {
           isActive: false,
         })
         .then((r) => r.data),
-    onSuccess: (_d, vars) =>
-      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? vars.eventId] }),
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? vars.eventId] });
+      trackAction("form_fields", "deactivated");
+    },
   });
 }
 
@@ -130,8 +137,10 @@ export function useActivateFormField(eventId?: string) {
           eventId: payload.eventId,
         })
         .then((r) => r.data),
-    onSuccess: (_d, vars) =>
-      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? vars.eventId] }),
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? vars.eventId] });
+      trackAction("form_fields", "activated");
+    },
   });
 }
 
@@ -146,7 +155,9 @@ export function useDeleteFormField(eventId?: string) {
           eventId: payload.eventId,
         })
         .then((r) => r.data),
-    onSuccess: (_d, vars) =>
-      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? vars.eventId] }),
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["formFields", eventId ?? vars.eventId] });
+      trackAction("form_fields", "deleted");
+    },
   });
 }

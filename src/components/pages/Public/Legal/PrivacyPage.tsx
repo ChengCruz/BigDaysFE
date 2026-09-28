@@ -143,7 +143,7 @@ const sections: Section[] = [
     title: <>Who we <em style={{ color: '#B4543A' }}>disclose data to</em></>,
     body: [
       "We do not sell personal data, either yours or your guests', to advertisers or to anyone else.",
-      "Personal data may be disclosed to these classes of third party, who act as our data processors under contract and only on our instructions:",
+      "Personal data may be disclosed to these classes of third party, who process it on our behalf and only on our instructions:",
       [
         "Cloud hosting and database providers that run the platform",
         "Transactional email delivery services that send invites, confirmations and account mail",
@@ -159,8 +159,8 @@ const sections: Section[] = [
     num: "09",
     title: <>Transfers <em style={{ color: '#B4543A' }}>outside Malaysia</em></>,
     body: [
-      "Our primary hosting region is Singapore, so personal data stored on our platform may be hosted and processed on servers located there rather than in Malaysia.",
-      "We also use third-party service providers, including cloud storage, content delivery and analytics providers such as Cloudflare and Google Analytics. These providers operate internationally and may process limited personal data in countries outside Malaysia.",
+      "We aim to keep personal data stored on our platform primarily in the Singapore region, though the edge and content-delivery infrastructure we use does not guarantee a single fixed location, so it may also be cached or processed briefly on servers elsewhere rather than only in Malaysia.",
+      "We also use third-party service providers, including Netlify for application hosting, and Cloudflare and Google Analytics for content delivery and analytics. These providers operate internationally and may process limited personal data in countries outside Malaysia.",
       "Where personal data is transferred or processed outside Malaysia, we use established service providers and take reasonable steps to ensure that appropriate security and data protection safeguards are in place. These may include encryption in transit, access controls, contractual data protection commitments and restrictions on how service providers may use the data.",
       <>You may ask us for more information about where your personal data is processed by contacting <a href={`mailto:${PRIVACY_EMAIL}`} style={linkStyle}>{PRIVACY_EMAIL}</a>.</>,
     ],
@@ -175,7 +175,7 @@ const sections: Section[] = [
         "Preference cookies: they remember small choices, such as a view or language setting, so the app feels the same next time",
         "Analytics cookies: set by Google Analytics, they tell us in aggregate which pages and features get used so we can improve them",
       ],
-      "You can control non-essential cookies through your browser settings, which let you block or clear cookies for this site, and you can opt out of Google Analytics entirely using Google's browser opt-out add-on. Clearing or blocking strictly necessary cookies will stop sign-in from working.",
+      "You can accept or reject analytics cookies from the cookie banner shown on your first visit, and change that choice at any time from the \"Cookie Preferences\" link in the footer. You can also control non-essential cookies through your browser settings, which let you block or clear cookies for this site, and you can opt out of Google Analytics entirely using Google's browser opt-out add-on. Clearing or blocking strictly necessary cookies will stop sign-in from working.",
       "Guests do not need an account to RSVP, and we do not track them across other websites.",
     ],
   },

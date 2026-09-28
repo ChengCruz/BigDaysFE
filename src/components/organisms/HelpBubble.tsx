@@ -4,6 +4,7 @@ import QuestionMarkCircleIcon from "@heroicons/react/solid/QuestionMarkCircleIco
 import { useTour } from "../tour/useTour";
 import { findTourForPath } from "../tour/tours";
 import { BrandWordmark } from "../atoms/BrandWordmark";
+import { hasDecided as hasCookieChoice } from "../../utils/cookieConsent";
 
 const HINT_STORAGE_KEY = "mbd_help_bubble_hint_seen";
 
@@ -43,13 +44,21 @@ export function HelpBubble() {
   // First-time hint: show a callout next to the bubble until the user dismisses
   // it or interacts with the bubble. Persisted in localStorage so we never show
   // it again on this device.
+  //
+  // Skipped while the cookie-consent banner's own first-visit decision is
+  // still pending: that banner sits above this same bottom-right corner
+  // (CookieConsentBanner.tsx), and a callout popping open underneath it would
+  // be unreadable. Once the visitor has decided (almost always well before
+  // 1200ms — the banner needs one click), the hint is free to show normally.
   useEffect(() => {
     try {
       if (localStorage.getItem(HINT_STORAGE_KEY) === "1") return;
     } catch {
       return;
     }
-    const t = window.setTimeout(() => setHintVisible(true), 1200);
+    const t = window.setTimeout(() => {
+      if (hasCookieChoice()) setHintVisible(true);
+    }, 1200);
     return () => window.clearTimeout(t);
   }, []);
 

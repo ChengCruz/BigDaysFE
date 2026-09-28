@@ -51,6 +51,7 @@ import { NoEventsState } from "../../molecules/NoEventsState";
 
 import { useEventContext } from "../../../context/EventContext";
 import { useDashboardApi } from "../../../api/hooks/useDashboardApi";
+import { trackEvent } from "../../../utils/analytics";
 import {
   formatEventDate,
   formatEventTime,
@@ -113,6 +114,13 @@ function ReadinessRing({ percent }: { percent: number }) {
 
 /** The single next action, plus the optional progress meter that belongs to it. */
 interface NextAction {
+  /**
+   * Stable analytics id for which rung of the ladder this is. Separate from
+   * `title`, which is prose and interpolates live counts ("3 parties still
+   * need a seat"), so it would be a different string every week and could
+   * never be grouped in a report. Never reuse a key for a different rung.
+   */
+  key: string;
   tone: "primary" | "amber" | "calm";
   Icon: React.FC<React.SVGProps<SVGSVGElement>>;
   title: string;
@@ -167,6 +175,7 @@ export default function CoupleHomePage() {
 
     if (days !== null && days < 0)
       return {
+        key: "day_passed",
         tone: "calm",
         Icon: SparklesIcon,
         title: "Your big day has passed",
@@ -175,6 +184,7 @@ export default function CoupleHomePage() {
 
     if (days === 0)
       return {
+        key: "today",
         tone: "primary",
         Icon: QrcodeIcon,
         title: "It's today 💍",
@@ -184,6 +194,7 @@ export default function CoupleHomePage() {
 
     if (r.totalRsvpsReceived === 0)
       return {
+        key: "invite_first_guests",
         tone: "primary",
         Icon: MailIcon,
         title: "Invite your first guests",
@@ -193,6 +204,7 @@ export default function CoupleHomePage() {
 
     if (t.totalTables === 0 && parties > 0)
       return {
+        key: "add_first_table",
         tone: "primary",
         Icon: TableIcon,
         title: "Add your first table",
@@ -202,6 +214,7 @@ export default function CoupleHomePage() {
 
     if (t.unassignedGuests > 0)
       return {
+        key: "seat_parties",
         tone: "primary",
         Icon: TableIcon,
         title: `${t.unassignedGuests} ${plural(t.unassignedGuests, "party", "parties")} still ${plural(t.unassignedGuests, "needs", "need")} a seat`,
@@ -212,6 +225,7 @@ export default function CoupleHomePage() {
 
     if (r.pendingCount > 0)
       return {
+        key: "chase_rsvps",
         tone: "amber",
         Icon: MailIcon,
         title: `${r.pendingCount} ${plural(r.pendingCount, "invite is", "invites are")} still waiting on a reply`,
@@ -221,6 +235,7 @@ export default function CoupleHomePage() {
 
     if (b.status === "over_budget")
       return {
+        key: "over_budget",
         tone: "amber",
         Icon: CurrencyDollarIcon,
         title: "You're over budget",
@@ -229,6 +244,7 @@ export default function CoupleHomePage() {
       };
 
     return {
+      key: "on_track",
       tone: "calm",
       Icon: CheckCircleIcon,
       title: "Everything's on track",
@@ -236,6 +252,29 @@ export default function CoupleHomePage() {
       meter: parties > 0 ? seatingMeter : undefined,
     };
   }, [dashboard, days]);
+
+  // ─── Is the next-action card actually earning its place? ───────────────────
+  //
+  // The card is the whole premise of couple-mode Home: one answer to "what do
+  // we do next?" instead of six equal panels. Whether that premise holds is a
+  // measurable question, and these two events are what make it measurable:
+  //
+  //   shown / click            per key -- which rungs get acted on, and which
+  //                            are read and ignored. A rung with traffic and no
+  //                            clicks is wrong prose or a wrong priority.
+  //   click -> the matching    whether the click finished the job. Chain to
+  //   feature_used action      feature_used in a GA funnel; see
+  //                            docs/ANALYTICS_GA4.md.
+  //
+  // Keyed on `next.key`, not on `next`: the minute tick rebuilds the object
+  // every 60s and the counts inside the title move whenever data changes, so
+  // depending on the object would re-fire this all afternoon and turn one
+  // sitting into dozens of impressions. The rung itself changing is the event.
+  useEffect(() => {
+    if (next) trackEvent("couple_next_action_shown", { step: next.key });
+    // Depending on `next` is exactly what must not happen here; see above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [next?.key]);
 
   // ─── Guards ────────────────────────────────────────────────────────────────
 
@@ -376,7 +415,10 @@ export default function CoupleHomePage() {
             {next.cta && (
               <button
                 type="button"
-                onClick={() => navigate(next.cta!.to)}
+                onClick={() => {
+                  trackEvent("couple_next_action_click", { step: next.key });
+                  navigate(next.cta!.to);
+                }}
                 className={`mt-3 inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${toneClasses[next.tone].cta}`}
               >
                 {next.cta.label}
