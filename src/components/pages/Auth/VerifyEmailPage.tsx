@@ -30,6 +30,26 @@ function markEmailVerified(email: string) {
   }
 }
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Reads `#email=...&code=...` from the verification email link. The fragment never reaches
+ * a server, log or Referer header. Anything malformed or invalid is ignored (returns null).
+ */
+function readVerifyFragment(hash: string): { email: string; code: string } | null {
+  if (!hash || hash.length < 2) return null;
+  try {
+    const params = new URLSearchParams(hash.slice(1));
+    const email = (params.get("email") ?? "").trim();
+    const code = params.get("code") ?? "";
+    if (email.length > 254 || !EMAIL_PATTERN.test(email)) return null;
+    if (!/^\d{6}$/.test(code)) return null;
+    return { email, code };
+  } catch {
+    return null;
+  }
+}
+
 const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '0.75rem 0',
@@ -58,8 +78,10 @@ export default function VerifyEmailPage() {
   const location = useLocation();
   const emailFromState = (location.state as any)?.email as string | undefined;
   const { verifyEmail, resendVerificationCode } = useAuthApi();
-  const [email, setEmail] = useState(emailFromState ?? "");
-  const [code, setCode] = useState("");
+  // Prefill from the email link fragment (never auto-submitted: the user presses verify).
+  const [fromHash] = useState(() => readVerifyFragment(window.location.hash));
+  const [email, setEmail] = useState(emailFromState ?? fromHash?.email ?? "");
+  const [code, setCode] = useState(fromHash?.code ?? "");
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
 
@@ -74,6 +96,13 @@ export default function VerifyEmailPage() {
       navigate("/login", { replace: true });
     }
   }, [alreadyVerified, navigate]);
+
+  // Drop the fragment from the address bar and history entry, valid or not.
+  useEffect(() => {
+    if (window.location.hash) {
+      window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+    }
+  }, []);
 
   useEffect(() => {
     if (cooldown <= 0) return;
