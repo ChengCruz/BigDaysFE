@@ -15,6 +15,7 @@ import { CalendarIcon, LocationMarkerIcon, ArchiveIcon, PencilIcon, XIcon, Refre
 import { StatsCard } from "../../atoms/StatsCard";
 import { useEventOwners } from "../../../api/hooks/useEventOwners";
 import { formatEventDate, formatEventTime } from "../../../utils/eventUtils";
+import { GuestDataPurgeNotice } from "../../molecules/GuestDataPurgeNotice";
 
 export default function EventsPage() {
   const [showArchived, setShowArchived] = useState(false);
@@ -120,6 +121,14 @@ export default function EventsPage() {
             </Button>
           </div>
         </div>
+
+        {activeEvent && (
+          <GuestDataPurgeNotice
+            eventId={activeEvent.id}
+            eventDate={activeEvent.date}
+            guestDataPurgedAt={activeEvent.guestDataPurgedAt}
+          />
+        )}
 
         {activeEvent && (
           <div className="p-4 rounded-xl border border-primary/25 bg-white dark:bg-accent dark:border-primary/30 shadow-sm shadow-primary/10 flex flex-col md:flex-row md:items-center md:justify-between gap-3">

@@ -34,6 +34,22 @@ export function daysUntilEvent(dateStr?: string | null): number | null {
   return Math.round((target.getTime() - today) / 86_400_000);
 }
 
+/** Guest data is removed this many days after the event date (see Privacy Notice). */
+export const GUEST_DATA_RETENTION_DAYS = 90;
+
+/**
+ * Date (YYYY-MM-DD) on which guest data is purged: the event date plus 90
+ * calendar days. Date only, no time of day, done in UTC on the sliced date part
+ * for the same reason as formatEventDate above. Null when there is no usable date.
+ */
+export function guestDataPurgeDate(eventDateStr?: string | null): string | null {
+  if (!eventDateStr) return null;
+  const d = new Date(`${eventDateStr.slice(0, 10)}T00:00:00Z`);
+  if (isNaN(d.getTime())) return null;
+  d.setUTCDate(d.getUTCDate() + GUEST_DATA_RETENTION_DAYS);
+  return d.toISOString().slice(0, 10);
+}
+
 /**
  * Live countdown to the event: whole days, hours and minutes remaining.
  *

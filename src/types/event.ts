@@ -15,4 +15,6 @@ export interface ApiEvent {
   eventCode?: string;
   rsvpDueDate?: string | null;
   isExpired?: boolean;
+  /** Set once the 90-day guest data purge has run for this event. */
+  guestDataPurgedAt?: string | null;
 }

@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { Link } from "react-router";
 
 const RETENTION_COMMITMENT =
-  "RSVP responses are kept only as long as they are needed for your event. We permanently delete all guest RSVP data 90 days after the event ends.";
+  "RSVP responses are kept only as long as they are needed for your event. 90 days after the event ends, we permanently delete guest RSVP replies, contact details, dietary notes and check-in records, and we replace guest names with anonymous labels.";
 
 const PRIVACY_EMAIL = "admin@bigdaysmanager.com";
 
@@ -118,8 +118,10 @@ const sections: Section[] = [
           {RETENTION_COMMITMENT}
         </p>
       </div>,
-      "The 90-day period runs from your event's end date. Until it expires the records stay available, so you can reconcile attendance, follow up on no-shows and close out your planning.",
-      "Once those 90 days elapse, the guest RSVP records for that event are permanently erased. That includes guest names, contact details, party size, dietary notes and check-in records. The deletion is permanent and cannot be reversed by us or by you.",
+      "The 90-day period runs from your event's date. Until it expires the records stay available, so you can reconcile attendance, follow up on no-shows and close out your planning.",
+      "Once those 90 days elapse, we permanently delete the RSVP replies for that event, the answers to your RSVP questions, contact details such as phone numbers and email addresses, dietary and accessibility notes, and check-in records. Guests you had already deleted are permanently deleted too. The deletion is permanent and cannot be reversed by us or by you.",
+      "Each remaining guest is kept only as an anonymous entry. The guest's name is replaced with a table label (for example \"Dad friend 1\", or \"Guest 12\" if the guest has no table), and the guest's group and tags are cleared. We keep the party size and the table and seat assignment as an anonymous count, so that your seating plan, your dashboard and our aggregate statistics keep working. No name or contact details remain on these entries.",
+      "The event itself, its tables and floor plan, and your budget and checklist are not guest data. They stay until the account is closed.",
       "If you want to keep a record, export your guest list before that date. The export is available from your event's guest list at any time.",
       "We may retain anonymised or aggregate counts, for example how many events used seating last year, because those numbers no longer identify anyone.",
     ],
@@ -236,7 +238,7 @@ const sections: Section[] = [
       "If you replied to an RSVP page hosted on MYBigDay, your details sit inside that couple's or planner's event. For the RSVP information an event organiser chooses to collect, the organiser generally acts as the data controller and MYBigDay processes that information on the organiser's behalf.",
       "MYBigDay may separately act as a data controller for limited processing necessary to operate and secure the platform and to meet our own legal obligations, such as security logs, fraud and abuse prevention, and aggregate usage statistics.",
       "To have your details corrected or removed, ask the couple or planner who invited you. They control the guest list for their event and can change or delete your entry themselves at any time, and they are the right people to ask because the event and its data belong to them.",
-      "Whether or not you ask, your RSVP details are deleted in full 90 days after the event ends.",
+      "Whether or not you ask, 90 days after the event ends your RSVP reply, contact details, dietary notes and check-in record are permanently deleted, and your name is replaced with an anonymous label. Only an anonymous party size and seat count remain.",
       <>If you cannot reach the couple or planner, contact us through our <Link to="/contact" style={linkStyle}>contact page</Link> and we will pass your request on to them.</>,
     ],
   },
@@ -358,7 +360,7 @@ export default function PrivacyPage() {
             >
               <div style={{ ...labelStyle, marginBottom: '1rem' }}>In Short</div>
               <p style={{ color: '#6B5D50', fontSize: '1rem', lineHeight: 1.75, margin: 0, maxWidth: '68ch' }}>
-                We collect your account details, the event details you enter, and the RSVP details your guests submit. We use them to run your event: to deliver RSVP pages, count replies, seat guests and support you. Guest RSVP data is permanently deleted 90 days after the event ends. You may access, correct, port or delete your personal data, or withdraw your consent, by writing to{' '}
+                We collect your account details, the event details you enter, and the RSVP details your guests submit. We use them to run your event: to deliver RSVP pages, count replies, seat guests and support you. 90 days after the event ends, guest RSVP replies, contact details, dietary notes and check-in records are permanently deleted and guest names are replaced with anonymous labels. You may access, correct, port or delete your personal data, or withdraw your consent, by writing to{' '}
                 <a href={`mailto:${PRIVACY_EMAIL}`} style={linkStyle}>{PRIVACY_EMAIL}</a> or using our{' '}
                 <Link to="/contact" style={linkStyle}>contact page</Link>.
               </p>

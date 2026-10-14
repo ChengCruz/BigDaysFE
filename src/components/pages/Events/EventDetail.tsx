@@ -14,6 +14,7 @@ import { useRsvpsApi } from "../../../api/hooks/useRsvpsApi";
 import { useAuth } from "../../../api/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { ShareWithGuestsCard } from "../../molecules/ShareWithGuestsCard";
+import { GuestDataPurgeNotice } from "../../molecules/GuestDataPurgeNotice";
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -53,6 +54,13 @@ const [impOpen, setImpOpen] = useState(false);
           Edit Event
         </Link>
       </header>
+      {event && (
+        <GuestDataPurgeNotice
+          eventId={id!}
+          eventDate={event.date}
+          guestDataPurgedAt={event.guestDataPurgedAt}
+        />
+      )}
       <div className="flex space-x-4 mb-6">
       <ImportRsvpsModal
         isOpen={impOpen}
