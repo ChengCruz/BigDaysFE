@@ -9,6 +9,9 @@ const VERIFIED_EMAILS_KEY = "mbd_verified_emails";
 /** Matches the backend resend cooldown: a second request inside this window is a silent no-op. */
 const RESEND_COOLDOWN_SECONDS = 60;
 
+/** How long the "email verified" modal stays up before it moves on to the sign-in page. */
+const VERIFIED_MODAL_MS = 3500;
+
 function getVerifiedEmails(): string[] {
   try {
     const raw = localStorage.getItem(VERIFIED_EMAILS_KEY);
@@ -27,6 +30,26 @@ function markEmailVerified(email: string) {
     }
   } catch {
     // localStorage unavailable, so worst case the form just shows again
+  }
+}
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Reads `#email=...&code=...` from the verification email link. The fragment never reaches
+ * a server, log or Referer header. Anything malformed or invalid is ignored (returns null).
+ */
+function readVerifyFragment(hash: string): { email: string; code: string } | null {
+  if (!hash || hash.length < 2) return null;
+  try {
+    const params = new URLSearchParams(hash.slice(1));
+    const email = (params.get("email") ?? "").trim();
+    const code = params.get("code") ?? "";
+    if (email.length > 254 || !EMAIL_PATTERN.test(email)) return null;
+    if (!/^\d{6}$/.test(code)) return null;
+    return { email, code };
+  } catch {
+    return null;
   }
 }
 
@@ -58,10 +81,14 @@ export default function VerifyEmailPage() {
   const location = useLocation();
   const emailFromState = (location.state as any)?.email as string | undefined;
   const { verifyEmail, resendVerificationCode } = useAuthApi();
-  const [email, setEmail] = useState(emailFromState ?? "");
-  const [code, setCode] = useState("");
+  // Prefill from the email link fragment (never auto-submitted: the user presses verify).
+  const [fromHash] = useState(() => readVerifyFragment(window.location.hash));
+  const [email, setEmail] = useState(emailFromState ?? fromHash?.email ?? "");
+  const [code, setCode] = useState(fromHash?.code ?? "");
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
+  // Set once the code is accepted. Shows the confirmation modal, then moves on to sign-in.
+  const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
 
   // Guards against: (1) browser back-button after a successful verify (handled by the
   // `replace` navigation below) and (2) revisiting this route later, e.g. via the original
@@ -74,6 +101,24 @@ export default function VerifyEmailPage() {
       navigate("/login", { replace: true });
     }
   }, [alreadyVerified, navigate]);
+
+  // Drop the fragment from the address bar and history entry, valid or not.
+  useEffect(() => {
+    if (window.location.hash) {
+      window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+    }
+  }, []);
+
+  // Carry the address forward so the login form is prefilled instead of asking for
+  // something they typed 30 seconds ago.
+  const goToSignIn = (address: string) => navigate("/login", { replace: true, state: { email: address } });
+
+  useEffect(() => {
+    if (!verifiedEmail) return;
+    const timer = setTimeout(() => goToSignIn(verifiedEmail), VERIFIED_MODAL_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verifiedEmail]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -111,10 +156,7 @@ export default function VerifyEmailPage() {
       if (result.isSuccess) {
         markEmailVerified(email);
         trackEvent("email_verified");
-        toast.success(result.message || "Email verified! You can now sign in.");
-        // Carry the address forward so the login form is prefilled instead of
-        // asking for something they typed 30 seconds ago.
-        navigate("/login", { replace: true, state: { email: email.trim() } });
+        setVerifiedEmail(email.trim());
       } else {
         setError(result.message || "Invalid or expired verification code. Please check your email and try again.");
       }
@@ -349,6 +391,81 @@ export default function VerifyEmailPage() {
           </form>
         </div>
       </div>
+
+      {/* ── Confirmation modal: shown after a successful verify, then continues to sign-in ── */}
+      {verifiedEmail && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+            background: 'rgba(42,34,30,0.55)',
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="verified-title"
+            style={{
+              width: '100%',
+              maxWidth: '24rem',
+              background: '#FAF6EF',
+              padding: '2.5rem 2rem',
+              textAlign: 'center',
+              boxShadow: '0 20px 50px rgba(42,34,30,0.35)',
+            }}
+          >
+            <div
+              aria-hidden
+              style={{
+                width: '3.5rem',
+                height: '3.5rem',
+                margin: '0 auto 1.25rem',
+                borderRadius: '50%',
+                background: '#B4543A',
+                color: '#FAF6EF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.75rem',
+              }}
+            >
+              ✓
+            </div>
+            <h2
+              id="verified-title"
+              style={{ fontFamily: 'var(--font-display)', fontWeight: 300, fontSize: '2rem', lineHeight: 1.1, marginBottom: '0.75rem', color: '#2A221E' }}
+            >
+              Email <em style={{ fontStyle: 'italic', color: '#B4543A' }}>verified.</em>
+            </h2>
+            <p role="status" style={{ color: '#6B5D50', fontSize: '1.05rem', lineHeight: 1.6, fontFamily: 'var(--font-serif)', marginBottom: '1.5rem' }}>
+              Your account is active. Taking you to sign in…
+            </p>
+            <button
+              type="button"
+              onClick={() => goToSignIn(verifiedEmail)}
+              style={{
+                width: '100%',
+                padding: '1rem',
+                background: '#2A221E',
+                color: '#FAF6EF',
+                border: 'none',
+                fontFamily: 'var(--font-label)',
+                fontSize: '0.75rem',
+                letterSpacing: '0.3em',
+                textTransform: 'uppercase' as const,
+                cursor: 'pointer',
+              }}
+            >
+              Sign in now →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
