@@ -52,3 +52,41 @@ test.describe('Verify email fragment', () => {
     });
   }
 });
+
+test.describe('Verify email success modal', () => {
+  test('shows a confirmation modal, then moves on to sign-in by itself', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(`/verify-email${goodHash}`);
+    await page.click('button[type="submit"]');
+
+    const modal = page.getByRole('dialog');
+    await expect(modal).toBeVisible();
+    await expect(modal).toContainText('verified');
+    // The modal stays up for a few seconds first, so the user can read it.
+    await expect(page).toHaveURL(/\/verify-email$/);
+    await expect(page).toHaveURL(/\/login/, { timeout: 8000 });
+  });
+
+  test('"Sign in now" goes to sign-in straight away', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(`/verify-email${goodHash}`);
+    await page.click('button[type="submit"]');
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    await page.getByRole('button', { name: /sign in now/i }).click();
+    await expect(page).toHaveURL(/\/login/);
+  });
+
+  test('a rejected code shows the error and no modal', async ({ page }) => {
+    await mockApi(page);
+    await page.route('**/User/VerifyEmail**', route =>
+      route.fulfill({ status: 200, json: { isSuccess: false, message: 'Invalid or expired verification code.' } }),
+    );
+    await page.goto(`/verify-email${goodHash}`);
+    await page.click('button[type="submit"]');
+
+    await expect(page.getByText('Invalid or expired verification code.')).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page).toHaveURL(/\/verify-email$/);
+  });
+});
