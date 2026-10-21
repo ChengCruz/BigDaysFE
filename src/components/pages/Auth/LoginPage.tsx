@@ -47,12 +47,14 @@ export default function LoginPage() {
   const { forgotPassword, resetPassword } = useAuthApi();
   const nav = useNavigate();
   const location = useLocation();
-  const rawFrom = (location.state as any)?.from?.pathname || "/app";
+  const fromLocation = (location.state as any)?.from;
+  const rawFrom = fromLocation?.pathname || "/app";
   const FULLSCREEN_FALLBACKS: Record<string, string> = {
     "/app/tables/fullscreen": "/app/tables",
     "/app/rsvps/designer-v3": "/app/events",
   };
-  const from = FULLSCREEN_FALLBACKS[rawFrom] ?? rawFrom;
+  // Keep the query string and hash too, so a deep link such as /app/feedback?event=<id> survives the login.
+  const from = FULLSCREEN_FALLBACKS[rawFrom] ?? `${rawFrom}${fromLocation?.search ?? ""}${fromLocation?.hash ?? ""}`;
 
   // Prefilled when /verify-email hands the user over after a successful verify,
   // so they aren't asked for an address they typed thirty seconds earlier.
