@@ -24,6 +24,7 @@ import {
   MailIcon,
   HeartIcon,
   SparklesIcon,
+  ChatAlt2Icon,
 } from "@heroicons/react/solid";
 import { Chair, Blueprint } from "@phosphor-icons/react";
 import { BrandLogo } from "../atoms/BrandLogo";
@@ -32,6 +33,7 @@ import { useAuth } from "../../api/hooks/useAuth";
 import { useUiMode } from "../../context/UiModeContext";
 import { getRoleLabel } from "../../utils/jwtUtils";
 import { hasUnseenRelease } from "../../utils/whatsNew";
+import { useFeedbackStatus } from "../../api/hooks/useFeedbackApi";
 
 interface SidebarLink {
   to: string;
@@ -41,6 +43,8 @@ interface SidebarLink {
   sub?: boolean;
   external?: boolean;
   soon?: boolean;
+  /** Shows a small "New" dot after the label. */
+  dot?: boolean;
 }
 
 const BASE_LINKS: SidebarLink[] = [
@@ -59,6 +63,9 @@ const BASE_LINKS: SidebarLink[] = [
   { to: "/app/crew", label: "Crew", Icon: IdentificationIcon, sub: true },
   { to: "/app/contact", label: "Contact Us", Icon: MailIcon },
 ];
+
+/** Added after Contact Us only while the server says there is feedback to give or to read back. */
+const FEEDBACK_LINK: SidebarLink = { to: "/app/feedback", label: "Feedback", Icon: ChatAlt2Icon };
 
 // Pages accessible to Staff (role 6) only
 const STAFF_ALLOWED_PATHS = ["/app/checkin", "/app/guests", "/app/tables"];
@@ -88,7 +95,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   // would offer them the helper-management list. Helpers don't manage helpers.
   const canUseCoupleMode = userRole !== 6;
 
-  const links = BASE_LINKS.map(l =>
+  // Hidden while the status loads, on any error, in demo mode and for crew.
+  const feedback = useFeedbackStatus();
+
+  const baseLinks = feedback.available
+    ? [...BASE_LINKS, { ...FEEDBACK_LINK, dot: feedback.pending }]
+    : BASE_LINKS;
+
+  const links = baseLinks.map(l =>
     l.label === "RSVP Questions" && eventId
       ? { ...l, to: `/app/events/${eventId}/form-fields` }
       : l
@@ -164,7 +178,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <div className={`flex-1 overflow-y-auto py-3 ${collapsed ? "md:px-2" : "px-3"}`} data-tour="sidebar-nav">
             {/* Navigation links */}
             <nav className="space-y-0.5">
-              {visibleLinks.map(({ to, label, Icon, end, sub, external, soon }) =>
+              {visibleLinks.map(({ to, label, Icon, end, sub, external, soon, dot }) =>
                 soon ? (
                   <div
                     key={to}
@@ -220,6 +234,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   >
                     <Icon className={`${sub ? "h-4 w-4" : "h-5 w-5"} flex-shrink-0`} />
                     {!collapsed && <span>{label}</span>}
+                    {dot && (
+                      <span
+                        role="img"
+                        className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"
+                        aria-label="New"
+                      />
+                    )}
                   </NavLink>
                 )
               )}

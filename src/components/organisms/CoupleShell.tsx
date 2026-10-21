@@ -16,6 +16,7 @@ import { NavLink, useLocation, useNavigate } from "react-router";
 import pkg from "../../../package.json";
 import { Palette } from "@phosphor-icons/react";
 import {
+  ChatAlt2Icon,
   ChevronLeftIcon,
   ChevronRightIcon,
   QuestionMarkCircleIcon,
@@ -31,6 +32,7 @@ import { useAuth } from "../../api/hooks/useAuth";
 import { useTheme } from "../../context/ThemeContext";
 import { useUiMode } from "../../context/UiModeContext";
 import { hasUnseenRelease } from "../../utils/whatsNew";
+import { useFeedbackStatus } from "../../api/hooks/useFeedbackApi";
 import { DemoBanner, isDemoActive } from "../../demo";
 
 function initialsFor(email?: string): string {
@@ -59,6 +61,23 @@ const SECONDARY = [
   { to: "/app/users", label: "Your account", Icon: UserCircleIcon },
 ];
 
+/**
+ * Post-event feedback. Joins SECONDARY right after "Get help", and only while the
+ * server says there is a form to fill in or saved answers to read back.
+ */
+const FEEDBACK = { to: "/app/feedback", label: "Feedback", Icon: ChatAlt2Icon };
+
+/** The small unread marker shared by the rail and the mobile account menu. */
+function NewDot({ label }: { label: string }) {
+  return (
+    <span
+      role="img"
+      className="inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"
+      aria-label={label}
+    />
+  );
+}
+
 export function CoupleShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -69,6 +88,12 @@ export function CoupleShell({ children }: { children: ReactNode }) {
   // Re-read on every navigation (this component re-renders on location change),
   // which is when visiting the page should clear the dot.
   const hasUnseenNews = hasUnseenRelease();
+
+  // Hidden while the status loads, on any error and in demo mode.
+  const feedback = useFeedbackStatus();
+  const secondary = feedback.available
+    ? SECONDARY.flatMap((item) => (item.to === "/app/contact" ? [item, FEEDBACK] : [item]))
+    : SECONDARY;
 
   const [collapsed, setCollapsed] = React.useState(false);
   const active = sectionForPath(pathname);
@@ -144,7 +169,7 @@ export function CoupleShell({ children }: { children: ReactNode }) {
 
         {/* ─── Rail footer: secondary links + mode switch ─────────────── */}
         <div className="border-t border-primary/10 p-3">
-          {(demo ? [] : SECONDARY).map(({ to, label, Icon }) => (
+          {(demo ? [] : secondary).map(({ to, label, Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -169,6 +194,7 @@ export function CoupleShell({ children }: { children: ReactNode }) {
                   aria-label="New updates"
                 />
               )}
+              {to === FEEDBACK.to && feedback.pending && <NewDot label="New" />}
             </NavLink>
           ))}
 
@@ -238,6 +264,14 @@ export function CoupleShell({ children }: { children: ReactNode }) {
                 <DropdownItem onClick={() => navigate("/app/contact")} className="md:hidden">
                   Get help
                 </DropdownItem>
+                {feedback.available && (
+                  <DropdownItem onClick={() => navigate(FEEDBACK.to)} className="md:hidden">
+                    <span className="inline-flex items-center gap-2">
+                      Feedback
+                      {feedback.pending && <NewDot label="New" />}
+                    </span>
+                  </DropdownItem>
+                )}
                 <DropdownItem onClick={() => navigate("/app/users")}>Your account</DropdownItem>
                 {/* Mobile has no rail, so this is the only way to the release notes there. */}
                 <DropdownItem onClick={() => navigate("/app/whats-new")} className="md:hidden">
