@@ -5,6 +5,7 @@ import { AuthEndpoints } from "../api/endpoints";
 import { tokenStore, sessionHint, crewTokenStore, crewEventGuidStore } from "../utils/tokenStore";
 import { decodeJwt, getUserGuidFromToken, getUserRoleFromToken, isTokenExpired } from "../utils/jwtUtils";
 import { setAnalyticsUser } from "../utils/analytics";
+import { checkApiHealth, isServerUnavailable, maintenanceStore } from "../utils/maintenance";
 
 interface AuthUser {
   id: string;
@@ -80,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
+    let held = false;
     client
       .post(AuthEndpoints.refreshToken)
       .then(({ data }) => {
@@ -88,7 +90,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (authData.expiresIn) scheduleProactiveRefreshRef.current(authData.expiresIn);
         setTokenVersion(v => v + 1);
       })
-      .catch(() => {
+      .catch(async (err) => {
+        // The API is down for maintenance: the session is fine, it just cannot be
+        // restored yet. Keep the hint and the loader, so the user is not signed out or
+        // sent to /login, and let the maintenance screen reload the page once the API
+        // answers again.
+        if (isServerUnavailable(err) && !(await checkApiHealth())) {
+          held = true;
+          maintenanceStore.set(true);
+          maintenanceStore.reloadWhenBack = true;
+          return;
+        }
         // Crew (Staff) tokens have no refresh cookie, so fall back to the token
         // stored in sessionStorage if it hasn't expired yet.
         const crewToken = crewTokenStore.get();
@@ -101,7 +113,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         crewTokenStore.clear();
         sessionHint.clear();
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!held) setLoading(false);
+      });
   }, []);
 
   const accessToken = tokenStore.get();

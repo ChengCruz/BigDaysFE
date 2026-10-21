@@ -4,6 +4,7 @@ import { tokenStore } from "../utils/tokenStore";
 import { decodeJwt } from "../utils/jwtUtils";
 import { AuthEndpoints } from "./endpoints";
 import { installDemoAdapter } from "../demo";
+import { reportApiFailure } from "../utils/maintenance";
 
 /** Author sent on calls made before login, when there is no JWT to derive one from. */
 const ANONYMOUS_AUTHOR = "anonymous";
@@ -47,6 +48,7 @@ function processQueue(error: unknown, token: string | null) {
 client.interceptors.response.use(
   res => res,
   async error => {
+    reportApiFailure(error);
     const original = error.config;
 
     // Only attempt refresh on 401, and not for the refresh/login endpoints themselves
