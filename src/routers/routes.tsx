@@ -192,6 +192,7 @@ import ChecklistPage from "../components/pages/Checklist/ChecklistPage";
 import TutorialPage from "../components/pages/Tutorial/TutorialPage";
 import WhatsNewPage from "../components/pages/WhatsNew/WhatsNewPage";
 import ContactSupportPage from "../components/pages/Contact/ContactSupportPage";
+import FeedbackPage from "../components/pages/Feedback/FeedbackPage";
 // …and other Public pages…
 
 export default function AppRoutes() {
@@ -319,6 +320,9 @@ export default function AppRoutes() {
 
         {/* CONTACT / SUPPORT */}
         <Route path="contact" element={<ContactSupportPage />} />
+
+        {/* POST-EVENT FEEDBACK: linked from the feedback request email; the API decides who may submit */}
+        <Route path="feedback" element={<FeedbackPage />} />
 
         {/* any other /app/* → back to dashboard */}
         <Route path="*" element={<Navigate to="/app/dashboard" replace />} />

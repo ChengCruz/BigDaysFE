@@ -188,3 +188,14 @@ export const ContactEndpoints = {
   // Sends a support / bug-report email. Sender name & email resolved server-side from the JWT.
   send: "/Contact/Send",
 };
+
+export const FeedbackEndpoints = {
+  // Which of the signed-in user's events can still receive post-event feedback.
+  eligibility: "/Feedback/Eligibility",
+  // Whether the menu should offer feedback at all, and whether an answer is still pending.
+  status: "/Feedback/Status",
+  // Submits feedback for one event. Sender email is resolved server-side from the JWT.
+  submit: "/Feedback",
+  // The signed-in user's own saved feedback for one event. 404 when there is none.
+  mine: (eventGuid: string) => `/Feedback/${eventGuid}`,
+};
