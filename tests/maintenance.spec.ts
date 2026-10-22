@@ -17,11 +17,17 @@ const expect = baseExpect.configure({ timeout: 15_000 });
 const HEADING = /We're updating MYBigDay$/;
 
 /** Answers /health with `status` and counts the calls. `status` can be flipped mid-test. */
-async function mockHealth(page: Page, initial: number) {
-  const state = { status: initial, calls: 0 };
-  await page.route('**/health', (route) => {
+async function mockHealth(page: Page, initial: number, marker = false) {
+  const state = { status: initial, calls: 0, marker };
+  await page.route("**/health", (route) => {
     state.calls += 1;
-    return route.fulfill({ status: state.status, json: { status: state.status === 200 ? 'healthy' : 'down' } });
+    const json =
+      state.status === 200
+        ? { status: "healthy" }
+        : state.marker
+          ? { maintenance: true, message: "We are updating MYBigDay" }
+          : { status: "down" };
+    return route.fulfill({ status: state.status, json });
   });
   return state;
 }
@@ -155,5 +161,51 @@ test.describe('Maintenance screen', () => {
 
     await expect(page.getByRole('heading', { name: HEADING })).toHaveCount(0);
     expect(health.calls).toBeGreaterThan(0);
+  });
+
+  test.describe("when the app loads or the tab comes back", () => {
+    test("the landing page goes down with the rest when /health shows the maintenance marker", async ({ page }) => {
+      await mockHealth(page, 503, true);
+      await page.goto("/");
+      await expect(page.getByRole("heading", { name: HEADING })).toBeVisible();
+      await expect(page.getByText("Scheduled maintenance")).toBeVisible();
+    });
+
+    test("the landing page is untouched while /health is fine", async ({ page }) => {
+      const health = await mockHealth(page, 200);
+      await page.goto("/");
+      await expect.poll(() => health.calls).toBeGreaterThan(0);
+      await expect(page.getByRole("heading", { name: HEADING })).toHaveCount(0);
+    });
+
+    test("an unplanned outage shows the screen without the Scheduled maintenance badge", async ({ page }) => {
+      await mockHealth(page, 502);
+      await page.goto("/");
+      await expect(page.getByRole("heading", { name: HEADING })).toBeVisible();
+      await expect(page.getByText("Scheduled maintenance")).toHaveCount(0);
+    });
+
+    test("an open tab goes into maintenance when it becomes visible again", async ({ page }) => {
+      const health = await mockHealth(page, 200);
+      await page.goto("/");
+      await expect.poll(() => health.calls).toBeGreaterThan(0);
+      await expect(page.getByRole("heading", { name: HEADING })).toHaveCount(0);
+
+      health.status = 503;
+      health.marker = true;
+      await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+      await expect(page.getByRole("heading", { name: HEADING })).toBeVisible();
+      await expect(page.getByText("Scheduled maintenance")).toBeVisible();
+    });
+
+    test("demo mode makes no health check", async ({ page }) => {
+      const health = await mockHealth(page, 503, true);
+      await page.goto("/");
+      await page.evaluate(() => sessionStorage.setItem("bigdays.demo.v1", "1"));
+      health.calls = 0;
+      await page.reload();
+      await page.waitForLoadState("networkidle");
+      expect(health.calls).toBe(0);
+    });
   });
 });
