@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">My Big Day</title>
+  <!-- Simplified from the My Big Day arch and bridal-shoe brand mark. -->
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="#FFF9F0"/>
+
+  <!-- Champagne-gold doorway arch -->
+  <path d="M12 53V29C12 17.4 20.9 8 32 8s20 9.4 20 21v24H12Z"
+        fill="none" stroke="#D4AA5D" stroke-width="3.2" stroke-linejoin="round"/>
+
+  <!-- Dusty-rose folded bridal fabric -->
+  <path d="M18 24.5 39 18l-4.8 16.7-13.9 7.1Z" fill="#B86F73"/>
+  <path d="m18 24.5 16.2 10.2-13.9 7.1Z" fill="#D9A19B"/>
+  <path d="m39 18-4.8 16.7-5.7-3.6Z" fill="#965660"/>
+
+  <!-- Gold high heel -->
+  <path d="M19 46.5c8.4-.4 12.4-3.5 17.4-8.3 2.1-2 3.9-3.2 6.3-2.7 1.1.2 1.9 1.2 1.7 2.4-.6 4.1-4.2 8.3-9.2 10.1-4.6 1.7-10.3 2.2-16.2 1.7Z" fill="#C8A24F"/>
+  <path d="M41.2 39.1h4.1L43.9 51h-3.2Z" fill="#B78D36"/>
+  <path d="M19 46.5c3.5.8 6.7.8 9.7.2l2.6 3H19Z" fill="#D9B866"/>
+</svg>
