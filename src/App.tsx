@@ -7,6 +7,7 @@ import Routes from "./routers/routes";
 import { GoogleAnalytics } from "./components/analytics/GoogleAnalytics";
 import { CookieConsentBanner } from "./components/organisms/CookieConsentBanner";
 import ScrollToTop from "./components/ScrollToTop";
+import MaintenanceScreen from "./components/organisms/MaintenanceScreen";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
               <ScrollToTop />
               <Routes />
               <CookieConsentBanner />
+              <MaintenanceScreen />
             </BrowserRouter>
           </EventProvider>
         </UiModeProvider>
