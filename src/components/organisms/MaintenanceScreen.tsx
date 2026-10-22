@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { useQueryClient } from "@tanstack/react-query";
 import { BrandLogo } from "../atoms/BrandLogo";
 import { Button } from "../atoms/Button";
-import { checkApiHealth, maintenanceStore } from "../../utils/maintenance";
+import { isDemoActive } from "../../demo";
+import { checkApiHealth, maintenanceStore, startHealthWatch } from "../../utils/maintenance";
 
 const RECHECK_SECONDS = 30;
 
@@ -13,12 +14,16 @@ const RECHECK_SECONDS = 30;
  */
 export default function MaintenanceScreen() {
   const on = useSyncExternalStore(maintenanceStore.subscribe, maintenanceStore.getSnapshot);
+  // Pages with no API call of their own (the landing page) go down with the rest of the
+  // site. Demo mode runs on sample data and needs no API.
+  useEffect(() => startHealthWatch(isDemoActive), []);
   return on ? <MaintenanceView /> : null;
 }
 
 /** Mounted only while maintenance is on, so every outage starts its countdown from 30. */
 function MaintenanceView() {
   const queryClient = useQueryClient();
+  const planned = useSyncExternalStore(maintenanceStore.subscribe, maintenanceStore.getPlanned);
   const [secondsLeft, setSecondsLeft] = useState(RECHECK_SECONDS);
   const [checking, setChecking] = useState(false);
   const busy = useRef(false);
@@ -64,9 +69,11 @@ function MaintenanceView() {
           className="flex w-full flex-col items-center gap-3 rounded-2xl border border-primary/10 bg-white p-8 text-center shadow-sm dark:border-white/10 dark:bg-slate-900"
         >
           <BrandLogo tone="full" height={72} alt="MYBigDay" />
-          <span className="mt-1 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
-            Scheduled maintenance
-          </span>
+          {planned && (
+            <span className="mt-1 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+              Scheduled maintenance
+            </span>
+          )}
           <h1 className="mt-2 text-balance text-2xl font-bold">
             We&apos;re updating{" "}
             {/* Brand name coloured like the logo: gold "MY", rose "BigDay". */}
