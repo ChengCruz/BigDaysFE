@@ -44,10 +44,10 @@ export default function AuthBrandPanel() {
       <div style={{ position: 'relative', zIndex: 2 }}>
         <Link to="/" aria-label="Go to homepage" style={{ display: 'inline-block' }}>
           <img
-            src="/MYBigDay_logo_trimmed.png"
+            src="/mybigday-logo-xmas.png"
             alt="My Big Day"
-            width={1399}
-            height={1486}
+            width={1375}
+            height={1087}
             className="block w-auto h-28 md:h-[168px]"
           />
         </Link>
