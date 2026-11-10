@@ -188,3 +188,8 @@ export const ContactEndpoints = {
   // Sends a support / bug-report email. Sender name & email resolved server-side from the JWT.
   send: "/Contact/Send",
 };
+
+export const FeedbackNudgeEndpoints = {
+  // Whether to show the "check your inbox and reply" banner to the logged-in user.
+  nudge: "/feedback/nudge",
+};

@@ -19,15 +19,16 @@ interface BrandLogoProps {
 }
 
 const SRC = {
-  full: "/mybigday-logo.png",
+  // Christmas edition. To go back, point this at "/mybigday-logo.png" (1401x1107).
+  full: "/mybigday-logo-xmas.png",
   dark: "/mybigday-logo-dark.png",
   light: "/mybigday-logo-light.png",
 } as const;
 
 // Intrinsic size of the trimmed asset: set as width/height attrs so the browser
 // reserves the right space before the PNG loads (avoids layout shift).
-const INTRINSIC_W = 1401;
-const INTRINSIC_H = 1107;
+const INTRINSIC_W = 1375;
+const INTRINSIC_H = 1087;
 
 /**
  * App brand logo. Served from /public so the URL stays stable across builds.

@@ -18,6 +18,7 @@ import { PlannerShell } from "../components/organisms/PlannerShell";
 import { HelpBubble } from "../components/organisms/HelpBubble";
 import { ExportBackupReminder } from "../components/organisms/ExportBackupReminder";
 import { WhatsNewAnnouncer } from "../components/organisms/WhatsNewAnnouncer";
+import { FeedbackNudgeBanner } from "../components/organisms/FeedbackNudgeBanner";
 import { TourProvider } from "../components/tour/TourProvider";
 import { NoEventsState } from "../components/molecules/NoEventsState";
 import { useEventContext } from "../context/EventContext";
@@ -51,7 +52,12 @@ function AppLayout() {
 
   return (
     <TourProvider>
-      <Shell>{showEmptyState ? <NoEventsState /> : <Outlet />}</Shell>
+      <Shell>
+        {/* Temporary: nudges a few members to reply to our feedback email. The backend
+            decides who sees it. Not for crew (role 6), the demo, or mid-onboarding. */}
+        {!showEmptyState && userRole !== 6 && !demo && <FeedbackNudgeBanner />}
+        {showEmptyState ? <NoEventsState /> : <Outlet />}
+      </Shell>
       {/* Planner only. Two reasons, both real:
           1. Couple mode swaps in Couple* page components on the SAME paths
              (see the mode checks below), but none of them carry `data-tour`

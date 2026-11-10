@@ -166,10 +166,10 @@ export default function RegisterPage() {
         <div style={{ position: 'relative', zIndex: 2 }}>
           <Link to="/" aria-label="Go to homepage" style={{ display: 'inline-block' }}>
             <img
-              src="/MYBigDay_logo_trimmed.png"
+              src="/mybigday-logo-xmas.png"
               alt="My Big Day"
-              width={1399}
-              height={1486}
+              width={1375}
+              height={1087}
               style={{ height: 168, width: 'auto', display: 'block' }}
             />
           </Link>
