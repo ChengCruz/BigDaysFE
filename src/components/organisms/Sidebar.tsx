@@ -6,7 +6,6 @@ import XIcon from "@heroicons/react/outline/XIcon";
 import ChevronLeftIcon from "@heroicons/react/outline/ChevronLeftIcon";
 import ChevronRightIcon from "@heroicons/react/outline/ChevronRightIcon";
 import LogoutIcon from "@heroicons/react/outline/LogoutIcon";
-import UserCircleIcon from "@heroicons/react/outline/UserCircleIcon";
 
 import {
   CalendarIcon,
@@ -273,10 +272,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               </button>
             )}
             {!collapsed ? (
-              <div className="flex items-center gap-3 px-2 py-2">
-                <div className="h-8 w-8 rounded-full bg-primary/10 dark:bg-white/10 grid place-items-center flex-shrink-0">
-                  <UserCircleIcon className="h-5 w-5 text-primary dark:text-white/70" />
-                </div>
+              <div className="flex items-center gap-2 px-2 py-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{user?.email ?? ""}</p>
                   {displayRole && <p className="text-xs text-text/50 dark:text-white/40 truncate">{displayRole}</p>}
